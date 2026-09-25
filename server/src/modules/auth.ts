@@ -5,11 +5,12 @@ import type { Ctx, ReqMeta } from '../context.js';
 import type { Queryable } from '../db/index.js';
 import { hashSecret, keyedHash, randomCode, randomDigits, randomToken, safeEqual, verifySecret } from '../lib/crypto.js';
 import { AppError, badRequest, tooMany, unauthorized } from '../lib/errors.js';
-import { normalizeNgPhone } from '../lib/phone.js';
+import { maskPhone, normalizeNgPhone } from '../lib/phone.js';
 import { createAccount } from './ledger.js';
 import { audit, notify } from './platform.js';
 
 const OTP_TTL_MS = 5 * 60_000;
+const SESSION_IDLE_DAYS = 14;
 const OTP_MAX_ATTEMPTS = 5;
 const OTP_PER_PHONE_WINDOW = { minutes: 15, max: 4 };
 const OTP_PER_IP_WINDOW = { minutes: 60, max: 30 };
@@ -29,6 +30,7 @@ export interface UserRow {
   pin_failed_attempts: number;
   pin_locked_until: Date | null;
   kyc_tier: 1 | 2 | 3;
+  pin_reset_at: Date | null;
   bvn_last4: string | null;
   status: 'active' | 'frozen' | 'closed';
   referral_code: string;
@@ -122,8 +124,8 @@ const deviceFromUA = (ua: string | null) => {
 export async function refresh(ctx: Ctx, refreshToken: string, meta: ReqMeta): Promise<AuthTokensDTO> {
   const hash = keyedHash(ctx.config.HASH_SECRET, refreshToken);
   const out = await ctx.db.tx(async (q) => {
-    const current = await q.query<{ id: string; user_id: string; expires_at: Date; revoked_at: Date | null }>(
-      'SELECT id, user_id, expires_at, revoked_at FROM sessions WHERE refresh_hash = $1 FOR UPDATE',
+    const current = await q.query<{ id: string; user_id: string; expires_at: Date; revoked_at: Date | null; last_used_at: Date }>(
+      'SELECT id, user_id, expires_at, revoked_at, last_used_at FROM sessions WHERE refresh_hash = $1 FOR UPDATE',
       [hash],
     );
     const s = current.rows[0];
@@ -140,6 +142,11 @@ export async function refresh(ctx: Ctx, refreshToken: string, meta: ReqMeta): Pr
       return null;
     }
     if (s.revoked_at || s.expires_at <= ctx.now()) return null;
+    // Idle sessions end too, not just old ones.
+    if (ctx.now().getTime() - s.last_used_at.getTime() > SESSION_IDLE_DAYS * 86_400_000) {
+      await q.query('UPDATE sessions SET revoked_at = now() WHERE id = $1', [s.id]);
+      return null;
+    }
     const user = await getUser(q, s.user_id);
     if (user.status !== 'active') throw new AppError(403, 'account_restricted', 'This account is restricted. Contact support.');
     const next = randomToken(32);
@@ -171,10 +178,10 @@ export async function revokeAllSessions(ctx: Ctx, userId: string, exceptSessionI
 
 const otpHash = (ctx: Ctx, phone: string, code: string) => keyedHash(ctx.config.HASH_SECRET, `otp:${phone}:${code}`);
 
-export async function requestOtp(ctx: Ctx, rawPhone: string, meta: ReqMeta) {
-  const phone = normalizeNgPhone(rawPhone);
-  if (!phone) throw badRequest('invalid_phone', 'Enter a valid Nigerian mobile number.');
+type OtpPurpose = 'login' | 'pin_reset';
 
+/** Sends a code bound to one purpose, so a sign-in code can never reset a PIN and vice versa. */
+async function issueOtp(ctx: Ctx, phone: string, purpose: OtpPurpose, meta: ReqMeta) {
   const recent = await ctx.db.query<{ by_phone: number; by_ip: number }>(
     `SELECT
        COUNT(*) FILTER (WHERE phone = $1 AND created_at > now() - make_interval(mins => $3))::int AS by_phone,
@@ -182,36 +189,31 @@ export async function requestOtp(ctx: Ctx, rawPhone: string, meta: ReqMeta) {
      FROM otp_challenges WHERE created_at > now() - make_interval(mins => GREATEST($3, $4))`,
     [phone, meta.ip, OTP_PER_PHONE_WINDOW.minutes, OTP_PER_IP_WINDOW.minutes],
   );
-  if (recent.rows[0].by_phone >= OTP_PER_PHONE_WINDOW.max) throw tooMany('Too many codes requested for this number. Try again in 15 minutes.');
-  if (meta.ip && recent.rows[0].by_ip >= OTP_PER_IP_WINDOW.max) throw tooMany();
-
+  if (recent.rows[0].by_phone >= OTP_PER_PHONE_WINDOW.max || (meta.ip && recent.rows[0].by_ip >= OTP_PER_IP_WINDOW.max)) {
+    await audit(ctx.db, { action: 'auth.otp_rate_limited', ip: meta.ip, metadata: { phone: maskPhone(phone), purpose } });
+    throw tooMany('Too many codes requested. Try again in 15 minutes.');
+  }
   const code = randomDigits(6);
-  await ctx.db.query('INSERT INTO otp_challenges (phone, code_hash, expires_at, ip) VALUES ($1, $2, $3, $4)', [
+  await ctx.db.query('INSERT INTO otp_challenges (phone, code_hash, expires_at, ip, purpose) VALUES ($1, $2, $3, $4, $5)', [
     phone,
     otpHash(ctx, phone, code),
     new Date(ctx.now().getTime() + OTP_TTL_MS),
     meta.ip,
+    purpose,
   ]);
-  await ctx.sms.send(phone, `Your PACT code is ${code}. It expires in 5 minutes. Never share it, not even with PACT staff.`);
-  const exists = await ctx.db.query('SELECT 1 FROM users WHERE phone = $1', [phone]);
-  return {
-    phone,
-    expiresInSec: OTP_TTL_MS / 1000,
-    isNewUser: exists.rowCount === 0,
-    ...(ctx.config.exposeDevCodes ? { devCode: code } : {}),
-  };
+  const what = purpose === 'pin_reset' ? 'code to reset your PACT PIN' : 'PACT code';
+  await ctx.sms.send(phone, `Your ${what} is ${code}. It expires in 5 minutes. Never share it, not even with PACT staff.`);
+  return code;
 }
 
-export async function verifyOtp(ctx: Ctx, rawPhone: string, code: string, device: string | undefined, meta: ReqMeta): Promise<OtpVerifyDTO> {
-  const phone = normalizeNgPhone(rawPhone);
-  if (!phone) throw badRequest('invalid_phone', 'Enter a valid Nigerian mobile number.');
-
+/** Checks a code. Failures are counted and audited; returns normally only on success. */
+async function consumeOtp(ctx: Ctx, phone: string, code: string, purpose: OtpPurpose, meta: ReqMeta) {
   const verified = await ctx.db.tx(async (q) => {
     const r = await q.query<{ id: string; code_hash: string; attempts: number }>(
       `SELECT id, code_hash, attempts FROM otp_challenges
-        WHERE phone = $1 AND consumed_at IS NULL AND expires_at > now()
+        WHERE phone = $1 AND purpose = $2 AND consumed_at IS NULL AND expires_at > now()
         ORDER BY created_at DESC LIMIT 1 FOR UPDATE`,
-      [phone],
+      [phone, purpose],
     );
     const c = r.rows[0];
     if (!c) return 'expired' as const;
@@ -220,9 +222,27 @@ export async function verifyOtp(ctx: Ctx, rawPhone: string, code: string, device
     await q.query(`UPDATE otp_challenges SET attempts = attempts + 1, consumed_at = CASE WHEN $2 THEN now() END WHERE id = $1`, [c.id, ok]);
     return ok ? ('ok' as const) : ('wrong' as const);
   });
+  if (verified !== 'ok') await audit(ctx.db, { action: 'auth.otp_failed', ip: meta.ip, metadata: { phone: maskPhone(phone), purpose, reason: verified } });
   if (verified === 'expired') throw badRequest('otp_expired', 'That code has expired. Request a new one.');
   if (verified === 'locked') throw tooMany('Too many wrong codes. Request a new one.');
   if (verified === 'wrong') throw badRequest('otp_incorrect', 'That code isn’t right. Check the SMS and try again.');
+}
+
+/**
+ * The response is identical whether or not the number has an account, so this
+ * endpoint can't be used to find out who is on PACT.
+ */
+export async function requestOtp(ctx: Ctx, rawPhone: string, meta: ReqMeta) {
+  const phone = normalizeNgPhone(rawPhone);
+  if (!phone) throw badRequest('invalid_phone', 'Enter a valid Nigerian mobile number.');
+  const code = await issueOtp(ctx, phone, 'login', meta);
+  return { phone, expiresInSec: OTP_TTL_MS / 1000, ...(ctx.config.exposeDevCodes ? { devCode: code } : {}) };
+}
+
+export async function verifyOtp(ctx: Ctx, rawPhone: string, code: string, device: string | undefined, meta: ReqMeta): Promise<OtpVerifyDTO> {
+  const phone = normalizeNgPhone(rawPhone);
+  if (!phone) throw badRequest('invalid_phone', 'Enter a valid Nigerian mobile number.');
+  await consumeOtp(ctx, phone, code, 'login', meta);
 
   const user = await ctx.db.query<{ id: string; status: string }>('SELECT id, status FROM users WHERE phone = $1', [phone]);
   if (user.rows[0]) {
@@ -337,13 +357,54 @@ export async function verifyPin(ctx: Ctx, userId: string, pin: string, meta?: Re
   throw new AppError(403, 'incorrect_pin', 'That PIN isn’t right.', { attemptsLeft: PIN_MAX_ATTEMPTS - attempts });
 }
 
-export async function changePin(ctx: Ctx, userId: string, currentPin: string, newPin: string, meta: ReqMeta) {
+/** Changing the PIN signs out every other device, so an old stolen session can't keep going. */
+export async function changePin(ctx: Ctx, userId: string, sessionId: string, currentPin: string, newPin: string, meta: ReqMeta) {
   await verifyPin(ctx, userId, currentPin, meta);
   assertStrongPin(newPin);
   if (currentPin === newPin) throw badRequest('same_pin', 'Choose a different PIN.');
   await ctx.db.tx(async (q) => {
     await q.query('UPDATE users SET pin_hash = $2, updated_at = now() WHERE id = $1', [userId, await hashSecret(newPin)]);
+    await q.query('UPDATE sessions SET revoked_at = now() WHERE user_id = $1 AND id <> $2 AND revoked_at IS NULL', [userId, sessionId]);
     await audit(q, { actorId: userId, action: 'pin.changed', ip: meta.ip });
-    await notify(q, [userId], { type: 'security', title: 'PIN changed', body: 'Your transaction PIN was changed. If this wasn’t you, contact support now.' });
+    await notify(q, [userId], { type: 'security', title: 'PIN changed', body: 'Your transaction PIN was changed and other devices were signed out. If this wasn’t you, contact support now.' });
   });
+}
+
+/* Forgotten PIN: proven by a fresh SMS code to the account's own number. */
+
+export const PIN_RESET_HOLD_HOURS = 24;
+
+export async function requestPinReset(ctx: Ctx, userId: string, meta: ReqMeta) {
+  const u = await getUser(ctx.db, userId);
+  const code = await issueOtp(ctx, u.phone, 'pin_reset', meta);
+  await audit(ctx.db, { actorId: userId, action: 'pin.reset_requested', ip: meta.ip });
+  return { expiresInSec: OTP_TTL_MS / 1000, ...(ctx.config.exposeDevCodes ? { devCode: code } : {}) };
+}
+
+export async function resetPin(ctx: Ctx, userId: string, sessionId: string, code: string, newPin: string, meta: ReqMeta) {
+  const u = await getUser(ctx.db, userId);
+  assertStrongPin(newPin);
+  await consumeOtp(ctx, u.phone, code, 'pin_reset', meta);
+  await ctx.db.tx(async (q) => {
+    await q.query(
+      'UPDATE users SET pin_hash = $2, pin_failed_attempts = 0, pin_locked_until = NULL, pin_reset_at = now(), updated_at = now() WHERE id = $1',
+      [userId, await hashSecret(newPin)],
+    );
+    await q.query('UPDATE sessions SET revoked_at = now() WHERE user_id = $1 AND id <> $2 AND revoked_at IS NULL', [userId, sessionId]);
+    await audit(q, { actorId: userId, action: 'pin.reset_completed', ip: meta.ip });
+    await notify(q, [userId], {
+      type: 'security',
+      title: 'PIN reset',
+      body: `Your PIN was reset and other devices were signed out. Withdrawals pause for ${PIN_RESET_HOLD_HOURS} hours as a precaution. If this wasn’t you, contact support now.`,
+    });
+  });
+}
+
+/** Withdrawals and bank changes wait out the hold after a PIN reset. */
+export function assertNoResetHold(ctx: Ctx, user: UserRow) {
+  if (!user.pin_reset_at) return;
+  const until = new Date(user.pin_reset_at.getTime() + PIN_RESET_HOLD_HOURS * 3_600_000);
+  if (until > ctx.now()) {
+    throw new AppError(423, 'reset_hold', `For your safety, withdrawals and bank changes are paused until ${until.toLocaleString('en-NG', { timeZone: 'Africa/Lagos', dateStyle: 'medium', timeStyle: 'short' })} after your PIN reset.`, { until: until.toISOString() });
+  }
 }

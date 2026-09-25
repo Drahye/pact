@@ -10,24 +10,40 @@ const kobo = (min: number) => z.number().int().min(min).max(MAX_PACT_TARGET);
 const pin = z.string().regex(/^\d{4}$/, 'PIN must be 4 digits');
 const phone = z.string().trim().min(10).max(20);
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD');
-const name = z.string().trim().min(1).max(40);
+/**
+ * Free text from people: trimmed, length-capped, and free of control characters and
+ * bidirectional overrides (which can make one name display as another). React escapes
+ * on render; this keeps stored data clean for SMS, exports and any future surface.
+ */
+// eslint-disable-next-line no-control-regex
+const UNSAFE = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F\u202A-\u202E\u2066-\u2069\u200B-\u200F\uFEFF]/;
+const text = (min: number, max: number) =>
+  z
+    .string()
+    .trim()
+    .min(min)
+    .max(max)
+    .refine((v) => !UNSAFE.test(v), 'Remove unusual or invisible characters.')
+    .refine((v) => !/[<>]/.test(v), 'Angle brackets aren’t allowed.');
+const name = text(1, 40).refine((v) => /^[\p{L}\p{M}' .-]+$/u.test(v), 'Use letters only.');
 
 export const categories = ['gift', 'trip', 'event', 'household', 'wedding', 'fund', 'other'] as const;
 
 export const OtpRequestBody = z.object({ phone });
-export const OtpVerifyBody = z.object({ phone, code: z.string().regex(/^\d{6}$/), device: z.string().max(80).optional() });
+export const OtpVerifyBody = z.object({ phone, code: z.string().regex(/^\d{6}$/), device: text(0, 80).optional() });
+export const PinResetBody = z.object({ code: z.string().regex(/^\d{6}$/), newPin: pin });
 export const SignupBody = z.object({
   signupToken: z.string().min(10),
   firstName: name,
   lastName: name,
   pin,
-  referralCode: z.string().trim().max(12).optional(),
+  referralCode: z.string().trim().regex(/^[A-Za-z0-9]{0,12}$/).optional(),
 });
 export const RefreshBody = z.object({ refreshToken: z.string().min(20).optional() });
 
 export const CreatePactBody = z.object({
-  title: z.string().trim().min(1).max(60),
-  note: z.string().trim().max(280).optional(),
+  title: text(1, 60),
+  note: text(0, 280).optional(),
   category: z.enum(categories),
   target: kobo(MIN_PACT_TARGET),
   deadline: isoDate,

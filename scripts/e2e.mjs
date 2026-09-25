@@ -34,7 +34,11 @@ try {
   await shot('welcome');
 
   // Sign up
-  await link('Get started');
+  // Welcome renders a live WebGL scene; under headless software rendering Playwright's
+  // stability check can time out, so this one click skips it.
+  await page.getByRole('link', { name: 'Get started' }).click({ force: true });
+  await page.getByText('What’s your number?').waitFor();
+  await page.waitForTimeout(600); // let the push transition settle
   await page.getByLabel('Mobile number').fill(phone.slice(1));
   await shot('phone');
   await tap('Send code');

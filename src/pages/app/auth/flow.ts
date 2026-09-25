@@ -3,7 +3,6 @@ export interface AuthFlow {
   phone?: string;
   displayPhone?: string;
   devCode?: string;
-  isNewUser?: boolean;
   signupToken?: string;
   firstName?: string;
   lastName?: string;

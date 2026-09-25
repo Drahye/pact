@@ -1,5 +1,5 @@
 import type { ActivityDTO, CreatePactInput, PactDTO, PactPreviewDTO, PersonDTO, WithPeople } from '../../../shared/contracts.js';
-import { MAX_PACT_DAYS, MAX_PACT_MEMBERS, MISSED_GOAL_GRACE_DAYS, NUDGE_COOLDOWN_HOURS, TIER_LIMITS, type KycTier } from '../../../shared/policy.js';
+import { SMS_INVITES_PER_DAY, MAX_PACT_DAYS, MAX_PACT_MEMBERS, MISSED_GOAL_GRACE_DAYS, NUDGE_COOLDOWN_HOURS, TIER_LIMITS, type KycTier } from '../../../shared/policy.js';
 import type { Ctx, ReqMeta } from '../context.js';
 import type { Queryable } from '../db/index.js';
 import { randomCode } from '../lib/crypto.js';
@@ -269,7 +269,18 @@ async function invite(ctx: Ctx, q: Queryable, pactId: string, inviterId: string,
   await notify(q, invited, { type: 'invite', title: 'You’re invited', body: `${inviter.first_name} invited you to ${title}.`, pactId });
 
   const knownPhones = new Set(known.rows.map((u) => u.phone));
-  for (const phone of phones.filter((p) => !knownPhones.has(p) && p !== inviter.phone)) {
+  const smsTargets = phones.filter((p) => !knownPhones.has(p) && p !== inviter.phone);
+  // Invite texts cost money and land on strangers' phones: cap them per person per day.
+  if (smsTargets.length) {
+    const sent = await q.query<{ n: number }>(
+      `SELECT COUNT(*)::int AS n FROM pact_phone_invites WHERE invited_by = $1 AND created_at > now() - interval '24 hours'`,
+      [inviterId],
+    );
+    if (sent.rows[0].n + smsTargets.length > SMS_INVITES_PER_DAY) {
+      throw new AppError(429, 'invite_limit', `You can text up to ${SMS_INVITES_PER_DAY} new numbers a day. Share the invite link instead.`);
+    }
+  }
+  for (const phone of smsTargets) {
     const r = await q.query(`INSERT INTO pact_phone_invites (pact_id, phone, invited_by) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING RETURNING id`, [pactId, phone, inviterId]);
     if (r.rowCount) await enqueue(q, 'sms.invite', { pactId, phone, inviter: inviter.first_name });
   }

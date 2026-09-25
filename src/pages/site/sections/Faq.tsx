@@ -7,7 +7,7 @@ const naira = (kobo: number) => `₦${(kobo / NGN).toLocaleString('en-NG')}`;
 const faqs = [
   {
     q: 'Where does the money sit while we save?',
-    a: 'In the Pact, not in anyone’s personal account. Wallets and Pact pools are held with our licensed banking and payment partners, separate from PACT’s own money, and every movement is recorded on a double-entry ledger.',
+    a: 'In the Pact, not in anyone’s personal account. Every movement is recorded on a double-entry ledger. At launch, balances will be held with a licensed banking or payment partner, separate from PACT’s own money. Until then PACT runs in sandbox mode and no real money moves.',
   },
   {
     q: 'What happens if we don’t reach the goal?',

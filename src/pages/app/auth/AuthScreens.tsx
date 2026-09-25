@@ -31,7 +31,7 @@ export function PhoneScreen() {
     setError(undefined);
     try {
       const r = await requestOtp(`0${digits}`);
-      writeFlow({ phone: r.phone, displayPhone: `0${pretty(digits)}`, devCode: r.devCode, isNewUser: r.isNewUser, signupToken: undefined });
+      writeFlow({ phone: r.phone, displayPhone: `0${pretty(digits)}`, devCode: r.devCode, signupToken: undefined });
       navigate('/app/auth/code');
     } catch (err) {
       setError((err as ApiError).message);

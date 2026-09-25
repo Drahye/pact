@@ -17,7 +17,7 @@ interface AuthValue {
   status: Status;
   user: MeDTO | null;
   config: ServerConfig | null;
-  requestOtp: (phone: string) => Promise<{ phone: string; expiresInSec: number; isNewUser: boolean; devCode?: string }>;
+  requestOtp: (phone: string) => Promise<{ phone: string; expiresInSec: number; devCode?: string }>;
   verifyOtp: (phone: string, code: string) => Promise<OtpVerifyDTO>;
   signup: (input: { signupToken: string; firstName: string; lastName: string; pin: string; referralCode?: string }) => Promise<void>;
   signOut: () => Promise<void>;

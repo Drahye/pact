@@ -46,9 +46,9 @@ export function createPaystackProvider(config: Config): PaymentProvider {
       return { checkoutUrl: data.authorization_url };
     },
     async verifyCheckout(reference) {
-      const data = await call<{ status: string; amount: number; gateway_response: string }>(`/transaction/verify/${encodeURIComponent(reference)}`);
+      const data = await call<{ status: string; amount: number; currency: string; gateway_response: string }>(`/transaction/verify/${encodeURIComponent(reference)}`);
       const status = data.status === 'success' ? 'succeeded' : ['failed', 'reversed', 'abandoned'].includes(data.status) ? 'failed' : 'pending';
-      return { status, amountPaid: data.amount, reason: data.gateway_response ?? null };
+      return { status, amountPaid: data.amount, currency: data.currency ?? null, reason: data.gateway_response ?? null };
     },
     verifyWebhookSignature(rawBody, headers) {
       const given = headers['x-paystack-signature'];

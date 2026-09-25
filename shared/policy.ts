@@ -64,3 +64,6 @@ export const MISSED_GOAL_GRACE_DAYS = 3;
 export const PIN_MAX_ATTEMPTS = 5;
 export const PIN_LOCK_MINUTES = 30;
 export const NUDGE_COOLDOWN_HOURS = 24;
+
+/** Texts to numbers not on PACT yet, per inviter per 24 hours. */
+export const SMS_INVITES_PER_DAY = 30;

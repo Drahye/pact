@@ -21,8 +21,8 @@ export function Footer() {
           <Link to="/privacy">Privacy</Link>
         </nav>
         <p className="footer__note">
-          PACT is a technology company, not a bank. Wallet balances and Pact funds are held with licensed banking and payment partners.
-          Until launch, the web app runs in sandbox mode and no real money moves.
+          PACT is not a bank. Before real money moves, balances will be held with a licensed banking or payment partner.
+          Until then, the web app runs in sandbox mode and no real money moves.
         </p>
         <p className="footer__copy">© 2026 PACT</p>
       </div>

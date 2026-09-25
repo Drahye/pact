@@ -8,6 +8,7 @@ export interface ParsedWebhook {
   type: WebhookEventType;
   reference: string;
   amount: number | null;
+  currency: string | null;
   reason: string | null;
 }
 
@@ -15,6 +16,7 @@ export interface CheckoutStatus {
   status: 'succeeded' | 'failed' | 'pending';
   /** What the customer actually paid, in kobo. Always checked against what we expected. */
   amountPaid: number | null;
+  currency?: string | null;
   reason: string | null;
 }
 
@@ -53,6 +55,7 @@ export function parsePaystackEvent(body: unknown): ParsedWebhook | null {
     type,
     reference: data.reference,
     amount: typeof data.amount === 'number' ? data.amount : null,
+    currency: typeof data.currency === 'string' ? data.currency : null,
     reason: typeof data.gateway_response === 'string' ? data.gateway_response : typeof data.reason === 'string' ? data.reason : null,
   };
 }

@@ -91,6 +91,13 @@ export async function buildApp({ config, db, provider, sms, now = () => new Date
     hsts: config.isProd ? { maxAge: 31_536_000, includeSubDomains: true, preload: true } : false,
   });
 
+  // Production is HTTPS only. Behind a proxy, redirect anything that arrived over plain HTTP.
+  if (config.isProd && config.TRUST_PROXY) {
+    app.addHook('onRequest', async (req, reply) => {
+      if (req.headers['x-forwarded-proto'] === 'http') return reply.redirect(`https://${req.headers.host}${req.url}`, 301);
+    });
+  }
+
   const origins = new Set([config.APP_ORIGIN, ...config.CORS_ORIGINS.split(',').map((o) => o.trim()).filter(Boolean)]);
   await app.register(cors, {
     origin: (origin, cb) => cb(null, !origin || origins.has(origin)),
@@ -106,10 +113,21 @@ export async function buildApp({ config, db, provider, sms, now = () => new Date
     max: 300,
     timeWindow: '1 minute',
     keyGenerator: (req) => req.ip,
+    onExceeded: (req) => {
+      req.log.warn({ route: req.routeOptions.url, ip: req.ip }, 'rate limit exceeded');
+      void db
+        .query(`INSERT INTO audit_log (action, target_type, target_id, ip) VALUES ('security.rate_limited', 'route', $1, $2)`, [req.routeOptions.url ?? req.url, req.ip])
+        .catch(() => undefined);
+    },
     errorResponseBuilder: (_req, context) => ({
       statusCode: 429,
       error: { code: 'rate_limited', message: `Too many requests. Try again in ${Math.ceil(context.ttl / 1000)} seconds.` },
     }),
+  });
+
+  // Personal and financial data must never sit in a shared cache.
+  app.addHook('onSend', async (req, reply) => {
+    if (req.url.startsWith('/api/') && !reply.hasHeader('Cache-Control')) reply.header('Cache-Control', 'no-store');
   });
 
   app.setErrorHandler((err: Error & { statusCode?: number; validation?: unknown }, req, reply) => {
@@ -236,6 +254,10 @@ export async function buildApp({ config, db, provider, sms, now = () => new Date
       api.post('/auth/refresh', strict(30), async (req, reply) => {
         const body = parse(C.RefreshBody, req.body);
         // Cookie refresh requires the custom header: a cross-site form can't send it.
+        // Cookie-based refresh also checks where the request came from (CSRF defence in depth,
+        // on top of SameSite=Strict and the custom header).
+        const origin = req.headers.origin;
+        if (!body.refreshToken && origin && !origins.has(origin)) throw unauthorized('Sign in to continue.');
         const token = body.refreshToken ?? (isWeb(req) ? req.cookies[REFRESH_COOKIE] : undefined);
         if (!token) throw unauthorized('Sign in to continue.');
         try {
@@ -281,7 +303,24 @@ export async function buildApp({ config, db, provider, sms, now = () => new Date
         });
         priv.post('/me/pin', strict(5), async (req) => {
           const body = parse(C.ChangePinBody, req.body);
-          await auth.changePin(ctx, req.userId, body.currentPin, body.newPin, meta(req));
+          await auth.changePin(ctx, req.userId, req.sessionId, body.currentPin, body.newPin, meta(req));
+          return { ok: true };
+        });
+        priv.post('/me/pin/reset/request', strict(3, 15), async (req) => auth.requestPinReset(ctx, req.userId, meta(req)));
+        priv.post('/me/pin/reset', strict(5, 15), async (req) => {
+          const body = parse(C.PinResetBody, req.body);
+          await auth.resetPin(ctx, req.userId, req.sessionId, body.code, body.newPin, meta(req));
+          return { ok: true };
+        });
+        priv.get('/me/export', strict(3, 60), async (req, reply) => {
+          reply.header('Content-Disposition', 'attachment; filename="pact-my-data.json"');
+          reply.header('Cache-Control', 'no-store');
+          return users.exportData(ctx, req.userId);
+        });
+        priv.post('/me/close', strict(3, 60), async (req, reply) => {
+          await auth.verifyPin(ctx, req.userId, parse(C.PinBody, req.body).pin, meta(req));
+          await users.closeAccount(ctx, req.userId, meta(req));
+          reply.clearCookie(REFRESH_COOKIE, { path: '/api/auth' });
           return { ok: true };
         });
         priv.get('/me/sessions', async (req) => users.listSessions(ctx, req.userId, req.sessionId));

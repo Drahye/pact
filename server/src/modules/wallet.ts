@@ -6,7 +6,7 @@ import { decrypt, encrypt, keyedHash, randomCode } from '../lib/crypto.js';
 import { AppError, badRequest, notFound } from '../lib/errors.js';
 import { formatNgn } from '../lib/money.js';
 import { lagosDayStart } from '../lib/time.js';
-import { getUser, verifyPin } from './auth.js';
+import { assertNoResetHold, getUser, verifyPin } from './auth.js';
 import { post, systemAccountId, walletAccountId } from './ledger.js';
 import { audit, enqueue, notify } from './platform.js';
 
@@ -196,6 +196,10 @@ export async function getTopup(ctx: Ctx, userId: string, reference: string): Pro
 /** Asks the processor for the truth. Used when a webhook is late. */
 export async function reconcileTopup(ctx: Ctx, t: TopupRow): Promise<TopupDTO> {
   const status = await ctx.provider.verifyCheckout(t.reference);
+  if (status.status === 'succeeded' && status.currency && status.currency !== 'NGN') {
+    await failTopup(ctx, t.reference, 'currency_mismatch');
+    return toTopup({ ...t, status: 'failed', failure_reason: 'currency_mismatch' });
+  }
   if (status.status === 'succeeded') return settleTopup(ctx, t.reference, status.amountPaid, 'verify');
   if (status.status === 'failed') {
     await failTopup(ctx, t.reference, status.reason);
@@ -271,6 +275,7 @@ export async function listBankAccounts(ctx: Ctx, userId: string): Promise<BankAc
 export async function addBankAccount(ctx: Ctx, userId: string, input: { bankCode: string; accountNumber: string; pin: string }, meta: ReqMeta) {
   await verifyPin(ctx, userId, input.pin, meta);
   const user = await getUser(ctx.db, userId);
+  assertNoResetHold(ctx, user);
   const banks = await ctx.provider.listBanks();
   const bank = banks.find((b) => b.code === input.bankCode);
   if (!bank) throw badRequest('bank_not_found', 'Choose a bank from the list.');
@@ -334,6 +339,7 @@ async function toWithdrawal(q: Queryable, w: WithdrawalRow): Promise<WithdrawalD
 export async function withdraw(ctx: Ctx, userId: string, input: { amount: number; bankAccountId: string; pin: string }, meta: ReqMeta): Promise<WithdrawalDTO> {
   await verifyPin(ctx, userId, input.pin, meta);
   const user = await getUser(ctx.db, userId);
+  assertNoResetHold(ctx, user);
   const limits = TIER_LIMITS[user.kyc_tier as KycTier];
   const bank = await ctx.db.query<BankRow>('SELECT * FROM bank_accounts WHERE id = $1 AND user_id = $2 AND deleted_at IS NULL', [input.bankAccountId, userId]);
   if (!bank.rows[0]) throw notFound('Bank account');

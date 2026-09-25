@@ -2,6 +2,7 @@ import { Building2, CreditCard, ShieldCheck } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { MIN_TOPUP, topupFee } from '../../../../shared/policy';
+import { useAuth } from '../../../api/auth';
 import { ApiError, newIdempotencyKey } from '../../../api/client';
 import { useStartTopup, useWallet } from '../../../api/hooks';
 import { Notice } from '../../../components/app/States';
@@ -18,6 +19,7 @@ export const TOPUP_RETURN_KEY = 'pact.topupReturn';
 
 export function TopupScreen() {
   const [params] = useSearchParams();
+  const { config } = useAuth();
   const navigate = useNavigate();
   const wallet = useWallet();
   const start = useStartTopup();
@@ -66,7 +68,7 @@ export function TopupScreen() {
             {valid ? `Pay ${formatNairaKobo(kobo + fee)}` : `Enter at least ${formatNairaKobo(MIN_TOPUP)}`}
           </Button>
           <p className="wallet__secure">
-            <ShieldCheck aria-hidden /> Payments are processed by our licensed payment partner.
+            <ShieldCheck aria-hidden /> {config?.sandbox ? 'Sandbox mode: no real money moves.' : 'Payments are processed by our payment partner.'}
           </p>
         </>
       }

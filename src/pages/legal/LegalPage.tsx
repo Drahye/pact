@@ -16,7 +16,7 @@ const content: Record<Doc, { title: string; intro: string; sections: { h: string
         h: '1. What PACT is',
         p: [
           'PACT lets groups pool money toward a shared goal. You keep a wallet, and you contribute from it to Pacts you have joined. Every member of a Pact can see every contribution.',
-          'PACT is a technology service. Wallet balances and Pact funds are held with our licensed banking and payment partners in accounts that are kept separate from PACT’s own money. PACT does not lend, invest or pay interest on your balance.',
+          'PACT is a technology service, not a bank. Before real money moves, wallet balances and Pact funds will be held with a licensed banking or payment partner, separate from PACT’s own money. Until then PACT runs in sandbox mode. PACT does not lend, invest or pay interest on your balance.',
         ],
       },
       {
@@ -56,7 +56,7 @@ const content: Record<Doc, { title: string; intro: string; sections: { h: string
   },
   privacy: {
     title: 'Privacy Policy',
-    intro: 'This policy explains what personal data PACT collects, why, and the choices you have. It is written to meet the Nigeria Data Protection Act 2023.',
+    intro: 'This policy explains what personal data PACT collects, why, and the choices you have. It is a plain-language draft that will be reviewed by counsel against the Nigeria Data Protection Act 2023 before launch.',
     sections: [
       {
         h: 'What we collect',

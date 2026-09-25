@@ -1,4 +1,5 @@
 import type { Ctx } from '../context.js';
+import { audit } from './platform.js';
 import { failTopup, reverseWithdrawal, completeWithdrawal, settleTopup } from './wallet.js';
 
 /**
@@ -6,7 +7,10 @@ import { failTopup, reverseWithdrawal, completeWithdrawal, settleTopup } from '.
  * first; a redelivery of an event we already processed is acknowledged and ignored.
  */
 export async function handleWebhook(ctx: Ctx, rawBody: string, headers: Record<string, string | string[] | undefined>) {
-  if (!ctx.provider.verifyWebhookSignature(rawBody, headers)) return { status: 401 as const, body: { ok: false } };
+  if (!ctx.provider.verifyWebhookSignature(rawBody, headers)) {
+    await audit(ctx.db, { action: 'webhook.bad_signature', metadata: { provider: ctx.provider.name, bytes: rawBody.length } });
+    return { status: 401 as const, body: { ok: false } };
+  }
   let body: unknown;
   try {
     body = JSON.parse(rawBody);
@@ -28,7 +32,9 @@ export async function handleWebhook(ctx: Ctx, rawBody: string, headers: Record<s
   try {
     switch (event.type) {
       case 'charge.success':
-        await settleTopup(ctx, event.reference, event.amount, 'webhook');
+        // Only naira is accepted; anything else is never credited.
+        if (event.currency && event.currency !== 'NGN') await failTopup(ctx, event.reference, 'currency_mismatch');
+        else await settleTopup(ctx, event.reference, event.amount, 'webhook');
         break;
       case 'charge.failed':
         await failTopup(ctx, event.reference, event.reason);

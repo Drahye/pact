@@ -110,8 +110,8 @@ export function Anatomy() {
           <SectionHeading
             variant="site"
             id="how-title"
-            title="One goal. Everyone knows where things stand."
-            description="Four moments in the app, from naming the goal to watching it fill."
+            title="One plan. Everyone knows where things stand."
+            description="The goal, the people, the money, the tasks and the deadline, in one place everyone can see."
           />
         </Reveal>
 

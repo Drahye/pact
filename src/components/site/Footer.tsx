@@ -13,7 +13,6 @@ export function Footer() {
         <nav aria-label="Footer" className="footer__links">
           <a href="/#how">How it works</a>
           <a href="/#plans">Plans</a>
-          <a href="/#clarity">Clarity</a>
           <a href="/#faq">FAQ</a>
           <Link to="/download">Download</Link>
           <Link to="/app">Open the web app</Link>

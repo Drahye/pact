@@ -9,7 +9,7 @@ const links = [
   { href: '/#how', label: 'How it works' },
   { href: '/#app', label: 'The app' },
   { href: '/#plans', label: 'Plans' },
-  { href: '/#clarity', label: 'Clarity' },
+  { href: '/#faq', label: 'FAQ' },
 ];
 
 /** Floating pill navigation. One conversion: get the app. */

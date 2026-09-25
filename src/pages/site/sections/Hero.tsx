@@ -31,7 +31,7 @@ export function Hero() {
     <section className="hero" ref={root} aria-labelledby="hero-title">
       <div className="container hero__copy">
         <h1 id="hero-title" className="hero__title">
-          <span className="hero__title-text">Plan it together.</span>{' '}
+          <span className="hero__title-text">Make it happen</span>{' '}
           <span className="hero__faces" aria-hidden>
             {faces.map((id) => (
               <span key={id} style={{ ['--c' as string]: friendColor[id] }}>
@@ -39,9 +39,9 @@ export function Hero() {
               </span>
             ))}
           </span>{' '}
-          <span className="hero__title-text">Fund it together.</span>
+          <span className="hero__title-text">together.</span>
         </h1>
-        <p className="hero__lede">Trips, birthdays, rent, owambe. Start one shared goal, bring your people in, and watch every naira land as it happens.</p>
+        <p className="hero__lede">Plan the trip. Fund the gift. Organise the event. PACT brings your people, money and plan together.</p>
         <div className="hero__ctas">
           <Button to="/download" iconRight={<ArrowRight />}>
             Get the app

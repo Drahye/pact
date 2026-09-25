@@ -111,7 +111,7 @@ export function ContributeDemo() {
             align="center"
             id="give-title"
             eyebrow="Contributing"
-            title="Everyone contributes. Everyone sees the progress."
+            title="Watch the plan move."
             description="Choose who’s paying, press and hold, and watch their colour grow in the ring. Every member sees the same thing, instantly."
           />
         </Reveal>

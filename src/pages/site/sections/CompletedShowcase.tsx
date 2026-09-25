@@ -48,7 +48,7 @@ export function CompletedShowcase() {
     <section className="section done" ref={root} aria-labelledby="done-title">
       <div className="container">
         <h2 id="done-title" className="done__title">
-          Your goal is more than a number.
+          Celebrate what you made happen.
         </h2>
         <div className="done__stage">
           <div className="done__ring">

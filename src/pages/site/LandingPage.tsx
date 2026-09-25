@@ -3,9 +3,10 @@ import { Footer } from '../../components/site/Footer';
 import { SiteNav } from '../../components/site/SiteNav';
 import { Anatomy } from './sections/Anatomy';
 import { AppSnapshots } from './sections/AppSnapshots';
-import { Clarity } from './sections/Clarity';
+import { AlmostThere } from './sections/AlmostThere';
 import { CompletedShowcase } from './sections/CompletedShowcase';
 import { ContributeDemo } from './sections/ContributeDemo';
+import { EveryoneBrings } from './sections/EveryoneBrings';
 import { Faq } from './sections/Faq';
 import { FinalCta } from './sections/FinalCta';
 import { Hero } from './sections/Hero';
@@ -16,9 +17,9 @@ import './landing.css';
 import { setFixedClock } from '../../lib/clock';
 
 /**
- * One Pact, told as a story: friends pay into it live (hero), the app that runs it,
- * how it's built, what it adapts to, a contribution you make yourself,
- * and the finish: a ring made of everyone's money.
+ * One Pact, told as a story: make it happen together (hero), the app, one plan everyone
+ * can see, what you're planning, how each person shows up, the plan moving, the last
+ * stretch, and the finish: a ring made of everyone's part.
  */
 export function LandingPage() {
   // Showcase numbers stay pinned to the launch date.
@@ -39,9 +40,10 @@ export function LandingPage() {
         <AppSnapshots />
         <Anatomy />
         <Scenarios />
+        <EveryoneBrings />
         <ContributeDemo />
+        <AlmostThere />
         <CompletedShowcase />
-        <Clarity />
         <Faq />
         <FinalCta />
       </main>

@@ -23,9 +23,9 @@ export function FinalCta() {
           <span className="final__shape final__shape--b" aria-hidden />
           <span className="final__shape final__shape--c" aria-hidden />
           <h2 id="final-title" className="final__title">
-            Ready to make the plan happen?
+            Make the plan. Make it happen together.
           </h2>
-          <p className="final__lede">Get PACT on iOS or Android and start your first Pact in under a minute.</p>
+          <p className="final__lede">Start your first Pact in the web app today. iOS and Android are coming soon.</p>
           <Button to="/download" variant="inverse" iconRight={<ArrowRight />} className="final__btn">
             Get the app
           </Button>

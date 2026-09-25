@@ -13,6 +13,8 @@ npm test           # API integration tests (ledger, payments, auth, concurrency)
 node scripts/e2e.mjs   # full user journey in a headless browser, with screenshots (needs `npm run dev`)
 ```
 
+**Demo:** watch the 3-minute walkthrough in [`docs/demo/pact-demo.mp4`](docs/demo/pact-demo.mp4), or run it live with the talk track in [DEMO.md](DEMO.md).
+
 Open `http://localhost:5173/app`. Sign up with any Nigerian mobile number (the SMS code is shown on screen in the sandbox), or use a demo account: `0801 000 0001` (Abraham, organiser of Sarah's Birthday), `0801 000 0002`, `0801 000 0003`. Demo PIN `1357`.
 
 ---

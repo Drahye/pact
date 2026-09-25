@@ -53,12 +53,15 @@ export function ContributeScreen() {
   // One key per intent: retries after a wrong PIN reuse it, so a double tap can never pay twice.
   const [intentKey, setIntentKey] = useState(newIdempotencyKey);
   const inputRef = useRef<HTMLInputElement>(null);
+  // Set while our own contribution is in flight, so completing the goal shows the confirmation
+  // instead of the "already funded" redirect.
+  const paying = useRef(false);
 
   if (q.isLoading) return <Screen topBar={<TopBar leading="close" backTo={`/app/pact/${id}`} title="Contribute" />}><Loading /></Screen>;
   if (!pact) return <Navigate to="/app/home" replace />;
   const s = summarize(pact);
   const base = `/app/pact/${pact.id}`;
-  if (s.isComplete && phase === 'enter') return <Navigate to={base} replace />;
+  if (s.isComplete && phase === 'enter' && !paying.current) return <Navigate to={base} replace />;
 
   const suggested = pact.viewer?.suggestedShare || 0;
   const defaultAmount = suggested > 0 ? Math.min(suggested, s.remaining) : Math.min(25_000, s.remaining);
@@ -86,7 +89,13 @@ export function ContributeScreen() {
 
   const submit = async (pin: string) => {
     const raisedBefore = s.raised;
-    await contribute.mutateAsync({ amount: toKobo(capped), pin, key: intentKey });
+    paying.current = true;
+    try {
+      await contribute.mutateAsync({ amount: toKobo(capped), pin, key: intentKey });
+    } catch (err) {
+      paying.current = false;
+      throw err;
+    }
     setBefore(raisedBefore);
     setGiven(capped);
     setPinOpen(false);

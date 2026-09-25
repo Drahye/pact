@@ -5,6 +5,7 @@ import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-route
 import { AuthProvider, useAuth } from './api/auth';
 import { ApiError } from './api/client';
 import { Loading } from './components/app/States';
+import { peekReturnTo } from './pages/app/auth/flow';
 import { ActivityScreen } from './pages/app/ActivityScreen';
 import { AppShell } from './pages/app/AppShell';
 import { CodeScreen, PhoneScreen, PinSetupScreen, ProfileSetupScreen } from './pages/app/auth/AuthScreens';
@@ -55,7 +56,7 @@ function RequireAuth({ children }: { children: ReactNode }) {
 function GuestOnly({ children }: { children: ReactNode }) {
   const { status } = useAuth();
   if (status === 'loading') return <Loading />;
-  if (status === 'signedIn') return <Navigate to="/app/home" replace />;
+  if (status === 'signedIn') return <Navigate to={peekReturnTo()} replace />;
   return <>{children}</>;
 }
 

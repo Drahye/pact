@@ -9,7 +9,7 @@ import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { TopBar } from '../../../components/ui/TopBar';
 import { Screen } from '../Screen';
-import { clearFlow, readFlow, takeReturnTo, writeFlow } from './flow';
+import { clearFlow, readFlow, writeFlow } from './flow';
 import './auth.css';
 
 const toLocal = (raw: string) => raw.replace(/\D/g, '').replace(/^234/, '').replace(/^0/, '').slice(0, 10);
@@ -123,8 +123,8 @@ export function CodeScreen() {
     try {
       const out = await verifyOtp(flow.phone!, value);
       if (out.status === 'signed_in') {
+        // The guest-only route guard sends them on to wherever they were headed.
         clearFlow();
-        navigate(takeReturnTo(), { replace: true });
       } else {
         writeFlow({ signupToken: out.signupToken });
         navigate('/app/auth/profile');
@@ -281,7 +281,6 @@ export function PinSetupScreen() {
     try {
       await signup({ signupToken: flow.signupToken!, firstName: flow.firstName!, lastName: flow.lastName!, pin, referralCode: flow.referralCode });
       clearFlow();
-      navigate(takeReturnTo(), { replace: true });
     } catch (err) {
       const e = err as ApiError;
       if (e.code === 'signup_expired') {

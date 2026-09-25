@@ -46,6 +46,24 @@ export const setReturnTo = (path: string | undefined) => {
   }
 };
 
+/** Where a freshly signed-in person should land. Read by the guest-only guard, cleared once they arrive. */
+export const peekReturnTo = () => {
+  try {
+    const p = sessionStorage.getItem(RETURN_KEY);
+    return p && p.startsWith('/app/') ? p : '/app/home';
+  } catch {
+    return '/app/home';
+  }
+};
+
+export const clearReturnTo = () => {
+  try {
+    sessionStorage.removeItem(RETURN_KEY);
+  } catch {
+    /* ignore */
+  }
+};
+
 export const takeReturnTo = () => {
   try {
     const p = sessionStorage.getItem(RETURN_KEY);

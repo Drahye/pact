@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link, useLocation, useOutlet } from 'react-router-dom';
 import { useAuth } from '../../api/auth';
 import { setFixedClock } from '../../lib/clock';
+import { clearReturnTo } from './auth/flow';
 import { Logo } from '../../components/ui/Logo';
 import { OverlayRootContext } from '../../components/ui/overlay';
 import { ToastProvider } from '../../components/ui/Toast';
@@ -118,6 +119,11 @@ export function AppShell() {
   const direction = useTransitionDirection(location.pathname);
 
   setFixedClock(false);
+  const { status } = useAuth();
+  // Once a signed-in person has landed somewhere real, the pending return path is spent.
+  useEffect(() => {
+    if (status === 'signedIn' && !location.pathname.startsWith('/app/auth')) clearReturnTo();
+  }, [status, location.pathname]);
   useEffect(() => {
     document.title = 'PACT';
   }, []);

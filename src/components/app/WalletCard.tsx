@@ -61,3 +61,18 @@ export function WalletCard({ balance, tier = 1, compact }: Props) {
     </section>
   );
 }
+
+/** Home's compact wallet: the balance and a way to add money, without the dashboard feel. */
+export function WalletStrip({ balance }: { balance: number | undefined }) {
+  return (
+    <div className="wallet-strip">
+      <Link to="/app/wallet" className="wallet-strip__main">
+        <span className="wallet-strip__label">Wallet</span>
+        <span className="wallet-strip__balance num">{balance === undefined ? '…' : formatNairaKobo(balance)}</span>
+      </Link>
+      <Link to="/app/wallet/topup" className="wallet-strip__action">
+        <Plus aria-hidden /> Top up
+      </Link>
+    </div>
+  );
+}

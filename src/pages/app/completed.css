@@ -162,3 +162,79 @@
 .completed .notice {
   margin-top: var(--space-5);
 }
+
+.completed__stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-2);
+  margin-top: var(--space-5);
+}
+
+.completed__stats li {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: var(--space-3) var(--space-2);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: inset 0 0 0 1px var(--color-border);
+  font-size: var(--text-caption);
+  color: var(--color-text-tertiary);
+}
+
+.completed__stats strong {
+  font-size: var(--num-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text);
+}
+
+.completed__tasks {
+  margin-top: var(--space-6);
+}
+
+.completed__tasks h2 {
+  margin-bottom: var(--space-3);
+}
+
+.completed__tasks ul {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: var(--radius-xl);
+  background: var(--color-surface);
+  box-shadow: inset 0 0 0 1px var(--color-border);
+}
+
+.completed__tasks li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 52px;
+  padding: 0 var(--space-4);
+}
+
+.completed__tasks li + li {
+  border-top: var(--border-hairline);
+}
+
+.completed__tasks li svg {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  color: var(--color-accent-text);
+}
+
+.completed__tasks li span {
+  flex: 1;
+  font-weight: var(--weight-medium);
+}
+
+.completed__tasks small {
+  font-size: var(--text-sm);
+  color: var(--color-text-tertiary);
+}
+
+.completed__memory {
+  margin-top: var(--space-6);
+}

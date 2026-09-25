@@ -475,67 +475,117 @@ export async function leave(ctx: Ctx, userId: string, pactId: string) {
  * accounts, so concurrent contributions can't push a Pact past its target or a
  * wallet below zero.
  */
+/** Why a contribution can't go ahead right now, or null if it can. Checked under the Pact's row lock. */
+function contributionBlocker(pact: PactRow, amount: number, today: string): AppError | null {
+  if (pact.status !== 'open') return badRequest('pact_closed', pact.status === 'funded' ? 'This Pact is already fully funded.' : 'This Pact is closed.');
+  if (pact.deadline < today) return badRequest('pact_past_deadline', 'This Pact’s deadline has passed.');
+  const remaining = pact.target_amount - pact.raised_amount;
+  if (amount > remaining) return new AppError(422, 'exceeds_remaining', `Only ${formatNgn(remaining)} is left to reach the goal.`, { remaining });
+  return null;
+}
+
+/**
+ * Wallet → Pact pool, inside the caller's transaction, with the Pact row already locked.
+ * Shared by contributions from the wallet and by direct payments into a Pact.
+ */
+async function contributeTx(q: Queryable, pact: PactRow, member: MemberRow, userId: string, amount: number, via: 'wallet' | 'direct') {
+  if (member.status === 'invited') await joinTx(q, pact, userId);
+  const wallet = await walletAccountId(q, userId);
+  const user = await getUser(q, userId);
+  await post(q, {
+    kind: 'contribution',
+    reference: `contribution:${pact.id}:${randomCode(16)}`,
+    description: `Contribution to ${pact.title}`,
+    userId,
+    pactId: pact.id,
+    metadata: { via },
+    postings: [
+      { accountId: wallet, amount: -amount },
+      { accountId: pact.account_id, amount },
+    ],
+  });
+  // A "split the rest" ask is settled once this person has put in at least that much since.
+  await q.query(
+    `UPDATE pact_members SET contributed = contributed + $3,
+       participation = CASE WHEN participation IS NULL OR participation = 'later' THEN 'money' WHEN participation = 'task' THEN 'both' ELSE participation END,
+       requested_amount = CASE WHEN requested_amount IS NOT NULL AND $3 >= requested_amount THEN NULL
+                               WHEN requested_amount IS NOT NULL THEN requested_amount - $3 END
+     WHERE pact_id = $1 AND user_id = $2`,
+    [pact.id, userId, amount],
+  );
+  const upd = await q.query<{ raised_amount: number }>('UPDATE pacts SET raised_amount = raised_amount + $2 WHERE id = $1 RETURNING raised_amount', [pact.id, amount]);
+  await recordActivity(q, { pactId: pact.id, actorId: userId, type: 'contribution', amount });
+  // Momentum markers at halfway and 80%, recorded once each.
+  const before = (upd.rows[0].raised_amount - amount) / pact.target_amount;
+  const after = upd.rows[0].raised_amount / pact.target_amount;
+  for (const mark of [0.5, 0.8]) {
+    if (before < mark && after >= mark && after < 1) await recordActivity(q, { pactId: pact.id, actorId: null, type: 'milestone', detail: `${mark * 100}%` });
+  }
+  const members = await q.query<{ user_id: string }>(`SELECT user_id FROM pact_members WHERE pact_id = $1 AND status = 'joined'`, [pact.id]);
+  const completed = upd.rows[0].raised_amount >= pact.target_amount;
+  if (completed) {
+    await q.query(`UPDATE pacts SET status = 'funded', funded_at = now() WHERE id = $1`, [pact.id]);
+    await recordActivity(q, { pactId: pact.id, actorId: userId, type: 'completed' });
+    await notify(q, members.rows.map((m) => m.user_id), { type: 'funded', title: 'Goal reached', body: `${pact.title} is fully funded. ${formatNgn(pact.target_amount)} raised together.`, pactId: pact.id });
+  } else if (userId !== pact.organizer_id) {
+    await notify(q, [pact.organizer_id], { type: 'contribution', title: 'New contribution', body: `${user.first_name} added ${formatNgn(amount)} to ${pact.title}.`, pactId: pact.id });
+  }
+  return completed;
+}
+
+/**
+ * Wallet → Pact pool. The Pact row is locked first, then the ledger locks both
+ * accounts, so concurrent contributions can't push a Pact past its target or a
+ * wallet below zero.
+ */
 export async function contribute(ctx: Ctx, userId: string, pactId: string, amount: number, pin: string, meta: ReqMeta) {
   if (amount % 100 !== 0) throw badRequest('invalid_amount', 'Contribute whole naira amounts.');
   await loadVisible(ctx.db, pactId, userId);
   await verifyPin(ctx, userId, pin, meta);
   const today = lagosToday(ctx.now());
-
-  const result = await ctx.db.tx(async (q) => {
+  const completed = await ctx.db.tx(async (q) => {
     const { pact, member } = await loadVisible(q, pactId, userId, true);
-    if (pact.status !== 'open') throw badRequest('pact_closed', pact.status === 'funded' ? 'This Pact is already fully funded.' : 'This Pact is closed.');
-    if (pact.deadline < today) throw badRequest('pact_past_deadline', 'This Pact’s deadline has passed.');
-    const remaining = pact.target_amount - pact.raised_amount;
-    if (amount > remaining) throw new AppError(422, 'exceeds_remaining', `Only ${formatNgn(remaining)} is left to reach the goal.`, { remaining });
-    if (member!.status === 'invited') await joinTx(q, pact, userId);
-
-    const wallet = await walletAccountId(q, userId);
-    const user = await getUser(q, userId);
-    await post(q, {
-      kind: 'contribution',
-      reference: `contribution:${pactId}:${randomCode(16)}`,
-      description: `Contribution to ${pact.title}`,
-      userId,
-      pactId,
-      postings: [
-        { accountId: wallet, amount: -amount },
-        { accountId: pact.account_id, amount },
-      ],
-    });
-    // A "split the rest" ask is settled once this person has put in at least that much since.
-    await q.query(
-      `UPDATE pact_members SET contributed = contributed + $3,
-         participation = CASE WHEN participation IS NULL OR participation = 'later' THEN 'money' WHEN participation = 'task' THEN 'both' ELSE participation END,
-         requested_amount = CASE WHEN requested_amount IS NOT NULL AND $3 >= requested_amount THEN NULL
-                                 WHEN requested_amount IS NOT NULL THEN requested_amount - $3 END
-       WHERE pact_id = $1 AND user_id = $2`,
-      [pactId, userId, amount],
-    );
-    const upd = await q.query<{ raised_amount: number }>('UPDATE pacts SET raised_amount = raised_amount + $2 WHERE id = $1 RETURNING raised_amount', [pactId, amount]);
-    await recordActivity(q, { pactId, actorId: userId, type: 'contribution', amount });
-    // Momentum markers at halfway and 80%, recorded once each.
-    const before = (upd.rows[0].raised_amount - amount) / pact.target_amount;
-    const after = upd.rows[0].raised_amount / pact.target_amount;
-    for (const mark of [0.5, 0.8]) {
-      if (before < mark && after >= mark && after < 1) await recordActivity(q, { pactId, actorId: null, type: 'milestone', detail: `${mark * 100}%` });
-    }
-
-    const members = await q.query<{ user_id: string }>(`SELECT user_id FROM pact_members WHERE pact_id = $1 AND status = 'joined'`, [pactId]);
-    const everyone = members.rows.map((m) => m.user_id);
-    const completed = upd.rows[0].raised_amount >= pact.target_amount;
-    if (completed) {
-      await q.query(`UPDATE pacts SET status = 'funded', funded_at = now() WHERE id = $1`, [pactId]);
-      await recordActivity(q, { pactId, actorId: userId, type: 'completed' });
-      await notify(q, everyone, { type: 'funded', title: 'Goal reached', body: `${pact.title} is fully funded. ${formatNgn(pact.target_amount)} raised together.`, pactId });
-    } else if (userId !== pact.organizer_id) {
-      await notify(q, [pact.organizer_id], { type: 'contribution', title: 'New contribution', body: `${user.first_name} added ${formatNgn(amount)} to ${pact.title}.`, pactId });
-    }
+    const blocked = contributionBlocker(pact, amount, today);
+    if (blocked) throw blocked;
+    const done = await contributeTx(q, pact, member!, userId, amount, 'wallet');
     await audit(q, { actorId: userId, action: 'pact.contribution', targetType: 'pact', targetId: pactId, ip: meta.ip, metadata: { amount } });
-    return { completed };
+    return done;
   });
-
   const out = await getPact(ctx, userId, pactId);
-  return { ...out, completed: result.completed };
+  return { ...out, completed };
+}
+
+/** Before a direct payment starts: may this person pay this much into this Pact? */
+export async function assertCanPayInto(ctx: Ctx, userId: string, pactId: string, amount: number) {
+  if (amount % 100 !== 0) throw badRequest('invalid_amount', 'Contribute whole naira amounts.');
+  const { pact } = await loadVisible(ctx.db, pactId, userId);
+  const blocked = contributionBlocker(pact, amount, lagosToday(ctx.now()));
+  if (blocked) throw blocked;
+  return pact.title;
+}
+
+/**
+ * After a direct payment settles (inside the settlement transaction): move it from the
+ * wallet into the Pact. If the Pact filled up or closed in the meantime, the money stays
+ * in the wallet and nothing is lost.
+ */
+export async function applyDirectPayment(ctx: Ctx, q: Queryable, userId: string, pactId: string, amount: number): Promise<'contributed' | 'kept'> {
+  const p = await q.query<PactRow>('SELECT * FROM pacts WHERE id = $1 FOR UPDATE', [pactId]);
+  const m = await q.query<MemberRow>('SELECT * FROM pact_members WHERE pact_id = $1 AND user_id = $2', [pactId, userId]);
+  const pact = p.rows[0];
+  const member = m.rows[0];
+  if (!pact || !member || member.status === 'left' || contributionBlocker(pact, amount, lagosToday(ctx.now()))) {
+    await notify(q, [userId], {
+      type: 'topup',
+      title: 'Payment kept in your wallet',
+      body: `${formatNgn(amount)} arrived, but ${pact?.title ?? 'the Pact'} couldn’t take it any more. It’s safe in your wallet.`,
+      pactId,
+    });
+    return 'kept';
+  }
+  await contributeTx(q, pact, member, userId, amount, 'direct');
+  await audit(q, { actorId: userId, action: 'pact.contribution', targetType: 'pact', targetId: pactId, metadata: { amount, via: 'direct' } });
+  return 'contributed';
 }
 
 /** Organiser moves the pool into their wallet: once funded, or after a missed deadline if the Pact's rule allows it. */
@@ -624,26 +674,39 @@ export async function cancel(ctx: Ctx, userId: string, pactId: string, pin: stri
   return getPact(ctx, userId, pactId);
 }
 
+/**
+ * Reminders that read like momentum, not debt collection: each person gets the most
+ * useful line for where they stand. Rule-based and at most once a day per person.
+ */
 export async function nudge(ctx: Ctx, userId: string, pactId: string) {
   return ctx.db.tx(async (q) => {
     const { pact, member } = await loadVisible(q, pactId, userId, true);
     if (member!.role !== 'organizer') throw forbidden('Only the organiser can send reminders.');
     if (pact.status !== 'open') throw badRequest('pact_closed', 'This Pact is closed.');
-    const organizer = await getUser(q, userId);
-    const targets = await q.query<{ user_id: string }>(
+    const targets = await q.query<{ user_id: string; participation: Participation | null; requested_amount: number | null; contributed: number }>(
       `UPDATE pact_members SET last_nudged_at = now()
-        WHERE pact_id = $1 AND user_id <> $2 AND status IN ('joined', 'invited') AND contributed = 0
+        WHERE pact_id = $1 AND user_id <> $2 AND status IN ('joined', 'invited')
+          AND (contributed = 0 OR requested_amount IS NOT NULL OR participation IS NULL OR participation = 'later')
           AND (last_nudged_at IS NULL OR last_nudged_at < now() - make_interval(hours => $3))
-        RETURNING user_id`,
+        RETURNING user_id, participation, requested_amount, contributed`,
       [pactId, userId, NUDGE_COOLDOWN_HOURS],
     );
-    if (!targets.rowCount) throw conflict('nothing_to_nudge', 'Everyone has contributed or was reminded in the last day.');
-    await notify(q, targets.rows.map((t) => t.user_id), {
-      type: 'nudge',
-      title: `${organizer.first_name} sent a reminder`,
-      body: `${pact.title} is ${Math.floor((pact.raised_amount / pact.target_amount) * 100)}% funded. Add your share when you can.`,
-      pactId,
-    });
+    if (!targets.rowCount) throw conflict('nothing_to_nudge', 'Everyone is in, or was reminded in the last day.');
+    const pct = Math.floor((pact.raised_amount / pact.target_amount) * 100);
+    const days = Math.max(0, Math.round((new Date(`${pact.deadline}T00:00:00Z`).getTime() - new Date(`${lagosToday(ctx.now())}T00:00:00Z`).getTime()) / 86_400_000));
+    const unconfirmed = targets.rows.filter((t) => !t.participation || t.participation === 'later').length;
+    const openTask = (await q.query<{ title: string }>(`SELECT title FROM tasks WHERE pact_id = $1 AND assignee_id IS NULL AND status <> 'done' ORDER BY created_at LIMIT 1`, [pactId])).rows[0];
+    const when = days === 0 ? 'It’s today' : `${days} ${days === 1 ? 'day' : 'days'} to go`;
+
+    for (const t of targets.rows) {
+      let body: string;
+      if (t.requested_amount) body = `You’re ${formatNgn(t.requested_amount)} away from your share. ${pact.title} is ${pct}% funded.`;
+      else if (!t.participation || t.participation === 'later')
+        body = unconfirmed > 1 ? `${pact.title} is ${pct}% funded. You’re one of ${unconfirmed} people who haven’t confirmed yet.` : `${pact.title} is ${pct}% funded. Let everyone know how you’re showing up.`;
+      else if (openTask && (t.participation === 'task' || t.participation === 'both')) body = `“${openTask.title}” still needs someone for ${pact.title}. Want to take it?`;
+      else body = `${when} for ${pact.title}. The group is ${pct}% funded.`;
+      await notify(q, [t.user_id], { type: 'nudge', title: pact.title, body, pactId });
+    }
     await recordActivity(q, { pactId, actorId: userId, type: 'nudge' });
     return { reminded: targets.rowCount };
   });

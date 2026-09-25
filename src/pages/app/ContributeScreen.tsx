@@ -11,7 +11,7 @@ import { AnimatedNumber } from '../../components/pact/AnimatedNumber';
 import { HoldButton } from '../../components/ui/HoldButton';
 import { getUser } from '../../data/users';
 import { useRef, useState } from 'react';
-import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { AmountInput } from '../../components/ui/AmountInput';
 import { Button } from '../../components/ui/Button';
 import { Segmented } from '../../components/ui/Segmented';
@@ -184,11 +184,23 @@ export function ContributeScreen() {
       footer={
         <>
           {short > 0 ? (
-            <Button fullWidth iconLeft={<Plus />} to={`/app/wallet/topup?amount=${Math.max(100, short)}&return=${encodeURIComponent(`/app/pact/${pact.id}/contribute`)}`}>
-              Top up {formatNaira(Math.max(100, short))} to continue
-            </Button>
+            <>
+              <Button fullWidth to={`/app/wallet/topup?amount=${capped}&pact=${pact.id}`}>
+                Pay {formatNaira(capped)} by transfer or card
+              </Button>
+              <Button variant="ghost" fullWidth iconLeft={<Plus />} to={`/app/wallet/topup?amount=${Math.max(100, short)}&return=${encodeURIComponent(`/app/pact/${pact.id}/contribute`)}`}>
+                Or top up the {formatNaira(Math.max(100, short))} difference
+              </Button>
+            </>
           ) : (
-            <HoldButton label={capped >= 100 ? `Hold to contribute ${formatNaira(capped)}` : 'Enter at least ₦100'} onComplete={() => setPinOpen(true)} disabled={capped < 100 || balance === undefined} />
+            <>
+              <HoldButton label={capped >= 100 ? `Hold to contribute ${formatNaira(capped)}` : 'Enter at least ₦100'} onComplete={() => setPinOpen(true)} disabled={capped < 100 || balance === undefined} />
+              {capped >= 100 && (
+                <Link className="contribute__direct" to={`/app/wallet/topup?amount=${capped}&pact=${pact.id}`}>
+                  Pay by transfer or card instead
+                </Link>
+              )}
+            </>
           )}
           <p className="contribute__secure">
             <LockKeyhole aria-hidden /> Hold, then confirm with your PIN · Everyone in the Pact sees it

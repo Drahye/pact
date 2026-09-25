@@ -340,7 +340,7 @@ export async function buildApp({ config, db, provider, sms, now = () => new Date
         priv.post('/wallet/topups', strict(10), async (req, reply) =>
           idempotent(req, reply, 'topup', () => {
             const body = parse(C.TopupBody, req.body);
-            return wallet.initTopup(ctx, req.userId, body.amount, body.channel, meta(req));
+            return wallet.initTopup(ctx, req.userId, body.amount, body.channel, meta(req), body.pactId);
           }),
         );
         priv.get<{ Params: { ref: string } }>('/wallet/topups/:ref', async (req) => wallet.getTopup(ctx, req.userId, req.params.ref));

@@ -59,3 +59,14 @@
   line-height: var(--leading-sm);
   color: var(--color-text-secondary);
 }
+
+.join__choose {
+  margin-top: var(--space-2);
+}
+
+.join__how-title {
+  margin-bottom: var(--space-3);
+  font-size: var(--text-lg);
+  line-height: var(--leading-lg);
+  letter-spacing: var(--tracking-snug);
+}

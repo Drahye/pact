@@ -8,6 +8,7 @@ import { formatNgn } from '../lib/money.js';
 import { lagosDayStart } from '../lib/time.js';
 import { assertNoResetHold, getUser, verifyPin } from './auth.js';
 import { post, systemAccountId, walletAccountId } from './ledger.js';
+import { applyDirectPayment, assertCanPayInto } from './pacts.js';
 import { audit, enqueue, notify } from './platform.js';
 
 const ref = (prefix: string) => `${prefix}_${randomCode(18)}`;
@@ -93,6 +94,7 @@ interface TopupRow {
   checkout_url: string | null;
   failure_reason: string | null;
   created_at: Date;
+  pact_id: string | null;
 }
 
 const toTopup = (t: TopupRow): TopupDTO => ({
@@ -104,10 +106,13 @@ const toTopup = (t: TopupRow): TopupDTO => ({
   checkoutUrl: t.status === 'pending' ? t.checkout_url : null,
   failureReason: t.failure_reason,
   createdAt: t.created_at.toISOString(),
+  pactId: t.pact_id,
 });
 
-export async function initTopup(ctx: Ctx, userId: string, amount: number, channel: 'card' | 'bank_transfer', meta: ReqMeta): Promise<TopupDTO> {
+export async function initTopup(ctx: Ctx, userId: string, amount: number, channel: 'card' | 'bank_transfer', meta: ReqMeta, pactId?: string): Promise<TopupDTO> {
   const user = await getUser(ctx.db, userId);
+  // Direct pay: checked now (membership, open, not over the goal) and again when the money lands.
+  if (pactId) await assertCanPayInto(ctx, userId, pactId, amount);
   const limits = TIER_LIMITS[user.kyc_tier as KycTier];
   const wallet = await getWallet(ctx, userId);
   const usage = await usageToday(ctx.db, userId, ctx.now());
@@ -134,8 +139,8 @@ export async function initTopup(ctx: Ctx, userId: string, amount: number, channe
     callbackUrl: `${ctx.config.APP_ORIGIN}/app/wallet/topup/${reference}`,
   });
   const r = await ctx.db.query<TopupRow>(
-    `INSERT INTO topups (user_id, reference, provider, channel, amount, fee, checkout_url) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
-    [userId, reference, ctx.provider.name, channel, amount, fee, checkoutUrl],
+    `INSERT INTO topups (user_id, reference, provider, channel, amount, fee, checkout_url, pact_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
+    [userId, reference, ctx.provider.name, channel, amount, fee, checkoutUrl, pactId ?? null],
   );
   await audit(ctx.db, { actorId: userId, action: 'topup.initiated', targetType: 'topup', targetId: reference, ip: meta.ip, metadata: { amount, fee, channel } });
   // If neither the webhook nor the app ever report back, the worker asks the processor directly.
@@ -173,7 +178,13 @@ export async function settleTopup(ctx: Ctx, reference: string, amountPaid: numbe
       postings,
     });
     await q.query(`UPDATE topups SET status = 'succeeded', completed_at = now(), ledger_tx_id = $2 WHERE id = $1`, [t.id, transactionId]);
-    await notify(q, [t.user_id], { type: 'topup', title: 'Wallet topped up', body: `${formatNgn(t.amount)} is in your wallet.` });
+    if (t.pact_id) {
+      // Same transaction: the money is never left half-applied.
+      const applied = await applyDirectPayment(ctx, q, t.user_id, t.pact_id, t.amount);
+      if (applied === 'contributed') await notify(q, [t.user_id], { type: 'contribution', title: 'Payment received', body: `${formatNgn(t.amount)} went into your Pact.`, pactId: t.pact_id });
+    } else {
+      await notify(q, [t.user_id], { type: 'topup', title: 'Wallet topped up', body: `${formatNgn(t.amount)} is in your wallet.` });
+    }
     return toTopup({ ...t, status: 'succeeded' });
   });
 }

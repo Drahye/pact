@@ -252,3 +252,13 @@
   font-weight: var(--weight-semibold);
   color: #a2381f;
 }
+
+.contribute__direct {
+  align-self: center;
+  min-height: 36px;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-secondary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}

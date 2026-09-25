@@ -1,9 +1,11 @@
-import { Bell, Plus } from 'lucide-react';
+import { Bell, ChevronRight, Plus, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../api/auth';
 import { useActivity, useNotifications, usePacts, useWallet } from '../../api/hooks';
 import { ErrorState } from '../../components/app/States';
-import { WalletCard } from '../../components/app/WalletCard';
+import { WalletStrip } from '../../components/app/WalletCard';
+import { attentionFor } from '../../lib/plan';
+import { isoDay } from '../../lib/dates';
 import { FeaturedPactCard } from '../../components/pact/FeaturedPactCard';
 import { PactCard } from '../../components/pact/PactCard';
 import { ActivityItem } from '../../components/ui/ActivityItem';
@@ -31,12 +33,17 @@ export function HomeScreen() {
   const featured = [...open].sort((a, b) => summarize(a).daysLeft - summarize(b).daysLeft)[0];
   const rest = mine.filter((p) => p.id !== featured?.id && (p.status === 'open' || p.status === 'funded')).slice(0, 4);
   const unread = notes.data?.unread ?? 0;
+  // The most personal thing each open Pact needs from you, across all your Pacts.
+  const needs = open
+    .map((p) => ({ pact: p, item: attentionFor(p, user?.id ?? '')[0] }))
+    .filter((x) => x.item)
+    .slice(0, 4);
 
   return (
     <Screen tabBar={<BottomNav />} className="home">
       <header className="home__header">
         <div>
-          <p className="eyebrow">{formatDate(new Date().toISOString(), { weekday: 'long', month: 'long', day: 'numeric' })}</p>
+          <p className="eyebrow">{formatDate(isoDay(new Date()), { weekday: 'long', month: 'long', day: 'numeric' })}</p>
           <h1 className="large-title">
             {greeting()}, {user?.firstName}
           </h1>
@@ -52,8 +59,6 @@ export function HomeScreen() {
         </div>
       </header>
 
-      <WalletCard balance={wallet.data?.balance} tier={wallet.data?.tier} />
-
       {invites.length > 0 && (
         <section className="screen-section" aria-labelledby="invites">
           <SectionHeading id="invites" title={`Invitations · ${invites.length}`} />
@@ -62,6 +67,26 @@ export function HomeScreen() {
               <InvitationCard key={p.id} pact={p} />
             ))}
           </div>
+        </section>
+      )}
+
+      {needs.length > 0 && (
+        <section className="screen-section screen-section--first" aria-labelledby="needs">
+          <SectionHeading id="needs" title="Needs your attention" />
+          <ul className="needs">
+            {needs.map(({ pact, item }) => (
+              <li key={pact.id}>
+                <Link to={`/app/pact/${pact.id}`} className={`needs__row needs__row--${item!.tone}`}>
+                  <span className="needs__dot" aria-hidden />
+                  <span className="needs__text">
+                    <span className="needs__pact">{pact.title}</span>
+                    <strong>{item!.title}</strong>
+                  </span>
+                  <ChevronRight aria-hidden />
+                </Link>
+              </li>
+            ))}
+          </ul>
         </section>
       )}
 
@@ -74,6 +99,15 @@ export function HomeScreen() {
         </div>
       ) : (
         <>
+          {!mine.length && !invites.length && (
+            <section className="home__empty">
+              <span className="home__empty-icon" aria-hidden>
+                <Sparkles />
+              </span>
+              <h2>Nothing planned yet.</h2>
+              <p>Create your first Pact and bring your people in.</p>
+            </section>
+          )}
           {featured && (
             <section className="screen-section" aria-label="Closing soonest">
               <FeaturedPactCard pact={featured} to={`/app/pact/${featured.id}`} />
@@ -98,6 +132,10 @@ export function HomeScreen() {
           </section>
         </>
       )}
+
+      <div className="screen-section">
+        <WalletStrip balance={wallet.data?.balance} />
+      </div>
 
       {!!activity.data?.length && (
         <section className="screen-section" aria-labelledby="recent">

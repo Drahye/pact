@@ -78,7 +78,8 @@ export const TaskPatchBody = z.object({
 });
 export const MemoryBody = z.object({ note: text(0, 500).nullable().optional(), happenedOn: isoDate.nullable().optional() });
 
-export const TopupBody = z.object({ amount: kobo(MIN_TOPUP), channel: z.enum(['card', 'bank_transfer']) });
+/** With `pactId`, the payment goes straight into that Pact once it settles (direct pay). */
+export const TopupBody = z.object({ amount: kobo(MIN_TOPUP), channel: z.enum(['card', 'bank_transfer']), pactId: z.string().uuid().optional() });
 export const WithdrawBody = z.object({ amount: kobo(MIN_WITHDRAWAL), bankAccountId: z.string().uuid(), pin });
 export const ResolveBankBody = z.object({ bankCode: z.string().regex(/^\d{3,6}$/), accountNumber: z.string().regex(/^\d{10}$/, 'Account numbers are 10 digits') });
 export const AddBankBody = ResolveBankBody.extend({ pin });
@@ -257,6 +258,8 @@ export interface TopupDTO {
   checkoutUrl: string | null;
   failureReason: string | null;
   createdAt: string;
+  /** Set for direct payments into a Pact. */
+  pactId: string | null;
 }
 
 export interface BankDTO {

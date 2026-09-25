@@ -209,7 +209,8 @@ export function useJoinByCode() {
   const setPact = useSetPact();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (code: string) => api<PactDetail>('POST', `/invites/${code}/join`, {}),
+    mutationFn: ({ code, participation }: { code: string; participation?: Participation | null }) =>
+      api<PactDetail>('POST', `/invites/${code}/join`, participation ? { participation } : {}),
     onSuccess: (r) => {
       setPact(r);
       qc.invalidateQueries({ queryKey: keys.pacts });
@@ -219,8 +220,8 @@ export function useJoinByCode() {
 
 export function useStartTopup() {
   return useMutation({
-    mutationFn: ({ amount, channel, key }: { amount: number; channel: 'card' | 'bank_transfer'; key: string }) =>
-      api<TopupDTO>('POST', '/wallet/topups', { amount, channel }, { idempotencyKey: key }),
+    mutationFn: ({ amount, channel, key, pactId }: { amount: number; channel: 'card' | 'bank_transfer'; key: string; pactId?: string }) =>
+      api<TopupDTO>('POST', '/wallet/topups', { amount, channel, ...(pactId ? { pactId } : {}) }, { idempotencyKey: key }),
   });
 }
 
@@ -314,6 +315,7 @@ export function usePlan(pactId: string) {
 export function usePhoto(pactId: string, photoId: string) {
   return useQuery({
     queryKey: ['photo', pactId, photoId],
+    enabled: !!photoId,
     staleTime: Infinity,
     queryFn: async () => URL.createObjectURL(await fetchPhoto(`/pacts/${pactId}/memory/photos/${photoId}`)),
   });

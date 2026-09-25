@@ -258,6 +258,52 @@ describe('PACT end to end', () => {
     assert.equal(young.status, 400);
   });
 
+  it('pays straight into a Pact, and keeps the money safe if the Pact fills first', async () => {
+    const org = await t.signIn('08010000001');
+    const payer = await t.signIn('08034448888', { firstName: 'Direct', lastName: 'Payer', pin: '2468' });
+    const outsider = await t.signIn('08034449999', { firstName: 'Not', lastName: 'Invited', pin: '2468' });
+    const created = await t.call('POST', '/pacts', org.accessToken, { title: 'Direct pay', category: 'gift', target: 30_000_00, deadline: new Date(Date.now() + 9 * 86400000).toISOString().slice(0, 10) });
+    const id = created.body.data.pact.id;
+    await t.call('POST', `/invites/${created.body.data.pact.inviteCode}/join`, payer.accessToken, {});
+    // Outsiders and overshooting are refused before any checkout starts.
+    assert.equal((await t.call('POST', '/wallet/topups', outsider.accessToken, { amount: 5_000_00, channel: 'card', pactId: id })).status, 404);
+    assert.equal((await t.call('POST', '/wallet/topups', payer.accessToken, { amount: 40_000_00, channel: 'card', pactId: id })).status, 422);
+
+    const top = await t.call('POST', '/wallet/topups', payer.accessToken, { amount: 10_000_00, channel: 'bank_transfer', pactId: id });
+    assert.equal(top.body.pactId, id);
+    await t.call('POST', `/sandbox/checkout/${top.body.reference}/complete`, payer.accessToken, { outcome: 'success' });
+    const after = await t.call('GET', `/pacts/${id}`, payer.accessToken);
+    assert.equal(after.body.data.pact.raised, 10_000_00);
+    assert.equal((await t.call('GET', '/wallet', payer.accessToken)).body.balance, 0, 'direct pay should not leave money in the wallet');
+
+    // Start a direct payment, then the organiser fills the Pact before it settles.
+    const late = await t.call('POST', '/wallet/topups', payer.accessToken, { amount: 20_000_00, channel: 'bank_transfer', pactId: id });
+    await t.call('POST', `/pacts/${id}/contributions`, org.accessToken, { amount: 20_000_00, pin: '1357' });
+    await t.call('POST', `/sandbox/checkout/${late.body.reference}/complete`, payer.accessToken, { outcome: 'success' });
+    assert.equal((await t.call('GET', '/wallet', payer.accessToken)).body.balance, 20_000_00, 'late payment must land in the wallet');
+    assert.ok((await reconcile(t.db)).ok);
+  });
+
+  it('sends reminders that fit where each person stands', async () => {
+    const org = await t.signIn('08010000001');
+    const later = await t.signIn('08034441212', { firstName: 'Maybe', lastName: 'Later', pin: '2468' });
+    const tasker = await t.signIn('08034441313', { firstName: 'Task', lastName: 'Person', pin: '2468' });
+    const created = await t.call('POST', '/pacts', org.accessToken, {
+      title: 'Reminder test', category: 'birthday', target: 50_000_00, deadline: new Date(Date.now() + 6 * 86400000).toISOString().slice(0, 10), tasks: [{ title: 'Order the cake' }],
+    });
+    const { id, inviteCode } = created.body.data.pact;
+    await t.call('POST', `/invites/${inviteCode}/join`, later.accessToken, { participation: 'later' });
+    await t.call('POST', `/invites/${inviteCode}/join`, tasker.accessToken, { participation: 'task' });
+    const r = await t.call('POST', `/pacts/${id}/nudge`, org.accessToken, {});
+    assert.equal(r.body.reminded, 2);
+    const a = (await t.call('GET', '/notifications', later.accessToken)).body.items.find((n: { type: string }) => n.type === 'nudge');
+    const b = (await t.call('GET', '/notifications', tasker.accessToken)).body.items.find((n: { type: string }) => n.type === 'nudge');
+    assert.match(a.body, /how you’re showing up/);
+    assert.match(b.body, /Order the cake/);
+    // Once a day per person.
+    assert.equal((await t.call('POST', `/pacts/${id}/nudge`, org.accessToken, {})).status, 409);
+  });
+
   it('rate limits OTP requests per number', async () => {
     const phone = '08032223333';
     const codes = [];

@@ -4,7 +4,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { MIN_TOPUP, topupFee } from '../../../../shared/policy';
 import { useAuth } from '../../../api/auth';
 import { ApiError, newIdempotencyKey } from '../../../api/client';
-import { useStartTopup, useWallet } from '../../../api/hooks';
+import { usePact, useStartTopup, useWallet } from '../../../api/hooks';
 import { Notice } from '../../../components/app/States';
 import { AmountInput } from '../../../components/ui/AmountInput';
 import { Button } from '../../../components/ui/Button';
@@ -27,7 +27,10 @@ export function TopupScreen() {
   const [channel, setChannel] = useState<'bank_transfer' | 'card'>('bank_transfer');
   const [error, setError] = useState<{ message: string; remaining?: number }>();
   const [key, setKey] = useState(newIdempotencyKey);
-  const returnTo = params.get('return');
+  const pactId = params.get('pact') ?? undefined;
+  const pactQ = usePact(pactId);
+  const pactTitle = pactQ.data?.pact.title;
+  const returnTo = params.get('return') ?? (pactId ? `/app/pact/${pactId}` : null);
 
   const kobo = toKobo(amount);
   const fee = topupFee(kobo, channel);
@@ -42,7 +45,7 @@ export function TopupScreen() {
   const submit = async () => {
     setError(undefined);
     try {
-      const t = await start.mutateAsync({ amount: kobo, channel, key });
+      const t = await start.mutateAsync({ amount: kobo, channel, key, pactId });
       try {
         if (returnTo?.startsWith('/app/')) sessionStorage.setItem(TOPUP_RETURN_KEY, returnTo);
         else sessionStorage.removeItem(TOPUP_RETURN_KEY);
@@ -61,7 +64,7 @@ export function TopupScreen() {
 
   return (
     <Screen
-      topBar={<TopBar leading="close" backTo={returnTo ?? '/app/wallet'} title="Top up" />}
+      topBar={<TopBar leading="close" backTo={returnTo ?? '/app/wallet'} title={pactId ? 'Contribute' : 'Top up'} />}
       footer={
         <>
           <Button fullWidth onClick={submit} loading={start.isPending} disabled={!valid}>
@@ -74,9 +77,15 @@ export function TopupScreen() {
       }
       className="topup"
     >
-      <h1 className="large-title">Add money</h1>
+      <h1 className="large-title">{pactId ? `Pay into ${pactTitle ?? 'your Pact'}` : 'Add money'}</h1>
       <p className="screen-lede">
-        Balance <span className="num">{wallet.data ? formatNairaKobo(wallet.data.balance) : '…'}</span>
+        {pactId ? (
+          'It goes straight into the Pact as your contribution once the payment is confirmed.'
+        ) : (
+          <>
+            Balance <span className="num">{wallet.data ? formatNairaKobo(wallet.data.balance) : '…'}</span>
+          </>
+        )}
       </p>
 
       <div className="topup__amount">
@@ -113,7 +122,7 @@ export function TopupScreen() {
       {valid && (
         <div className="summary topup__summary">
           <div className="summary__row">
-            <span>Added to wallet</span>
+            <span>{pactId ? 'Your contribution' : 'Added to wallet'}</span>
             <strong className="num">{formatNairaKobo(kobo)}</strong>
           </div>
           <div className="summary__row">

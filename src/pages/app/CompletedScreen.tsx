@@ -1,5 +1,6 @@
 import { motion, useReducedMotion } from 'framer-motion';
-import { Check, ShieldCheck, Wallet } from 'lucide-react';
+import { Check, CheckCheck, ShieldCheck, Wallet } from 'lucide-react';
+import { MemorySection } from '../../components/pact/Memory';
 import { useAuth } from '../../api/auth';
 import { usePactAction } from '../../api/hooks';
 import { PinSheet } from '../../components/app/PinSheet';
@@ -13,7 +14,7 @@ import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
 import { SegmentedRing } from '../../components/pact/SegmentedRing';
 import { TopBar } from '../../components/ui/TopBar';
-import type { Pact } from '../../data/types';
+import type { Activity, Pact } from '../../data/types';
 import { getUser } from '../../data/users';
 import { formatNaira } from '../../lib/format';
 import { joinedMembers, sharesOf, summarize } from '../../lib/pact';
@@ -22,7 +23,7 @@ import { ease, spring } from '../../tokens/tokens';
 import { Screen } from './Screen';
 import './completed.css';
 
-export function CompletedScreen({ pact }: { pact: Pact }) {
+export function CompletedScreen({ pact, activity = [] }: { pact: Pact; activity?: Activity[] }) {
   const reduce = useReducedMotion();
   const { user } = useAuth();
   const toast = useToast();
@@ -35,6 +36,8 @@ export function CompletedScreen({ pact }: { pact: Pact }) {
   const released = pact.status === 'released';
   const canRelease = (user?.kycTier ?? 1) >= 2;
   const members = [...joinedMembers(pact)].sort((a, b) => b.contributed - a.contributed);
+  const contributions = activity.filter((a) => a.type === 'contribution').length || members.filter((m) => m.contributed > 0).length;
+  const doneTasks = (pact.tasks ?? []).filter((t) => t.status === 'done');
   const name = (id: string) => (id === CURRENT_USER_ID ? 'You' : getUser(id).name);
   const rise = (delay: number) =>
     reduce ? {} : { initial: { opacity: 0, y: 12 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.55, ease: ease.out, delay } };
@@ -87,7 +90,7 @@ export function CompletedScreen({ pact }: { pact: Pact }) {
           <Badge tone="accent" dot>
             100% funded
           </Badge>
-          <h1 className="completed__title">Goal reached.</h1>
+          <h1 className="completed__title">We did it.</h1>
           <p className="completed__amount">
             <AnimatedNumber value={s.raised} from={s.raised * 0.86} />
           </p>
@@ -105,9 +108,9 @@ export function CompletedScreen({ pact }: { pact: Pact }) {
       <span className="completed__float completed__float--a" aria-hidden />
       <span className="completed__float completed__float--b" aria-hidden />
       <span className="completed__float completed__float--c" aria-hidden />
-      <section className="completed__people" aria-label={`${members.length} people made this happen`}>
+      <section className="completed__people" aria-label={`${members.length} {members.length === 1 ? "person" : "people"} made this happen`}>
         <p className="completed__people-label">
-          {members.length} people made this happen
+          {members.length} {members.length === 1 ? "person" : "people"} made this happen
         </p>
         <ul>
           {members.map((m, i) => (
@@ -126,6 +129,42 @@ export function CompletedScreen({ pact }: { pact: Pact }) {
           ))}
         </ul>
       </section>
+
+      <ul className="completed__stats">
+        <li>
+          <strong className="num">{members.length}</strong>
+          <span>{members.length === 1 ? 'person' : 'people'}</span>
+        </li>
+        <li>
+          <strong className="num">{contributions}</strong>
+          <span>{contributions === 1 ? 'contribution' : 'contributions'}</span>
+        </li>
+        <li>
+          <strong className="num">{doneTasks.length}</strong>
+          <span>{doneTasks.length === 1 ? 'task done' : 'tasks done'}</span>
+        </li>
+      </ul>
+
+      {doneTasks.length > 0 && (
+        <section className="completed__tasks" aria-labelledby="done-tasks">
+          <h2 id="done-tasks" className="section-heading__title">
+            What got done
+          </h2>
+          <ul>
+            {doneTasks.map((t) => (
+              <li key={t.id}>
+                <CheckCheck aria-hidden />
+                <span>{t.title}</span>
+                {t.assigneeId && <small>{name(t.assigneeId)}</small>}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      <div className="completed__memory">
+        <MemorySection pact={pact} meId={CURRENT_USER_ID} />
+      </div>
 
       {released && isOrganizer && (
         <Notice tone="accent" icon={<Wallet />}>

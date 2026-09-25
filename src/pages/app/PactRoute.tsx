@@ -21,6 +21,6 @@ export function PactRoute() {
     );
   }
   const { pact, activities } = q.data;
-  if (pact.status === 'funded' || pact.status === 'released') return <CompletedScreen pact={pact} />;
+  if (pact.status === 'funded' || pact.status === 'released') return <CompletedScreen pact={pact} activity={activities} />;
   return <PactDetailScreen pact={pact} activity={activities} />;
 }

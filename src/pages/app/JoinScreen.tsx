@@ -1,4 +1,7 @@
 import { CalendarDays, Users } from 'lucide-react';
+import { useState } from 'react';
+import type { Participation } from '../../data/types';
+import { ParticipationPicker } from './detail/Sheets';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../api/auth';
 import { ApiError } from '../../api/client';
@@ -22,6 +25,14 @@ export function JoinScreen() {
   const toast = useToast();
   const preview = useInvitePreview(code);
   const join = useJoinByCode();
+  // A choice made before signing up is remembered for the way back.
+  const [choice, setChoice] = useState<Participation | null>(() => {
+    try {
+      return (sessionStorage.getItem(`pact.joinChoice.${code}`) as Participation | null) ?? null;
+    } catch {
+      return null;
+    }
+  });
 
   if (preview.isLoading) return <Screen topBar={<TopBar backTo="/app" />}><Loading /></Screen>;
   if (preview.error || !preview.data) {
@@ -38,12 +49,22 @@ export function JoinScreen() {
 
   const onJoin = async () => {
     if (status !== 'signedIn') {
+      try {
+        if (choice) sessionStorage.setItem(`pact.joinChoice.${code}`, choice);
+      } catch {
+        /* ignore */
+      }
       setReturnTo(`/app/join/${code}`);
       navigate('/app/auth/phone');
       return;
     }
     try {
-      const r = await join.mutateAsync(code);
+      const r = await join.mutateAsync({ code, participation: choice });
+      try {
+        sessionStorage.removeItem(`pact.joinChoice.${code}`);
+      } catch {
+        /* ignore */
+      }
       toast(`You’re in ${r.data.pact.title}`);
       navigate(`/app/pact/${r.data.pact.id}`, { replace: true });
     } catch (err) {
@@ -56,8 +77,8 @@ export function JoinScreen() {
       topBar={<TopBar backTo={status === 'signedIn' ? '/app/home' : '/app'} />}
       footer={
         open ? (
-          <Button fullWidth onClick={onJoin} loading={join.isPending}>
-            {status === 'signedIn' ? 'Join this Pact' : 'Sign up to join'}
+          <Button fullWidth onClick={onJoin} loading={join.isPending} disabled={!choice}>
+            {!choice ? 'Choose how you’ll show up' : status === 'signedIn' ? 'Join this Pact' : 'Sign up to join'}
           </Button>
         ) : undefined
       }
@@ -81,6 +102,14 @@ export function JoinScreen() {
         </ul>
       </div>
       {!open && <Notice>This Pact isn’t taking new people. It’s {p.status === 'funded' ? 'already fully funded' : 'closed'}.</Notice>}
+      {open && (
+        <section className="join__choose" aria-labelledby="join-how">
+          <h2 id="join-how" className="join__how-title">
+            Make it happen together. How do you want to show up?
+          </h2>
+          <ParticipationPicker value={choice} onChange={setChoice} />
+        </section>
+      )}
       <ul className="join__how">
         <li>Money goes into the Pact, not anyone’s personal account.</li>
         <li>Everyone in the Pact sees every contribution.</li>

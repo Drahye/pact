@@ -752,3 +752,49 @@ button.menu__row:hover {
   flex: 1;
   font-weight: var(--weight-medium);
 }
+
+/* Wallet strip (Home) ------------------------------------------------------ */
+.wallet-strip {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4);
+  border-radius: var(--radius-xl);
+  background: var(--sun-100);
+}
+
+.wallet-strip__main {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.wallet-strip__label {
+  font-size: var(--text-caption);
+  font-weight: var(--weight-semibold);
+  color: #8a5a00;
+}
+
+.wallet-strip__balance {
+  font-size: var(--num-sm);
+  font-weight: var(--weight-semibold);
+}
+
+.wallet-strip__action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 40px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-full);
+  background: var(--ink-900);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--paper-50);
+}
+
+.wallet-strip__action svg {
+  width: 16px;
+  height: 16px;
+}

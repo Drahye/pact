@@ -1,6 +1,7 @@
 // End-to-end journey for a brand-new user, at phone width, against the running dev stack.
 // Usage: node scripts/e2e.mjs [outDir]   (needs `npm run dev`)
 import { chromium } from 'playwright';
+import sharp from 'sharp';
 import { existsSync, mkdirSync } from 'node:fs';
 import { homedir } from 'node:os';
 
@@ -61,7 +62,7 @@ try {
   await page.getByText('Confirm your PIN').waitFor();
   await shot('pin-confirm');
   await pin();
-  await page.getByText('Wallet balance').waitFor();
+  await page.locator('.wallet-strip').waitFor();
   await shot('home-new-user');
 
   // Top up by card through the sandbox checkout
@@ -114,6 +115,32 @@ try {
   await pin();
   await page.getByText('You’re in.').waitFor();
   await shot('contribute-done');
+
+  // Direct pay: finish the Pact straight from checkout, without touching the wallet
+  const pactUrl = page.url();
+  await page.goto(`${pactUrl.replace(/\/contribute.*$/, '')}/contribute?amount=55000`);
+  await page.getByRole('link', { name: /Pay ₦55,000 by transfer or card/ }).click();
+  await page.getByText('Pay into Lagos Beach Weekend').waitFor();
+  await shot('direct-pay');
+  await tap('Pay ₦55,000');
+  await page.getByText('Sandbox checkout').waitFor();
+  await tap('I’ve sent the money');
+  await page.getByText('added to Lagos Beach Weekend').waitFor();
+  await shot('direct-pay-done');
+  await tap('Back to the Pact');
+  await page.getByText('We did it.').waitFor();
+  await shot('completed');
+
+  // The memory: a note and a photo (checked and re-encoded by the server)
+  await page.getByRole('button', { name: /Add the memory/ }).click();
+  await page.getByLabel('How did it go?').fill('Sun, jollof and nobody got lost. Same time next year.');
+  const jpeg = await sharp({ create: { width: 800, height: 600, channels: 3, background: '#4da3ff' } }).jpeg().toBuffer();
+  await page.locator('input[type=file]').setInputFiles({ name: 'beach.jpg', mimeType: 'image/jpeg', buffer: jpeg });
+  await page.getByText('Photos · 1/6').waitFor({ timeout: 15000 });
+  await tap('Save');
+  await page.locator('.memory__grid img').first().waitFor({ timeout: 15000 });
+  await page.locator('.memory').scrollIntoViewIfNeeded();
+  await shot('memory');
 
   // Wallet history
   await page.goto(`${BASE}/app/wallet`);

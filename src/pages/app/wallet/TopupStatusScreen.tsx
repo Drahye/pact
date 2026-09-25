@@ -3,7 +3,7 @@ import { Check, X } from 'lucide-react';
 import { useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { keys, useTopup } from '../../../api/hooks';
+import { keys, usePact, useTopup } from '../../../api/hooks';
 import { ErrorState, Loading } from '../../../components/app/States';
 import { Button } from '../../../components/ui/Button';
 import { formatNairaKobo } from '../../../lib/format';
@@ -28,9 +28,15 @@ export function TopupStatusScreen() {
   const qc = useQueryClient();
   const q = useTopup(ref, true);
   const t = q.data;
+  const pactQ = usePact(t?.pactId ?? undefined);
 
   useEffect(() => {
     if (t?.status === 'succeeded') {
+      if (t.pactId) {
+        qc.invalidateQueries({ queryKey: keys.pact(t.pactId) });
+        qc.invalidateQueries({ queryKey: keys.pacts });
+        qc.invalidateQueries({ queryKey: keys.activity });
+      }
       qc.invalidateQueries({ queryKey: keys.wallet });
       qc.invalidateQueries({ queryKey: keys.txns });
       qc.invalidateQueries({ queryKey: keys.notifications });
@@ -40,7 +46,7 @@ export function TopupStatusScreen() {
   if (q.error) return <Screen><ErrorState onRetry={() => q.refetch()} /></Screen>;
   if (!t) return <Screen><Loading /></Screen>;
 
-  const back = readReturn();
+  const back = t.pactId ? `/app/pact/${t.pactId}` : readReturn();
   const done = () => {
     try {
       sessionStorage.removeItem(TOPUP_RETURN_KEY);
@@ -70,7 +76,7 @@ export function TopupStatusScreen() {
       footer={
         ok ? (
           <Button fullWidth onClick={done}>
-            {back?.includes('/contribute') ? 'Continue to contribute' : 'Done'}
+            {t.pactId ? 'Back to the Pact' : back?.includes('/contribute') ? 'Continue to contribute' : 'Done'}
           </Button>
         ) : (
           <>
@@ -94,12 +100,18 @@ export function TopupStatusScreen() {
         >
           {ok ? <Check strokeWidth={3} /> : <X strokeWidth={3} />}
         </motion.span>
-        <h1 className="large-title">{ok ? 'Money added' : 'Payment didn’t go through'}</h1>
+        <h1 className="large-title">{ok ? (t.pactId ? 'You’re in.' : 'Money added') : 'Payment didn’t go through'}</h1>
         <p className="screen-lede">
           {ok ? (
-            <>
-              <strong className="num">{formatNairaKobo(t.amount)}</strong> is in your wallet.
-            </>
+            t.pactId ? (
+              <>
+                <strong className="num">{formatNairaKobo(t.amount)}</strong> added to {pactQ.data?.pact.title ?? 'your Pact'}.
+              </>
+            ) : (
+              <>
+                <strong className="num">{formatNairaKobo(t.amount)}</strong> is in your wallet.
+              </>
+            )
           ) : (
             (t.failureReason === 'amount_mismatch' ? 'The amount paid didn’t match. Any money taken will be returned.' : t.failureReason) ?? 'Nothing was charged.'
           )}

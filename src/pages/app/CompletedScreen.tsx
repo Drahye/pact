@@ -108,7 +108,7 @@ export function CompletedScreen({ pact, activity = [] }: { pact: Pact; activity?
       <span className="completed__float completed__float--a" aria-hidden />
       <span className="completed__float completed__float--b" aria-hidden />
       <span className="completed__float completed__float--c" aria-hidden />
-      <section className="completed__people" aria-label={`${members.length} {members.length === 1 ? "person" : "people"} made this happen`}>
+      <section className="completed__people" aria-label={`${members.length} ${members.length === 1 ? 'person' : 'people'} made this happen`}>
         <p className="completed__people-label">
           {members.length} {members.length === 1 ? "person" : "people"} made this happen
         </p>

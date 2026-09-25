@@ -1,4 +1,5 @@
-import { KeyRound, LogOut, Monitor, Smartphone } from 'lucide-react';
+import { KeyRound, LifeBuoy, LogOut, Monitor, Smartphone } from 'lucide-react';
+import { ResetPinSheet } from './ResetPinSheet';
 import { useState } from 'react';
 import { ApiError } from '../../../api/client';
 import { useProfileActions, useSessions } from '../../../api/hooks';
@@ -25,6 +26,7 @@ export function SecurityScreen() {
   const [next, setNext] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [errorKey, setErrorKey] = useState(0);
+  const [resetOpen, setResetOpen] = useState(false);
 
   const close = () => {
     setOpen(false);
@@ -73,7 +75,15 @@ export function SecurityScreen() {
             <span className="menu__sub">Used to approve every payment</span>
           </span>
         </button>
+        <button type="button" className="menu__row" onClick={() => setResetOpen(true)}>
+          <span className="menu__icon tint--sun"><LifeBuoy /></span>
+          <span className="menu__text">
+            <span className="menu__title">Forgot your PIN?</span>
+            <span className="menu__sub">Reset it with a code sent to your number</span>
+          </span>
+        </button>
       </div>
+      <ResetPinSheet open={resetOpen} onClose={() => setResetOpen(false)} />
 
       <p className="menu-label">Signed in on</p>
       {sessions.isLoading ? (

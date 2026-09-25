@@ -1,4 +1,8 @@
-import { BadgeCheck, ChevronRight, FileText, Gift, Landmark, LifeBuoy, LockKeyhole, LogOut, ShieldCheck } from 'lucide-react';
+import { BadgeCheck, ChevronRight, Download, FileText, Gift, Landmark, LifeBuoy, LockKeyhole, LogOut, ShieldCheck, UserX } from 'lucide-react';
+import { useState } from 'react';
+import { api, ApiError } from '../../api/client';
+import { useProfileActions } from '../../api/hooks';
+import { PinSheet } from '../../components/app/PinSheet';
 import { Link, useNavigate } from 'react-router-dom';
 import { TIER_LIMITS } from '../../../shared/policy';
 import { useAuth } from '../../api/auth';
@@ -16,7 +20,28 @@ export function ProfileScreen() {
   const pacts = usePacts();
   const navigate = useNavigate();
   const toast = useToast();
+  const { closeAccount } = useProfileActions();
+  const [closeOpen, setCloseOpen] = useState(false);
+  const [exporting, setExporting] = useState(false);
   if (!user) return null;
+
+  const download = async () => {
+    setExporting(true);
+    try {
+      const data = await api<unknown>('GET', '/me/export');
+      const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'pact-my-data.json';
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      toast('Your data is downloading');
+    } catch (err) {
+      toast((err as ApiError).message, 'neutral');
+    } finally {
+      setExporting(false);
+    }
+  };
   const mine = (pacts.data ?? []).filter((p) => p.viewer?.status === 'joined');
   const given = mine.reduce((sum, p) => sum + (p.members.find((m) => m.userId === user.id)?.contributed ?? 0), 0);
   const tier = TIER_LIMITS[user.kycTier];
@@ -76,6 +101,33 @@ export function ProfileScreen() {
         </Link>
       </div>
 
+      <p className="menu-label">Your data</p>
+      <div className="menu">
+        <button type="button" className="menu__row" onClick={download} disabled={exporting}>
+          <span className="menu__icon tint--sky"><Download /></span>
+          <span className="menu__text"><span className="menu__title">Download my data</span><span className="menu__sub">Profile, Pacts, transactions and devices as a file</span></span>
+          <span className="menu__end">{exporting ? '…' : <ChevronRight />}</span>
+        </button>
+        <button type="button" className="menu__row menu__row--danger" onClick={() => setCloseOpen(true)}>
+          <span className="menu__icon tint--coral"><UserX /></span>
+          <span className="menu__text"><span className="menu__title">Close my account</span><span className="menu__sub">Needs an empty wallet and no money in open Pacts</span></span>
+        </button>
+      </div>
+
+      <PinSheet
+        open={closeOpen}
+        onClose={() => setCloseOpen(false)}
+        title="Close your account?"
+        description="Your name and details are erased. Transaction records are kept for as long as financial regulations require. This can’t be undone. Enter your PIN to confirm."
+        onSubmit={async (pin) => {
+          await closeAccount.mutateAsync(pin);
+          setCloseOpen(false);
+          toast('Your account is closed');
+          await signOut().catch(() => undefined);
+          navigate('/app', { replace: true });
+        }}
+      />
+
       <p className="menu-label">More</p>
       <div className="menu">
         <button type="button" className="menu__row" onClick={shareInvite}>
@@ -90,7 +142,7 @@ export function ProfileScreen() {
         </a>
         <Link to="/terms" className="menu__row">
           <span className="menu__icon tint--pink"><FileText /></span>
-          <span className="menu__text"><span className="menu__title">Terms and privacy</span></span>
+          <span className="menu__text"><span className="menu__title">Terms, privacy and refunds</span></span>
           <span className="menu__end"><ChevronRight /></span>
         </Link>
         <button

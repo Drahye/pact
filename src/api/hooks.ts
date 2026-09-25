@@ -273,6 +273,9 @@ export function useProfileActions() {
     changePin: useMutation({ mutationFn: (body: { currentPin: string; newPin: string }) => api('POST', '/me/pin', body) }),
     revokeSession: useMutation({ mutationFn: (id: string) => api('DELETE', `/me/sessions/${id}`), onSuccess: () => qc.invalidateQueries({ queryKey: keys.sessions }) }),
     revokeOthers: useMutation({ mutationFn: () => api('POST', '/me/sessions/revoke-others', {}), onSuccess: () => qc.invalidateQueries({ queryKey: keys.sessions }) }),
+    requestPinReset: useMutation({ mutationFn: () => api<{ expiresInSec: number; devCode?: string }>('POST', '/me/pin/reset/request', {}) }),
+    resetPin: useMutation({ mutationFn: (body: { code: string; newPin: string }) => api('POST', '/me/pin/reset', body), onSuccess: () => qc.invalidateQueries({ queryKey: keys.sessions }) }),
+    closeAccount: useMutation({ mutationFn: (pin: string) => api('POST', '/me/close', { pin }) }),
   };
 }
 

@@ -49,7 +49,7 @@ export function PhoneScreen() {
             Send code
           </Button>
           <p className="auth__fine">
-            By continuing you agree to the <Link to="/terms">Terms</Link> and <Link to="/privacy">Privacy Policy</Link>.
+            PACT is for people aged 18 and over. By continuing you agree to the <Link to="/terms">Terms</Link> and <Link to="/privacy">Privacy Policy</Link>.
           </p>
         </>
       }

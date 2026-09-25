@@ -18,6 +18,8 @@ export function Footer() {
           <Link to="/app">Open the web app</Link>
           <Link to="/terms">Terms</Link>
           <Link to="/privacy">Privacy</Link>
+          <Link to="/refunds">Refunds</Link>
+          <Link to="/cookies">Cookies</Link>
         </nav>
         <p className="footer__note">
           PACT is not a bank. Before real money moves, balances will be held with a licensed banking or payment partner.

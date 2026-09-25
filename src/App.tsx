@@ -74,6 +74,8 @@ export function App() {
               <Route path="/styleguide" element={<StyleGuidePage />} />
               <Route path="/terms" element={<LegalPage doc="terms" />} />
               <Route path="/privacy" element={<LegalPage doc="privacy" />} />
+              <Route path="/refunds" element={<LegalPage doc="refunds" />} />
+              <Route path="/cookies" element={<LegalPage doc="cookies" />} />
               <Route path="/app" element={<AppShell />}>
                 <Route index element={<GuestOnly><WelcomeScreen /></GuestOnly>} />
                 <Route path="auth/phone" element={<GuestOnly><PhoneScreen /></GuestOnly>} />

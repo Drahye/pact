@@ -1,0 +1,310 @@
+/* ==========================================================================
+   The plan on Pact detail: attention, budget, tasks
+   ========================================================================== */
+
+/* Needs attention ----------------------------------------------------------- */
+.attention {
+  padding: var(--space-4);
+  border-radius: var(--radius-xl);
+  background: var(--color-surface);
+  box-shadow: inset 0 0 0 1px var(--color-border);
+}
+
+.attention__title {
+  margin-bottom: var(--space-2);
+  font-size: var(--text-caption);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+}
+
+.attention ul {
+  display: flex;
+  flex-direction: column;
+}
+
+.attention__item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+}
+
+.attention__item + .attention__item {
+  border-top: var(--border-hairline);
+}
+
+.attention__dot {
+  flex-shrink: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.attention__item--accent .attention__dot { background: var(--color-accent); }
+.attention__item--sun .attention__dot { background: var(--sun-400); }
+.attention__item--coral .attention__dot { background: var(--coral-400); }
+.attention__item--lilac .attention__dot { background: var(--lilac-400); }
+
+.attention__text {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  gap: 2px;
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+  color: var(--color-text-secondary);
+}
+
+.attention__text strong {
+  font-size: var(--text-body);
+  line-height: 22px;
+  font-weight: var(--weight-semibold);
+  color: var(--color-text);
+}
+
+.attention__action {
+  flex-shrink: 0;
+  min-height: 36px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-full);
+  background: var(--color-text);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--paper-50);
+}
+
+.attention__action:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+
+/* Budget -------------------------------------------------------------------- */
+.budget__list {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: var(--radius-xl);
+  background: var(--color-surface);
+  box-shadow: inset 0 0 0 1px var(--color-border);
+}
+
+.budget__list > li + li {
+  border-top: var(--border-hairline);
+}
+
+.budget__row {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  text-align: left;
+}
+
+button.budget__row:hover {
+  background: var(--color-surface-raised);
+}
+
+.budget__row:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--color-focus);
+}
+
+.budget__head {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-3);
+}
+
+.budget__name {
+  font-weight: var(--weight-medium);
+}
+
+.budget__state {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--text-sm);
+  color: var(--color-text-tertiary);
+  white-space: nowrap;
+}
+
+.budget__state.is-full {
+  font-weight: var(--weight-semibold);
+  color: var(--color-accent-text);
+}
+
+.budget__state svg {
+  width: 14px;
+  height: 14px;
+}
+
+.budget__bar {
+  display: block;
+  width: 100%;
+  height: 6px;
+  overflow: hidden;
+  border-radius: var(--radius-full);
+  background: var(--color-track);
+}
+
+.budget__bar > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--color-accent);
+  transition: width var(--duration-slow) var(--ease-out);
+}
+
+/* Tasks --------------------------------------------------------------------- */
+.tasks__list {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: var(--radius-xl);
+  background: var(--color-surface);
+  box-shadow: inset 0 0 0 1px var(--color-border);
+}
+
+.tasks__list > li + li {
+  border-top: var(--border-hairline);
+}
+
+.task {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: 64px;
+  padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4);
+  text-align: left;
+}
+
+.task:hover {
+  background: var(--color-surface-raised);
+}
+
+.task:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--color-focus);
+}
+
+.task__status {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  color: var(--color-text-tertiary);
+}
+
+.task__status svg {
+  width: 20px;
+  height: 20px;
+}
+
+.task--in_progress .task__status {
+  color: #8a5a00;
+}
+
+.task--done .task__status {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+.task--done .task__status svg {
+  width: 15px;
+  height: 15px;
+}
+
+.task__text {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  gap: 1px;
+}
+
+.task__title {
+  font-weight: var(--weight-medium);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.task--done .task__title {
+  color: var(--color-text-tertiary);
+  text-decoration: line-through;
+  text-decoration-color: var(--ink-300);
+}
+
+.task__meta {
+  font-size: var(--text-caption);
+  color: var(--color-text-tertiary);
+}
+
+.task__who {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  max-width: 110px;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-secondary);
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.task__who.is-open {
+  color: #8a5a00;
+}
+
+.task__chevron {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  color: var(--ink-300);
+}
+
+/* Shared --------------------------------------------------------------------- */
+.plan-add {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  margin-top: var(--space-2);
+  padding: 0 var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--color-accent-text);
+}
+
+.plan-add svg {
+  width: 16px;
+  height: 16px;
+}
+
+.plan-empty {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-sunken);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.plan-empty svg {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+}

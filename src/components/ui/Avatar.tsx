@@ -14,6 +14,8 @@ interface Props {
   label?: boolean; // expose name to assistive tech
   /** Outline the avatar in the person's identity colour. */
   accent?: boolean;
+  /** Overrides the identity colour, e.g. the person's colour inside one Pact. */
+  accentColor?: string;
   className?: string;
 }
 
@@ -25,14 +27,14 @@ const initials = (name: string) =>
     .join('');
 
 /** Portrait with a tinted initials fallback. Pending = invited but not yet joined. */
-export function Avatar({ userId, size = 'md', ring = 'none', pending, label = true, accent, className = '' }: Props) {
+export function Avatar({ userId, size = 'md', ring = 'none', pending, label = true, accent, accentColor, className = '' }: Props) {
   const user = getUser(userId);
   const [failed, setFailed] = useState(false);
   const showPhoto = user.photo && !failed;
   return (
     <span
       className={`avatar avatar--${size} avatar--ring-${ring} avatar--${user.tint} ${pending ? 'is-pending' : ''} ${accent ? 'avatar--accent' : ''} ${className}`}
-      style={accent ? { ['--accent' as string]: user.color } : undefined}
+      style={accent ? { ['--accent' as string]: accentColor ?? user.color } : undefined}
       role={label ? 'img' : undefined}
       aria-label={label ? `${user.name}${pending ? ' (invited)' : ''}` : undefined}
       aria-hidden={label ? undefined : true}

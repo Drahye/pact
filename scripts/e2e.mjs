@@ -80,16 +80,18 @@ try {
 
   // Create a Pact
   await page.goto(`${BASE}/app/create`);
-  await page.getByLabel('What’s the money for?').fill('Lagos Beach Weekend');
-  await page.getByLabel('How much do you need?').fill('60000');
+  await page.getByLabel('Name', { exact: true }).fill('Lagos Beach Weekend');
+  await page.getByRole('radio', { name: 'Trip' }).click();
+  await page.getByLabel('Target', { exact: true }).fill('60000');
   const d = new Date(Date.now() + 21 * 86400000).toISOString().slice(0, 10);
-  await page.getByLabel('When do you need it?').fill(d);
+  await page.getByLabel('When is it happening?').fill(d);
   await tap('Invite people');
   await page.getByLabel('Add by phone number').fill('08031112222');
   await page.getByRole('button', { name: 'Add', exact: true }).click();
   await shot('create-invite-sheet');
   await page.getByRole('button', { name: /Add 1 person/ }).click();
   await page.getByRole('radio', { name: /Equal shares/ }).click();
+  await page.getByRole('button', { name: 'Book the flights' }).click();
   await shot('create');
   await tap('Create Pact');
   await page.getByText('Bring your people in.').waitFor();
@@ -99,7 +101,7 @@ try {
   await link('Done');
   await page.getByText('If the goal isn’t reached').waitFor();
   await shot('pact-detail');
-  await page.getByRole('link', { name: /Add your share|Contribute/ }).first().click();
+  await page.getByRole('link', { name: /Add to Pact|Add your share|Contribute/ }).first().click();
   await page.getByText('From your wallet').waitFor();
   await shot('contribute-short');
   await page.getByRole('radio', { name: '₦5k' }).click();

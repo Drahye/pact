@@ -13,10 +13,42 @@ export interface User {
 
 export type PactCategory = 'birthday' | 'trip' | 'wedding' | 'gift' | 'event' | 'dinner' | 'household' | 'fund' | 'other';
 
+export type Participation = 'money' | 'task' | 'both' | 'later';
+
 export interface Member {
   userId: UserId;
   contributed: number; // naira
   status: 'joined' | 'invited';
+  /* From the API: */
+  role?: 'organizer' | 'member';
+  participation?: Participation | null;
+  /** Colour inside this Pact; falls back to the person's own colour. */
+  color?: string;
+  /** Naira asked of this person by "split the rest". */
+  requestedAmount?: number | null;
+}
+
+export interface BudgetLine {
+  id: string;
+  name: string;
+  amount: number; // naira
+  funded: number; // naira
+}
+
+export interface Task {
+  id: string;
+  title: string;
+  budgetItemId: string | null;
+  assigneeId: string | null;
+  status: 'open' | 'in_progress' | 'done';
+  createdBy: string;
+  completedAt: string | null;
+}
+
+export interface Memory {
+  note: string | null;
+  happenedOn: string | null;
+  photoIds: string[];
 }
 
 export interface Pact {
@@ -39,6 +71,9 @@ export interface Pact {
   missedGoalPolicy?: 'refund' | 'release';
   splitMode?: 'flexible' | 'equal';
   pendingPhoneInvites?: number;
+  budget?: BudgetLine[];
+  tasks?: Task[];
+  memory?: Memory | null;
   viewer?: { role: 'organizer' | 'member' | null; status: 'invited' | 'joined' | 'left' | null; suggestedShare: number };
 }
 

@@ -16,7 +16,15 @@ export function toPact(p: PactDTO): Pact {
     organizerId: p.organizerId,
     members: p.members
       .filter((m) => m.status !== 'left')
-      .map((m) => ({ userId: m.userId, contributed: fromKobo(m.contributed), status: m.status === 'invited' ? 'invited' : 'joined' })),
+      .map((m) => ({
+        userId: m.userId,
+        contributed: fromKobo(m.contributed),
+        status: m.status === 'invited' ? ('invited' as const) : ('joined' as const),
+        role: m.role,
+        participation: m.participation,
+        color: m.color,
+        requestedAmount: m.requestedAmount !== null ? fromKobo(m.requestedAmount) : null,
+      })),
     status: p.status,
     inviteCode: p.inviteCode,
     note: p.note,
@@ -24,6 +32,9 @@ export function toPact(p: PactDTO): Pact {
     missedGoalPolicy: p.missedGoalPolicy,
     splitMode: p.splitMode,
     pendingPhoneInvites: p.pendingPhoneInvites,
+    budget: p.budget.map((b) => ({ id: b.id, name: b.name, amount: fromKobo(b.amount), funded: fromKobo(b.funded) })),
+    tasks: p.tasks.map((t) => ({ id: t.id, title: t.title, budgetItemId: t.budgetItemId, assigneeId: t.assigneeId, status: t.status, createdBy: t.createdBy, completedAt: t.completedAt })),
+    memory: p.memory ? { note: p.memory.note, happenedOn: p.memory.happenedOn, photoIds: p.memory.photoIds } : null,
     viewer: { ...p.viewer, suggestedShare: fromKobo(p.viewer.suggestedShare) },
   };
 }

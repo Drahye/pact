@@ -9,6 +9,7 @@ import type {
   Page,
   PactDTO,
   PactPreviewDTO,
+  Participation,
   PersonDTO,
   SessionDTO,
   TopupDTO,
@@ -18,7 +19,7 @@ import type {
   WithPeople,
 } from '../../shared/contracts';
 import { useAuth } from './auth';
-import { api, newIdempotencyKey } from './client';
+import { api, fetchPhoto, newIdempotencyKey, uploadPhoto } from './client';
 import { register, toActivity, toPact } from './mappers';
 
 export const keys = {
@@ -272,4 +273,48 @@ export function useProfileActions() {
     revokeSession: useMutation({ mutationFn: (id: string) => api('DELETE', `/me/sessions/${id}`), onSuccess: () => qc.invalidateQueries({ queryKey: keys.sessions }) }),
     revokeOthers: useMutation({ mutationFn: () => api('POST', '/me/sessions/revoke-others', {}), onSuccess: () => qc.invalidateQueries({ queryKey: keys.sessions }) }),
   };
+}
+
+/* ---------------------------------------------------------------- the plan */
+
+/** Every plan edit returns the fresh Pact, which replaces the cached one. */
+function usePlanMutation<V>(run: (v: V) => Promise<PactDetail>) {
+  const setPact = useSetPact();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: run,
+    onSuccess: (r) => {
+      setPact(r);
+      qc.invalidateQueries({ queryKey: keys.pacts });
+      qc.invalidateQueries({ queryKey: keys.activity });
+    },
+  });
+}
+
+export function usePlan(pactId: string) {
+  const base = `/pacts/${pactId}`;
+  return {
+    participation: usePlanMutation((participation: Participation) => api<PactDetail>('PATCH', `${base}/participation`, { participation })),
+    addTask: usePlanMutation((body: { title: string; budgetItemId?: string | null; assigneeId?: string | null }) => api<PactDetail>('POST', `${base}/tasks`, body)),
+    updateTask: usePlanMutation(({ id, ...body }: { id: string; title?: string; status?: 'open' | 'in_progress' | 'done'; assigneeId?: 'me' | string | null }) =>
+      api<PactDetail>('PATCH', `${base}/tasks/${id}`, body),
+    ),
+    deleteTask: usePlanMutation((id: string) => api<PactDetail>('DELETE', `${base}/tasks/${id}`)),
+    addBudget: usePlanMutation((body: { name: string; amount: number }) => api<PactDetail>('POST', `${base}/budget`, body)),
+    updateBudget: usePlanMutation(({ id, ...body }: { id: string; name?: string; amount?: number }) => api<PactDetail>('PATCH', `${base}/budget/${id}`, body)),
+    deleteBudget: usePlanMutation((id: string) => api<PactDetail>('DELETE', `${base}/budget/${id}`)),
+    splitRest: usePlanMutation(() => api<PactDetail & { split: { share: number; people: number } }>('POST', `${base}/split-rest`, {})),
+    saveMemory: usePlanMutation((body: { note?: string | null; happenedOn?: string | null }) => api<PactDetail>('PUT', `${base}/memory`, body)),
+    deletePhoto: usePlanMutation((id: string) => api<PactDetail>('DELETE', `${base}/memory/photos/${id}`)),
+    addPhoto: usePlanMutation((file: File) => uploadPhoto(`${base}/memory/photos`, file)),
+  };
+}
+
+/** Photos are private: fetched with the session and shown from a local object URL. */
+export function usePhoto(pactId: string, photoId: string) {
+  return useQuery({
+    queryKey: ['photo', pactId, photoId],
+    staleTime: Infinity,
+    queryFn: async () => URL.createObjectURL(await fetchPhoto(`/pacts/${pactId}/memory/photos/${photoId}`)),
+  });
 }

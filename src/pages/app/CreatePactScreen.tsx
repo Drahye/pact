@@ -1,4 +1,4 @@
-import { CalendarDays, Check, ChevronRight, Phone, RotateCcw, Scale, Wallet, X } from 'lucide-react';
+import { CalendarDays, Check, ChevronRight, ListChecks, Phone, Plus, RotateCcw, Scale, Wallet, X } from 'lucide-react';
 import { useMemo, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ApiError, newIdempotencyKey } from '../../api/client';
@@ -17,20 +17,21 @@ import { useToast } from '../../components/ui/Toast';
 import type { PactCategory } from '../../data/types';
 import { getUser } from '../../data/users';
 import { isoDay } from '../../lib/dates';
-import { daysUntil, formatDate, formatDaysLeft, formatNaira, joinNames, toKobo } from '../../lib/format';
+import { daysUntil, formatDate, formatDaysLeft, formatNaira, joinNames, parseAmount, formatAmountInput, toKobo } from '../../lib/format';
+import { PACT_TYPES, TEMPLATES } from '../../../shared/templates';
 import { inferCategory } from '../../lib/pact';
 import { Screen } from './Screen';
 import '../../components/app/app-ui.css';
 import './create.css';
 
-const kinds: { value: PactCategory; label: string }[] = [
-  { value: 'gift', label: 'Gift' },
-  { value: 'trip', label: 'Trip' },
-  { value: 'event', label: 'Event' },
-  { value: 'wedding', label: 'Wedding' },
-  { value: 'household', label: 'Home' },
-  { value: 'other', label: 'Other' },
-];
+const kinds = PACT_TYPES.map((value) => ({ value: value as PactCategory, label: TEMPLATES[value].label }));
+
+interface Line {
+  key: number;
+  name: string;
+  amount: number;
+}
+let lineKey = 0;
 
 const normalizePhone = (raw: string) => {
   const d = raw.replace(/\D/g, '').replace(/^234/, '').replace(/^0/, '');
@@ -57,15 +58,33 @@ export function CreatePactScreen() {
   const [split, setSplit] = useState<'flexible' | 'equal'>('flexible');
   const [error, setError] = useState<string>();
   const [key] = useState(newIdempotencyKey);
+  const [mode, setMode] = useState<'target' | 'budget'>('target');
+  const [lines, setLines] = useState<Line[]>([]);
+  const [tasks, setTasks] = useState<string[]>([]);
+  const [taskDraft, setTaskDraft] = useState('');
   const category = picked ?? inferCategory(title);
+  const template = TEMPLATES[category];
+  const budgetTotal = lines.reduce((sum, l) => sum + l.amount, 0);
+  const goal = mode === 'budget' ? budgetTotal : target;
+  const addLine = (name = '') => setLines((l) => [...l, { key: lineKey++, name, amount: 0 }]);
+  const toggleTask = (t: string) => setTasks((list) => (list.includes(t) ? list.filter((x) => x !== t) : [...list, t]));
 
   const errors = useMemo(
     () => ({
       title: !title.trim() ? 'Give your Pact a name.' : undefined,
-      target: target < 1_000 ? 'Enter at least ₦1,000.' : undefined,
+      target:
+        mode === 'budget'
+          ? lines.some((l) => !l.name.trim() || l.amount < 1)
+            ? 'Give every line a name and an amount.'
+            : budgetTotal < 1_000
+              ? 'The budget needs to add up to at least ₦1,000.'
+              : undefined
+          : target < 1_000
+            ? 'Enter at least ₦1,000.'
+            : undefined,
       deadline: !deadline ? 'Pick a date.' : deadline < minDate ? 'Choose a date after today.' : undefined,
     }),
-    [title, target, deadline, minDate],
+    [title, target, deadline, minDate, mode, lines, budgetTotal],
   );
   const valid = !errors.title && !errors.target && !errors.deadline;
   const count = invitees.length + phones.length;
@@ -78,7 +97,18 @@ export function CreatePactScreen() {
     try {
       const r = await create.mutateAsync({
         key,
-        input: { title: title.trim(), category, target: toKobo(target), deadline, missedGoalPolicy: policy, splitMode: split, inviteUserIds: invitees, invitePhones: phones },
+        input: {
+          title: title.trim(),
+          category,
+          // With a budget the server works out the target from the lines.
+          ...(mode === 'budget' ? { budget: lines.map((l) => ({ name: l.name.trim(), amount: toKobo(l.amount) })) } : { target: toKobo(target) }),
+          tasks: tasks.map((t) => ({ title: t })),
+          deadline,
+          missedGoalPolicy: policy,
+          splitMode: split,
+          inviteUserIds: invitees,
+          invitePhones: phones,
+        },
       });
       toast('Pact created');
       navigate(`/app/pact/${r.data.pact.id}/invite`, { replace: true });
@@ -101,18 +131,18 @@ export function CreatePactScreen() {
       topBar={<TopBar leading="close" backTo="/app/home" title="New Pact" />}
       footer={
         <Button type="submit" form="create-pact" fullWidth loading={create.isPending}>
-          Create Pact
+          {goal >= 1000 ? `Create Pact · ${formatNaira(goal)}` : 'Create Pact'}
         </Button>
       }
       className="create"
     >
-      <h1 className="large-title">Create a Pact</h1>
-      <p className="screen-lede">Three details, one rule, and you’re ready to invite people.</p>
+      <h1 className="large-title">What are you planning?</h1>
+      <p className="screen-lede">Name it, pick a date and a target. Everything else is optional.</p>
 
       <form id="create-pact" className="create__form" onSubmit={submit} noValidate>
         <Input
-          label="What’s the money for?"
-          placeholder="Sarah’s Birthday"
+          label="Name"
+          placeholder={template.placeholder}
           value={title}
           maxLength={60}
           onChange={(e) => setTitle(e.target.value)}
@@ -136,13 +166,8 @@ export function CreatePactScreen() {
           ))}
         </div>
 
-        <div className={`create__amount ${touched && errors.target ? 'has-error' : ''}`}>
-          <AmountInput label="How much do you need?" value={target} onChange={setTarget} placeholder="500,000" max={50_000_000} />
-          {touched && errors.target && <p className="field__error">{errors.target}</p>}
-        </div>
-
         <Input
-          label="When do you need it?"
+          label="When is it happening?"
           type="date"
           min={minDate}
           value={deadline}
@@ -152,6 +177,77 @@ export function CreatePactScreen() {
           hint={deadline && !errors.deadline ? `${formatDate(deadline)} · ${formatDaysLeft(daysUntil(deadline))}` : 'Up to a year from today'}
           className={deadline ? '' : 'is-empty'}
         />
+
+
+        <div className="field">
+          <span className="field__label">How much do you need?</span>
+          <Segmented<'target' | 'budget'>
+            label="Target or budget"
+            value={mode}
+            onChange={(m) => {
+              setMode(m);
+              if (m === 'budget' && !lines.length) setLines(template.budget.slice(0, 3).map((name) => ({ key: lineKey++, name, amount: 0 })));
+            }}
+            options={[
+              { value: 'target', label: 'One target' },
+              { value: 'budget', label: 'Plan the budget' },
+            ]}
+          />
+        </div>
+
+        {mode === 'target' ? (
+          <div className={`create__amount ${touched && errors.target ? 'has-error' : ''}`}>
+            <AmountInput label="Target" hideLabel value={target} onChange={setTarget} placeholder="500,000" max={50_000_000} />
+            {touched && errors.target && <p className="field__error">{errors.target}</p>}
+          </div>
+        ) : (
+          <div className="budget-edit">
+            <ul className="budget-edit__lines">
+              {lines.map((l, i) => (
+                <li key={l.key} className="budget-edit__line">
+                  <input
+                    className="budget-edit__name"
+                    aria-label={`Line ${i + 1} name`}
+                    placeholder="What for?"
+                    value={l.name}
+                    maxLength={60}
+                    onChange={(e) => setLines((all) => all.map((x) => (x.key === l.key ? { ...x, name: e.target.value } : x)))}
+                  />
+                  <span className="budget-edit__amount">
+                    <span aria-hidden>₦</span>
+                    <input
+                      className="num"
+                      inputMode="numeric"
+                      aria-label={`Line ${i + 1} amount`}
+                      placeholder="0"
+                      value={formatAmountInput(l.amount)}
+                      onChange={(e) => setLines((all) => all.map((x) => (x.key === l.key ? { ...x, amount: Math.min(50_000_000, parseAmount(e.target.value)) } : x)))}
+                    />
+                  </span>
+                  <button type="button" className="budget-edit__remove" aria-label={`Remove ${l.name || 'line'}`} onClick={() => setLines((all) => all.filter((x) => x.key !== l.key))}>
+                    <X />
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <div className="suggest">
+              {template.budget
+                .filter((name) => !lines.some((l) => l.name.toLowerCase() === name.toLowerCase()))
+                .map((name) => (
+                  <button key={name} type="button" className="suggest__chip" onClick={() => addLine(name)}>
+                    <Plus aria-hidden /> {name}
+                  </button>
+                ))}
+              <button type="button" className="suggest__chip suggest__chip--own" onClick={() => addLine()}>
+                <Plus aria-hidden /> Add a line
+              </button>
+            </div>
+            <p className="budget-edit__total">
+              Target <strong className="num">{formatNaira(budgetTotal)}</strong>
+            </p>
+            {touched && errors.target && <p className="field__error">{errors.target}</p>}
+          </div>
+        )}
 
         <div className="field">
           <span className="field__label" id="invite-label">
@@ -174,6 +270,40 @@ export function CreatePactScreen() {
         </div>
 
         <div className="field">
+          <span className="field__label">
+            <ListChecks aria-hidden className="create__label-icon" /> Anything that needs doing? <span className="field__optional">Optional</span>
+          </span>
+          <div className="suggest">
+            {[...template.tasks, ...tasks.filter((t) => !template.tasks.includes(t))].map((t) => {
+              const on = tasks.includes(t);
+              return (
+                <button key={t} type="button" className={`suggest__chip ${on ? 'is-on' : ''}`} aria-pressed={on} onClick={() => toggleTask(t)}>
+                  {on ? <Check aria-hidden /> : <Plus aria-hidden />} {t}
+                </button>
+              );
+            })}
+          </div>
+          <div className="create__task-add">
+            <input
+              className="field__input create__task-input"
+              aria-label="Add your own task"
+              placeholder="Add your own"
+              value={taskDraft}
+              maxLength={80}
+              onChange={(e) => setTaskDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && taskDraft.trim()) {
+                  e.preventDefault();
+                  if (!tasks.includes(taskDraft.trim())) setTasks((l) => [...l, taskDraft.trim()]);
+                  setTaskDraft('');
+                }
+              }}
+            />
+          </div>
+          <p className="field__hint">People can pick these up once they join. {tasks.length ? `${tasks.length} selected.` : ''}</p>
+        </div>
+
+        <div className="field">
           <span className="field__label">How should people chip in?</span>
           <Segmented<'flexible' | 'equal'>
             label="Split"
@@ -185,8 +315,8 @@ export function CreatePactScreen() {
             ]}
           />
           <p className="field__hint">
-            {split === 'equal' && target >= 1000
-              ? `Everyone is asked for an equal share of ${formatNaira(target)}, updated as people join.`
+            {split === 'equal' && goal >= 1000
+              ? `Everyone is asked for an equal share of ${formatNaira(goal)}, updated as people join.`
               : 'Everyone gives what they can.'}
           </p>
         </div>

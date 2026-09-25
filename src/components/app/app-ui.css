@@ -692,3 +692,63 @@ button.menu__row:hover {
   background: var(--tint-bg, var(--color-bg-sunken));
   color: var(--tint-fg, var(--color-text));
 }
+
+/* Sheet internals ---------------------------------------------------------- */
+.sheet-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding-bottom: var(--space-2);
+}
+
+.sheet-note {
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-sm);
+  color: var(--color-text-tertiary);
+}
+
+.sheet-check {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 44px;
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+}
+
+.sheet-check input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--ink-900);
+}
+
+.sheet-actions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.sheet-actions > .btn:first-child:not(.btn--full) {
+  flex-shrink: 0;
+}
+
+.split-list {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: var(--space-4);
+}
+
+.split-list li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 52px;
+}
+
+.split-list li + li {
+  border-top: var(--border-hairline);
+}
+
+.split-list span {
+  flex: 1;
+  font-weight: var(--weight-medium);
+}

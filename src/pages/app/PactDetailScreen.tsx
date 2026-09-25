@@ -1,14 +1,15 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { BellRing, CalendarDays, Ellipsis, LogOut, RotateCcw, Scale, Share, Target, UserPlus, Users, XCircle } from 'lucide-react';
+import { BellRing, CalendarDays, ChevronRight, Divide, Ellipsis, LogOut, RotateCcw, Scale, Share, Target, UserPlus, Users, XCircle } from 'lucide-react';
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../api/auth';
 import { ApiError } from '../../api/client';
-import { usePactAction, usePactCommand } from '../../api/hooks';
+import { usePactAction, usePactCommand, usePlan } from '../../api/hooks';
 import { PinSheet } from '../../components/app/PinSheet';
 import { Notice } from '../../components/app/States';
 import { AnimatedNumber } from '../../components/pact/AnimatedNumber';
 import { CategoryChip } from '../../components/pact/category';
+import { AttentionCard, BudgetList, TaskList } from '../../components/pact/Plan';
 import { SegmentedRing } from '../../components/pact/SegmentedRing';
 import { ActivityItem } from '../../components/ui/ActivityItem';
 import { Avatar } from '../../components/ui/Avatar';
@@ -18,13 +19,15 @@ import { Modal } from '../../components/ui/Modal';
 import { SectionHeading } from '../../components/ui/SectionHeading';
 import { TopBar } from '../../components/ui/TopBar';
 import { useToast } from '../../components/ui/Toast';
-import type { Activity, Pact } from '../../data/types';
+import type { Activity, BudgetLine, Pact, Task } from '../../data/types';
 import { getUser } from '../../data/users';
-import { formatDate, formatNaira, formatNairaCompact, formatPercent } from '../../lib/format';
 import { addDaysIso } from '../../lib/dates';
-import { invitedMembers, joinedMembers, sharesOf, summarize } from '../../lib/pact';
+import { formatDate, formatNaira, formatNairaCompact, formatPercent } from '../../lib/format';
+import { colorOf, invitedMembers, joinedMembers, sharesOf, summarize } from '../../lib/pact';
+import { attentionFor, participationLabel, stageOf, type AttentionItem } from '../../lib/plan';
 import { spring } from '../../tokens/tokens';
 import { MISSED_GOAL_GRACE_DAYS } from '../../../shared/policy';
+import { AddTaskSheet, BudgetLineSheet, ParticipationSheet, SplitSheet, TaskSheet } from './detail/Sheets';
 import { Screen } from './Screen';
 import './detail.css';
 
@@ -38,24 +41,31 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
   const [selected, setSelected] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
+  const [participationOpen, setParticipationOpen] = useState(false);
+  const [task, setTask] = useState<Task | null>(null);
+  const [addTaskOpen, setAddTaskOpen] = useState(false);
+  const [line, setLine] = useState<BudgetLine | null>(null);
+  const [lineOpen, setLineOpen] = useState(false);
+  const [splitOpen, setSplitOpen] = useState(false);
   const cmd = usePactCommand(pact.id);
+  const plan = usePlan(pact.id);
   const cancel = usePactAction(pact.id, 'cancel');
 
   const s = summarize(pact);
+  const stage = stageOf(pact, me);
   const joined = joinedMembers(pact);
   const invited = invitedMembers(pact);
   const isOrganizer = pact.organizerId === me;
-  const isInvited = pact.viewer?.status === 'invited';
   const isOpen = pact.status === 'open';
-  const closed = pact.status === 'cancelled' || pact.status === 'refunded';
-  const pastDeadline = isOpen && s.daysLeft === 0 && new Date(`${pact.deadline}T23:59:59`) < new Date();
-  const myContribution = pact.members.find((m) => m.userId === me)?.contributed ?? 0;
+  const mine = pact.members.find((m) => m.userId === me);
   const organizer = isOrganizer ? 'you' : getUser(pact.organizerId).name;
-  const justYou = joined.length === 1 && s.raised === 0;
   const base = `/app/pact/${pact.id}`;
   const name = (id: string) => (id === me ? 'You' : getUser(id).name);
   const picked = selected ? pact.members.find((m) => m.userId === selected) : null;
-  const share = pact.viewer?.suggestedShare ?? 0;
+  const ask = mine?.requestedAmount || (pact.splitMode === 'equal' ? pact.viewer?.suggestedShare : 0) || 0;
+  const tasks = pact.tasks ?? [];
+  const budget = pact.budget ?? [];
+  const attention = attentionFor(pact, me);
 
   const run = async (fn: () => Promise<unknown>, ok: string) => {
     setMenuOpen(false);
@@ -67,16 +77,41 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
     }
   };
 
-  const contribute = (
-    <Button to={`${base}/contribute`} variant={justYou ? 'secondary' : 'primary'} fullWidth>
-      {share > 0 && pact.splitMode === 'equal' ? `Add your share · ${formatNairaCompact(share)}` : 'Contribute'}
-    </Button>
-  );
-  const invite = (
-    <Button to={`${base}/invite`} variant={justYou ? 'primary' : 'secondary'} fullWidth>
-      Invite people
-    </Button>
-  );
+  const onAttention = (it: AttentionItem) => {
+    const a = it.action;
+    if (!a) return;
+    if (a.kind === 'contribute') navigate(`${base}/contribute${a.amount ? `?amount=${a.amount}` : ''}`);
+    else if (a.kind === 'participation') setParticipationOpen(true);
+    else if (a.kind === 'claim' && a.taskId) void run(() => plan.updateTask.mutateAsync({ id: a.taskId!, assigneeId: 'me' }), 'It’s yours');
+    else if (a.kind === 'done' && a.taskId) void run(() => plan.updateTask.mutateAsync({ id: a.taskId!, status: 'done' }), 'Done. Nice.');
+    else if (a.kind === 'remind') void run(() => cmd.nudge.mutateAsync(), 'Reminder sent');
+    else if (a.kind === 'split') setSplitOpen(true);
+    else if (a.kind === 'invite') navigate(`${base}/invite`);
+  };
+
+  /* The main action depends on where the Pact is. */
+  const actions = (() => {
+    switch (stage) {
+      case 'just-you':
+        return { primary: <Button to={`${base}/invite`} fullWidth>Invite people</Button>, secondary: <Button to={`${base}/contribute`} variant="secondary" fullWidth>Add to Pact</Button> };
+      case 'almost':
+        return {
+          primary: <Button to={`${base}/contribute?amount=${Math.ceil(s.remaining)}`} fullWidth>Cover the rest · {formatNairaCompact(s.remaining)}</Button>,
+          secondary: isOrganizer ? (
+            <Button variant="secondary" fullWidth iconLeft={<Divide />} onClick={() => setSplitOpen(true)}>Split the rest</Button>
+          ) : (
+            <Button to={`${base}/contribute`} variant="secondary" fullWidth>Another amount</Button>
+          ),
+        };
+      case 'open':
+        return {
+          primary: <Button to={`${base}/contribute${ask ? `?amount=${Math.ceil(ask)}` : ''}`} fullWidth>{ask ? `Add your share · ${formatNairaCompact(ask)}` : 'Contribute'}</Button>,
+          secondary: <Button to={`${base}/invite`} variant="secondary" fullWidth>Invite people</Button>,
+        };
+      default:
+        return null;
+    }
+  })();
 
   return (
     <Screen
@@ -85,7 +120,7 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
           backTo="/app/home"
           title={pact.title}
           trailing={
-            isInvited ? undefined : isOpen ? (
+            stage !== 'invited' && isOpen ? (
               <span className="detail__top-actions">
                 <IconButton label="Share invite link" icon={<Share />} to={`${base}/invite`} />
                 <IconButton label="More" icon={<Ellipsis />} onClick={() => setMenuOpen(true)} />
@@ -100,23 +135,23 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
         <CategoryChip category={pact.category} suffix={`by ${organizer}`} />
       </div>
 
-      {isInvited && (
+      {stage === 'invited' && (
         <div className="detail__invite">
           <p>
-            <strong>{getUser(pact.organizerId).name}</strong> invited you to this Pact.
+            <strong>{getUser(pact.organizerId).name}</strong> invited you. How do you want to show up?
           </p>
           <div className="detail__invite-actions">
             <Button size="md" variant="secondary" onClick={() => run(() => cmd.leave.mutateAsync().then(() => navigate('/app/home')), 'Invite declined')}>
-              Decline
+              Not this time
             </Button>
-            <Button size="md" onClick={() => run(() => cmd.accept.mutateAsync(), `You joined ${pact.title}`)} loading={cmd.accept.isPending}>
+            <Button size="md" onClick={() => run(async () => { await cmd.accept.mutateAsync(); setParticipationOpen(true); }, `You joined ${pact.title}`)} loading={cmd.accept.isPending}>
               Join
             </Button>
           </div>
         </div>
       )}
 
-      {closed && (
+      {stage === 'closed' && (
         <Notice tone="neutral" icon={<RotateCcw />}>
           {pact.status === 'cancelled' ? 'The organiser closed this Pact.' : 'The goal wasn’t reached by the deadline.'} Every contribution went back to the wallet it came from.
         </Notice>
@@ -128,7 +163,7 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
         <SegmentedRing
           shares={sharesOf(pact)}
           target={pact.target}
-          size={236}
+          size={228}
           stroke={20}
           selected={selected}
           onSelect={setSelected}
@@ -138,7 +173,7 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
           <AnimatePresence mode="wait" initial={false}>
             {picked ? (
               <motion.div key={picked.userId} className="detail__center" initial={{ opacity: 0, scale: 0.94 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.94 }} transition={{ duration: 0.18 }}>
-                <Avatar userId={picked.userId} size="md" accent label={false} />
+                <Avatar userId={picked.userId} size="md" accent accentColor={colorOf(pact, picked.userId)} label={false} />
                 <p className="detail__center-name">{name(picked.userId)}</p>
                 <p className="detail__center-amount num">{formatNaira(picked.contributed)}</p>
                 <p className="detail__center-meta num">{formatPercent((picked.contributed / Math.max(1, s.raised)) * 100)} of the total</p>
@@ -158,7 +193,7 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
             )}
           </AnimatePresence>
         </SegmentedRing>
-        {!justYou && <p className="detail__ring-hint">{picked ? 'Tap the centre to see the total' : 'Tap a colour to see who gave it'}</p>}
+        {s.raised > 0 && <p className="detail__ring-hint">{picked ? 'Tap the centre to see the total' : 'Tap a colour or a name to see who gave it'}</p>}
       </div>
 
       <ul className="detail__stats">
@@ -185,47 +220,79 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
         </li>
       </ul>
 
-      <ul className="detail__people" aria-label="People in this Pact">
-        {joined.map((m) => (
-          <li key={m.userId}>
-            <button type="button" className={`person ${selected === m.userId ? 'is-selected' : ''}`} onClick={() => setSelected(selected === m.userId ? null : m.userId)} aria-pressed={selected === m.userId}>
-              <Avatar userId={m.userId} size="md" accent label={false} />
-              <span className="person__name">{name(m.userId)}</span>
-              <span className="person__amount num">{m.contributed ? formatNairaCompact(m.contributed) : 'None yet'}</span>
-            </button>
-          </li>
-        ))}
-        {invited.map((m) => (
-          <li key={m.userId}>
-            <span className="person is-pending">
-              <Avatar userId={m.userId} size="md" pending label={false} />
-              <span className="person__name">{getUser(m.userId).name}</span>
-              <span className="person__amount">Invited</span>
-            </span>
-          </li>
-        ))}
-      </ul>
-
-      {isOpen && !isInvited && !pastDeadline && (
+      {actions && (
         <div className="detail__actions">
-          {justYou ? (
-            <>
-              {invite}
-              {contribute}
-            </>
-          ) : (
-            <>
-              {contribute}
-              {invite}
-            </>
-          )}
+          {actions.primary}
+          {actions.secondary}
         </div>
       )}
-      {pastDeadline && (
+      {stage === 'almost' && <p className="detail__almost">We’re almost there. {formatNaira(s.remaining)} left.</p>}
+      {stage === 'past-deadline' && (
         <Notice tone="sun" icon={<Scale />}>
           The deadline has passed. Within {MISSED_GOAL_GRACE_DAYS} days the Pact’s rule runs: {pact.missedGoalPolicy === 'refund' ? 'everyone is refunded' : 'what was raised goes to the organiser'}.
         </Notice>
       )}
+
+      {mine && stage !== 'invited' && stage !== 'closed' && (
+        <button type="button" className="detail__me" onClick={() => setParticipationOpen(true)}>
+          <Avatar userId={me} size="sm" accent accentColor={colorOf(pact, me)} label={false} />
+          <span className="detail__me-text">
+            <strong>{mine.participation ? participationLabel[mine.participation].long : 'Tell the group how you’re showing up'}</strong>
+            <span className="num">{mine.contributed ? `${formatNaira(mine.contributed)} in so far` : 'Nothing added yet'}</span>
+          </span>
+          <ChevronRight aria-hidden />
+        </button>
+      )}
+
+      {attention.length > 0 && (
+        <div className="screen-section">
+          <AttentionCard items={attention} onAction={onAttention} />
+        </div>
+      )}
+
+      {(budget.length > 0 || (isOrganizer && isOpen)) && (
+        <section className="screen-section" aria-labelledby="the-plan">
+          <SectionHeading id="the-plan" title="The plan" />
+          {budget.length ? (
+            <BudgetList lines={budget} editable={isOrganizer && isOpen} onEdit={(l) => { setLine(l); setLineOpen(true); }} onAdd={() => { setLine(null); setLineOpen(true); }} />
+          ) : (
+            <button type="button" className="detail__plan-empty" onClick={() => { setLine(null); setLineOpen(true); }}>
+              Break the target into what it covers <ChevronRight aria-hidden />
+            </button>
+          )}
+        </section>
+      )}
+
+      {(tasks.length > 0 || (isOpen && stage !== 'invited')) && (
+        <section className="screen-section" aria-labelledby="pact-tasks">
+          <SectionHeading id="pact-tasks" title={`Tasks${tasks.length ? ` · ${tasks.filter((t) => t.status === 'done').length}/${tasks.length} done` : ''}`} />
+          <TaskList pact={pact} tasks={tasks} meId={me} onOpen={(t) => (stage === 'invited' ? undefined : setTask(t))} onAdd={isOpen && stage !== 'invited' ? () => setAddTaskOpen(true) : undefined} />
+        </section>
+      )}
+
+      <section className="screen-section" aria-labelledby="pact-group">
+        <SectionHeading id="pact-group" title="Your group" />
+        <ul className="detail__people" aria-label="People in this Pact">
+          {joined.map((m) => (
+            <li key={m.userId}>
+              <button type="button" className={`person ${selected === m.userId ? 'is-selected' : ''}`} onClick={() => setSelected(selected === m.userId ? null : m.userId)} aria-pressed={selected === m.userId}>
+                <Avatar userId={m.userId} size="md" accent accentColor={colorOf(pact, m.userId)} label={false} />
+                <span className="person__name">{name(m.userId)}</span>
+                <span className="person__amount num">{m.contributed ? formatNairaCompact(m.contributed) : m.participation === 'task' ? 'Task' : 'None yet'}</span>
+              </button>
+            </li>
+          ))}
+          {invited.map((m) => (
+            <li key={m.userId}>
+              <span className="person is-pending">
+                <Avatar userId={m.userId} size="md" pending label={false} />
+                <span className="person__name">{getUser(m.userId).name}</span>
+                <span className="person__amount">Invited</span>
+              </span>
+            </li>
+          ))}
+        </ul>
+      </section>
 
       {isOpen && (
         <div className="detail__rule">
@@ -235,7 +302,6 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
             {pact.missedGoalPolicy === 'refund'
               ? `by ${formatDate(pact.deadline, { month: 'short', day: 'numeric' })}, everyone is refunded automatically on ${formatDate(addDaysIso(pact.deadline, MISSED_GOAL_GRACE_DAYS), { month: 'short', day: 'numeric' })}.`
               : `by ${formatDate(pact.deadline, { month: 'short', day: 'numeric' })}, what was raised is released to ${organizer}.`}
-            {myContribution > 0 && <> You’ve put in <span className="num">{formatNaira(myContribution)}</span>.</>}
           </p>
         </div>
       )}
@@ -253,7 +319,7 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
             </AnimatePresence>
           </ul>
         ) : (
-          <p className="detail__empty">Contributions and new members will show up here.</p>
+          <p className="detail__empty">{stage === 'invited' ? 'Join to see what the group has been up to.' : 'Your Pact activity will appear here.'}</p>
         )}
       </section>
 
@@ -263,12 +329,21 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
             <span className="menu__icon tint--sky"><UserPlus /></span>
             <span className="menu__text"><span className="menu__title">Invite people</span></span>
           </button>
+          {isOrganizer && s.remaining > 0 && (
+            <button type="button" className="menu__row" onClick={() => { setMenuOpen(false); setSplitOpen(true); }}>
+              <span className="menu__icon tint--mint"><Divide /></span>
+              <span className="menu__text">
+                <span className="menu__title">Split the rest</span>
+                <span className="menu__sub">Ask everyone contributing for an equal share of what’s left</span>
+              </span>
+            </button>
+          )}
           {isOrganizer && (
-            <button type="button" className="menu__row" onClick={() => run(async () => { const r = await cmd.nudge.mutateAsync(); return r; }, 'Reminder sent')}>
+            <button type="button" className="menu__row" onClick={() => run(() => cmd.nudge.mutateAsync(), 'Reminder sent')}>
               <span className="menu__icon tint--sun"><BellRing /></span>
               <span className="menu__text">
                 <span className="menu__title">Remind people</span>
-                <span className="menu__sub">Everyone who hasn’t contributed yet</span>
+                <span className="menu__sub">Everyone who hasn’t added anything yet</span>
               </span>
             </button>
           )}
@@ -281,7 +356,7 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
               </span>
             </button>
           ) : (
-            myContribution === 0 && (
+            (mine?.contributed ?? 0) === 0 && (
               <button type="button" className="menu__row menu__row--danger" onClick={() => run(() => cmd.leave.mutateAsync().then(() => navigate('/app/home')), 'You left the Pact')}>
                 <span className="menu__icon tint--coral"><LogOut /></span>
                 <span className="menu__text"><span className="menu__title">Leave this Pact</span></span>
@@ -290,6 +365,12 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
           )}
         </div>
       </Modal>
+
+      <ParticipationSheet pact={pact} open={participationOpen} onClose={() => setParticipationOpen(false)} current={mine?.participation ?? null} />
+      <TaskSheet pact={pact} task={task ? tasks.find((t) => t.id === task.id) ?? null : null} meId={me} onClose={() => setTask(null)} />
+      <AddTaskSheet pact={pact} meId={me} open={addTaskOpen} onClose={() => setAddTaskOpen(false)} />
+      <BudgetLineSheet pact={pact} line={line} open={lineOpen} onClose={() => setLineOpen(false)} />
+      <SplitSheet pact={pact} open={splitOpen} onClose={() => setSplitOpen(false)} />
 
       <PinSheet
         open={cancelOpen}

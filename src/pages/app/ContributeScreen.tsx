@@ -11,7 +11,7 @@ import { AnimatedNumber } from '../../components/pact/AnimatedNumber';
 import { HoldButton } from '../../components/ui/HoldButton';
 import { getUser } from '../../data/users';
 import { useRef, useState } from 'react';
-import { Navigate, useNavigate, useParams } from 'react-router-dom';
+import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { AmountInput } from '../../components/ui/AmountInput';
 import { Button } from '../../components/ui/Button';
 import { Segmented } from '../../components/ui/Segmented';
@@ -44,7 +44,9 @@ export function ContributeScreen() {
   const navigate = useNavigate();
   const reduce = useReducedMotion();
   const pact = q.data?.pact;
-  const [amount, setAmount] = useState<number | null>(null);
+  const [params] = useSearchParams();
+  // "Cover the rest" and "Add your share" arrive with an amount.
+  const [amount, setAmount] = useState<number | null>(() => (Number(params.get('amount')) > 0 ? Math.floor(Number(params.get('amount'))) : null));
   const [choice, setChoice] = useState<Choice | null>(null);
   const [phase, setPhase] = useState<'enter' | 'done'>('enter');
   const [pinOpen, setPinOpen] = useState(false);

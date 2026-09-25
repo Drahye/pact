@@ -70,4 +70,7 @@ export const slugify = (title: string) =>
 export const sharesOf = (pact: Pact) =>
   pact.members
     .filter((m) => m.contributed > 0)
-    .map((m) => ({ id: m.userId, color: getUser(m.userId).color, value: m.contributed, label: getUser(m.userId).name }));
+    .map((m) => ({ id: m.userId, color: colorOf(pact, m.userId), value: m.contributed, label: getUser(m.userId).name }));
+
+/** A person's colour inside a Pact (unique within the Pact), or their own colour. */
+export const colorOf = (pact: Pact, userId: string) => pact.members.find((m) => m.userId === userId)?.color ?? getUser(userId).color;

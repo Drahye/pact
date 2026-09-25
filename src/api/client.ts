@@ -95,3 +95,29 @@ export async function api<T>(method: string, path: string, body?: unknown, opts:
 /** New key per user intent; reuse it when retrying the same intent. */
 export const newIdempotencyKey = () =>
   typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+/** Uploads raw image bytes (the server checks the actual content, not the name or type). */
+export async function uploadPhoto<T>(path: string, file: File): Promise<T> {
+  const send = () =>
+    fetch(`${BASE}${path}`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'X-Pact-Client': 'web', 'Content-Type': file.type || 'application/octet-stream', ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}) },
+      body: file,
+    });
+  let res = await send().catch(() => null);
+  if (res?.status === 401 && (await refreshSession()) && accessToken) res = await send().catch(() => null);
+  if (!res) throw new ApiError(0, 'network', 'The upload didn’t go through. Check your connection and try again.');
+  const data = await res.json().catch(() => null);
+  if (!res.ok) throw new ApiError(res.status, data?.error?.code ?? 'upload_failed', data?.error?.message ?? 'That photo couldn’t be added.');
+  return data as T;
+}
+
+/** Fetches a private image with the session. */
+export async function fetchPhoto(path: string): Promise<Blob> {
+  const get = () => fetch(`${BASE}${path}`, { credentials: 'include', headers: { 'X-Pact-Client': 'web', ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}) } });
+  let res = await get();
+  if (res.status === 401 && (await refreshSession()) && accessToken) res = await get();
+  if (!res.ok) throw new ApiError(res.status, 'photo_unavailable', 'This photo isn’t available.');
+  return res.blob();
+}

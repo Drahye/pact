@@ -130,3 +130,10 @@
 .activity__glyph--refunded,
 .activity__glyph--cancelled,
 .activity__glyph--left { background: var(--ink-200); color: var(--ink-900); }
+
+.activity__glyph--committed,
+.activity__glyph--task_claimed,
+.activity__glyph--task_added { background: var(--lilac-400); color: var(--white); }
+.activity__glyph--task_done { background: var(--color-accent); color: var(--color-on-accent); }
+.activity__glyph--split_requested { background: var(--sun-400); color: var(--ink-900); }
+.activity__glyph--memory_added { background: var(--pink-400); color: var(--white); }

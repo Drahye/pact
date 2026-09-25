@@ -17,6 +17,7 @@ import { AppError, badRequest, conflict, notFound, unauthorized } from './lib/er
 import * as auth from './modules/auth.js';
 import { reconcile } from './modules/ledger.js';
 import * as pacts from './modules/pacts.js';
+import * as plan from './modules/plan.js';
 import * as users from './modules/users.js';
 import * as wallet from './modules/wallet.js';
 import { handleWebhook } from './modules/webhooks.js';
@@ -103,7 +104,7 @@ export async function buildApp({ config, db, provider, sms, now = () => new Date
     origin: (origin, cb) => cb(null, !origin || origins.has(origin)),
     credentials: true,
     allowedHeaders: ['Content-Type', 'Authorization', 'Idempotency-Key', 'X-Pact-Client', 'X-Request-Id'],
-    methods: ['GET', 'POST', 'PATCH', 'DELETE'],
+    methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE'],
     maxAge: 600,
   });
   await app.register(cookie, { secret: config.HASH_SECRET });
@@ -376,7 +377,49 @@ export async function buildApp({ config, db, provider, sms, now = () => new Date
           const body = parse(C.InviteBody, req.body);
           return pacts.inviteMore(ctx, req.userId, req.params.id, body.userIds, body.phones);
         });
-        priv.post<{ Params: { id: string } }>('/pacts/:id/accept', async (req) => pacts.acceptInvite(ctx, req.userId, req.params.id));
+        priv.post<{ Params: { id: string } }>('/pacts/:id/accept', async (req) =>
+          pacts.acceptInvite(ctx, req.userId, req.params.id, parse(C.ParticipationBody.partial(), req.body).participation ?? null),
+        );
+        priv.patch<{ Params: { id: string } }>('/pacts/:id/participation', strict(20), async (req) =>
+          plan.setParticipation(ctx, req.userId, req.params.id, parse(C.ParticipationBody, req.body).participation),
+        );
+        priv.post<{ Params: { id: string } }>('/pacts/:id/split-rest', strict(5), async (req) => plan.splitRest(ctx, req.userId, req.params.id));
+
+        /* ---------- the plan: budget, tasks, memory */
+        priv.post<{ Params: { id: string } }>('/pacts/:id/budget', strict(30), async (req) => plan.addBudgetItem(ctx, req.userId, req.params.id, parse(C.BudgetItemBody, req.body)));
+        priv.patch<{ Params: { id: string; itemId: string } }>('/pacts/:id/budget/:itemId', strict(30), async (req) =>
+          plan.updateBudgetItem(ctx, req.userId, req.params.id, req.params.itemId, parse(C.BudgetItemPatchBody, req.body)),
+        );
+        priv.delete<{ Params: { id: string; itemId: string } }>('/pacts/:id/budget/:itemId', strict(30), async (req) =>
+          plan.removeBudgetItem(ctx, req.userId, req.params.id, req.params.itemId),
+        );
+        priv.post<{ Params: { id: string } }>('/pacts/:id/tasks', strict(30), async (req) => plan.createTask(ctx, req.userId, req.params.id, parse(C.TaskCreateBody, req.body)));
+        priv.patch<{ Params: { id: string; taskId: string } }>('/pacts/:id/tasks/:taskId', strict(60), async (req) =>
+          plan.updateTask(ctx, req.userId, req.params.id, req.params.taskId, parse(C.TaskPatchBody, req.body)),
+        );
+        priv.delete<{ Params: { id: string; taskId: string } }>('/pacts/:id/tasks/:taskId', strict(30), async (req) =>
+          plan.deleteTask(ctx, req.userId, req.params.id, req.params.taskId),
+        );
+        priv.put<{ Params: { id: string } }>('/pacts/:id/memory', strict(20), async (req) => plan.saveMemory(ctx, req.userId, req.params.id, parse(C.MemoryBody, req.body)));
+        priv.get<{ Params: { id: string; photoId: string } }>('/pacts/:id/memory/photos/:photoId', async (req, reply) => {
+          const photo = await plan.getPhoto(ctx, req.userId, req.params.id, req.params.photoId);
+          return reply
+            .header('Content-Type', photo.mime)
+            .header('Cache-Control', 'private, max-age=3600')
+            .header('Content-Disposition', 'inline')
+            .header('X-Content-Type-Options', 'nosniff')
+            .send(photo.data);
+        });
+        priv.delete<{ Params: { id: string; photoId: string } }>('/pacts/:id/memory/photos/:photoId', strict(20), async (req) =>
+          plan.deletePhoto(ctx, req.userId, req.params.id, req.params.photoId),
+        );
+        // Photo uploads: raw image bytes, only three image types, 8 MB before re-encoding.
+        await priv.register(async (uploads) => {
+          uploads.addContentTypeParser(['image/jpeg', 'image/png', 'image/webp'], { parseAs: 'buffer', bodyLimit: 8 * 1024 * 1024 }, (_req, body, done) => done(null, body));
+          uploads.post<{ Params: { id: string } }>('/pacts/:id/memory/photos', { bodyLimit: 8 * 1024 * 1024, ...strict(12, 10) }, async (req) =>
+            plan.addPhoto(ctx, req.userId, req.params.id, req.body as Buffer),
+          );
+        });
         priv.post<{ Params: { id: string } }>('/pacts/:id/leave', async (req) => {
           await pacts.leave(ctx, req.userId, req.params.id);
           return { ok: true };
@@ -388,7 +431,9 @@ export async function buildApp({ config, db, provider, sms, now = () => new Date
           idempotent(req, reply, `cancel:${req.params.id}`, () => pacts.cancel(ctx, req.userId, req.params.id, parse(C.PinBody, req.body).pin, meta(req))),
         );
         priv.post<{ Params: { id: string } }>('/pacts/:id/nudge', strict(5), async (req) => pacts.nudge(ctx, req.userId, req.params.id));
-        priv.post<{ Params: { code: string } }>('/invites/:code/join', strict(20), async (req) => pacts.joinByCode(ctx, req.userId, req.params.code));
+        priv.post<{ Params: { code: string } }>('/invites/:code/join', strict(20), async (req) =>
+          pacts.joinByCode(ctx, req.userId, req.params.code, parse(C.ParticipationBody.partial(), req.body).participation ?? null),
+        );
 
         priv.get('/activity', async (req) => pacts.feed(ctx, req.userId));
         priv.get('/people/recent', async (req) => pacts.recentPeople(ctx, req.userId));

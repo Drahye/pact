@@ -30,8 +30,14 @@ export async function notify(
   await enqueue(q, 'push.send', { userIds: unique, title: n.title, body: n.body, pactId: n.pactId ?? null });
 }
 
-export async function recordActivity(q: Queryable, a: { pactId: string; actorId: string | null; type: string; amount?: number | null }) {
-  await q.query('INSERT INTO activities (pact_id, actor_id, type, amount) VALUES ($1, $2, $3, $4)', [a.pactId, a.actorId, a.type, a.amount ?? null]);
+export async function recordActivity(q: Queryable, a: { pactId: string; actorId: string | null; type: string; amount?: number | null; detail?: string | null }) {
+  await q.query('INSERT INTO activities (pact_id, actor_id, type, amount, detail) VALUES ($1, $2, $3, $4, $5)', [
+    a.pactId,
+    a.actorId,
+    a.type,
+    a.amount ?? null,
+    a.detail?.slice(0, 120) ?? null,
+  ]);
 }
 
 /**

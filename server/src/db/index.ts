@@ -16,6 +16,12 @@ export interface Queryable {
 export interface Db extends Queryable {
   /** Runs `fn` in a transaction. Serialization failures and deadlocks are retried. */
   tx<T>(fn: (q: Queryable) => Promise<T>): Promise<T>;
+  /**
+   * Runs `fn` in a transaction as the restricted `pact_app` role with row-level security
+   * scoped to `userId`. Anything the policies don't allow is invisible or rejected, even
+   * if the calling code forgets a check.
+   */
+  asUser<T>(userId: string, fn: (q: Queryable) => Promise<T>): Promise<T>;
   close(): Promise<void>;
   driver: 'pglite' | 'pg';
 }
@@ -44,7 +50,7 @@ async function withRetry<T>(fn: () => Promise<T>, attempts = 3): Promise<T> {
   }
 }
 
-async function createPglite(dir: string | undefined): Promise<Db> {
+async function createPglite(dir: string | undefined): Promise<Omit<Db, 'asUser'>> {
   const { PGlite } = await import('@electric-sql/pglite');
   if (dir) (await import('node:fs')).mkdirSync(dir, { recursive: true });
   const pg: PGlite = new PGlite(dir, {
@@ -76,7 +82,7 @@ async function createPglite(dir: string | undefined): Promise<Db> {
   };
 }
 
-async function createPg(url: string, max: number): Promise<Db> {
+async function createPg(url: string, max: number): Promise<Omit<Db, 'asUser'>> {
   const pgMod = await import('pg');
   const { Pool, types } = pgMod.default ?? pgMod;
   types.setTypeParser(DATE_OID, (v: string) => v);
@@ -120,8 +126,24 @@ async function createPg(url: string, max: number): Promise<Db> {
   };
 }
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function withUserScope(db: Omit<Db, 'asUser'>): Db {
+  return {
+    ...db,
+    asUser(userId, fn) {
+      if (!UUID_RE.test(userId)) throw new Error('asUser needs a user id');
+      return db.tx(async (q) => {
+        await q.query('SET LOCAL ROLE pact_app');
+        await q.query(`SELECT set_config('pact.user_id', $1, true)`, [userId]);
+        return fn(q);
+      });
+    },
+  };
+}
+
 export async function createDb(config: Pick<Config, 'DATABASE_URL' | 'PGLITE_DIR' | 'DB_POOL_MAX' | 'isTest'>): Promise<Db> {
-  if (config.DATABASE_URL) return createPg(config.DATABASE_URL, config.DB_POOL_MAX);
+  if (config.DATABASE_URL) return withUserScope(await createPg(config.DATABASE_URL, config.DB_POOL_MAX));
   // Tests run on a fresh in-memory database each time.
-  return createPglite(config.isTest ? undefined : config.PGLITE_DIR);
+  return withUserScope(await createPglite(config.isTest ? undefined : config.PGLITE_DIR));
 }

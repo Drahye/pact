@@ -1,11 +1,13 @@
-import { Cake, Heart, House, PartyPopper, Plane, ShieldPlus, Sparkles } from 'lucide-react';
+import { Cake, Gift, Heart, House, PartyPopper, Plane, ShieldPlus, Sparkles, UtensilsCrossed } from 'lucide-react';
 import type { ReactNode } from 'react';
 import type { PactCategory } from '../../data/types';
 import { categoryLabel } from '../../lib/pact';
 import './category.css';
 
 export const categoryMeta: Record<PactCategory, { tint: string; icon: ReactNode }> = {
-  gift: { tint: 'coral', icon: <Cake /> },
+  birthday: { tint: 'coral', icon: <Cake /> },
+  gift: { tint: 'pink', icon: <Gift /> },
+  dinner: { tint: 'sun', icon: <UtensilsCrossed /> },
   trip: { tint: 'sky', icon: <Plane /> },
   event: { tint: 'lilac', icon: <PartyPopper /> },
   household: { tint: 'sun', icon: <House /> },

@@ -95,11 +95,13 @@ src/                   web app (/app), marketing site (/), style guide, legal pa
 
 | Threat | Control |
 | --- | --- |
+| Broken access control | Every protected route checks membership or ownership in code. Underneath, Postgres row-level security runs person-scoped requests as a restricted `pact_app` role that can only read and write rows the policies allow and has no access to money, credential or audit tables. The adversarial suite in `server/test/security.test.ts` attacks both layers. |
 | Account takeover | SMS OTP (hashed, 5-minute expiry, 5 attempts, per-number and per-IP limits). Refresh tokens are opaque, hashed at rest and rotated on every use; replaying an old one revokes the session. Sessions are listed and revocable per device. |
-| Unauthorised payments | Every movement out of a wallet needs the 4-digit PIN (scrypt-hashed, weak PINs refused, locked for 30 minutes after 5 wrong attempts, owner notified). |
+| Unauthorised payments | Every movement out of a wallet needs the 4-digit PIN (scrypt-hashed, weak PINs refused, locked for 30 minutes after 5 wrong attempts, owner notified). A forgotten PIN is reset with a fresh SMS code; other devices are signed out and withdrawals pause for 24 hours. |
 | Double charges | `Idempotency-Key` on every money route; retries replay the first response. Unique references at the ledger layer as a second line. |
 | Forged payment events | Webhooks verified with HMAC-SHA512 over the raw body using constant-time comparison; events are stored and deduplicated before processing. |
 | Fraudulent withdrawals | Payouts only to bank accounts whose resolved name matches the verified profile. Releasing Pact funds requires BVN verification. |
+| Malicious uploads | Memory photos are identified by their content (not name or declared type), limited to JPEG, PNG and WebP, re-encoded to WebP, resized, stripped of all metadata including GPS, capped at six per Pact, and served only to members through the API. |
 | Data exposure | Bank account numbers and BVNs encrypted with AES-256-GCM; BVN uniqueness enforced with a keyed hash. Logs redact tokens, PINs, account numbers and cookies. Non-members get a 404 for Pacts, so ids can't be probed. |
 | Web attacks | Strict CSP, HSTS, `frame-ancestors 'none'`, CORS allowlist, 64 KB body limit, all input validated with Zod, parameterised SQL only. Access tokens never touch storage; the refresh cookie is httpOnly, Secure and SameSite=Strict, and refresh requires a custom header. |
 | Misconfiguration | Production refuses to boot with development secrets, without Postgres, with the sandbox provider, or with SMS codes going to logs. |

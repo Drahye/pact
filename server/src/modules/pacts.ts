@@ -1,5 +1,5 @@
-import type { ActivityDTO, CreatePactInput, PactDTO, PactPreviewDTO, PersonDTO, WithPeople } from '../../../shared/contracts.js';
-import { SMS_INVITES_PER_DAY, MAX_PACT_DAYS, MAX_PACT_MEMBERS, MISSED_GOAL_GRACE_DAYS, NUDGE_COOLDOWN_HOURS, TIER_LIMITS, type KycTier } from '../../../shared/policy.js';
+import type { ActivityDTO, BudgetItemDTO, CreatePactInput, PactDTO, PactPreviewDTO, Participation, PersonDTO, TaskDTO, WithPeople } from '../../../shared/contracts.js';
+import { MAX_PACT_TARGET, MIN_PACT_TARGET, SMS_INVITES_PER_DAY, MAX_PACT_DAYS, MAX_PACT_MEMBERS, MISSED_GOAL_GRACE_DAYS, NUDGE_COOLDOWN_HOURS, TIER_LIMITS, type KycTier } from '../../../shared/policy.js';
 import type { Ctx, ReqMeta } from '../context.js';
 import type { Queryable } from '../db/index.js';
 import { randomCode } from '../lib/crypto.js';
@@ -38,6 +38,9 @@ interface MemberRow {
   status: 'invited' | 'joined' | 'left';
   contributed: number;
   joined_at: Date | null;
+  participation: Participation | null;
+  color: string | null;
+  requested_amount: number | null;
 }
 
 const personCols = `id, first_name, last_name, color, tint, photo_url`;
@@ -57,25 +60,71 @@ export async function peopleByIds(q: Queryable, ids: string[]): Promise<PersonDT
   return r.rows.map(toPerson);
 }
 
-/** Builds DTOs for many Pacts with two queries, whatever the count. */
+export const PALETTE = ['#3dd68c', '#ff7a5c', '#4da3ff', '#9b7bff', '#ffc53d', '#ff6fb5', '#22b8a6', '#ff9f43'];
+
+/** Someone's colour inside a Pact: their own if it's free there, otherwise the first free one. */
+export async function colorFor(q: Queryable, pactId: string, userId: string): Promise<string> {
+  const [mine, taken] = await Promise.all([
+    q.query<{ color: string }>('SELECT color FROM users WHERE id = $1', [userId]),
+    q.query<{ color: string }>(`SELECT color FROM pact_members WHERE pact_id = $1 AND user_id <> $2 AND status <> 'left' AND color IS NOT NULL`, [pactId, userId]),
+  ]);
+  const used = new Set(taken.rows.map((r) => r.color));
+  const own = mine.rows[0]?.color ?? PALETTE[0];
+  if (!used.has(own)) return own;
+  return PALETTE.find((c) => !used.has(c)) ?? own;
+}
+
+/** Raised money fills budget lines in order, so the plan shows which parts are covered. */
+export function allocate(raised: number, items: { id: string; name: string; amount: number; position: number }[]): BudgetItemDTO[] {
+  let left = raised;
+  return [...items]
+    .sort((a, b) => a.position - b.position)
+    .map((i) => {
+      const funded = Math.min(i.amount, Math.max(0, left));
+      left -= funded;
+      return { id: i.id, name: i.name, amount: i.amount, funded, position: i.position };
+    });
+}
+
+/**
+ * Builds DTOs for many Pacts with a fixed number of queries, whatever the count.
+ * Runs under row-level security (db.asUser), so it can only read what the viewer may see.
+ */
 async function hydrate(q: Queryable, rows: PactRow[], viewerId: string): Promise<PactDTO[]> {
   if (!rows.length) return [];
   const ids = rows.map((p) => p.id);
-  const [members, pools, invites] = await Promise.all([
+  const [members, invites, budget, tasks, memories, photos] = await Promise.all([
     q.query<MemberRow>(
-      `SELECT pact_id, user_id, role, status, contributed, joined_at FROM pact_members
+      `SELECT pact_id, user_id, role, status, contributed, joined_at, participation, color, requested_amount FROM pact_members
         WHERE pact_id = ANY($1::uuid[]) AND status <> 'left' ORDER BY joined_at NULLS LAST, created_at`,
       [ids],
     ),
-    q.query<{ id: string; balance: number }>('SELECT id, balance FROM accounts WHERE id = ANY($1::uuid[])', [rows.map((p) => p.account_id)]),
-    q.query<{ pact_id: string; n: number }>(
-      `SELECT pact_id, COUNT(*)::int AS n FROM pact_phone_invites WHERE pact_id = ANY($1::uuid[]) AND claimed_at IS NULL GROUP BY pact_id`,
+    q.query<{ pact_id: string; n: number }>(`SELECT id AS pact_id, pact_pending_invites(id) AS n FROM unnest($1::uuid[]) AS id`, [ids]),
+    q.query<{ id: string; pact_id: string; name: string; amount: number; position: number }>(
+      `SELECT id, pact_id, name, amount, position FROM budget_items WHERE pact_id = ANY($1::uuid[]) ORDER BY position, created_at`,
       [ids],
     ),
+    q.query<{ id: string; pact_id: string; title: string; budget_item_id: string | null; assignee_id: string | null; status: TaskDTO['status']; created_by: string; created_at: Date; completed_at: Date | null }>(
+      `SELECT id, pact_id, title, budget_item_id, assignee_id, status, created_by, created_at, completed_at FROM tasks
+        WHERE pact_id = ANY($1::uuid[]) ORDER BY created_at`,
+      [ids],
+    ),
+    q.query<{ pact_id: string; note: string | null; happened_on: string | null; updated_at: Date }>(
+      `SELECT pact_id, note, happened_on, updated_at FROM pact_memories WHERE pact_id = ANY($1::uuid[])`,
+      [ids],
+    ),
+    q.query<{ id: string; pact_id: string }>(`SELECT id, pact_id FROM memory_photos WHERE pact_id = ANY($1::uuid[]) ORDER BY created_at`, [ids]),
   ]);
-  const byPact = new Map<string, MemberRow[]>();
-  for (const m of members.rows) byPact.set(m.pact_id, [...(byPact.get(m.pact_id) ?? []), m]);
-  const pool = new Map(pools.rows.map((a) => [a.id, a.balance]));
+  const group = <T extends { pact_id: string }>(list: T[]) => {
+    const m = new Map<string, T[]>();
+    for (const x of list) m.set(x.pact_id, [...(m.get(x.pact_id) ?? []), x]);
+    return m;
+  };
+  const byPact = group(members.rows);
+  const budgetBy = group(budget.rows);
+  const tasksBy = group(tasks.rows);
+  const photosBy = group(photos.rows);
+  const memoryBy = new Map(memories.rows.map((m) => [m.pact_id, m]));
   const pending = new Map(invites.rows.map((i) => [i.pact_id, i.n]));
 
   return rows.map((p) => {
@@ -86,7 +135,9 @@ async function hydrate(q: Queryable, rows: PactRow[], viewerId: string): Promise
     // Equal split across everyone in or invited (rounded up to the naira).
     const heads = ms.length + (pending.get(p.id) ?? 0);
     const share = Math.ceil(p.target_amount / Math.max(1, heads, joined) / 100) * 100;
-    const suggested = me ? Math.min(remaining, Math.max(0, share - me.contributed)) : 0;
+    const ask = me?.requested_amount ? Math.max(0, me.requested_amount) : 0;
+    const suggested = me ? Math.min(remaining, ask || Math.max(0, share - me.contributed)) : 0;
+    const memory = memoryBy.get(p.id);
     return {
       id: p.id,
       slug: p.slug,
@@ -96,7 +147,8 @@ async function hydrate(q: Queryable, rows: PactRow[], viewerId: string): Promise
       category: p.category,
       target: p.target_amount,
       raised: p.raised_amount,
-      poolBalance: pool.get(p.account_id) ?? 0,
+      // The pool holds everything raised until it is released or refunded.
+      poolBalance: p.status === 'open' || p.status === 'funded' ? p.raised_amount : 0,
       deadline: p.deadline,
       createdAt: p.created_at.toISOString(),
       organizerId: p.organizer_id,
@@ -105,21 +157,53 @@ async function hydrate(q: Queryable, rows: PactRow[], viewerId: string): Promise
       splitMode: p.split_mode,
       fundedAt: p.funded_at?.toISOString() ?? null,
       closedAt: p.closed_at?.toISOString() ?? null,
-      members: ms.map((m) => ({ userId: m.user_id, role: m.role, status: m.status, contributed: m.contributed, joinedAt: m.joined_at?.toISOString() ?? null })),
+      members: ms.map((m) => ({
+        userId: m.user_id,
+        role: m.role,
+        status: m.status,
+        contributed: m.contributed,
+        joinedAt: m.joined_at?.toISOString() ?? null,
+        participation: m.participation,
+        color: m.color ?? PALETTE[0],
+        requestedAmount: m.requested_amount,
+      })),
       pendingPhoneInvites: pending.get(p.id) ?? 0,
+      budget: allocate(p.raised_amount, budgetBy.get(p.id) ?? []),
+      tasks: (tasksBy.get(p.id) ?? []).map((t) => ({
+        id: t.id,
+        title: t.title,
+        budgetItemId: t.budget_item_id,
+        assigneeId: t.assignee_id,
+        status: t.status,
+        createdBy: t.created_by,
+        createdAt: t.created_at.toISOString(),
+        completedAt: t.completed_at?.toISOString() ?? null,
+      })),
+      memory: memory || photosBy.has(p.id)
+        ? { note: memory?.note ?? null, happenedOn: memory?.happened_on ?? null, photoIds: (photosBy.get(p.id) ?? []).map((x) => x.id), updatedAt: (memory?.updated_at ?? p.created_at).toISOString() }
+        : null,
       viewer: { role: me?.role ?? null, status: me?.status ?? null, suggestedShare: suggested },
     };
   });
 }
 
 async function withPeople<T>(q: Queryable, data: T, pacts: PactDTO[], extraIds: (string | null)[] = []): Promise<WithPeople<T>> {
-  const ids = [...pacts.flatMap((p) => p.members.map((m) => m.userId)), ...pacts.map((p) => p.organizerId), ...(extraIds.filter(Boolean) as string[])];
+  const ids = [
+    ...pacts.flatMap((p) => [...p.members.map((m) => m.userId), ...p.tasks.map((t) => t.assigneeId ?? '')]),
+    ...pacts.map((p) => p.organizerId),
+    ...(extraIds.filter(Boolean) as string[]),
+  ];
   return { data, people: await peopleByIds(q, ids) };
 }
 
-/** Loads a Pact the viewer may see. Non-members get a 404, not a 403, so ids can't be probed. */
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Loads a Pact the viewer may see, for service-context commands. Non-members get a
+ * 404, not a 403, so ids can't be probed.
+ */
 async function loadVisible(q: Queryable, pactId: string, viewerId: string, lock = false): Promise<{ pact: PactRow; member: MemberRow | null }> {
-  if (!/^[0-9a-f-]{36}$/i.test(pactId)) throw notFound('Pact');
+  if (!UUID.test(pactId)) throw notFound('Pact');
   const p = await q.query<PactRow>(`SELECT * FROM pacts WHERE id = $1 ${lock ? 'FOR UPDATE' : ''}`, [pactId]);
   if (!p.rows[0]) throw notFound('Pact');
   const m = await q.query<MemberRow>('SELECT * FROM pact_members WHERE pact_id = $1 AND user_id = $2', [pactId, viewerId]);
@@ -140,53 +224,67 @@ const slugify = (title: string) =>
    Queries
    -------------------------------------------------------------------------- */
 
+/* All reads below run under row-level security as the viewer (db.asUser). */
+
 export async function listPacts(ctx: Ctx, userId: string) {
-  const r = await ctx.db.query<PactRow>(
-    `SELECT p.* FROM pacts p JOIN pact_members m ON m.pact_id = p.id
-      WHERE m.user_id = $1 AND m.status IN ('joined', 'invited')
-      ORDER BY (p.status = 'open') DESC, p.deadline ASC LIMIT 200`,
-    [userId],
-  );
-  const pacts = await hydrate(ctx.db, r.rows, userId);
-  return withPeople(ctx.db, pacts, pacts);
+  return ctx.db.asUser(userId, async (q) => {
+    const r = await q.query<PactRow>(
+      `SELECT p.* FROM pacts p JOIN pact_members m ON m.pact_id = p.id
+        WHERE m.user_id = $1 AND m.status IN ('joined', 'invited')
+        ORDER BY (p.status = 'open') DESC, p.deadline ASC LIMIT 200`,
+      [userId],
+    );
+    const pacts = await hydrate(q, r.rows, userId);
+    return withPeople(q, pacts, pacts);
+  });
 }
 
 export async function getPact(ctx: Ctx, userId: string, pactId: string) {
-  const { pact } = await loadVisible(ctx.db, pactId, userId);
-  const [dto] = await hydrate(ctx.db, [pact], userId);
-  const acts = await activitiesFor(ctx.db, [pactId], 50);
-  return withPeople(ctx.db, { pact: dto, activities: acts }, [dto], acts.map((a) => a.actorId));
+  if (!UUID.test(pactId)) throw notFound('Pact');
+  return ctx.db.asUser(userId, async (q) => {
+    const r = await q.query<PactRow>('SELECT * FROM pacts WHERE id = $1', [pactId]);
+    if (!r.rows[0]) throw notFound('Pact');
+    const [dto] = await hydrate(q, [r.rows[0]], userId);
+    if (!dto.viewer.status || dto.viewer.status === 'left') throw notFound('Pact');
+    // Invitees see the plan but not the group's activity until they join.
+    const acts = dto.viewer.status === 'joined' ? await activitiesFor(q, [pactId], 50) : [];
+    return withPeople(q, { pact: dto, activities: acts }, [dto], acts.map((a) => a.actorId));
+  });
 }
 
 async function activitiesFor(q: Queryable, pactIds: string[], limit: number): Promise<ActivityDTO[]> {
   if (!pactIds.length) return [];
-  const r = await q.query<{ id: string; pact_id: string; type: ActivityDTO['type']; actor_id: string | null; amount: number | null; created_at: Date }>(
-    `SELECT id, pact_id, type, actor_id, amount, created_at FROM activities
+  const r = await q.query<{ id: string; pact_id: string; type: ActivityDTO['type']; actor_id: string | null; amount: number | null; detail: string | null; created_at: Date }>(
+    `SELECT id, pact_id, type, actor_id, amount, detail, created_at FROM activities
       WHERE pact_id = ANY($1::uuid[]) AND type <> 'nudge' ORDER BY created_at DESC, id LIMIT $2`,
     [pactIds, limit],
   );
-  return r.rows.map((a) => ({ id: a.id, pactId: a.pact_id, type: a.type, actorId: a.actor_id, amount: a.amount, at: a.created_at.toISOString() }));
+  return r.rows.map((a) => ({ id: a.id, pactId: a.pact_id, type: a.type, actorId: a.actor_id, amount: a.amount, detail: a.detail, at: a.created_at.toISOString() }));
 }
 
 export async function feed(ctx: Ctx, userId: string) {
-  const mine = await ctx.db.query<{ pact_id: string }>(`SELECT pact_id FROM pact_members WHERE user_id = $1 AND status = 'joined'`, [userId]);
-  const acts = await activitiesFor(ctx.db, mine.rows.map((r) => r.pact_id), 80);
-  return { data: acts, people: await peopleByIds(ctx.db, acts.map((a) => a.actorId ?? '')) };
+  return ctx.db.asUser(userId, async (q) => {
+    const mine = await q.query<{ pact_id: string }>(`SELECT pact_id FROM pact_members WHERE user_id = $1 AND status = 'joined'`, [userId]);
+    const acts = await activitiesFor(q, mine.rows.map((r) => r.pact_id), 80);
+    return { data: acts, people: await peopleByIds(q, acts.map((a) => a.actorId ?? '')) };
+  });
 }
 
 /** People you've shared a Pact with: the invite picker's suggestions. */
 export async function recentPeople(ctx: Ctx, userId: string): Promise<PersonDTO[]> {
-  const r = await ctx.db.query<Parameters<typeof toPerson>[0] & { last: Date }>(
-    `SELECT u.id, u.first_name, u.last_name, u.color, u.tint, u.photo_url, MAX(p.created_at) AS last
-       FROM pact_members mine
-       JOIN pact_members other ON other.pact_id = mine.pact_id AND other.user_id <> mine.user_id AND other.status = 'joined'
-       JOIN users u ON u.id = other.user_id
-       JOIN pacts p ON p.id = mine.pact_id
-      WHERE mine.user_id = $1 AND mine.status = 'joined'
-      GROUP BY u.id ORDER BY last DESC LIMIT 30`,
-    [userId],
-  );
-  return r.rows.map(toPerson);
+  return ctx.db.asUser(userId, async (q) => {
+    const r = await q.query<Parameters<typeof toPerson>[0] & { last: Date }>(
+      `SELECT u.id, u.first_name, u.last_name, u.color, u.tint, u.photo_url, MAX(p.created_at) AS last
+         FROM pact_members mine
+         JOIN pact_members other ON other.pact_id = mine.pact_id AND other.user_id <> mine.user_id AND other.status = 'joined'
+         JOIN users u ON u.id = other.user_id AND u.status = 'active'
+         JOIN pacts p ON p.id = mine.pact_id
+        WHERE mine.user_id = $1 AND mine.status = 'joined'
+        GROUP BY u.id ORDER BY last DESC LIMIT 30`,
+      [userId],
+    );
+    return r.rows.map(toPerson);
+  });
 }
 
 export async function preview(ctx: Ctx, code: string): Promise<PactPreviewDTO & { id: string }> {
@@ -215,11 +313,17 @@ export async function preview(ctx: Ctx, code: string): Promise<PactPreviewDTO & 
    Commands
    -------------------------------------------------------------------------- */
 
-export async function createPact(ctx: Ctx, userId: string, input: Required<Omit<CreatePactInput, 'note'>> & { note?: string }, meta: ReqMeta) {
+type CreateInput = Omit<Required<CreatePactInput>, 'note' | 'target'> & { note?: string; target?: number };
+
+export async function createPact(ctx: Ctx, userId: string, input: CreateInput, meta: ReqMeta) {
   const today = lagosToday(ctx.now());
   if (input.deadline <= today) throw badRequest('invalid_deadline', 'Choose a date after today.');
   if (input.deadline > addDays(today, MAX_PACT_DAYS)) throw badRequest('invalid_deadline', 'Pacts can run for up to a year.');
-  if (input.target % 100 !== 0) throw badRequest('invalid_target', 'Use whole naira for the goal.');
+  // With a budget, the target is the budget total. The server works it out; the client's number is ignored.
+  const target = input.budget.length ? input.budget.reduce((sum, b) => sum + b.amount, 0) : input.target!;
+  if ([...input.budget.map((b) => b.amount), target].some((a) => a % 100 !== 0)) throw badRequest('invalid_target', 'Use whole naira amounts.');
+  if (target < MIN_PACT_TARGET) throw badRequest('invalid_target', 'The target needs to be at least ₦1,000.');
+  if (target > MAX_PACT_TARGET) throw badRequest('invalid_target', 'That target is higher than PACT allows.');
   const phones = [...new Set(input.invitePhones.map((p) => normalizeNgPhone(p)))];
   if (phones.includes(null)) throw badRequest('invalid_phone', 'One of the phone numbers isn’t a valid Nigerian mobile number.');
 
@@ -236,12 +340,21 @@ export async function createPact(ctx: Ctx, userId: string, input: Required<Omit<
     await q.query(
       `INSERT INTO pacts (id, slug, invite_code, title, note, category, target_amount, deadline, organizer_id, account_id, missed_goal_policy, split_mode)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
-      [pactId, slug, randomCode(8), input.title.trim(), input.note?.trim() || null, input.category, input.target, input.deadline, userId, accountId, input.missedGoalPolicy, input.splitMode],
+      [pactId, slug, randomCode(8), input.title.trim(), input.note?.trim() || null, input.category, target, input.deadline, userId, accountId, input.missedGoalPolicy, input.splitMode],
     );
-    await q.query(`INSERT INTO pact_members (pact_id, user_id, role, status, joined_at) VALUES ($1, $2, 'organizer', 'joined', now())`, [pactId, userId]);
+    await q.query(
+      `INSERT INTO pact_members (pact_id, user_id, role, status, joined_at, participation, color) VALUES ($1, $2, 'organizer', 'joined', now(), 'both', $3)`,
+      [pactId, userId, await colorFor(q, pactId, userId)],
+    );
+    for (const [i, b] of input.budget.entries()) {
+      await q.query('INSERT INTO budget_items (pact_id, name, amount, position, created_by) VALUES ($1, $2, $3, $4, $5)', [pactId, b.name, b.amount, i, userId]);
+    }
+    for (const t of input.tasks) {
+      await q.query('INSERT INTO tasks (pact_id, title, created_by) VALUES ($1, $2, $3)', [pactId, t.title, userId]);
+    }
     await recordActivity(q, { pactId, actorId: userId, type: 'created' });
     await invite(ctx, q, pactId, userId, input.title.trim(), input.inviteUserIds, phones as string[]);
-    await audit(q, { actorId: userId, action: 'pact.created', targetType: 'pact', targetId: pactId, ip: meta.ip, metadata: { target: input.target } });
+    await audit(q, { actorId: userId, action: 'pact.created', targetType: 'pact', targetId: pactId, ip: meta.ip, metadata: { target, budgetLines: input.budget.length } });
     // Reminders and the missed-goal rule run from the deadline sweep.
     return pactId;
   });
@@ -253,8 +366,19 @@ async function invite(ctx: Ctx, q: Queryable, pactId: string, inviterId: string,
   const count = await q.query<{ n: number }>(`SELECT COUNT(*)::int AS n FROM pact_members WHERE pact_id = $1 AND status <> 'left'`, [pactId]);
   if (count.rows[0].n + userIds.length + phones.length > MAX_PACT_MEMBERS) throw badRequest('too_many_members', `A Pact can have up to ${MAX_PACT_MEMBERS} people.`);
 
+  // Invites by id only reach people the inviter already shares a Pact with; anyone else is invited by phone.
+  if (userIds.length) {
+    const ok = await q.query<{ id: string }>(
+      `SELECT DISTINCT b.user_id AS id FROM pact_members a JOIN pact_members b ON b.pact_id = a.pact_id
+        WHERE a.user_id = $1 AND a.status = 'joined' AND b.status = 'joined' AND b.user_id = ANY($2::uuid[])`,
+      [inviterId, userIds],
+    );
+    if (ok.rows.length !== new Set(userIds.filter((id) => id !== inviterId)).size) {
+      throw badRequest('unknown_people', 'Invite people you haven’t done a Pact with by their phone number.');
+    }
+  }
   // Phone numbers that already belong to someone become direct invites.
-  const known = phones.length ? await q.query<{ id: string; phone: string }>('SELECT id, phone FROM users WHERE phone = ANY($1::text[])', [phones]) : { rows: [] };
+  const known = phones.length ? await q.query<{ id: string; phone: string }>(`SELECT id, phone FROM users WHERE phone = ANY($1::text[]) AND status = 'active'`, [phones]) : { rows: [] };
   const direct = [...new Set([...userIds, ...known.rows.map((u) => u.id)])].filter((id) => id !== inviterId);
   const invited: string[] = [];
   for (const uid of direct) {
@@ -299,15 +423,17 @@ export async function inviteMore(ctx: Ctx, userId: string, pactId: string, userI
   return getPact(ctx, userId, pactId);
 }
 
-async function joinTx(q: Queryable, pact: PactRow, userId: string) {
+async function joinTx(q: Queryable, pact: PactRow, userId: string, participation: Participation | null = null) {
   if (pact.status !== 'open') throw badRequest('pact_closed', 'This Pact isn’t taking new people.');
   const count = await q.query<{ n: number }>(`SELECT COUNT(*)::int AS n FROM pact_members WHERE pact_id = $1 AND status = 'joined'`, [pact.id]);
   if (count.rows[0].n >= MAX_PACT_MEMBERS) throw badRequest('pact_full', 'This Pact is full.');
   const r = await q.query(
-    `INSERT INTO pact_members (pact_id, user_id, role, status, joined_at) VALUES ($1, $2, 'member', 'joined', now())
-     ON CONFLICT (pact_id, user_id) DO UPDATE SET status = 'joined', joined_at = now() WHERE pact_members.status <> 'joined'
+    `INSERT INTO pact_members (pact_id, user_id, role, status, joined_at, participation, color) VALUES ($1, $2, 'member', 'joined', now(), $3, $4)
+     ON CONFLICT (pact_id, user_id) DO UPDATE SET status = 'joined', joined_at = now(),
+       participation = COALESCE(EXCLUDED.participation, pact_members.participation), color = EXCLUDED.color
+     WHERE pact_members.status <> 'joined'
      RETURNING user_id`,
-    [pact.id, userId],
+    [pact.id, userId, participation, await colorFor(q, pact.id, userId)],
   );
   if (!r.rowCount) return false;
   const user = await getUser(q, userId);
@@ -316,20 +442,20 @@ async function joinTx(q: Queryable, pact: PactRow, userId: string) {
   return true;
 }
 
-export async function joinByCode(ctx: Ctx, userId: string, code: string) {
+export async function joinByCode(ctx: Ctx, userId: string, code: string, participation: Participation | null = null) {
   const pactId = await ctx.db.tx(async (q) => {
     const p = await q.query<PactRow>('SELECT * FROM pacts WHERE invite_code = $1 FOR UPDATE', [code.toUpperCase()]);
     if (!p.rows[0]) throw notFound('Invite');
-    await joinTx(q, p.rows[0], userId);
+    await joinTx(q, p.rows[0], userId, participation);
     return p.rows[0].id;
   });
   return getPact(ctx, userId, pactId);
 }
 
-export async function acceptInvite(ctx: Ctx, userId: string, pactId: string) {
+export async function acceptInvite(ctx: Ctx, userId: string, pactId: string, participation: Participation | null = null) {
   await ctx.db.tx(async (q) => {
     const { pact } = await loadVisible(q, pactId, userId, true);
-    await joinTx(q, pact, userId);
+    await joinTx(q, pact, userId, participation);
   });
   return getPact(ctx, userId, pactId);
 }
@@ -351,6 +477,7 @@ export async function leave(ctx: Ctx, userId: string, pactId: string) {
  */
 export async function contribute(ctx: Ctx, userId: string, pactId: string, amount: number, pin: string, meta: ReqMeta) {
   if (amount % 100 !== 0) throw badRequest('invalid_amount', 'Contribute whole naira amounts.');
+  await loadVisible(ctx.db, pactId, userId);
   await verifyPin(ctx, userId, pin, meta);
   const today = lagosToday(ctx.now());
 
@@ -375,9 +502,23 @@ export async function contribute(ctx: Ctx, userId: string, pactId: string, amoun
         { accountId: pact.account_id, amount },
       ],
     });
-    await q.query('UPDATE pact_members SET contributed = contributed + $3 WHERE pact_id = $1 AND user_id = $2', [pactId, userId, amount]);
+    // A "split the rest" ask is settled once this person has put in at least that much since.
+    await q.query(
+      `UPDATE pact_members SET contributed = contributed + $3,
+         participation = CASE WHEN participation IS NULL OR participation = 'later' THEN 'money' WHEN participation = 'task' THEN 'both' ELSE participation END,
+         requested_amount = CASE WHEN requested_amount IS NOT NULL AND $3 >= requested_amount THEN NULL
+                                 WHEN requested_amount IS NOT NULL THEN requested_amount - $3 END
+       WHERE pact_id = $1 AND user_id = $2`,
+      [pactId, userId, amount],
+    );
     const upd = await q.query<{ raised_amount: number }>('UPDATE pacts SET raised_amount = raised_amount + $2 WHERE id = $1 RETURNING raised_amount', [pactId, amount]);
     await recordActivity(q, { pactId, actorId: userId, type: 'contribution', amount });
+    // Momentum markers at halfway and 80%, recorded once each.
+    const before = (upd.rows[0].raised_amount - amount) / pact.target_amount;
+    const after = upd.rows[0].raised_amount / pact.target_amount;
+    for (const mark of [0.5, 0.8]) {
+      if (before < mark && after >= mark && after < 1) await recordActivity(q, { pactId, actorId: null, type: 'milestone', detail: `${mark * 100}%` });
+    }
 
     const members = await q.query<{ user_id: string }>(`SELECT user_id FROM pact_members WHERE pact_id = $1 AND status = 'joined'`, [pactId]);
     const everyone = members.rows.map((m) => m.user_id);
@@ -399,14 +540,17 @@ export async function contribute(ctx: Ctx, userId: string, pactId: string, amoun
 
 /** Organiser moves the pool into their wallet: once funded, or after a missed deadline if the Pact's rule allows it. */
 export async function release(ctx: Ctx, userId: string, pactId: string, pin: string, meta: ReqMeta) {
+  // Authorisation first: outsiders learn nothing, not even that KYC would be needed.
+  const { member } = await loadVisible(ctx.db, pactId, userId);
+  if (member!.role !== 'organizer') throw forbidden('Only the organiser can release the funds.');
   await verifyPin(ctx, userId, pin, meta);
   const user = await getUser(ctx.db, userId);
   if (!TIER_LIMITS[user.kyc_tier as KycTier].canRelease) {
     throw new AppError(403, 'kyc_required', 'Verify your BVN to release funds. It takes about a minute.');
   }
   await ctx.db.tx(async (q) => {
-    const { pact, member } = await loadVisible(q, pactId, userId, true);
-    if (member!.role !== 'organizer') throw forbidden('Only the organiser can release the funds.');
+    const { pact, member: m } = await loadVisible(q, pactId, userId, true);
+    if (m!.role !== 'organizer') throw forbidden('Only the organiser can release the funds.');
     await releaseTx(ctx, q, pact, userId, 'organizer');
   });
   await audit(ctx.db, { actorId: userId, action: 'pact.released', targetType: 'pact', targetId: pactId, ip: meta.ip });
@@ -469,6 +613,7 @@ async function refundTx(q: Queryable, pact: PactRow, finalStatus: 'refunded' | '
 }
 
 export async function cancel(ctx: Ctx, userId: string, pactId: string, pin: string, meta: ReqMeta) {
+  await loadVisible(ctx.db, pactId, userId);
   await verifyPin(ctx, userId, pin, meta);
   await ctx.db.tx(async (q) => {
     const { pact, member } = await loadVisible(q, pactId, userId, true);

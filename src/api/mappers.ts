@@ -30,7 +30,7 @@ export function toPact(p: PactDTO): Pact {
 
 export function toActivity(a: ActivityDTO): Activity | null {
   if (a.type === 'nudge') return null;
-  return { id: a.id, pactId: a.pactId, type: a.type, userId: a.actorId ?? '', amount: a.amount !== null ? fromKobo(a.amount) : undefined, at: a.at };
+  return { id: a.id, pactId: a.pactId, type: a.type, userId: a.actorId ?? '', amount: a.amount !== null ? fromKobo(a.amount) : undefined, detail: a.detail, at: a.at };
 }
 
 export const register = (people: PersonDTO[]) => registerPeople(people);

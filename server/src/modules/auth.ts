@@ -11,6 +11,7 @@ import { audit, notify } from './platform.js';
 
 const OTP_TTL_MS = 5 * 60_000;
 const SESSION_IDLE_DAYS = 14;
+const REFRESH_GRACE_SEC = 60;
 const OTP_MAX_ATTEMPTS = 5;
 const OTP_PER_PHONE_WINDOW = { minutes: 15, max: 4 };
 const OTP_PER_IP_WINDOW = { minutes: 60, max: 30 };
@@ -109,6 +110,7 @@ async function createSession(ctx: Ctx, q: Queryable, userId: string, device: str
     `INSERT INTO sessions (user_id, refresh_hash, device, ip, user_agent, expires_at) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
     [userId, keyedHash(ctx.config.HASH_SECRET, refreshToken), device?.slice(0, 80) || deviceFromUA(meta.userAgent), meta.ip, meta.userAgent?.slice(0, 300) ?? null, expires],
   );
+  await q.query('INSERT INTO refresh_tokens (hash, session_id) VALUES ($1, $2)', [keyedHash(ctx.config.HASH_SECRET, refreshToken), s.rows[0].id]);
   const access = await signAccessToken(ctx, userId, s.rows[0].id);
   const user = await getUser(q, userId);
   return { accessToken: access.token, accessTokenExpiresAt: access.expiresAt.toISOString(), refreshToken, user: toMe(user) };
@@ -121,40 +123,42 @@ const deviceFromUA = (ua: string | null) => {
   return `${browser} on ${os}`;
 };
 
+/**
+ * Refresh tokens rotate on every use. A token replaced less than REFRESH_GRACE_SEC ago is
+ * still accepted, so a refresh response lost to a page reload or a dropped connection can be
+ * retried. Presenting any replaced token after that window is treated as theft: the whole
+ * session is revoked.
+ */
 export async function refresh(ctx: Ctx, refreshToken: string, meta: ReqMeta): Promise<AuthTokensDTO> {
   const hash = keyedHash(ctx.config.HASH_SECRET, refreshToken);
   const out = await ctx.db.tx(async (q) => {
-    const current = await q.query<{ id: string; user_id: string; expires_at: Date; revoked_at: Date | null; last_used_at: Date }>(
-      'SELECT id, user_id, expires_at, revoked_at, last_used_at FROM sessions WHERE refresh_hash = $1 FOR UPDATE',
+    const found = await q.query<{ session_id: string; superseded_at: Date | null; user_id: string; expires_at: Date; revoked_at: Date | null; last_used_at: Date }>(
+      `SELECT t.session_id, t.superseded_at, s.user_id, s.expires_at, s.revoked_at, s.last_used_at
+         FROM refresh_tokens t JOIN sessions s ON s.id = t.session_id WHERE t.hash = $1 FOR UPDATE OF s`,
       [hash],
     );
-    const s = current.rows[0];
-    if (!s) {
-      // A rotated-out token being replayed means it leaked: end that session everywhere.
+    const s = found.rows[0];
+    if (!s) return null;
+    if (s.revoked_at || s.expires_at <= ctx.now()) return null;
+    if (s.superseded_at && ctx.now().getTime() - s.superseded_at.getTime() > REFRESH_GRACE_SEC * 1000) {
       // Returned rather than thrown so the revocation commits.
-      const reused = await q.query<{ id: string; user_id: string }>(
-        'UPDATE sessions SET revoked_at = now() WHERE prev_refresh_hash = $1 AND revoked_at IS NULL RETURNING id, user_id',
-        [hash],
-      );
-      if (reused.rows[0]) {
-        await audit(q, { actorId: reused.rows[0].user_id, action: 'session.refresh_reuse_detected', targetType: 'session', targetId: reused.rows[0].id, ip: meta.ip });
-      }
+      await q.query('UPDATE sessions SET revoked_at = now() WHERE id = $1', [s.session_id]);
+      await audit(q, { actorId: s.user_id, action: 'session.refresh_reuse_detected', targetType: 'session', targetId: s.session_id, ip: meta.ip });
       return null;
     }
-    if (s.revoked_at || s.expires_at <= ctx.now()) return null;
     // Idle sessions end too, not just old ones.
     if (ctx.now().getTime() - s.last_used_at.getTime() > SESSION_IDLE_DAYS * 86_400_000) {
-      await q.query('UPDATE sessions SET revoked_at = now() WHERE id = $1', [s.id]);
+      await q.query('UPDATE sessions SET revoked_at = now() WHERE id = $1', [s.session_id]);
       return null;
     }
     const user = await getUser(q, s.user_id);
     if (user.status !== 'active') throw new AppError(403, 'account_restricted', 'This account is restricted. Contact support.');
     const next = randomToken(32);
-    await q.query(
-      `UPDATE sessions SET prev_refresh_hash = refresh_hash, refresh_hash = $2, last_used_at = now(), ip = $3 WHERE id = $1`,
-      [s.id, keyedHash(ctx.config.HASH_SECRET, next), meta.ip],
-    );
-    const access = await signAccessToken(ctx, s.user_id, s.id);
+    const nextHash = keyedHash(ctx.config.HASH_SECRET, next);
+    await q.query('UPDATE refresh_tokens SET superseded_at = $2 WHERE session_id = $1 AND superseded_at IS NULL', [s.session_id, ctx.now()]);
+    await q.query('INSERT INTO refresh_tokens (hash, session_id) VALUES ($1, $2)', [nextHash, s.session_id]);
+    await q.query('UPDATE sessions SET prev_refresh_hash = refresh_hash, refresh_hash = $2, last_used_at = $4, ip = $3 WHERE id = $1', [s.session_id, nextHash, meta.ip, ctx.now()]);
+    const access = await signAccessToken(ctx, s.user_id, s.session_id);
     return { accessToken: access.token, accessTokenExpiresAt: access.expiresAt.toISOString(), refreshToken: next, user: toMe(user) };
   });
   if (!out) throw unauthorized('Your session has ended. Sign in again.');

@@ -1,4 +1,4 @@
-import { Check, LogOut, Plus, RotateCcw, Sparkles, UserPlus, Wallet, X } from 'lucide-react';
+import { Camera, Check, CheckCheck, Divide, Flag, Hand, ListPlus, LogOut, Plus, RotateCcw, Sparkles, UserPlus, Wallet, X } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import type { Activity } from '../../data/types';
@@ -37,6 +37,20 @@ export function describeActivity(activity: Activity, viewerId: string | null = C
       return { name, verb: 'closed the Pact and refunded everyone' };
     case 'left':
       return { name, verb: 'left the Pact' };
+    case 'committed':
+      return { name, verb: activity.detail ?? 'is in' };
+    case 'task_added':
+      return { name, verb: `added a task: ${activity.detail ?? ''}`.trim() };
+    case 'task_claimed':
+      return { name, verb: `is handling ${activity.detail ?? 'a task'}` };
+    case 'task_done':
+      return { name, verb: `finished ${activity.detail ?? 'a task'}` };
+    case 'milestone':
+      return { name: `${activity.detail ?? 'Halfway'} there.`, verb: 'The group is moving' };
+    case 'split_requested':
+      return { name, verb: `split the rest between ${activity.detail ?? 'the group'}`, amount: activity.amount ? formatNaira(activity.amount) : undefined };
+    case 'memory_added':
+      return { name, verb: 'added a memory' };
   }
 }
 
@@ -49,10 +63,17 @@ const glyph = {
   refunded: <RotateCcw strokeWidth={2.5} />,
   cancelled: <X strokeWidth={3} />,
   left: <LogOut strokeWidth={2.5} />,
+  committed: <Hand strokeWidth={2.5} />,
+  task_added: <ListPlus strokeWidth={2.5} />,
+  task_claimed: <Hand strokeWidth={2.5} />,
+  task_done: <CheckCheck strokeWidth={2.5} />,
+  milestone: <Flag strokeWidth={2.5} />,
+  split_requested: <Divide strokeWidth={2.5} />,
+  memory_added: <Camera strokeWidth={2.5} />,
 };
 
 /** Events with no single person behind them get a badge instead of an avatar. */
-const systemEvent = (a: Activity) => a.type === 'completed' || (a.type === 'refunded' && !a.userId) || !a.userId;
+const systemEvent = (a: Activity) => a.type === 'completed' || a.type === 'milestone' || !a.userId;
 
 export function ActivityItem({ activity, viewerId = CURRENT_USER_ID, to, meta, size = 'md', tone = 'light' }: Props) {
   const d = describeActivity(activity, viewerId);
@@ -61,7 +82,7 @@ export function ActivityItem({ activity, viewerId = CURRENT_USER_ID, to, meta, s
       <span className="activity__avatar">
         {systemEvent(activity) ? (
           <span className={`activity__complete avatar--${size}`} aria-hidden>
-            {activity.type === 'refunded' ? <RotateCcw strokeWidth={2.5} /> : <Check strokeWidth={3} />}
+            {activity.type === 'refunded' ? <RotateCcw strokeWidth={2.5} /> : activity.type === 'milestone' ? <Flag strokeWidth={2.5} /> : <Check strokeWidth={3} />}
           </span>
         ) : (
           <Avatar userId={activity.userId} size={size} label={false} accent />

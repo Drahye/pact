@@ -33,10 +33,12 @@ export const summarize = (pact: Pact): PactSummary => {
 };
 
 export const categoryLabel: Record<PactCategory, string> = {
-  gift: 'Birthday gift',
+  birthday: 'Birthday',
+  dinner: 'Dinner',
+  gift: 'Gift',
   trip: 'Group trip',
   event: 'Event',
-  household: 'Shared household',
+  household: 'Home',
   wedding: 'Wedding contribution',
   fund: 'Emergency fund',
   other: 'Shared goal',
@@ -47,7 +49,9 @@ export const inferCategory = (title: string): PactCategory => {
   const t = title.toLowerCase();
   if (/trip|travel|holiday|vacation|getaway|weekend in|flight/.test(t)) return 'trip';
   if (/wedding|bride|groom/.test(t)) return 'wedding';
-  if (/birthday|gift|present|baby shower/.test(t)) return 'gift';
+  if (/birthday|bday/.test(t)) return 'birthday';
+  if (/gift|present|baby shower/.test(t)) return 'gift';
+  if (/dinner|lunch|brunch/.test(t)) return 'dinner';
   if (/rent|apartment|flat|house|bill|utilities|household/.test(t)) return 'household';
   if (/emergency|medical|hospital|fund/.test(t)) return 'fund';
   if (/dinner|party|event|send-?off|concert|retreat|reunion/.test(t)) return 'event';

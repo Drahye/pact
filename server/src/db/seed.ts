@@ -3,6 +3,7 @@ import type { Ctx } from '../context.js';
 import { hashSecret, randomCode } from '../lib/crypto.js';
 import { addDays, lagosToday } from '../lib/time.js';
 import { createAccount, post, systemAccountId } from '../modules/ledger.js';
+import { colorFor } from '../modules/pacts.js';
 
 /** Demo sign-in: any of these numbers, the code shown in the app, and PIN 1357. */
 export const DEMO_PIN = '1357';
@@ -34,11 +35,14 @@ const pactsSeed: {
   organizer: Key;
   note?: string;
   contributions: [Key, number, number][];
-  invited?: Key[];
+  /** What the money covers, in the order raised money fills it. */
+  budget?: [string, number][];
+  tasks?: [string, Key | null, 'open' | 'in_progress' | 'done', string?][];
+  participation?: Partial<Record<Key, 'money' | 'task' | 'both' | 'later'>>;
 }[] = [
   {
     title: "Sarah's Birthday",
-    category: 'gift',
+    category: 'birthday',
     target: 500_000,
     days: 12,
     organizer: 'abraham',
@@ -47,6 +51,14 @@ const pactsSeed: {
       ['kemi', 30_000, 400], ['femi', 30_000, 380], ['zara', 30_000, 300], ['tolu', 35_000, 220], ['abraham', 15_000, 150],
       ['maya', 45_000, 40], ['sarah', 50_000, 64], ['david', 20_000, 30], ['abraham', 25_000, 15], ['david', 40_000, 2],
     ],
+    budget: [['Dinner at Nok', 180_000], ['Cake', 70_000], ['Gift', 150_000], ['Photography', 100_000]],
+    tasks: [
+      ['Book the restaurant', 'maya', 'done', 'Dinner at Nok'],
+      ['Pick up the cake', 'tolu', 'in_progress', 'Cake'],
+      ['Buy the gift', 'abraham', 'open', 'Gift'],
+      ['Find a photographer', null, 'open', 'Photography'],
+    ],
+    participation: { maya: 'both', tolu: 'both' },
   },
   {
     title: 'Weekend in Cape Town',
@@ -55,6 +67,12 @@ const pactsSeed: {
     days: 77,
     organizer: 'james',
     contributions: [['james', 200_000, 900], ['ada', 200_000, 800], ['chidi', 150_000, 700], ['abraham', 150_000, 500], ['abraham', 30_000, 21], ['james', 50_000, 2.5]],
+    budget: [['Flights', 600_000], ['Accommodation', 400_000], ['Activities', 200_000]],
+    tasks: [
+      ['Book the flights', 'james', 'in_progress', 'Flights'],
+      ['Choose the accommodation', null, 'open', 'Accommodation'],
+      ['Plan the wine tour', 'ada', 'open', 'Activities'],
+    ],
   },
   {
     title: 'Wedding Gift',
@@ -64,6 +82,10 @@ const pactsSeed: {
     organizer: 'kemi',
     note: 'For Tolu and Femi.',
     contributions: [['kemi', 40_000, 300], ['abraham', 50_000, 200], ['maya', 40_000, 160], ['zara', 30_000, 140], ['kemi', 20_000, 71]],
+    tasks: [
+      ['Choose the gift from their registry', 'kemi', 'open'],
+      ['Collect everyone’s notes for the card', 'maya', 'done'],
+    ],
   },
   {
     title: 'New Apartment',
@@ -72,6 +94,11 @@ const pactsSeed: {
     days: 112,
     organizer: 'abraham',
     contributions: [['abraham', 220_000, 1200], ['david', 100_000, 1100], ['david', 100_000, 120]],
+    budget: [['Deposit', 400_000], ['Furniture', 200_000]],
+    tasks: [
+      ['Sign the lease', 'abraham', 'done', 'Deposit'],
+      ['Book movers', 'david', 'open'],
+    ],
   },
 ];
 
@@ -137,12 +164,10 @@ export async function seedDemo(ctx: Ctx) {
       const members: Key[] = [pact.organizer, ...pact.contributions.map((c) => c[0])].filter((k, i, a) => a.indexOf(k) === i);
       for (const [i, k] of members.entries()) {
         const joinedAt = at(first - 1 - i);
-        await q.query(`INSERT INTO pact_members (pact_id, user_id, role, status, joined_at, created_at) VALUES ($1, $2, $3, 'joined', $4, $4)`, [
-          pactId,
-          ids[k],
-          k === pact.organizer ? 'organizer' : 'member',
-          joinedAt,
-        ]);
+        await q.query(
+          `INSERT INTO pact_members (pact_id, user_id, role, status, joined_at, created_at, participation, color) VALUES ($1, $2, $3, 'joined', $4, $4, $5, $6)`,
+          [pactId, ids[k], k === pact.organizer ? 'organizer' : 'member', joinedAt, pact.participation?.[k] ?? (k === pact.organizer ? 'both' : 'money'), await colorFor(q, pactId, ids[k])],
+        );
         if (k !== pact.organizer) await q.query(`INSERT INTO activities (pact_id, actor_id, type, created_at) VALUES ($1, $2, 'join', $3)`, [pactId, ids[k], joinedAt]);
       }
 
@@ -163,6 +188,25 @@ export async function seedDemo(ctx: Ctx) {
         await q.query(`INSERT INTO activities (pact_id, actor_id, type, amount, created_at) VALUES ($1, $2, 'contribution', $3, $4)`, [pactId, ids[k], amount, at(hoursAgo)]);
       }
       await q.query('UPDATE pacts SET raised_amount = $2 WHERE id = $1', [pactId, raised]);
+
+      const budgetIds = new Map<string, string>();
+      for (const [i, [name, amount]] of (pact.budget ?? []).entries()) {
+        const b = await q.query<{ id: string }>('INSERT INTO budget_items (pact_id, name, amount, position, created_by, created_at) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id', [
+          pactId, name, amount * NGN, i, ids[pact.organizer], at(first),
+        ]);
+        budgetIds.set(name, b.rows[0].id);
+      }
+      for (const [i, [title, who, status, line]] of (pact.tasks ?? []).entries()) {
+        const created = at(first - 2 - i);
+        await q.query(
+          `INSERT INTO tasks (pact_id, title, budget_item_id, assignee_id, status, created_by, created_at, completed_at, completed_by)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+          [pactId, title, line ? budgetIds.get(line) ?? null : null, who ? ids[who] : null, status, ids[pact.organizer], created,
+            status === 'done' ? at(Math.max(1, first / 3)) : null, status === 'done' && who ? ids[who] : null],
+        );
+        if (who) await q.query(`INSERT INTO activities (pact_id, actor_id, type, detail, created_at) VALUES ($1, $2, 'task_claimed', $3, $4)`, [pactId, ids[who], title, at(first / 2 - i)]);
+        if (status === 'done' && who) await q.query(`INSERT INTO activities (pact_id, actor_id, type, detail, created_at) VALUES ($1, $2, 'task_done', $3, $4)`, [pactId, ids[who], title, at(Math.max(1, first / 3))]);
+      }
     }
 
     await q.query(

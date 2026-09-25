@@ -217,18 +217,22 @@ describe('PACT end to end', () => {
     assert.equal(right.status, 423);
   });
 
-  it('rotates refresh tokens and revokes the session when an old one is replayed', async () => {
+  it('rotates refresh tokens, tolerates interrupted retries, and revokes on later reuse', async () => {
     const s = await t.signIn('08010000003', undefined, true);
-    const r1 = await t.call('POST', '/auth/refresh', undefined, { refreshToken: s.refreshToken });
-    assert.equal(r1.status, 200);
-    assert.notEqual(r1.body.refreshToken, s.refreshToken);
-    const replay = await t.call('POST', '/auth/refresh', undefined, { refreshToken: s.refreshToken });
+    // Two refreshes whose responses were "lost": the original token is retried each time.
+    const a = await t.call('POST', '/auth/refresh', undefined, { refreshToken: s.refreshToken });
+    const b = await t.call('POST', '/auth/refresh', undefined, { refreshToken: s.refreshToken });
+    const c = await t.call('POST', '/auth/refresh', undefined, { refreshToken: s.refreshToken });
+    assert.deepEqual([a.status, b.status, c.status], [200, 200, 200]);
+    assert.notEqual(c.body.refreshToken, s.refreshToken);
+    // Two minutes later, any replaced token is treated as stolen: the whole session ends.
+    t.setClock(() => new Date(Date.now() + 120_000));
+    const replay = await t.call('POST', '/auth/refresh', undefined, { refreshToken: a.body.refreshToken });
     assert.equal(replay.status, 401);
-    // The thief's replay ended the session for the legitimate token too.
-    const r2 = await t.call('POST', '/auth/refresh', undefined, { refreshToken: r1.body.refreshToken });
-    assert.equal(r2.status, 401);
-    const me = await t.call('GET', '/me', r1.body.accessToken);
-    assert.equal(me.status, 401);
+    const latest = await t.call('POST', '/auth/refresh', undefined, { refreshToken: c.body.refreshToken });
+    t.setClock(() => new Date());
+    assert.equal(latest.status, 401);
+    assert.equal((await t.call('GET', '/me', c.body.accessToken)).status, 401);
   });
 
   it('hides Pacts from people who are not in them', async () => {

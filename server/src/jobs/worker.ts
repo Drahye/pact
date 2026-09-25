@@ -18,7 +18,12 @@ type Handler = (ctx: Ctx, payload: Record<string, unknown>) => Promise<unknown>;
 const handlers: Record<string, Handler> = {
   'payout.process': (ctx, p) => processPayout(ctx, String(p.reference)),
   'topup.reconcile': (ctx, p) => reconcileTopupByRef(ctx, String(p.reference)),
-  'pacts.sweep': (ctx) => sweepDeadlines(ctx),
+  'pacts.sweep': async (ctx) => {
+    // Replaced refresh tokens are only needed for the grace window and reuse detection.
+    await ctx.db.query(`DELETE FROM refresh_tokens WHERE superseded_at < now() - interval '2 days'`);
+    await ctx.db.query(`DELETE FROM otp_challenges WHERE created_at < now() - interval '2 days'`);
+    return sweepDeadlines(ctx);
+  },
   'ledger.reconcile': async (ctx) => {
     const r = await reconcile(ctx.db);
     if (!r.ok) ctx.log.fatal({ drift: r.drift, total: r.total }, 'LEDGER DRIFT DETECTED');

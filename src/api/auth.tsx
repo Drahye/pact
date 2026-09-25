@@ -88,13 +88,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     api<ServerConfig>('GET', '/config').then(setConfig).catch(() => undefined);
     // Resume the session from the refresh cookie, if there is one.
     if (!hint.get()) setStatus('signedOut');
-    else refreshSession().then((t) => (t ? accept(t) : endSession()));
+    else
+      void refreshSession().then(async (t) => {
+        // Offline at start-up: try once more before giving up, and keep the session hint either way.
+        if (t === 'offline') t = await new Promise<Awaited<ReturnType<typeof refreshSession>>>((r) => setTimeout(() => void refreshSession().then(r), 1500));
+        if (t && t !== 'offline') accept(t);
+        else if (t === null) endSession();
+        else setStatus('signedOut');
+      });
   }, [accept, endSession]);
 
   // Refresh the access token shortly before it expires while the app is open.
   useEffect(() => {
     if (status !== 'signedIn') return;
-    const id = window.setInterval(() => void refreshSession().then((t) => (t ? setUser(t.user) : endSession())), 12 * 60_000);
+    const id = window.setInterval(
+      () =>
+        void refreshSession().then((t) => {
+          if (t === null) endSession();
+          else if (t !== 'offline') setUser(t.user);
+        }),
+      12 * 60_000,
+    );
     return () => window.clearInterval(id);
   }, [status, setUser, endSession]);
 

@@ -14,6 +14,12 @@ page.on('pageerror', (e) => errors.push(e.message));
 page.on('console', (m) => m.type() === 'error' && !/401|Failed to load resource/.test(m.text()) && errors.push(m.text().slice(0, 200)));
 
 const BASE = 'http://localhost:5173';
+// REFRESH_LOG: record auth refresh outcomes to diagnose session loss.
+const refreshLog = [];
+page.on('response', async (r) => {
+  if (r.url().includes('/api/auth/refresh')) refreshLog.push(`${r.status()} ${(await r.text().catch(() => '')).slice(0, 90)}`);
+});
+page.on('requestfailed', (r) => { if (r.url().includes('/api/auth/refresh')) refreshLog.push(`ABORTED ${r.failure()?.errorText}`); });
 const phone = `080${String(Date.now()).slice(-8)}`;
 const PIN = '2580';
 let n = 0;
@@ -114,11 +120,11 @@ try {
 
   // Verify BVN
   await page.goto(`${BASE}/app/profile/verify`);
-  await page.getByLabel('BVN').fill('22212345678');
+  await page.getByLabel('BVN').fill(`222${String(Date.now()).slice(-8)}`);
   await page.getByLabel('Date of birth').fill('1994-05-17');
   await shot('verify');
   await page.locator('.screen__footer').getByRole('button', { name: 'Verify BVN' }).click();
-  await page.getByText('Verified', { exact: true }).first().waitFor();
+  await page.waitForURL((u) => !u.pathname.includes('/profile/verify'));
 
   // Withdraw to a new bank account
   await page.goto(`${BASE}/app/wallet/withdraw`);
@@ -155,6 +161,7 @@ try {
 } catch (err) {
   await page.screenshot({ path: `${out}/FAILED.png` });
   console.error('FAILED at step', n + 1, err.message);
+  console.error('refresh log:', refreshLog.join(' | '));
   console.error(errors.join('\n'));
   process.exitCode = 1;
 } finally {

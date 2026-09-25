@@ -11,7 +11,7 @@ export interface User {
   color: string;
 }
 
-export type PactCategory = 'gift' | 'trip' | 'event' | 'household' | 'wedding' | 'fund' | 'other';
+export type PactCategory = 'birthday' | 'trip' | 'wedding' | 'gift' | 'event' | 'dinner' | 'household' | 'fund' | 'other';
 
 export interface Member {
   userId: UserId;
@@ -42,7 +42,9 @@ export interface Pact {
   viewer?: { role: 'organizer' | 'member' | null; status: 'invited' | 'joined' | 'left' | null; suggestedShare: number };
 }
 
-export type ActivityType = 'contribution' | 'join' | 'created' | 'completed' | 'released' | 'refunded' | 'cancelled' | 'left';
+export type ActivityType =
+  | 'contribution' | 'join' | 'created' | 'completed' | 'released' | 'refunded' | 'cancelled' | 'left'
+  | 'committed' | 'task_added' | 'task_claimed' | 'task_done' | 'milestone' | 'split_requested' | 'memory_added';
 
 export interface Activity {
   id: string;
@@ -50,5 +52,7 @@ export interface Activity {
   type: ActivityType;
   userId: UserId;
   amount?: number;
+  /** Short context from the API, e.g. a task title or "80%". */
+  detail?: string | null;
   at: string; // ISO datetime
 }

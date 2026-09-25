@@ -17,7 +17,7 @@ const BASE = (import.meta.env.VITE_API_URL as string | undefined) ?? '/api';
 /* Access token lives in memory only. The refresh token is an httpOnly cookie the
    page can't read, so an XSS bug can't walk away with a long-lived credential. */
 let accessToken: string | null = null;
-let refreshing: Promise<AuthTokensDTO | null> | null = null;
+let refreshing: Promise<AuthTokensDTO | null | 'offline'> | null = null;
 let onSignedOut: () => void = () => {};
 
 export const setAccessToken = (token: string | null) => {
@@ -53,14 +53,20 @@ async function raw<T>(method: string, path: string, body?: unknown, headers: Rec
   return data as T;
 }
 
-/** One refresh at a time, however many requests hit a 401 together. */
-export function refreshSession(): Promise<AuthTokensDTO | null> {
+/**
+ * One refresh at a time, however many requests hit a 401 together.
+ * Resolves to the new tokens, `null` when the server says the session is over, or
+ * `'offline'` when the request never got an answer (dropped connection, page unloading).
+ * Only `null` ends the session: a flaky network must never sign anyone out.
+ */
+export function refreshSession(): Promise<AuthTokensDTO | null | 'offline'> {
   refreshing ??= raw<AuthTokensDTO>('POST', '/auth/refresh', {})
     .then((t) => {
       setAccessToken(t.accessToken);
       return t;
     })
-    .catch(() => {
+    .catch((err: unknown) => {
+      if (err instanceof ApiError && (err.status === 0 || err.status >= 500)) return 'offline' as const;
       setAccessToken(null);
       return null;
     })
@@ -77,10 +83,11 @@ export async function api<T>(method: string, path: string, body?: unknown, opts:
   } catch (err) {
     if (!(err instanceof ApiError) || err.status !== 401 || path.startsWith('/auth/')) throw err;
     const t = await refreshSession();
-    if (!t) {
+    if (t === null) {
       onSignedOut();
       throw err;
     }
+    if (t === 'offline') throw new ApiError(0, 'network', 'You seem to be offline. Check your connection and try again.');
     return raw<T>(method, path, body, headers);
   }
 }

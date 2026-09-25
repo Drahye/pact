@@ -11,6 +11,7 @@ import { Button } from '../../../components/ui/Button';
 import { Segmented } from '../../../components/ui/Segmented';
 import { TopBar } from '../../../components/ui/TopBar';
 import { formatNaira, formatNairaKobo, toKobo } from '../../../lib/format';
+import { safeAppPath } from '../auth/flow';
 import { Screen } from '../Screen';
 import './wallet.css';
 
@@ -27,10 +28,11 @@ export function TopupScreen() {
   const [channel, setChannel] = useState<'bank_transfer' | 'card'>('bank_transfer');
   const [error, setError] = useState<{ message: string; remaining?: number }>();
   const [key, setKey] = useState(newIdempotencyKey);
-  const pactId = params.get('pact') ?? undefined;
+  const rawPact = params.get('pact');
+  const pactId = rawPact && /^[0-9a-f-]{36}$/i.test(rawPact) ? rawPact : undefined;
   const pactQ = usePact(pactId);
   const pactTitle = pactQ.data?.pact.title;
-  const returnTo = params.get('return') ?? (pactId ? `/app/pact/${pactId}` : null);
+  const returnTo = safeAppPath(params.get('return')) ?? (pactId ? `/app/pact/${pactId}` : null);
 
   const kobo = toKobo(amount);
   const fee = topupFee(kobo, channel);
@@ -47,7 +49,7 @@ export function TopupScreen() {
     try {
       const t = await start.mutateAsync({ amount: kobo, channel, key, pactId });
       try {
-        if (returnTo?.startsWith('/app/')) sessionStorage.setItem(TOPUP_RETURN_KEY, returnTo);
+        if (returnTo) sessionStorage.setItem(TOPUP_RETURN_KEY, returnTo);
         else sessionStorage.removeItem(TOPUP_RETURN_KEY);
       } catch {
         /* ignore */

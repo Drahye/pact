@@ -45,7 +45,7 @@
 
 .badge--danger {
   background: var(--color-danger-soft);
-  color: var(--color-danger);
+  color: #963831; /* darker than --color-danger to clear 4.5:1 on the soft red */
 }
 
 .badge--outline {

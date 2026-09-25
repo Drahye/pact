@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MotionConfig } from 'framer-motion';
-import type { ReactNode } from 'react';
+import { lazy, Suspense, type ReactNode } from 'react';
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './api/auth';
 import { ApiError } from './api/client';
@@ -27,10 +27,12 @@ import { TopupStatusScreen } from './pages/app/wallet/TopupStatusScreen';
 import { WalletScreen } from './pages/app/wallet/WalletScreen';
 import { WithdrawScreen } from './pages/app/wallet/WithdrawScreen';
 import { WelcomeScreen } from './pages/app/WelcomeScreen';
-import { DownloadPage } from './pages/download/DownloadPage';
-import { LegalPage } from './pages/legal/LegalPage';
-import { LandingPage } from './pages/site/LandingPage';
-import { StyleGuidePage } from './pages/styleguide/StyleGuidePage';
+// The marketing pages (GSAP, scroll choreography) and the style guide load on demand,
+// so people opening the app don't download them, and vice versa.
+const LandingPage = lazy(() => import('./pages/site/LandingPage').then((m) => ({ default: m.LandingPage })));
+const DownloadPage = lazy(() => import('./pages/download/DownloadPage').then((m) => ({ default: m.DownloadPage })));
+const StyleGuidePage = lazy(() => import('./pages/styleguide/StyleGuidePage').then((m) => ({ default: m.StyleGuidePage })));
+const LegalPage = lazy(() => import('./pages/legal/LegalPage').then((m) => ({ default: m.LegalPage })));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -68,6 +70,7 @@ export function App() {
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <BrowserRouter>
+            <Suspense fallback={<Loading />}>
             <Routes>
               <Route path="/" element={<LandingPage />} />
               <Route path="/download" element={<DownloadPage />} />
@@ -104,6 +107,7 @@ export function App() {
               </Route>
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
+            </Suspense>
           </BrowserRouter>
         </AuthProvider>
       </QueryClientProvider>

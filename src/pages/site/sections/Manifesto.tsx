@@ -1,17 +1,19 @@
 import { useRef } from 'react';
 import { gsap, MQ, SplitText, useGSAP } from '../../../lib/gsap';
 
-/** One idea, read at scroll speed: words brighten from 0.12 to 1 as you move through. */
+/** One idea, read at scroll speed: words brighten from 0.5 to 1 as you move through. */
 export function Manifesto() {
   const root = useRef<HTMLElement>(null);
   useGSAP(
     () => {
       const mm = gsap.matchMedia();
       mm.add(MQ.motion, () => {
-        const split = SplitText.create('.manifesto__text', { type: 'words' });
+        const split = SplitText.create('.manifesto__text', { type: 'words', aria: 'none' });
         gsap.fromTo(
-          split.words,
-          { opacity: 0.12 },
+          // The highlighted pills stay fully readable; only the words around them dim.
+          split.words.filter((w) => !w.closest('.manifesto__pill')),
+          // Dimmed, not hidden: 0.5 keeps unread words above large-text contrast (3:1).
+          { opacity: 0.5 },
           {
             opacity: 1,
             stagger: 0.1,

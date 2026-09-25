@@ -153,6 +153,8 @@ export function Anatomy() {
           <>
             <ol
               className="how__rail"
+              tabIndex={0}
+              aria-label="Steps of a Pact, scroll sideways"
               ref={rail}
               onScroll={(e) => {
                 const el = e.currentTarget;

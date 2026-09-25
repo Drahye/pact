@@ -47,7 +47,7 @@
     "qrcode": "^1.5.4",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-router-dom": "^6.30.6",
+    "react-router-dom": "^7.18.4",
     "sharp": "^0.35.4",
     "three": "^0.169.0",
     "zod": "^4.6.5"
@@ -60,6 +60,7 @@
     "@types/react-dom": "^18.3.7",
     "@types/three": "^0.169.0",
     "@vitejs/plugin-react": "^4.7.0",
+    "axe-core": "^4.13.0",
     "concurrently": "^10.0.5",
     "esbuild": "^0.21.5",
     "marked": "^12.0.2",

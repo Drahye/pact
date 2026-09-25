@@ -26,7 +26,7 @@ export function EveryoneBrings() {
             <div className="brings__visual" aria-hidden>
               <Avatar userId="maya" size="lg" label={false} accent />
               <p>
-                <strong>{maya.name}</strong> added <strong className="num" style={{ color: maya.color }}>{formatNaira(45_000)}</strong>
+                <strong>{maya.name}</strong> added <strong className="num brings__amount" style={{ ['--c' as string]: maya.color }}>{formatNaira(45_000)}</strong>
               </p>
             </div>
             <p className="brings__copy">Contribute from your wallet or pay straight in. Everyone sees it land.</p>
@@ -50,7 +50,7 @@ export function EveryoneBrings() {
             <div className="brings__visual" aria-hidden>
               <Avatar userId="abraham" size="lg" label={false} accent />
               <p>
-                <strong className="num" style={{ color: abraham.color }}>{formatNaira(40_000)}</strong>
+                <strong className="num brings__amount" style={{ ['--c' as string]: abraham.color }}>{formatNaira(40_000)}</strong>
                 <span className="brings__plus">+</span>
                 <span className="brings__done">
                   <Check /> Buy the gift

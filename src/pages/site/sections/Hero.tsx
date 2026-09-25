@@ -15,7 +15,7 @@ export function Hero() {
     () => {
       const mm = gsap.matchMedia();
       mm.add(MQ.motion, () => {
-        const split = SplitText.create('.hero__title-text', { type: 'words', mask: 'words' });
+        const split = SplitText.create('.hero__title-text', { type: 'words', mask: 'words', aria: 'none' });
         const tl = gsap.timeline({ delay: 0.1 });
         tl.from(split.words, { yPercent: 110, duration: 1.1, stagger: 0.07, ease: 'expo.out' })
           .from('.hero__faces .avatar', { scale: 0, duration: 0.7, stagger: 0.08, ease: 'back.out(2)' }, 0.35)
@@ -30,7 +30,7 @@ export function Hero() {
   return (
     <section className="hero" ref={root} aria-labelledby="hero-title">
       <div className="container hero__copy">
-        <h1 id="hero-title" className="hero__title">
+        <h1 id="hero-title" className="hero__title" aria-label="Make it happen together.">
           <span className="hero__title-text">Make it happen</span>{' '}
           <span className="hero__faces" aria-hidden>
             {faces.map((id) => (

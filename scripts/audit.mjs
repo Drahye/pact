@@ -1,0 +1,99 @@
+// Launch audit: accessibility (axe-core), horizontal overflow at every required width,
+// console errors, and broken internal links, across the site and the signed-in app.
+// Usage: node scripts/audit.mjs [outFile]   (needs `npm run dev`; signs in as a demo organiser)
+import { chromium } from 'playwright';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { homedir } from 'node:os';
+
+const out = process.argv[2] ?? 'audit-results.json';
+const BASE = 'http://localhost:5173';
+const WIDTHS = [390, 430, 768, 1024, 1280, 1440];
+const axeSource = readFileSync('node_modules/axe-core/axe.min.js', 'utf8');
+const shell = `${homedir()}/Library/Caches/ms-playwright/chromium_headless_shell-1148/chrome-mac/headless_shell`;
+const browser = await chromium.launch(existsSync(shell) ? { executablePath: shell } : {});
+const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+const page = await context.newPage();
+const results = { overflow: [], axe: [], console: [], links: [], routes: [] };
+page.on('console', (m) => m.type() === 'error' && !/401|Failed to load resource/.test(m.text()) && results.console.push({ url: page.url(), text: m.text().slice(0, 200) }));
+page.on('pageerror', (e) => results.console.push({ url: page.url(), text: `pageerror: ${e.message}` }));
+
+const sitePages = ['/', '/download', '/terms', '/privacy', '/refunds', '/cookies', '/styleguide'];
+
+async function signIn(phone) {
+  await page.goto(`${BASE}/app/auth/phone`);
+  await page.getByText('What’s your number?').waitFor();
+  await page.waitForTimeout(500);
+  await page.getByLabel('Mobile number').fill(phone.replace(/^0/, ''));
+  await page.getByRole('button', { name: 'Send code' }).click();
+  await page.getByRole('button', { name: 'Fill it in' }).click();
+  await page.locator('.wallet-strip').waitFor();
+}
+
+async function checkOverflow(url) {
+  for (const w of WIDTHS) {
+    await page.setViewportSize({ width: w, height: 900 });
+    await page.waitForTimeout(500);
+    const o = await page.evaluate(() => {
+      const docW = document.documentElement.clientWidth;
+      const over = document.documentElement.scrollWidth - docW;
+      return { over };
+    });
+    if (o.over > 1) results.overflow.push({ url, width: w, px: o.over });
+  }
+  await page.setViewportSize({ width: 390, height: 844 });
+}
+
+async function runAxe(url) {
+  await page.addScriptTag({ content: axeSource });
+  const r = await page.evaluate(async () => {
+    // eslint-disable-next-line no-undef
+    const res = await axe.run(document, { runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'] }, resultTypes: ['violations'] });
+    return res.violations.map((v) => ({ id: v.id, impact: v.impact, help: v.help, nodes: v.nodes.length, sample: v.nodes.slice(0, 2).map((n) => n.target.join(' ')) }));
+  });
+  for (const v of r) results.axe.push({ url, ...v });
+}
+
+// Site pages
+for (const path of sitePages) {
+  const res = await page.goto(`${BASE}${path}`, { waitUntil: 'load' });
+  // Let entrance animations finish: axe measures colours at their current opacity.
+  await page.waitForTimeout(4000);
+  results.routes.push({ path, status: res?.status() });
+  await runAxe(path);
+  await checkOverflow(path);
+  const links = await page.$$eval('a[href]', (as) => as.map((a) => a.getAttribute('href')));
+  for (const href of new Set(links)) {
+    if (!href || href.startsWith('mailto:') || href.startsWith('http') || href.startsWith('sms:')) continue;
+    const [p, hash] = href.split('#');
+    if (hash && (p === '' || p === '/')) {
+      const exists = await page.evaluate((h) => !!document.getElementById(h), hash);
+      if (!exists && path === '/') results.links.push({ from: path, href, problem: 'missing anchor' });
+    }
+  }
+}
+
+// Signed-in app screens
+await signIn('08010000006');
+await page.goto(`${BASE}/app/pacts`);
+await page.getByText("Sarah's Birthday").first().click();
+await page.locator('.detail__ring').waitFor();
+const pactPath = new URL(page.url()).pathname;
+const appPages = ['/app/home', '/app/pacts', pactPath, `${pactPath}/invite`, `${pactPath}/contribute`, '/app/create', '/app/wallet', '/app/wallet/topup', '/app/wallet/withdraw', '/app/activity', '/app/notifications', '/app/profile', '/app/profile/verify', '/app/profile/security', '/app/profile/banks'];
+for (const path of appPages) {
+  const res = await page.goto(`${BASE}${path}`, { waitUntil: 'load' });
+  await page.waitForTimeout(1400);
+  results.routes.push({ path, status: res?.status(), landed: new URL(page.url()).pathname });
+  await runAxe(path);
+  await checkOverflow(path);
+}
+
+await browser.close();
+writeFileSync(out, JSON.stringify(results, null, 2));
+const byRule = {};
+for (const v of results.axe) (byRule[`${v.id} (${v.impact})`] ??= []).push(`${v.url} ×${v.nodes}`);
+console.log(`routes checked: ${results.routes.length}`);
+console.log(`overflow: ${results.overflow.length ? JSON.stringify(results.overflow) : 'none'}`);
+console.log(`console errors: ${results.console.length ? JSON.stringify(results.console.slice(0, 8)) : 'none'}`);
+console.log(`broken anchors: ${results.links.length ? JSON.stringify(results.links) : 'none'}`);
+console.log(`axe violations: ${results.axe.length ? '' : 'none'}`);
+for (const [rule, where] of Object.entries(byRule)) console.log(`  ${rule}: ${where.join(', ')}`);

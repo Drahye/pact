@@ -24,6 +24,12 @@ const Env = z.object({
   /** Postgres connection string. When empty, an embedded Postgres (PGlite) is used for local development. */
   DATABASE_URL: z.string().default(''),
   PGLITE_DIR: z.string().default('.data/pglite'),
+  /**
+   * Optional separate credential for migrations (the table owner). When set, the API runs
+   * migrations with it at boot and serves traffic with DATABASE_URL, a role that can't
+   * change the schema. See server/src/db/roles.sql.
+   */
+  MIGRATION_DATABASE_URL: z.string().default(''),
   DB_POOL_MAX: z.coerce.number().int().default(10),
 
   /** HMAC key for access tokens. 32+ bytes of randomness in production. */

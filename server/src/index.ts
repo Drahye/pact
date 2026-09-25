@@ -9,7 +9,14 @@ async function main() {
   const config = loadConfig();
   const db = await createDb(config);
   const { app, ctx } = await buildApp({ config, db });
-  await migrate(db, (m) => app.log.info(m));
+  if (config.MIGRATION_DATABASE_URL) {
+    // Schema changes run as the owner; the API itself connects without DDL rights.
+    const owner = await createDb({ ...config, DATABASE_URL: config.MIGRATION_DATABASE_URL, DB_POOL_MAX: 1 });
+    await migrate(owner, (m) => app.log.info(m));
+    await owner.close();
+  } else {
+    await migrate(db, (m) => app.log.info(m));
+  }
   if (config.SEED_DEMO && !config.isProd) await seedDemo(ctx);
 
   const stopWorker = config.RUN_WORKER ? startWorker(ctx) : () => {};

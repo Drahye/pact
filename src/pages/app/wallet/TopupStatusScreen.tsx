@@ -8,13 +8,14 @@ import { ErrorState, Loading } from '../../../components/app/States';
 import { Button } from '../../../components/ui/Button';
 import { formatNairaKobo } from '../../../lib/format';
 import { spring } from '../../../tokens/tokens';
+import { safeAppPath } from '../auth/flow';
 import { Screen } from '../Screen';
 import { TOPUP_RETURN_KEY } from './TopupScreen';
 import './wallet.css';
 
 const readReturn = () => {
   try {
-    return sessionStorage.getItem(TOPUP_RETURN_KEY);
+    return safeAppPath(sessionStorage.getItem(TOPUP_RETURN_KEY));
   } catch {
     return null;
   }

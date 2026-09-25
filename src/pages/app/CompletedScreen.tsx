@@ -17,7 +17,7 @@ import { TopBar } from '../../components/ui/TopBar';
 import type { Activity, Pact } from '../../data/types';
 import { getUser } from '../../data/users';
 import { formatNaira } from '../../lib/format';
-import { joinedMembers, sharesOf, summarize } from '../../lib/pact';
+import { colorOf, joinedMembers, sharesOf, summarize } from '../../lib/pact';
 import { formatNairaCompact } from '../../lib/format';
 import { ease, spring } from '../../tokens/tokens';
 import { Screen } from './Screen';
@@ -122,7 +122,7 @@ export function CompletedScreen({ pact, activity = [] }: { pact: Pact; activity?
             >
               <Avatar userId={m.userId} size="md" label={false} accent />
               <span>{name(m.userId)}</span>
-              <span className="completed__share num" style={{ color: getUser(m.userId).color }}>
+              <span className="completed__share num" style={{ ['--c' as string]: colorOf(pact, m.userId) }}>
                 {formatNairaCompact(m.contributed)}
               </span>
             </motion.li>

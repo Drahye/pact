@@ -238,3 +238,11 @@
 .completed__memory {
   margin-top: var(--space-6);
 }
+
+/* Identity colour as a highlight, dark text on top for contrast. */
+.completed__share {
+  padding: 0 6px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--c, var(--color-accent)) 26%, transparent);
+  color: var(--color-text);
+}

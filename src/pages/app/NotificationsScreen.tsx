@@ -61,7 +61,12 @@ export function NotificationsScreen() {
                   <span className="notes__body">{n.body}</span>
                   <span className="notes__time">{formatRelative(n.createdAt)}</span>
                 </span>
-                {!n.readAt && <span className="notes__dot" aria-label="Unread" />}
+                {!n.readAt && (
+                  <>
+                    <span className="notes__dot" aria-hidden />
+                    <span className="visually-hidden">Unread</span>
+                  </>
+                )}
               </>
             );
             return (

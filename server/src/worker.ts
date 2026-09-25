@@ -12,7 +12,8 @@ async function main() {
   const config = loadConfig();
   const log = pino({ level: config.LOG_LEVEL });
   const db = await createDb(config);
-  await migrate(db);
+  // The API applies migrations; the worker only needs the runtime credential.
+  if (!config.MIGRATION_DATABASE_URL) await migrate(db);
   const provider = config.PAYMENTS_PROVIDER === 'paystack' ? createPaystackProvider(config) : createSandboxProvider(config);
   const stop = startWorker({ config, db, provider, sms: createSms(config, log), log, now: () => new Date() }, 500);
   log.info('PACT worker running');

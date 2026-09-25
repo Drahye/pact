@@ -198,7 +198,7 @@
 }
 
 .manifesto__pill--sun { background: var(--sun-400); }
-.manifesto__pill--sky { background: var(--sky-400); color: #fff; }
+.manifesto__pill--sky { background: var(--sky-400); }
 .manifesto__pill--mint { background: var(--green-500); }
 
 /* App snapshots ------------------------------------------------------------------ */
@@ -1663,4 +1663,12 @@
 
 .almost .avatar--accent {
   --accent-gap: var(--color-surface-inverse);
+}
+
+/* Contributor colour as a highlight behind dark text: colour identifies, ink stays readable. */
+.brings__amount {
+  padding: 0 6px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--c) 28%, transparent);
+  color: var(--color-text);
 }

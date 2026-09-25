@@ -1,0 +1,193 @@
+.btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  border-radius: var(--radius-full);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-snug);
+  white-space: nowrap;
+  user-select: none;
+  transition:
+    background-color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out),
+    opacity var(--duration-fast) var(--ease-out);
+}
+
+.btn:active:not(:disabled) {
+  transform: scale(0.975);
+}
+
+.btn:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+  border-radius: var(--radius-full);
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+}
+
+.btn__content {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  transition: opacity var(--duration-fast) var(--ease-out);
+}
+
+.btn__icon {
+  display: inline-flex;
+}
+
+.btn__icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* sizes ------------------------------------------------------------------ */
+.btn--lg {
+  height: 56px;
+  padding: 0 var(--space-6);
+  font-size: var(--text-body);
+}
+
+.btn--md {
+  height: 48px;
+  padding: 0 var(--space-5);
+  font-size: var(--text-body);
+}
+
+.btn--sm {
+  height: 36px;
+  padding: 0 var(--space-4);
+  font-size: var(--text-sm);
+}
+
+.btn--sm .btn__icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.btn--full {
+  width: 100%;
+}
+
+/* variants --------------------------------------------------------------- */
+.btn--primary {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+.btn--primary:hover:not(:disabled) {
+  background: var(--color-accent-hover);
+}
+
+.btn--primary:active:not(:disabled) {
+  background: var(--color-accent-pressed);
+}
+
+.btn--primary:disabled:not(.is-loading) {
+  background: var(--color-bg-sunken);
+  color: var(--color-text-tertiary);
+}
+
+.btn--secondary {
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: inset 0 0 0 1px var(--color-border-strong);
+}
+
+.btn--secondary:hover:not(:disabled) {
+  background: var(--color-surface-raised);
+  box-shadow: inset 0 0 0 1px var(--ink-300);
+}
+
+.btn--secondary:focus-visible {
+  box-shadow: inset 0 0 0 1px var(--color-border-strong), var(--shadow-focus);
+}
+
+.btn--ghost {
+  color: var(--color-text);
+}
+
+.btn--ghost:hover:not(:disabled) {
+  background: var(--color-bg-sunken);
+}
+
+.btn--inverse {
+  background: var(--color-surface-inverse);
+  color: var(--color-text-inverse);
+}
+
+.btn--inverse:hover:not(:disabled) {
+  background: var(--ink-800);
+}
+
+/* loading ---------------------------------------------------------------- */
+.btn.is-loading .btn__content {
+  opacity: 0;
+}
+
+.btn__spinner {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  animation: btn-spin 700ms linear infinite;
+}
+
+@keyframes btn-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Icon button ------------------------------------------------------------ */
+.icon-btn {
+  display: inline-grid;
+  place-items: center;
+  width: var(--tap-min);
+  height: var(--tap-min);
+  flex-shrink: 0;
+  border-radius: var(--radius-full);
+  color: var(--color-text);
+  transition: background-color var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out);
+}
+
+.icon-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+.icon-btn:active {
+  transform: scale(0.94);
+}
+
+.icon-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+  border-radius: var(--radius-full);
+}
+
+.icon-btn--surface {
+  background: var(--color-surface);
+  box-shadow: inset 0 0 0 1px var(--color-border);
+}
+
+.icon-btn--surface:hover {
+  background: var(--color-surface-raised);
+}
+
+.icon-btn--ghost:hover {
+  background: var(--color-bg-sunken);
+}
+
+.icon-btn--inverse {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--color-text-inverse);
+}

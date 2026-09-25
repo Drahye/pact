@@ -1,0 +1,31 @@
+import { Link } from 'react-router-dom';
+import { Logo } from '../ui/Logo';
+import './footer.css';
+
+export function Footer() {
+  return (
+    <footer className="footer">
+      <div className="container footer__inner">
+        <div className="footer__brand">
+          <Logo size="md" />
+          <p>Money works better together.</p>
+        </div>
+        <nav aria-label="Footer" className="footer__links">
+          <a href="/#how">How it works</a>
+          <a href="/#plans">Plans</a>
+          <a href="/#clarity">Clarity</a>
+          <a href="/#faq">FAQ</a>
+          <Link to="/download">Download</Link>
+          <Link to="/app">Open the web app</Link>
+          <Link to="/terms">Terms</Link>
+          <Link to="/privacy">Privacy</Link>
+        </nav>
+        <p className="footer__note">
+          PACT is a technology company, not a bank. Wallet balances and Pact funds are held with licensed banking and payment partners.
+          Until launch, the web app runs in sandbox mode and no real money moves.
+        </p>
+        <p className="footer__copy">© 2026 PACT</p>
+      </div>
+    </footer>
+  );
+}

@@ -1,0 +1,222 @@
+.detail__head {
+  display: flex;
+  justify-content: center;
+}
+
+.detail__ring {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+}
+
+.detail__center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.detail__center-amount {
+  font-size: var(--num-md);
+  line-height: 36px;
+  font-weight: var(--weight-bold);
+  letter-spacing: -0.05em;
+}
+
+.detail__center-amount--total {
+  font-size: 36px;
+  line-height: 40px;
+}
+
+.detail__center-name {
+  margin-top: var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+}
+
+.detail__center-meta {
+  font-size: var(--text-sm);
+  color: var(--color-text-tertiary);
+}
+
+.detail__center-pct {
+  margin-top: var(--space-2);
+  padding: 2px 10px;
+  border-radius: var(--radius-full);
+  background: var(--color-accent-soft);
+  color: var(--color-accent-text);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+}
+
+.detail__ring-hint {
+  font-size: var(--text-caption);
+  color: var(--color-text-tertiary);
+}
+
+.detail__stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-2);
+  margin-top: var(--space-6);
+}
+
+.detail__stats li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-3);
+  border-radius: var(--radius-lg);
+  background: var(--tint-bg);
+  color: var(--tint-fg);
+  font-size: var(--text-caption);
+  font-weight: var(--weight-medium);
+}
+
+.detail__stats svg {
+  width: 18px;
+  height: 18px;
+  margin-bottom: var(--space-2);
+}
+
+.detail__stats strong {
+  font-size: var(--text-title);
+  line-height: 26px;
+  font-weight: var(--weight-bold);
+  letter-spacing: -0.03em;
+  color: var(--color-text);
+}
+
+.detail__stats span {
+  color: var(--color-text);
+}
+
+.detail__stats small {
+  font-size: var(--text-caption);
+  opacity: 0.85;
+}
+
+/* member rail: swipe sideways, tap to single someone out in the ring */
+.detail__people {
+  display: flex;
+  gap: var(--space-2);
+  margin: var(--space-5) calc(var(--space-5) * -1) 0;
+  padding: var(--space-1) var(--space-5) var(--space-2);
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+}
+
+.detail__people::-webkit-scrollbar {
+  display: none;
+}
+
+.person {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 72px;
+  padding: var(--space-3) 0 var(--space-2);
+  border-radius: var(--radius-lg);
+  scroll-snap-align: start;
+  transition: background-color var(--duration-fast) var(--ease-out);
+}
+
+.person:hover,
+.person.is-selected {
+  background: var(--color-surface);
+  box-shadow: inset 0 0 0 1px var(--color-border);
+}
+
+.person__name {
+  margin-top: 4px;
+  font-size: var(--text-caption);
+  font-weight: var(--weight-semibold);
+}
+
+.person__amount {
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+}
+
+.detail__actions {
+  display: grid;
+  grid-template-columns: 1.35fr 1fr;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+}
+
+.detail__empty {
+  padding: var(--space-6);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-sunken);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  text-align: center;
+}
+
+.detail__top-actions {
+  display: inline-flex;
+  gap: var(--space-2);
+}
+
+.detail__invite {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+  padding: var(--space-4);
+  border-radius: var(--radius-xl);
+  background: var(--lilac-50);
+}
+
+.detail__invite strong {
+  font-weight: var(--weight-semibold);
+}
+
+.detail__invite-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2);
+}
+
+.detail .notice {
+  margin-top: var(--space-4);
+}
+
+.detail__note {
+  margin-top: var(--space-4);
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+  color: var(--color-text-secondary);
+  font-style: italic;
+}
+
+.detail__rule {
+  display: flex;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: inset 0 0 0 1px var(--color-border);
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+  color: var(--color-text-secondary);
+}
+
+.detail__rule svg {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  color: var(--color-accent-text);
+}
+
+.detail__rule strong {
+  color: var(--color-text);
+  font-weight: var(--weight-semibold);
+}

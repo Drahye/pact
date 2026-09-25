@@ -1,0 +1,81 @@
+.segmented {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.segmented__option {
+  position: relative;
+  flex: 1;
+  display: grid;
+  place-items: center;
+  min-height: var(--tap-min);
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-full);
+  font-weight: var(--weight-semibold);
+  font-size: var(--text-body);
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  transition: color var(--duration-fast) var(--ease-out);
+}
+
+.segmented__option:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+  border-radius: var(--radius-full);
+}
+
+.segmented__label {
+  position: relative;
+  z-index: 1;
+}
+
+.segmented__thumb {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+
+.segmented__option.is-active {
+  color: var(--color-text);
+}
+
+/* track: a sunken pill with a sliding white thumb */
+.segmented--track {
+  padding: 4px;
+  gap: 0;
+  border-radius: var(--radius-full);
+  background: var(--color-bg-sunken);
+}
+
+.segmented--track .segmented__thumb {
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.segmented--track .segmented__option:hover:not(.is-active) {
+  color: var(--color-text);
+}
+
+/* chips: separate outlined pills; the active one fills with ink */
+.segmented--chips .segmented__option {
+  background: var(--color-surface);
+  box-shadow: inset 0 0 0 1px var(--color-border-strong);
+}
+
+.segmented--chips .segmented__option:hover:not(.is-active) {
+  box-shadow: inset 0 0 0 1px var(--ink-300);
+}
+
+.segmented--chips .segmented__thumb {
+  background: var(--color-surface-inverse);
+}
+
+.segmented--chips .segmented__option.is-active {
+  color: var(--color-text-inverse);
+}
+
+.segmented--lg .segmented__option {
+  min-height: 52px;
+  font-size: var(--text-lg);
+}

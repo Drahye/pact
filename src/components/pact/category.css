@@ -1,0 +1,45 @@
+/* Tint pairs: soft background + a deep, AA-readable foreground */
+.tint--coral { --tint-bg: var(--coral-100); --tint-fg: #a2381f; --tint-solid: var(--coral-400); }
+.tint--sky { --tint-bg: var(--sky-50); --tint-fg: #1d5fa8; --tint-solid: var(--sky-400); }
+.tint--lilac { --tint-bg: var(--lilac-50); --tint-fg: #5b3fc4; --tint-solid: var(--lilac-400); }
+.tint--sun { --tint-bg: var(--sun-100); --tint-fg: #8a5a00; --tint-solid: var(--sun-400); }
+.tint--pink { --tint-bg: var(--pink-100); --tint-fg: #a3246a; --tint-solid: var(--pink-400); }
+.tint--mint { --tint-bg: var(--mint-100); --tint-fg: var(--green-700); --tint-solid: var(--green-500); }
+
+.cat-icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  border-radius: 14px;
+  background: var(--tint-bg);
+  color: var(--tint-fg);
+}
+
+.cat-icon--sm { width: 32px; height: 32px; border-radius: 10px; }
+.cat-icon--md { width: 44px; height: 44px; }
+.cat-icon--lg { width: 56px; height: 56px; border-radius: 18px; }
+.cat-icon svg { width: 46%; height: 46%; }
+
+.cat-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-full);
+  background: var(--tint-bg);
+  color: var(--tint-fg);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  white-space: nowrap;
+}
+
+.cat-chip svg {
+  width: 15px;
+  height: 15px;
+}
+
+.cat-chip__suffix {
+  font-weight: var(--weight-medium);
+  opacity: 0.8;
+}

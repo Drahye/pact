@@ -1,0 +1,694 @@
+/* ==========================================================================
+   Product components: PIN pad, wallet card, transactions, states, notices
+   ========================================================================== */
+
+/* PIN pad ------------------------------------------------------------------ */
+.pinpad {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding-bottom: var(--space-2);
+}
+
+.pinpad__dots {
+  display: flex;
+  gap: var(--space-4);
+  padding: var(--space-3) 0;
+}
+
+.pinpad__dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 2px var(--color-border-strong);
+  transition: background-color var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-spring);
+}
+
+.pinpad__dot.is-filled {
+  background: var(--color-text);
+  box-shadow: inset 0 0 0 2px var(--color-text);
+  transform: scale(1.08);
+}
+
+.pinpad__dot.is-busy {
+  animation: pin-pulse 0.9s var(--ease-in-out) infinite;
+}
+
+@keyframes pin-pulse {
+  0%, 100% { background: var(--color-text); }
+  50% { background: var(--color-accent); box-shadow: inset 0 0 0 2px var(--color-accent); }
+}
+
+.pinpad__msg {
+  min-height: 20px;
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+  color: var(--color-text-tertiary);
+  text-align: center;
+}
+
+.pinpad__msg.is-error {
+  color: var(--color-danger);
+}
+
+.pinpad__keys {
+  display: grid;
+  grid-template-columns: repeat(3, 76px);
+  gap: var(--space-3) var(--space-6);
+  margin-top: var(--space-2);
+}
+
+.pinpad__key {
+  display: grid;
+  place-items: center;
+  width: 76px;
+  height: 64px;
+  border-radius: var(--radius-xl);
+  font-size: 26px;
+  font-weight: var(--weight-medium);
+  color: var(--color-text);
+  transition: background-color var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out);
+}
+
+.pinpad__key:hover {
+  background: var(--color-bg-sunken);
+}
+
+.pinpad__key:active {
+  transform: scale(0.94);
+  background: var(--color-border);
+}
+
+.pinpad__key:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+
+.pinpad__key svg {
+  width: 24px;
+  height: 24px;
+}
+
+/* Wallet card -------------------------------------------------------------- */
+.wallet-card {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-5) var(--space-5) var(--space-5);
+  border-radius: var(--radius-2xl);
+  background: var(--sun-400);
+  color: var(--ink-900);
+}
+
+.wallet-card__shape {
+  position: absolute;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.wallet-card__shape--a {
+  width: 120px;
+  height: 120px;
+  right: -36px;
+  top: -40px;
+  border-radius: 50%;
+  background: #ffd873;
+}
+
+.wallet-card__shape--b {
+  width: 64px;
+  height: 64px;
+  right: 72px;
+  bottom: -26px;
+  border-radius: 18px;
+  transform: rotate(18deg);
+  background: var(--coral-400);
+  opacity: 0.55;
+}
+
+.wallet-card__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.wallet-card__label {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: rgba(15, 23, 19, 0.7);
+}
+
+.wallet-card__tier {
+  display: inline-flex;
+  align-items: center;
+  height: 26px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-full);
+  background: rgba(15, 23, 19, 0.1);
+  font-size: var(--text-caption);
+  font-weight: var(--weight-semibold);
+}
+
+.wallet-card__row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.wallet-card__balance {
+  font-size: 36px;
+  line-height: 44px;
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-tight);
+}
+
+.wallet-card__eye {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  color: rgba(15, 23, 19, 0.6);
+}
+
+.wallet-card__eye svg {
+  width: 18px;
+  height: 18px;
+}
+
+.wallet-card__eye:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--ink-900);
+}
+
+.wallet-card__actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.wallet-card__action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  height: 44px;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.55);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  transition: transform var(--duration-fast) var(--ease-out), background-color var(--duration-fast) var(--ease-out);
+}
+
+.wallet-card__action svg {
+  width: 17px;
+  height: 17px;
+}
+
+.wallet-card__action--primary {
+  background: var(--ink-900);
+  color: var(--paper-50);
+}
+
+.wallet-card__action:active {
+  transform: scale(0.97);
+}
+
+.wallet-card__action:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--sun-400), 0 0 0 4px var(--ink-900);
+}
+
+/* Transactions ------------------------------------------------------------- */
+.txn-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.txn-list > * + * {
+  border-top: var(--border-hairline);
+}
+
+.txn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: 64px;
+  padding: var(--space-3) 0;
+  text-align: left;
+}
+
+.txn:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+  border-radius: var(--radius-sm);
+}
+
+.txn__icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+}
+
+.txn__icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.txn__text {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  gap: 2px;
+}
+
+.txn__title {
+  overflow: hidden;
+  font-weight: var(--weight-medium);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.txn__meta {
+  font-size: var(--text-sm);
+  color: var(--color-text-tertiary);
+}
+
+.txn__amount {
+  flex-shrink: 0;
+  font-weight: var(--weight-semibold);
+}
+
+.txn__amount.is-in {
+  color: var(--color-accent-text);
+}
+
+/* States ------------------------------------------------------------------- */
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-12) var(--space-4);
+  text-align: center;
+}
+
+.state--loading {
+  flex: 1;
+  justify-content: center;
+}
+
+.state__spinner {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 3px solid var(--color-border);
+  border-top-color: var(--color-accent);
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.state__icon {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  margin-bottom: var(--space-2);
+  border-radius: 50%;
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+}
+
+.state__icon--soft {
+  background: var(--color-accent-soft);
+  color: var(--color-accent-text);
+}
+
+.state__icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+.state__title {
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+}
+
+.state__body {
+  max-width: 280px;
+  margin-bottom: var(--space-3);
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+  color: var(--color-text-secondary);
+}
+
+/* Notices ------------------------------------------------------------------ */
+.notice {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-sunken);
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+  color: var(--color-text-secondary);
+}
+
+.notice strong {
+  color: var(--color-text);
+  font-weight: var(--weight-semibold);
+}
+
+.notice__icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  padding-top: 2px;
+}
+
+.notice__icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.notice__body {
+  min-width: 0;
+}
+
+.notice--danger {
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+}
+
+.notice--danger strong {
+  color: var(--color-danger);
+}
+
+.notice--accent {
+  background: var(--color-accent-soft);
+  color: var(--ink-700);
+}
+
+.notice--sun {
+  background: var(--sun-100);
+  color: var(--ink-700);
+}
+
+.notice a,
+.notice button.link {
+  font-weight: var(--weight-semibold);
+  color: var(--color-text);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* Skeletons ---------------------------------------------------------------- */
+.skeleton {
+  display: inline-block;
+  border-radius: var(--radius-xs);
+  background: linear-gradient(90deg, rgba(15, 23, 19, 0.08), rgba(15, 23, 19, 0.14), rgba(15, 23, 19, 0.08));
+  background-size: 200% 100%;
+  animation: shimmer 1.2s linear infinite;
+}
+
+.skeleton--num {
+  width: 160px;
+  height: 34px;
+}
+
+.skeleton--card {
+  display: block;
+  width: 100%;
+  height: 132px;
+  border-radius: var(--radius-xl);
+}
+
+@keyframes shimmer {
+  to { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton,
+  .state__spinner,
+  .pinpad__dot.is-busy {
+    animation: none;
+  }
+}
+
+/* Settings-style list rows (Profile, Wallet) ------------------------------- */
+.menu {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: var(--radius-xl);
+  background: var(--color-surface);
+  box-shadow: inset 0 0 0 1px var(--color-border);
+}
+
+.menu > * + * {
+  border-top: var(--border-hairline);
+}
+
+.menu__row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: 60px;
+  padding: var(--space-3) var(--space-4);
+  text-align: left;
+  transition: background-color var(--duration-fast) var(--ease-out);
+}
+
+a.menu__row:hover,
+button.menu__row:hover {
+  background: var(--color-surface-raised);
+}
+
+.menu__row:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--color-focus);
+}
+
+.menu__icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+}
+
+.menu__icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.menu__text {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  gap: 1px;
+}
+
+.menu__title {
+  font-weight: var(--weight-medium);
+}
+
+.menu__sub {
+  font-size: var(--text-sm);
+  color: var(--color-text-tertiary);
+}
+
+.menu__end {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
+  font-size: var(--text-sm);
+  color: var(--color-text-tertiary);
+}
+
+.menu__end svg {
+  width: 18px;
+  height: 18px;
+}
+
+.menu__row--danger .menu__title {
+  color: var(--color-danger);
+}
+
+.menu-label {
+  margin: var(--space-6) 0 var(--space-2) var(--space-1);
+  font-size: var(--text-caption);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+}
+
+/* Key/value summary (confirmations, receipts) ------------------------------ */
+.summary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: inset 0 0 0 1px var(--color-border);
+}
+
+.summary__row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-4);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.summary__row strong {
+  font-weight: var(--weight-semibold);
+  color: var(--color-text);
+  text-align: right;
+}
+
+.summary__row--total {
+  padding-top: var(--space-3);
+  border-top: var(--border-hairline);
+  font-size: var(--text-body);
+}
+
+/* Choice cards (payment method, missed-goal rule) ------------------------- */
+.choices {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.choice {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: inset 0 0 0 1px var(--color-border);
+  text-align: left;
+  transition: box-shadow var(--duration-fast) var(--ease-out);
+}
+
+.choice.is-on {
+  box-shadow: inset 0 0 0 2px var(--color-text);
+}
+
+.choice:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+
+.choice__icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-sm);
+}
+
+.choice__icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.choice__text {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 2px;
+}
+
+.choice__title {
+  font-weight: var(--weight-semibold);
+}
+
+.choice__sub {
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+  color: var(--color-text-tertiary);
+}
+
+.choice__radio {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 2px var(--color-border-strong);
+  transition: box-shadow var(--duration-fast) var(--ease-out);
+}
+
+.choice.is-on .choice__radio {
+  box-shadow: inset 0 0 0 7px var(--color-text);
+}
+
+/* Bell with unread dot ----------------------------------------------------- */
+.bell {
+  position: relative;
+}
+
+.bell__dot {
+  position: absolute;
+  top: 8px;
+  right: 9px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: var(--radius-full);
+  background: var(--coral-400);
+  box-shadow: 0 0 0 2px var(--color-bg);
+  font-size: 11px;
+  line-height: 18px;
+  font-weight: var(--weight-bold);
+  color: var(--white);
+  transform: translate(50%, -50%);
+}
+
+/* Sandbox ribbon ----------------------------------------------------------- */
+.sandbox-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-full);
+  background: var(--lilac-50);
+  font-size: var(--text-caption);
+  font-weight: var(--weight-semibold);
+  color: #5b3fd6;
+}
+
+.sandbox-tag svg {
+  width: 13px;
+  height: 13px;
+}
+
+/* Tinted icon tiles pick up the shared tint variables */
+.txn__icon,
+.menu__icon,
+.choice__icon {
+  background: var(--tint-bg, var(--color-bg-sunken));
+  color: var(--tint-fg, var(--color-text));
+}

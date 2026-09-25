@@ -1,0 +1,83 @@
+.pact-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5) var(--space-5);
+  border-radius: var(--radius-xl);
+  background: var(--color-surface);
+  box-shadow: inset 0 0 0 1px var(--color-border);
+  transition: box-shadow var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out);
+}
+
+.pact-card:hover {
+  box-shadow: inset 0 0 0 1px var(--color-border-strong), var(--shadow-sm);
+}
+
+.pact-card:active {
+  transform: scale(0.985);
+}
+
+.pact-card:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 1px var(--color-border), var(--shadow-focus);
+  border-radius: var(--radius-xl);
+}
+
+.pact-card__top {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.pact-card__heading {
+  flex: 1;
+  min-width: 0;
+}
+
+.pact-card__title {
+  font-size: var(--text-body);
+  line-height: 22px;
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-snug);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pact-card__sub {
+  font-size: var(--text-caption);
+  line-height: 16px;
+  color: var(--color-text-tertiary);
+}
+
+.pact-card__chevron {
+  width: 18px;
+  height: 18px;
+  color: var(--color-text-tertiary);
+}
+
+.pact-card__amount {
+  margin-top: var(--space-1);
+  font-size: var(--num-sm);
+  line-height: 28px;
+  font-weight: var(--weight-semibold);
+}
+
+.pact-card__target {
+  font-size: var(--text-body);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-tertiary);
+  letter-spacing: var(--tracking-normal);
+}
+
+.pact-card__meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: var(--space-1);
+}
+
+.pact-card__stats {
+  font-size: var(--text-sm);
+  color: var(--color-text-tertiary);
+}

@@ -1,0 +1,27 @@
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: var(--weight-bold);
+  letter-spacing: -0.045em;
+  line-height: 1;
+}
+
+.logo__word {
+  transform: translateY(-1px);
+}
+
+.logo--sm .logo__mark { width: 20px; height: 20px; }
+.logo--sm .logo__word { font-size: 20px; }
+.logo--md .logo__mark { width: 24px; height: 24px; }
+.logo--md .logo__word { font-size: 24px; }
+.logo--lg .logo__mark { width: 36px; height: 36px; }
+.logo--lg .logo__word { font-size: 36px; }
+
+.logo--ink { color: var(--color-text); }
+.logo--ink .logo__track { stroke: var(--color-track); }
+.logo--ink .logo__arc { stroke: var(--color-text); }
+
+.logo--inverse { color: var(--color-text-inverse); }
+.logo--inverse .logo__track { stroke: var(--color-track-inverse); }
+.logo--inverse .logo__arc { stroke: var(--color-accent); }

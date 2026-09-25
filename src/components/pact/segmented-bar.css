@@ -1,0 +1,28 @@
+.sbar {
+  display: flex;
+  gap: 2px;
+  width: 100%;
+  border-radius: var(--radius-full);
+  background: var(--color-track);
+  overflow: hidden;
+}
+
+.sbar--sm { height: 8px; }
+.sbar--md { height: 12px; }
+.sbar--lg { height: 16px; }
+.sbar--inverse { background: var(--color-track-inverse); }
+
+.sbar__seg {
+  flex-shrink: 0;
+  height: 100%;
+  border-radius: 2px;
+}
+
+.sbar__seg:first-child {
+  border-radius: var(--radius-full) 2px 2px var(--radius-full);
+}
+
+.sbar__preview {
+  border-radius: 2px var(--radius-full) var(--radius-full) 2px;
+  background: repeating-linear-gradient(-45deg, var(--c) 0 4px, color-mix(in srgb, var(--c) 40%, #fff) 4px 8px);
+}

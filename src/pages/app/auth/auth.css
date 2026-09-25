@@ -1,0 +1,163 @@
+.auth .screen-lede strong {
+  color: var(--color-text);
+  font-weight: var(--weight-semibold);
+}
+
+.auth__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  margin-top: var(--space-8);
+}
+
+.auth__fine {
+  font-size: var(--text-caption);
+  line-height: var(--leading-caption);
+  color: var(--color-text-tertiary);
+  text-align: center;
+}
+
+.auth__fine a {
+  color: var(--color-text-secondary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.auth__trust {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-top: var(--space-6);
+  font-size: var(--text-sm);
+  color: var(--color-text-tertiary);
+}
+
+.auth__trust svg {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  color: var(--color-accent-text);
+}
+
+/* phone field */
+.phone-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.phone-field__control {
+  display: flex;
+  align-items: center;
+  height: 64px;
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: inset 0 0 0 1px var(--color-border-strong);
+  transition: box-shadow var(--duration-fast) var(--ease-out);
+}
+
+.phone-field__control:focus-within {
+  box-shadow: inset 0 0 0 2px var(--color-text);
+}
+
+.phone-field.has-error .phone-field__control {
+  box-shadow: inset 0 0 0 2px var(--color-danger);
+}
+
+.phone-field__cc {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 100%;
+  padding: 0 var(--space-4);
+  border-right: var(--border-hairline);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-medium);
+}
+
+.phone-field__input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0 var(--space-4);
+  border: 0;
+  background: transparent;
+  font-size: 22px;
+  font-weight: var(--weight-medium);
+  letter-spacing: 0.02em;
+  color: var(--color-text);
+}
+
+.phone-field__input:focus {
+  outline: none;
+}
+
+/* code field: one real input under six drawn boxes */
+.code-field {
+  position: relative;
+  display: block;
+  margin-top: var(--space-8);
+}
+
+.code-field__input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  opacity: 0;
+  font-size: 16px;
+  caret-color: transparent;
+}
+
+.code-field__boxes {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: var(--space-2);
+  pointer-events: none;
+}
+
+.code-field__box {
+  display: grid;
+  place-items: center;
+  height: 60px;
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: inset 0 0 0 1px var(--color-border-strong);
+  font-size: 26px;
+  font-weight: var(--weight-semibold);
+  transition: box-shadow var(--duration-fast) var(--ease-out);
+}
+
+.code-field__input:focus + .code-field__boxes .code-field__box.is-active {
+  box-shadow: inset 0 0 0 2px var(--color-text);
+}
+
+.code-field__box.is-error {
+  box-shadow: inset 0 0 0 2px var(--color-danger);
+}
+
+.auth__error {
+  margin-top: var(--space-3);
+}
+
+.auth .notice {
+  margin-top: var(--space-5);
+}
+
+.auth__resend {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--space-6);
+  font-size: var(--text-sm);
+  color: var(--color-text-tertiary);
+}
+
+.auth--pin .screen__content {
+  padding-bottom: var(--space-6);
+}
+
+.auth__pin {
+  display: flex;
+  justify-content: center;
+  margin-top: auto;
+  padding-top: var(--space-8);
+}

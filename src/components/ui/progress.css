@@ -1,0 +1,65 @@
+/* Linear -------------------------------------------------------------------- */
+.progress {
+  position: relative;
+  width: 100%;
+  border-radius: var(--radius-full);
+  background: var(--color-track);
+  overflow: hidden;
+}
+
+.progress--sm { height: 6px; }
+.progress--md { height: 10px; }
+.progress--lg { height: 14px; }
+.progress--xl { height: 20px; }
+
+.progress--inverse {
+  background: var(--color-track-inverse);
+}
+
+.progress__fill,
+.progress__preview {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: inherit;
+}
+
+.progress__fill {
+  background: var(--color-accent);
+}
+
+.progress--light .progress__fill {
+  /* hairline edge keeps the light green legible on the warm track */
+  box-shadow: inset 0 0 0 1px rgba(19, 122, 74, 0.12);
+}
+
+.progress__preview {
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--mint-100) 0 4px,
+    color-mix(in srgb, var(--color-accent) 45%, var(--mint-100)) 4px 8px
+  );
+}
+
+/* Ring ---------------------------------------------------------------------- */
+.ring {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.ring > svg {
+  position: absolute;
+  inset: 0;
+}
+
+.ring__track { stroke: var(--color-track); }
+.ring--inverse .ring__track { stroke: var(--color-track-inverse); }
+.ring__fill { stroke: var(--color-accent); }
+
+.ring__center {
+  position: relative;
+  display: grid;
+  place-items: center;
+  text-align: center;
+}

@@ -1,0 +1,165 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.field__label {
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-secondary);
+}
+
+.field__control {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 56px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: inset 0 0 0 1px var(--color-border);
+  transition: box-shadow var(--duration-fast) var(--ease-out);
+}
+
+.field__control:hover {
+  box-shadow: inset 0 0 0 1px var(--color-border-strong);
+}
+
+.field__control:focus-within {
+  box-shadow: inset 0 0 0 1.5px var(--color-text);
+}
+
+.field.has-error .field__control {
+  box-shadow: inset 0 0 0 1.5px var(--color-danger);
+}
+
+.field__input {
+  flex: 1;
+  min-width: 0;
+  height: 54px;
+  border: 0;
+  background: transparent;
+  font-size: var(--text-lg);
+  font-weight: var(--weight-medium);
+  color: var(--color-text);
+}
+
+.field__input:focus-visible,
+.amount__input:focus-visible {
+  outline: none;
+}
+
+.field__input::placeholder {
+  color: var(--ink-300);
+}
+
+.field__input[type='date'] {
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.field__input[type='date']::-webkit-calendar-picker-indicator {
+  opacity: 0;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+}
+
+.field__leading,
+.field__trailing {
+  display: inline-flex;
+  color: var(--color-text-tertiary);
+}
+
+.field__leading svg,
+.field__trailing svg {
+  width: 20px;
+  height: 20px;
+}
+
+.field__hint,
+.field__error {
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+  color: var(--color-text-tertiary);
+}
+
+.field__error {
+  color: var(--color-danger);
+}
+
+/* Amount ----------------------------------------------------------------- */
+.amount {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.amount--center {
+  align-items: center;
+  text-align: center;
+}
+
+.amount__control {
+  display: flex;
+  align-items: baseline;
+  max-width: 100%;
+  color: var(--color-text);
+}
+
+.amount--center .amount__control {
+  justify-content: center;
+}
+
+.amount__currency {
+  font-weight: var(--weight-medium);
+  color: var(--color-text-tertiary);
+  margin-right: 2px;
+}
+
+/* The field sizes itself to its text via a hidden mirror, so the amount stays optically centred. */
+.amount__field {
+  position: relative;
+  display: inline-grid;
+  min-width: 1ch;
+  max-width: 100%;
+}
+
+.amount__field::after {
+  content: attr(data-value) ' ';
+  grid-area: 1 / 1;
+  visibility: hidden;
+  white-space: pre;
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-tight);
+  font-variant-numeric: tabular-nums;
+}
+
+.amount__input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  min-width: 1ch;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  font-weight: var(--weight-semibold);
+  color: var(--color-text);
+  caret-color: var(--color-accent-pressed);
+}
+
+.amount__input::placeholder {
+  color: var(--ink-300);
+}
+
+.amount--md .amount__currency { font-size: 28px; }
+.amount--md .amount__input,
+.amount--md .amount__field::after { font-size: var(--num-md); line-height: 44px; }
+.amount--xl .amount__currency { font-size: 40px; }
+.amount--xl .amount__input,
+.amount--xl .amount__field::after { font-size: var(--num-xl); line-height: 76px; }

@@ -1,0 +1,36 @@
+.sring {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.sring > svg {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+}
+
+.sring__track { stroke: var(--color-track); }
+.sring--inverse .sring__track { stroke: var(--color-track-inverse); }
+
+.sring__seg {
+  transition: opacity var(--duration-base) var(--ease-out), stroke-width var(--duration-base) var(--ease-out);
+}
+
+.sring__seg.is-interactive {
+  cursor: pointer;
+  pointer-events: stroke;
+}
+
+.sring.has-selection .sring__seg:not(.is-selected) {
+  opacity: 0.22;
+}
+
+.sring__center {
+  position: relative;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  pointer-events: none;
+}

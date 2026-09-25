@@ -1,0 +1,37 @@
+# Local production-like stack: Postgres + API/web + a separate worker.
+#   cp .env.example .env   (fill in the secrets)
+#   docker compose up --build
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: pact
+      POSTGRES_PASSWORD: pact
+      POSTGRES_DB: pact
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U pact']
+      interval: 5s
+      retries: 10
+
+  app:
+    build: .
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://pact:pact@db:5432/pact
+      RUN_WORKER: 'false'
+    ports: ['8080:8080']
+    depends_on:
+      db: { condition: service_healthy }
+
+  worker:
+    build: .
+    command: ['node', 'build/worker.mjs']
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://pact:pact@db:5432/pact
+    depends_on:
+      db: { condition: service_healthy }
+
+volumes:
+  pgdata:

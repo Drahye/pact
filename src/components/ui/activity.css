@@ -1,0 +1,132 @@
+.activity {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  min-height: 64px;
+  text-align: left;
+}
+
+.activity--link {
+  margin: 0 calc(var(--space-3) * -1);
+  padding-inline: var(--space-3);
+  border-radius: var(--radius-md);
+  transition: background-color var(--duration-fast) var(--ease-out);
+}
+
+.activity--link:hover {
+  background: var(--color-bg-sunken);
+}
+
+.activity__avatar {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.activity__glyph {
+  position: absolute;
+  right: -5px;
+  bottom: -5px;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px var(--activity-ring, var(--color-surface));
+}
+
+.activity__glyph svg {
+  width: 10px;
+  height: 10px;
+}
+
+.activity__glyph--contribution {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+.activity__glyph--join,
+.activity__glyph--created {
+  background: var(--color-surface-inverse);
+  color: var(--color-text-inverse);
+}
+
+.activity__complete {
+  display: grid;
+  place-items: center;
+  width: var(--avatar-size, 40px);
+  height: var(--avatar-size, 40px);
+  border-radius: 50%;
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+.activity__complete.avatar--sm { --avatar-size: 32px; }
+.activity__complete.avatar--md { --avatar-size: 40px; }
+.activity__complete.avatar--lg { --avatar-size: 56px; }
+
+.activity__complete svg {
+  width: 45%;
+  height: 45%;
+}
+
+.activity__text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 2px;
+}
+
+.activity__line {
+  font-size: var(--text-body);
+  line-height: 22px;
+  color: var(--color-text-secondary);
+}
+
+.activity__line strong {
+  font-weight: var(--weight-semibold);
+  color: var(--color-text);
+}
+
+.activity__meta {
+  font-size: var(--text-sm);
+  line-height: 18px;
+  color: var(--color-text-tertiary);
+}
+
+/* on ink ----------------------------------------------------------------- */
+.activity--inverse {
+  --activity-ring: var(--color-surface-inverse);
+}
+
+.activity--inverse .activity__line { color: var(--color-text-inverse-secondary); }
+.activity--inverse .activity__line strong { color: var(--color-text-inverse); }
+.activity--inverse .activity__meta { color: var(--color-text-inverse-secondary); }
+.activity--inverse .activity__glyph--join { background: var(--paper-50); color: var(--ink-900); }
+
+.activity-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.activity-list > * + * {
+  border-top: var(--border-hairline);
+}
+
+/* the identity ring's gap matches whatever surface the row sits on */
+.feed-group,
+.panel,
+.bento__history,
+.invite__joined,
+.completed__people {
+  --accent-gap: var(--color-surface);
+}
+
+.activity--inverse {
+  --accent-gap: var(--color-surface-inverse);
+}
+
+.activity__glyph--released { background: var(--sun-400); color: var(--ink-900); }
+.activity__glyph--refunded,
+.activity__glyph--cancelled,
+.activity__glyph--left { background: var(--ink-200); color: var(--ink-900); }

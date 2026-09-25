@@ -1,0 +1,51 @@
+.welcome .screen__content {
+  padding-bottom: 0;
+}
+
+.welcome__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 60px;
+  margin-right: calc(var(--space-2) * -1);
+}
+
+.welcome__visual {
+  position: relative;
+  flex: 1;
+  min-height: 360px;
+  margin: 0 calc(var(--space-5) * -1);
+}
+
+.welcome__visual .stage {
+  position: absolute;
+  inset: 0;
+}
+
+.welcome__pill {
+  display: inline-block;
+  padding: 0 0.22em 0.04em;
+  border-radius: 0.4em;
+  background: var(--sun-400);
+}
+
+.welcome__copy {
+  padding-top: var(--space-4);
+}
+
+.welcome__title {
+  font-size: 40px;
+  line-height: 42px;
+  letter-spacing: -0.045em;
+}
+
+.welcome__lede {
+  margin-top: var(--space-4);
+  font-size: var(--text-lg);
+  line-height: 26px;
+  color: var(--color-text-secondary);
+}
+
+.welcome .screen__footer {
+  padding-top: var(--space-6);
+}

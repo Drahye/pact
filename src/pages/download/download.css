@@ -1,0 +1,227 @@
+.dl__hero {
+  position: relative;
+  padding: 128px 0 var(--space-24);
+  overflow: hidden;
+}
+
+.dl__grid {
+  display: grid;
+  gap: var(--space-16);
+  align-items: center;
+}
+
+.dl__title {
+  font-size: clamp(44px, 6.4vw, 96px);
+  line-height: 0.98;
+  letter-spacing: -0.055em;
+  max-width: 11ch;
+}
+
+.dl__lede {
+  margin-top: var(--space-5);
+  max-width: 36ch;
+  font-size: clamp(17px, 1.5vw, 20px);
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+
+.dl__platform {
+  max-width: 320px;
+  margin: var(--space-8) 0 var(--space-4);
+}
+
+.dl__perks {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-8);
+}
+
+.dl__perks li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-weight: var(--weight-medium);
+}
+
+.dl__perks li > span {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--color-accent);
+}
+
+.dl__perks svg {
+  width: 14px;
+  height: 14px;
+}
+
+.dl__qr {
+  display: none;
+  align-items: center;
+  gap: var(--space-5);
+  max-width: 420px;
+  margin-top: var(--space-10);
+  padding: var(--space-4);
+  border-radius: var(--radius-xl);
+  background: var(--color-surface);
+  box-shadow: inset 0 0 0 1px var(--color-border);
+}
+
+.dl__qr img {
+  width: 104px;
+  height: 104px;
+  border-radius: var(--radius-sm);
+}
+
+.dl__qr-title {
+  font-weight: var(--weight-semibold);
+}
+
+.dl__qr-body {
+  margin-top: 2px;
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+@media (min-width: 1024px) {
+  .dl__qr {
+    display: flex;
+  }
+}
+
+/* phones */
+.dl__visual {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 560px;
+  perspective: 1400px;
+}
+
+.dl__stack {
+  position: relative;
+  width: min(62vw, 300px);
+  aspect-ratio: 390 / 890;
+  transform-style: preserve-3d;
+}
+
+.dl__phone {
+  position: absolute;
+  inset: 0;
+}
+
+.dl__phone img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top;
+  border-radius: 33px;
+}
+
+.dl__phone--back {
+  transform: translate3d(42%, -6%, -120px) rotate(8deg);
+  opacity: 0.95;
+}
+
+.dl__phone--front {
+  transform: translate3d(-18%, 4%, 40px) rotate(-5deg);
+}
+
+.dl__shape {
+  position: absolute;
+  z-index: -1;
+}
+
+.dl__shape--sun { width: 240px; height: 240px; border-radius: 50%; background: var(--sun-400); left: 4%; top: 10%; }
+.dl__shape--sky { width: 170px; height: 170px; border-radius: 40px; background: var(--sky-400); right: 2%; bottom: 8%; }
+.dl__shape--pink { width: 110px; height: 110px; border-radius: 50% 50% 50% 10px; background: var(--pink-400); right: 18%; top: 4%; }
+
+@media (min-width: 1024px) {
+  .dl__grid {
+    grid-template-columns: repeat(12, 1fr);
+    column-gap: var(--grid-gap);
+  }
+
+  .dl__copy {
+    grid-column: 1 / span 6;
+  }
+
+  .dl__visual {
+    grid-column: 7 / span 6;
+    min-height: 720px;
+  }
+
+  .dl__stack {
+    width: 280px;
+  }
+}
+
+@media (max-width: 767px) {
+  .dl__hero {
+    padding-top: 108px;
+  }
+
+  .dl__visual {
+    min-height: 480px;
+  }
+
+  .dl__shape--sun { width: 160px; height: 160px; }
+  .dl__shape--sky { width: 110px; height: 110px; }
+  .dl__shape--pink { display: none; }
+}
+
+.dl__try {
+  padding: 0 0 var(--space-24);
+}
+
+.dl__try-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-6);
+}
+
+.dl__try-inner p {
+  max-width: 56ch;
+  padding: var(--space-6) 0;
+  font-size: var(--text-lg);
+  color: var(--color-text-secondary);
+}
+
+.dl__try-inner strong {
+  color: var(--color-text);
+}
+
+.dl__try-inner > * {
+  flex-shrink: 0;
+}
+
+.dl__try-inner p {
+  flex-shrink: 1;
+}
+
+.dl__try-inner {
+  padding: var(--space-6) var(--space-8);
+  border-radius: var(--radius-3xl);
+  background: var(--color-surface);
+  box-shadow: inset 0 0 0 1px var(--color-border);
+}
+
+.dl__modal-list li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 44px;
+  font-weight: var(--weight-medium);
+}
+
+.dl__modal-list svg {
+  width: 18px;
+  height: 18px;
+  color: var(--color-accent-text);
+}

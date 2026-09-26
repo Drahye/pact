@@ -9,7 +9,8 @@ This repository holds the whole product: the marketing site, the mobile-first we
 ```bash
 npm install
 npm run dev        # web on :5173, API on :8787 (embedded Postgres, sandbox payments, seeded demo data)
-npm test           # API integration tests (ledger, payments, auth, concurrency)
+npm test           # API tests, including adversarial security tests
+node scripts/audit.mjs out.json   # accessibility, overflow, console errors (needs `npm run dev`)
 node scripts/e2e.mjs   # full user journey in a headless browser, with screenshots (needs `npm run dev`)
 ```
 
@@ -25,11 +26,14 @@ Open `http://localhost:5173/app`. Sign up with any Nigerian mobile number (the S
 | --- | --- |
 | Sign in | Phone number and 6-digit SMS code. New numbers set their name and a 4-digit transaction PIN. Sessions per device, revocable. |
 | Wallet | Balance, history with receipts, top up by bank transfer (free) or card (1.5%, capped at ₦2,000), withdraw to your own bank account (₦50). |
-| Pacts | Create with a goal, deadline, split mode (any amount or equal shares) and a missed-goal rule (refund everyone, or keep what was raised). Invite by link, WhatsApp, SMS or phone number; people not on PACT get a text and the invite waits for them. |
-| Contributing | Hold to contribute, confirm with PIN. If the wallet is short, one tap tops up the difference and brings you back. Contributions can't overshoot the goal. |
-| Completion | The Pact turns into its funded state. The organiser releases the pool to their wallet (BVN required), or closes the Pact and refunds everyone. Members can be reminded once a day. |
+| Pacts | Create from a type (birthday, trip, wedding, gift, event, dinner, home) with suggested budget lines and tasks. Set one target or a budget whose total becomes the target. Pick a split mode and a missed-goal rule (refund everyone, or keep what was raised). Invite by link, WhatsApp, SMS or phone number; people not on PACT get a text and the invite waits for them. |
+| The plan | Budget lines fill in order as money arrives. Lightweight tasks: add, claim, progress, done, assign. Each member says how they're showing up (money, a task, both, or later). A needs-attention card on each Pact and on Home. |
+| Contributing | Hold to contribute from the wallet, confirm with PIN, or pay straight into a Pact by transfer or card. Cover the rest in one move, or split the rest as an ask (never a charge). Contributions can't overshoot the goal. |
+| Completion | We did it: people, contributions and tasks done. The organiser releases the pool (BVN required) or closes the Pact and refunds everyone. The group keeps a memory: a note, the date and up to six private photos. Reminders are personal and at most once a day. |
 | Deadlines | Three days out, people who haven't contributed are reminded. After the deadline plus a 3-day grace period the Pact's rule runs automatically. |
-| Trust | Notifications for every movement of money and every security event, tiered limits (Starter, Verified, Plus), withdrawals only to accounts in your own name. |
+| Trust | Notifications for every movement of money and every security event, tiered limits (Starter, Verified, Plus), withdrawals only to accounts in your own name, data export and account closure, forgotten-PIN reset. |
+
+The launch review is in [LAUNCH_AUDIT.md](LAUNCH_AUDIT.md).
 
 ---
 

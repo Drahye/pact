@@ -1,8 +1,9 @@
 // Records a captioned walkthrough of the live app (needs `npm run dev` on a freshly seeded database).
-// Story: a friend joins Sarah's Birthday from an invite link, tops up, completes the goal;
-// then the organiser releases the funds and withdraws to their bank.
+// Story: a friend joins Sarah's Birthday from an invite link, takes a task and pays straight in
+// to complete the goal; then the organiser releases the funds and adds the memory.
 // Usage: node scripts/demo-video.mjs [outDir]   → <outDir>/pact-demo.webm
 import { chromium } from 'playwright';
+import sharp from 'sharp';
 import { existsSync, mkdirSync, readdirSync, renameSync } from 'node:fs';
 import { homedir } from 'node:os';
 
@@ -138,114 +139,97 @@ const hold = async (locator) => {
 try {
   // Title
   await page.goto(`${BASE}/app/join/${code}`, { waitUntil: 'load' });
-  await card(`<h1>pact</h1><p>Plan it <span>together</span>. Fund it together.</p><small>Product walkthrough · sandbox payments, no real money</small>`, 3200);
+  await card(`<h1>pact</h1><p>Make it happen <span>together</span>.</p><small>Product walkthrough · sandbox payments, no real money</small>`, 3200);
   await card('', 600);
 
-  // 1. Invite link
+  // 1. The invite
   await page.getByText('invited you to').waitFor();
-  await cap('Abraham drops an invite link in the group chat. Anyone can see what it’s for.', 3200);
+  await cap('Abraham shares an invite in the group chat. Anyone can see what it’s for.', 3000);
+  await page.getByText('How do you want to show up?').scrollIntoViewIfNeeded();
+  await cap('Money is one way to show up. A task is another.', 2200);
+  await tap(page.getByRole('radio', { name: /Contributing and taking a task/ }), 900);
   await tap(btn('Sign up to join'));
 
   // 2. Sign up
-  await cap('Signing up takes a phone number…', 1200);
+  await cap('Signing up takes a phone number and a one-time code.', 1200);
   await typeSlow(page.getByLabel('Mobile number'), '8035550142');
   await tap(btn('Send code'), 1400);
-  await cap('…and a one-time SMS code. The sandbox shows it on screen.', 2200);
   await tap(btn('Fill it in'), 1500);
-  await cap('Name as on your bank account, so withdrawals always go through.', 1400);
   await typeSlow(page.getByLabel('First name'), 'Ngozi');
   await typeSlow(page.getByLabel('Last name'), 'Adebayo');
   await tap(btn('Continue'), 1000);
-  await cap('A 4-digit PIN approves every payment. Weak PINs are refused.', 1600);
+  await cap('A 4-digit PIN approves every payment.', 1400);
   await pin('2580');
   await wait(700);
   await pin('2580');
   await page.getByText('Join this Pact').waitFor();
-  await cap('Back to the invite, signed in.', 1600);
-  await tap(btn('Join this Pact'), 1800);
+  await tap(btn('Join this Pact'), 2000);
 
-  // 3. The Pact
-  await page.getByText('Tap a colour to see who gave it').waitFor();
-  await cap('One goal, one ring. Every colour is a person’s money.', 2600);
-  await tap(page.locator('.person').nth(1), 2000);
-  await tap(page.locator('.person').nth(1), 600);
-  await page.locator('.detail__rule').scrollIntoViewIfNeeded();
-  await cap('The rule for a missed goal is set up front and runs by itself.', 3000);
-  await tap(lnk('Contribute'), 1400);
+  // 3. The plan
+  await page.locator('.detail__ring').waitFor();
+  await cap('One goal, one ring. Every colour is someone’s part.', 2600);
+  await page.locator('.attention').scrollIntoViewIfNeeded();
+  await cap('PACT shows what needs attention, so nobody has to chase.', 2800);
+  await tap(page.locator('.attention__action').filter({ hasText: 'I’ll do it' }).first(), 1600);
+  await cap('Ngozi takes the photography. That counts as showing up too.', 2400);
+  await page.locator('.budget').scrollIntoViewIfNeeded();
+  await cap('The plan: what the money covers, and what’s already funded.', 2800);
+  await page.locator('.tasks').scrollIntoViewIfNeeded();
+  await wait(1600);
 
-  // 4. Short on funds → top up the difference
-  await tap(btn(/Cover the rest/), 1200);
-  await cap('Ngozi covers the rest. Her wallet is empty, so PACT offers to top up the difference.', 3200);
-  await tap(lnk(/Top up ₦180,000/), 1400);
-  await cap('Bank transfer is free. Cards carry a 1.5% fee, shown before you pay.', 3000);
-  await tap(btn(/Pay ₦180,000/), 1600);
-  await cap('Sandbox checkout. In production this is Paystack’s secure page.', 2600);
-  await cap('The wallet is credited only when the processor confirms to our server.', 2400);
+  // 4. Cover the rest by paying straight in
+  await page.goto(`${page.url()}/contribute?amount=180000`);
+  await page.getByText('From your wallet').waitFor();
+  await cap('She covers the rest. No wallet balance needed: pay straight into the Pact.', 3000);
+  await tap(page.getByRole('link', { name: /Pay ₦180,000 by transfer or card/ }), 1400);
+  await cap('Bank transfer is free. Cards show their 1.5% fee before you pay.', 2600);
+  await tap(btn(/Pay ₦180,000/), 1400);
+  await cap('Sandbox checkout. In production this is Paystack’s secure page.', 2400);
+  await cap('Nothing counts until the processor confirms to our server.', 2200);
   await tap(btn('I’ve sent the money'), 1800);
-  await page.getByText('Money added').waitFor();
-  await wait(1200);
-  await tap(btn('Continue to contribute'), 1400);
-
-  // 5. Contribute: hold, then PIN
-  await tap(btn(/Cover the rest/), 1000);
-  await cap('Press and hold to contribute. Letting go early cancels.', 1800);
-  await hold(page.locator('.hold'));
-  await cap('Then the PIN. A retry can never charge twice.', 1400);
-  await pin('2580');
   await page.getByText('You’re in.').waitFor();
-  await cap('Done, and it completed the goal. Everyone in the Pact is notified.', 3200);
-  await tap(btn('See it complete'), 3200);
-  await cap('₦500,000, from nine people. Nobody had to chase anybody.', 3000);
+  await cap('And that completed the goal. Everyone is told.', 2600);
+  await tap(btn('Back to the Pact'), 3000);
+  await cap('We did it: nine people, one plan, nobody chased anybody.', 3200);
 
-  // 6. Organiser
+  // 5. The organiser
   await page.goto(`${BASE}/app/profile`);
-  await cap('Now the organiser’s side.', 1600);
+  await cap('Now the organiser’s side.', 1400);
   await tap(btn('Sign out'), 600);
-  // Straight to sign-in: Welcome's live 3D scene is slow under headless software rendering.
   await page.goto(`${BASE}/app/auth/phone`);
   await wait(800);
   await typeSlow(page.getByLabel('Mobile number'), '8010000001');
   await tap(btn('Send code'), 1200);
   await tap(btn('Fill it in'), 2200);
-  await cap('Abraham’s home: wallet, open Pacts, and a new notification.', 2600);
-  await tap(page.getByRole('link', { name: /Notifications/ }), 1400);
-  await cap('Every movement of money shows up here.', 2400);
-  await tap(page.getByRole('button', { name: 'Back' }), 900);
+  await cap('Abraham’s home: what needs him, and his Pacts.', 2600);
   await tap(lnk('Pacts'), 1200);
-  await tap(page.getByRole('link', { name: /Sarah/ }), 2400);
-  await cap('Funded. Only a BVN-verified organiser can release the money.', 2600);
+  await tap(page.getByRole('link', { name: /Sarah/ }).first(), 2400);
+  await cap('Only a BVN-verified organiser can release the money.', 2400);
   await tap(btn(/Release ₦500,000/), 1400);
   await pin('1357');
   await wait(1600);
-  await cap('The pool moves to his wallet, and everyone is told.', 2600);
+  await cap('It lands in his wallet, and every member is told.', 2400);
 
-  // 7. Wallet and withdrawal
-  await tap(page.getByRole('button', { name: 'Back' }), 1200);
-  await tap(lnk('Wallet'), 1800);
-  await cap('Full history, every line with a receipt.', 2600);
-  await tap(page.locator('.txn').first(), 2400);
-  await page.keyboard.press('Escape');
-  await wait(600);
-  await tap(page.locator('.wallet-card').getByRole('link', { name: 'Withdraw' }), 1400);
-  await tap(page.locator('.screen__footer').getByRole('button', { name: 'Add a bank account' }), 1000);
-  await page.getByLabel('Bank', { exact: true }).selectOption('058');
-  await wait(600);
-  await typeSlow(page.getByLabel('Account number'), '0123456789');
-  await page.getByText('ABRAHAM OKAFOR').waitFor();
-  await cap('The account name is checked. Withdrawals only go to your own name.', 2800);
-  await tap(btn('Save account'), 1000);
-  await pin('1357');
-  await wait(1200);
-  await typeSlow(page.getByLabel('Amount', { exact: true }), '100000');
-  await cap('A flat ₦50 fee, shown up front.', 2000);
-  await tap(btn(/Withdraw ₦100,000/), 1000);
-  await pin('1357');
-  await page.getByText('On its way').waitFor({ timeout: 15000 });
-  await cap('Sent. If the bank ever returns it, the money and fee come straight back.', 3200);
+  // 6. The memory
+  await page.locator('.memory').scrollIntoViewIfNeeded();
+  await cap('Afterwards, the group keeps the memory. Only people in the Pact can see it.', 2600);
+  await tap(page.getByRole('button', { name: /Add the memory/ }), 1000);
+  await typeSlow(page.getByLabel('How did it go?'), 'Sarah cried twice. The cake survived the drive.');
+  const photo = await sharp({ create: { width: 900, height: 700, channels: 3, background: '#ffc53d' } })
+    .composite([{ input: Buffer.from('<svg width="900" height="700"><circle cx="450" cy="350" r="220" fill="#ff7a5c"/><circle cx="450" cy="350" r="120" fill="#3dd68c"/></svg>') }])
+    .jpeg()
+    .toBuffer();
+  await page.locator('input[type=file]').setInputFiles({ name: 'party.jpg', mimeType: 'image/jpeg', buffer: photo });
+  await page.getByText('Photos · 1/6').waitFor({ timeout: 15000 });
+  await cap('Photos are checked, re-encoded and stripped of location data.', 2600);
+  await tap(btn('Save'), 1600);
+  await page.locator('.memory__grid img').first().waitFor({ timeout: 15000 });
+  await page.locator('.memory').scrollIntoViewIfNeeded();
+  await wait(2600);
 
   // End
   await page.evaluate(() => window.__cap(''));
-  await card(`<h1>pact</h1><p>Money works <span>better</span> together.</p><small>Web app live now · iOS and Android coming soon</small>`, 3600);
+  await card(`<h1>pact</h1><p>Make the plan. Make it happen <span>together</span>.</p><small>Web app live now · iOS and Android coming soon</small>`, 3600);
 } catch (err) {
   await page.screenshot({ path: `${out}/demo-FAILED.png` });
   console.error('FAILED at caption', step, err.message);

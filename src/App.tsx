@@ -47,10 +47,11 @@ const queryClient = new QueryClient({
 
 /** Signed-out visitors are sent to Welcome and brought back after signing in. */
 function RequireAuth({ children }: { children: ReactNode }) {
-  const { status } = useAuth();
+  const { status, signOutReason } = useAuth();
   const location = useLocation();
   if (status === 'loading') return <Loading />;
-  if (status === 'signedOut') return <Navigate to="/app" replace state={{ from: location.pathname + location.search }} />;
+  // After choosing to sign out, the next person to sign in starts fresh on Home.
+  if (status === 'signedOut') return <Navigate to="/app" replace state={signOutReason === 'explicit' ? undefined : { from: location.pathname + location.search }} />;
   return <>{children}</>;
 }
 

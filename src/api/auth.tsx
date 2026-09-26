@@ -22,6 +22,8 @@ interface AuthValue {
   signup: (input: { signupToken: string; firstName: string; lastName: string; pin: string; referralCode?: string }) => Promise<void>;
   signOut: () => Promise<void>;
   setUser: (u: MeDTO) => void;
+  /** Why the last session ended. Only an expired session should bring the next sign-in back to the same page. */
+  signOutReason: 'explicit' | 'expired' | null;
 }
 
 const AuthContext = createContext<AuthValue | null>(null);
@@ -58,6 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<Status>('loading');
   const [user, setUserState] = useState<MeDTO | null>(null);
   const [config, setConfig] = useState<ServerConfig | null>(null);
+  const [signOutReason, setSignOutReason] = useState<'explicit' | 'expired' | null>(null);
 
   const setUser = useCallback((u: MeDTO) => {
     setUserState(u);
@@ -75,7 +78,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [setUser],
   );
 
-  const endSession = useCallback(() => {
+  const endSession = useCallback((reason: 'explicit' | 'expired' = 'expired') => {
+    setSignOutReason(reason);
     setAccessToken(null);
     setUserState(null);
     setStatus('signedOut');
@@ -84,7 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [qc]);
 
   useEffect(() => {
-    onSessionEnded(endSession);
+    onSessionEnded(() => endSession('expired'));
     api<ServerConfig>('GET', '/config').then(setConfig).catch(() => undefined);
     // Resume the session from the refresh cookie, if there is one.
     if (!hint.get()) setStatus('signedOut');
@@ -104,7 +108,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const id = window.setInterval(
       () =>
         void refreshSession().then((t) => {
-          if (t === null) endSession();
+            if (t === null) endSession('expired');
           else if (t !== 'offline') setUser(t.user);
         }),
       12 * 60_000,
@@ -126,11 +130,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signup: async (input) => accept(await api<AuthTokensDTO>('POST', '/auth/signup', input)),
       signOut: async () => {
         await api('POST', '/auth/logout', {}).catch(() => undefined);
-        endSession();
+        endSession('explicit');
       },
       setUser,
+      signOutReason,
     }),
-    [status, user, config, accept, endSession, setUser],
+    [status, user, config, accept, endSession, setUser, signOutReason],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

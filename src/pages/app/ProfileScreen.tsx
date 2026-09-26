@@ -12,6 +12,7 @@ import { BottomNav } from '../../components/ui/BottomNav';
 import { useToast } from '../../components/ui/Toast';
 import { formatNaira, formatPhone } from '../../lib/format';
 import '../../components/app/app-ui.css';
+import { clearReturnTo } from './auth/flow';
 import { Screen } from './Screen';
 import './profile.css';
 
@@ -150,6 +151,7 @@ export function ProfileScreen() {
           className="menu__row menu__row--danger"
           onClick={async () => {
             await signOut();
+            clearReturnTo();
             navigate('/app', { replace: true });
           }}
         >

@@ -1,6 +1,6 @@
 # PACT demo walkthrough
 
-A 3-minute recorded walkthrough is in [`docs/demo/pact-demo.mp4`](docs/demo/pact-demo.mp4). This page is the talk track for running the same demo live.
+A 2½-minute recorded walkthrough is in [`docs/demo/pact-demo.mp4`](docs/demo/pact-demo.mp4). This page is the talk track for running the same demo live.
 
 ## Before you start
 
@@ -20,34 +20,35 @@ The organiser's invite link: sign in as Abraham, open Sarah's Birthday, tap **In
 
 ## The story (about 5 minutes live)
 
-**The problem (15s).** "When a group pools money, it goes through one person's account and the status lives in a WhatsApp thread. Nobody knows the real total, and one person ends up chasing everyone. PACT makes the goal itself hold the money."
+**The problem (15s).** "Group plans die in the group chat. Nobody knows what the money covers, who has paid, or who's doing what, and one person ends up chasing everyone. PACT puts the people, the money, the tasks and the deadline in one place."
 
 ### 1. The invite (friend, private window)
-- Open the invite link. *"Anyone can see what it's for, who organised it and how far along it is before signing up."*
-- Tap **Sign up to join**, enter the number, tap **Fill it in** on the code. *"Phone number and a one-time code. Nothing else to remember."*
-- Enter a first and last name. *"We ask for the name on your bank account so withdrawals never bounce."*
-- Create a PIN, twice. *"Every payment needs this. Guessable PINs like 1234 are refused, and five wrong tries pause payments."*
-- You land back on the invite. Tap **Join this Pact**.
+- Open the invite link. *"Anyone can see what it's for and how far along it is before signing up."*
+- Scroll to **How do you want to show up?** *"Money is one way. Taking a task is another. Or both, or 'I'm in, I'll confirm later'."* Pick **Contributing and taking a task**, then **Sign up to join**.
+- Enter the number, tap **Fill it in**, add a name, create a PIN twice. *"Every payment needs this PIN. Guessable ones are refused."*
+- You land back on the invite with your choice remembered. Tap **Join this Pact**.
 
-### 2. The Pact
-- *"One goal, one ring. Every colour is a person."* Tap a person to show their share, tap again to go back.
-- Scroll to the rule card. *"What happens if the goal is missed is decided at the start, visible to everyone, and runs by itself. Usually a full refund."*
+### 2. The plan
+- *"One goal, one ring. Every colour is someone's part."* Tap a name to see their share.
+- **Needs attention**: *"PACT surfaces what's missing so nobody has to chase."* Tap **I'll do it** on "Find a photographer". *"That counts as showing up too."*
+- Scroll to **The plan**: *"What the money covers. Raised money fills the lines in order, so you can see Dinner and Cake are covered and Photography isn't."*
+- **Tasks**: tap one to show the sheet (claim, progress, done; the organiser can assign).
 
 ### 3. Paying in
-- Tap **Contribute**, then **Cover the rest**. *"New wallet, no money. PACT offers to top up the difference and bring you right back."*
-- Tap **Top up**. *"Bank transfer is free; card is 1.5%, shown before paying."* Tap **Pay**.
-- Sandbox checkout: *"In production this is Paystack. The wallet is credited only when the processor confirms to our server, never because the app says so."* Tap **I've sent the money**.
-- **Continue to contribute**, **Cover the rest**, then press and hold. *"Holding is deliberate: let go early and nothing happens."* Enter the PIN.
-- "You're in." *"And that completed the goal. Everyone in the Pact just got notified."* Tap **See it complete**.
+- **Contribute**, then **Cover the rest**. *"No wallet balance? Pay straight into the Pact."* Tap **Pay ₦180,000 by transfer or card**.
+- *"Transfer is free; card shows its fee first."* Tap **Pay**. On the sandbox checkout: *"In production this is Paystack. Nothing counts until the processor confirms to our server."* Tap **I've sent the money**.
+- "You're in." Then **Back to the Pact**: *"We did it. Nine people, one plan."*
+- To show the wallet path instead: top up first, then press and hold to contribute and confirm with the PIN. *"Holding is deliberate; let go early and nothing happens."*
 
 ### 4. The organiser (Abraham, normal window)
-- Sign in as Abraham. Point at the bell. *"Every movement of money shows up here."*
-- **Pacts** tab → Sarah's Birthday. *"Only a BVN-verified organiser can release the money."* Tap **Release**, PIN 1357. *"It moves to his wallet and every member is told."*
-- Back → **Wallet**. *"Full history; every line has a receipt with a reference."* Tap a row.
-- **Withdraw** → **Add a bank account** → Guaranty Trust Bank, `0123456789`. *"The account name is checked: withdrawals only go to an account in your own name."* Save with the PIN.
-- Withdraw ₦100,000. *"Flat ₦50 fee, shown up front. If the bank ever returns the transfer, the money and the fee come straight back."*
+- Sign in as Abraham. **Home** shows what needs him across all his Pacts.
+- **Pacts** → Sarah's Birthday. *"Only a BVN-verified organiser can release the money."* Tap **Release**, PIN 1357.
+- Near the end of Tasks, as organiser: **Split the rest** on an open Pact asks everyone for an equal share. *"It's a note, never a charge."*
 
-**Close (15s).** "No treasurer, no spreadsheet, no chasing. The money sits in the Pact, everyone sees it, and the rules run themselves."
+### 5. The memory
+- On the completed Pact: **Add the memory**, a line about how it went, and a photo. *"Photos are checked, re-encoded and stripped of location data. Only people in the Pact can see them."*
+
+**Close (15s).** "Plan it, fund it, split the work, and keep the memory. Make it happen together."
 
 ## Things worth showing if asked
 

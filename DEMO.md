@@ -1,6 +1,6 @@
 # PACT demo walkthrough
 
-A 2½-minute recorded walkthrough is in [`docs/demo/pact-demo.mp4`](docs/demo/pact-demo.mp4). This page is the talk track for running the same demo live.
+An 8½-minute narrated walkthrough is in [`docs/demo/pact-demo.mp4`](docs/demo/pact-demo.mp4). This page is the talk track for running the same demo live.
 
 ## Before you start
 
@@ -72,13 +72,16 @@ The recorded video follows this order, in eight chapters. The talk track below m
 
 ## Recording it again
 
-The recording runs its own copy of the app on separate ports and a throwaway database, so it never touches your dev data and can be repeated:
+The video has a synthesised music bed and a narrator. The narration is spoken by a local model (Kokoro, through `hyperframes tts`), so nothing leaves the machine. The recorder times every caption to its spoken line, and the mixer places the voice and ducks the music under it.
+
+The recording runs its own copy of the app on separate ports and a throwaway database, so it never touches your dev data:
 
 ```bash
-scripts/demo-stack.sh                                            # API :8788, web :5174, fresh seeded data
-DEMO_BASE=http://localhost:5174 node scripts/demo-video.mjs exports/demo   # about 7 minutes → pact-demo.webm
-ffmpeg -i exports/demo/pact-demo.webm -ss 0.8 -c:v libx264 -crf 22 -pix_fmt yuv420p -movflags +faststart docs/demo/pact-demo.mp4
+node scripts/demo-voice.mjs                       # once, and after changing a caption (only changed lines are regenerated)
+scripts/demo-stack.sh                             # API :8788, web :5174, fresh seeded data
+DEMO_BASE=http://localhost:5174 node scripts/demo-video.mjs exports/demo      # about 8.5 minutes
+node scripts/demo-audio.mjs exports/demo/pact-demo.webm exports/demo/narration.json docs/demo/pact-demo.mp4
 scripts/demo-stack.sh stop
 ```
 
-`DEMO_SPEED=0.4` runs the same script faster (no useful video) to check it still passes after a change. The script signs up Ngozi with a fixed number, so run `scripts/demo-stack.sh` again between recordings.
+`DEMO_NARRATE=0 DEMO_SPEED=0.4` runs the script fast and silent, to check it still passes after a change. The script signs up Ngozi with a fixed number, so run `scripts/demo-stack.sh` again between recordings. Change the voice with `node scripts/demo-voice.mjs am_adam` (see `npx hyperframes tts --list`).

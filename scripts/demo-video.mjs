@@ -8,6 +8,8 @@ import { chromium } from 'playwright';
 import sharp from 'sharp';
 import { existsSync, mkdirSync, readdirSync, renameSync } from 'node:fs';
 import { homedir } from 'node:os';
+import { readFileSync, writeFileSync } from 'node:fs';
+import { INTRO, OUTRO, chapterSpeech, lineId } from './lib/demo-lines.mjs';
 
 const out = process.argv[2] ?? 'exports/demo';
 mkdirSync(out, { recursive: true });
@@ -81,6 +83,21 @@ await context.addInitScript(() => {
 });
 
 const page = await context.newPage();
+const t0 = Date.now(); // the video starts here; narration timestamps are relative to it
+
+// Narration: lines come from `node scripts/demo-voice.mjs`. Each caption waits for its line to finish.
+const NARRATE = process.env.DEMO_NARRATE !== '0';
+const voiceIndex = NARRATE ? JSON.parse(readFileSync('exports/voice/index.json', 'utf8')) : {};
+const narration = [];
+const speak = (text) => {
+  if (!NARRATE || !text) return 0;
+  const e = voiceIndex[lineId(text)];
+  if (!e) throw new Error(`No narration for “${text.slice(0, 50)}”. Run: node scripts/demo-voice.mjs`);
+  narration.push({ ms: Date.now() - t0, file: e.file, text });
+  return e.seconds * 1000;
+};
+// Speech sets the pace when there is some; otherwise the written hold does.
+const pause = (hold, spoken) => (spoken ? page.waitForTimeout(Math.max(hold * SPEED, spoken + 450)) : wait(hold));
 const SPEED = Number(process.env.DEMO_SPEED ?? 1);
 const wait = (ms) => page.waitForTimeout(ms * SPEED);
 let step = 0;
@@ -88,11 +105,11 @@ let lastCap = '';
 const cap = async (text, hold = 1800) => {
   lastCap = text;
   await page.evaluate(([t, n]) => window.__cap(t, n), [text, ++step]);
-  await wait(hold);
+  await pause(hold, speak(text));
 };
-const card = async (html, hold = 2600) => {
+const card = async (html, hold = 2600, speech = '') => {
   await page.evaluate((h) => window.__card(h), html);
-  await wait(hold);
+  await pause(hold, speak(speech));
 };
 const tap = async (locator, after = 900) => {
   await locator.waitFor({ state: 'visible' });
@@ -128,7 +145,7 @@ const hold = async (locator) => {
 
 const chapter = async (n, title, sub) => {
   await page.evaluate(([nn, t, s]) => window.__card(`<small style="margin:0;font-weight:700;letter-spacing:.14em;color:#22b872">CHAPTER ${nn}</small><h1 style="font-size:52px">${t}</h1><p>${s}</p>`), [n, title, sub]);
-  await wait(2400);
+  await pause(2400, speak(chapterSpeech(n, title, sub)));
   await page.evaluate(() => window.__card(''));
   await wait(500);
 };
@@ -151,7 +168,7 @@ let pactUrl = '';
 
 try {
   await page.goto(`${BASE}/app`, { waitUntil: 'load' });
-  await card(`<h1>pact</h1><p>Make it happen <span>together</span>.</p><small>Product walkthrough · sandbox payments, no real money</small>`, 3200);
+  await card(`<h1>pact</h1><p>Make it happen <span>together</span>.</p><small>Product walkthrough · sandbox payments, no real money</small>`, 3200, INTRO);
   await card(
     `<small style="margin:0;font-weight:700;letter-spacing:.14em;color:#22b872">IN THIS WALKTHROUGH</small>
      <p style="text-align:left;font-size:24px;line-height:1.7;color:#0f1713">1 &nbsp;Plan it together<br>2 &nbsp;Bring people in, and let them pay<br>3 &nbsp;A friend joins<br>4 &nbsp;Finish the goal<br>5 &nbsp;Pay vendors from the Pact<br>6 &nbsp;Wallet and security<br>7 &nbsp;Take orders for aso-ebi<br>8 &nbsp;Keep the memory</p>`,
@@ -434,12 +451,13 @@ try {
   await wait(2600);
 
   await page.evaluate(() => window.__cap(''));
-  await card(`<h1>pact</h1><p>Plan it. Fund it. Split the work. Keep the memory.<br>Make it happen <span>together</span>.</p><small>Web app live now · iOS and Android coming soon</small>`, 4200);
+  await card(`<h1>pact</h1><p>Plan it. Fund it. Split the work. Keep the memory.<br>Make it happen <span>together</span>.</p><small>Web app live now · iOS and Android coming soon</small>`, 4200, OUTRO);
 } catch (err) {
   await page.screenshot({ path: `${out}/demo-FAILED.png` });
   console.error('FAILED after caption', step, `“${lastCap}”`, err.message.split('\n').slice(0, 3).join(' | '));
   process.exitCode = 1;
 } finally {
+  writeFileSync(`${out}/narration.json`, JSON.stringify({ ms: Date.now() - t0, lines: narration }, null, 1));
   await context.close();
   await browser.close();
   const vid = readdirSync(out).filter((f) => f.endsWith('.webm') && f !== 'pact-demo.webm').pop();

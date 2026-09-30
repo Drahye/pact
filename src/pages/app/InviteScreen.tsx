@@ -5,7 +5,7 @@ import { Navigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../api/auth';
 import { ApiError } from '../../api/client';
 import { usePact, usePactCommand } from '../../api/hooks';
-import { Loading } from '../../components/app/States';
+import { FormSkeleton } from '../../components/app/Skeleton';
 import { CategoryIcon } from '../../components/pact/category';
 import { Avatar } from '../../components/ui/Avatar';
 import { Button } from '../../components/ui/Button';
@@ -13,6 +13,7 @@ import { Input } from '../../components/ui/Input';
 import { TopBar } from '../../components/ui/TopBar';
 import { useToast } from '../../components/ui/Toast';
 import { getUser } from '../../data/users';
+import { pushRecent } from '../../lib/drafts';
 import { formatNaira } from '../../lib/format';
 import { joinedMembers, summarize } from '../../lib/pact';
 import { spring } from '../../tokens/tokens';
@@ -29,7 +30,7 @@ export function InviteScreen() {
   const [phone, setPhone] = useState('');
   const [phoneError, setPhoneError] = useState<string>();
 
-  if (q.isLoading) return <Screen topBar={<TopBar backTo={`/app/pact/${id}`} />}><Loading /></Screen>;
+  if (q.isLoading) return <Screen topBar={<TopBar backTo={`/app/pact/${id}`} />}><FormSkeleton fields={2} label="Loading invite" /></Screen>;
   const pact = q.data?.pact;
   if (!pact) return <Navigate to="/app/home" replace />;
 
@@ -64,6 +65,7 @@ export function InviteScreen() {
     if (!/^[789][01]\d{8}$/.test(d)) return setPhoneError('Enter an 11-digit Nigerian number.');
     try {
       await cmd.invite.mutateAsync({ phones: [`0${d}`] });
+      pushRecent('invite-phones', { phone: `0${d}` }, (x) => x.phone, 6);
       setPhone('');
       toast('Invite sent');
     } catch (err) {
@@ -133,7 +135,11 @@ export function InviteScreen() {
       <div className="invite__phone">
         <Input
           label="Or invite by phone number"
+          type="tel"
+          name="invite-phone"
+          autoComplete="off"
           inputMode="tel"
+          enterKeyHint="send"
           placeholder="0803 123 4567"
           value={phone}
           onChange={(e) => {

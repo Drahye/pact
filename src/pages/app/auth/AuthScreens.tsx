@@ -8,6 +8,7 @@ import { Notice } from '../../../components/app/States';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { TopBar } from '../../../components/ui/TopBar';
+import { deviceMemory } from '../../../lib/drafts';
 import { Screen } from '../Screen';
 import { clearFlow, readFlow, writeFlow } from './flow';
 import './auth.css';
@@ -19,7 +20,10 @@ const pretty = (digits: string) => [digits.slice(0, 3), digits.slice(3, 6), digi
 export function PhoneScreen() {
   const { requestOtp } = useAuth();
   const navigate = useNavigate();
-  const [digits, setDigits] = useState(() => toLocal(readFlow().phone ?? ''));
+  // Returning on this device: offer the number used last time (cleared when someone signs out on purpose).
+  const remembered = useState(() => toLocal(deviceMemory.get('lastPhone') ?? ''))[0];
+  const [digits, setDigits] = useState(() => toLocal(readFlow().phone ?? '') || remembered);
+  const [usedRemembered, setUsedRemembered] = useState(() => !readFlow().phone && !!remembered);
   const [error, setError] = useState<string>();
   const [busy, setBusy] = useState(false);
   const valid = /^[789][01]\d{8}$/.test(digits);
@@ -31,6 +35,7 @@ export function PhoneScreen() {
     setError(undefined);
     try {
       const r = await requestOtp(`0${digits}`);
+      deviceMemory.set('lastPhone', digits);
       writeFlow({ phone: r.phone, displayPhone: `0${pretty(digits)}`, devCode: r.devCode, signupToken: undefined });
       navigate('/app/auth/code');
     } catch (err) {
@@ -69,11 +74,15 @@ export function PhoneScreen() {
             <input
               id="phone"
               className="phone-field__input num"
+              type="tel"
+              name="phone"
               inputMode="tel"
               autoComplete="tel-national"
+              enterKeyHint="send"
               placeholder="803 123 4567"
               value={pretty(digits)}
               onChange={(e) => {
+                setUsedRemembered(false);
                 setDigits(toLocal(e.target.value));
                 setError(undefined);
               }}
@@ -82,6 +91,22 @@ export function PhoneScreen() {
               autoFocus
             />
           </div>
+          {usedRemembered && !error && (
+            <p className="field__hint">
+              Filled in from last time.{' '}
+              <button
+                type="button"
+                className="link"
+                onClick={() => {
+                  setDigits('');
+                  setUsedRemembered(false);
+                  deviceMemory.clear('lastPhone');
+                }}
+              >
+                Use a different number
+              </button>
+            </p>
+          )}
           {error && (
             <p className="field__error" id="phone-error">
               {error}
@@ -115,6 +140,21 @@ export function CodeScreen() {
     return () => window.clearTimeout(t);
   }, [resendIn]);
 
+  // Android Chrome can read the code straight out of the SMS (needs "@host #code" in the message).
+  useEffect(() => {
+    if (!('OTPCredential' in window)) return;
+    const ac = new AbortController();
+    navigator.credentials
+      .get({ otp: { transport: ['sms'] }, signal: ac.signal } as CredentialRequestOptions)
+      .then((c) => {
+        const v = ((c as unknown as { code?: string } | null)?.code ?? '').replace(/\D/g, '').slice(0, 6);
+        if (v.length === 6) onChangeRef.current(v);
+      })
+      .catch(() => undefined);
+    return () => ac.abort();
+  }, []);
+  const onChangeRef = useRef<(v: string) => void>(() => undefined);
+
   if (!flow.phone) return <Navigate to="/app/auth/phone" replace />;
 
   const verify = async (value: string) => {
@@ -145,6 +185,8 @@ export function CodeScreen() {
     if (next.length === 6) void verify(next);
   };
 
+  onChangeRef.current = onChange;
+
   const resend = async () => {
     try {
       const r = await requestOtp(flow.phone!);
@@ -169,8 +211,10 @@ export function CodeScreen() {
           ref={input}
           id="otp"
           className="code-field__input"
+          name="otp"
           inputMode="numeric"
           autoComplete="one-time-code"
+          enterKeyHint="done"
           value={code}
           onChange={(e) => onChange(e.target.value)}
           maxLength={6}

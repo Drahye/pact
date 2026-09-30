@@ -7,7 +7,8 @@ import { useAuth } from '../../api/auth';
 import { ApiError } from '../../api/client';
 import { useInvitePreview, useJoinByCode } from '../../api/hooks';
 import { CategoryIcon } from '../../components/pact/category';
-import { ErrorState, Loading, Notice } from '../../components/app/States';
+import { ErrorState, Notice } from '../../components/app/States';
+import { PactDetailSkeleton } from '../../components/app/Skeleton';
 import { ProgressBar } from '../../components/ui/ProgressBar';
 import { Button } from '../../components/ui/Button';
 import { TopBar } from '../../components/ui/TopBar';
@@ -35,7 +36,7 @@ export function JoinScreen() {
     }
   });
 
-  if (preview.isLoading) return <Screen topBar={<TopBar backTo="/app" />}><Loading /></Screen>;
+  if (preview.isLoading) return <Screen topBar={<TopBar backTo="/app" />}><PactDetailSkeleton label="Loading invite" /></Screen>;
   if (preview.error || !preview.data) {
     const notFound = (preview.error as ApiError)?.status === 404;
     return (

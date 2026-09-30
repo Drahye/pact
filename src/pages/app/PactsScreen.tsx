@@ -1,6 +1,7 @@
 import { Plus } from 'lucide-react';
 import { usePacts } from '../../api/hooks';
-import { Empty, ErrorState, Loading } from '../../components/app/States';
+import { Empty, ErrorState } from '../../components/app/States';
+import { PactListSkeleton } from '../../components/app/Skeleton';
 import { PactCard } from '../../components/pact/PactCard';
 import { BottomNav } from '../../components/ui/BottomNav';
 import { Button } from '../../components/ui/Button';
@@ -27,7 +28,7 @@ export function PactsScreen() {
         <IconButton label="Create a Pact" icon={<Plus />} to="/app/create" />
       </div>
       {pacts.isLoading ? (
-        <Loading />
+        <PactListSkeleton label="Loading your Pacts" />
       ) : pacts.error ? (
         <ErrorState onRetry={() => pacts.refetch()} />
       ) : !mine.length ? (

@@ -12,6 +12,7 @@ import { useToast } from '../../../components/ui/Toast';
 import type { BudgetLine, Pact, Participation, Task } from '../../../data/types';
 import { getUser } from '../../../data/users';
 import { formatNaira, toKobo } from '../../../lib/format';
+import { clearDraft, readDraft, useSaveDraft } from '../../../lib/drafts';
 import { colorOf, summarize } from '../../../lib/pact';
 import { participationLabel } from '../../../lib/plan';
 import '../../../components/app/app-ui.css';
@@ -166,17 +167,23 @@ export function AddTaskSheet({ pact, meId, open, onClose }: { pact: Pact; meId: 
   const [title, setTitle] = useState('');
   const [line, setLine] = useState<string | null>(null);
   const [mine, setMine] = useState(false);
+  const draftKey = `task.${pact.id}`;
   useEffect(() => {
     if (open) {
-      setTitle('');
-      setLine(null);
-      setMine(false);
+      const d = readDraft<{ title: string; line: string | null; mine: boolean }>(draftKey);
+      setTitle(d?.title ?? '');
+      setLine(d?.line ?? null);
+      setMine(d?.mine ?? false);
     }
-  }, [open]);
+  }, [open, draftKey]);
+  useSaveDraft(draftKey, { title, line, mine }, !title.trim(), open);
   const save = async () => {
     if (!title.trim()) return;
     const ok = await run(() => plan.addTask.mutateAsync({ title: title.trim(), budgetItemId: line, assigneeId: mine ? meId : null }), 'Task added');
-    if (ok) onClose();
+    if (ok) {
+      clearDraft(draftKey);
+      onClose();
+    }
   };
   return (
     <Modal
@@ -219,18 +226,25 @@ export function BudgetLineSheet({ pact, line, open, onClose }: { pact: Pact; lin
   const run = useRun();
   const [name, setName] = useState('');
   const [amount, setAmount] = useState(0);
+  // Only a new line is remembered; editing an existing one starts from what's saved.
+  const draftKey = `budget.${pact.id}`;
   useEffect(() => {
     if (open) {
-      setName(line?.name ?? '');
-      setAmount(line?.amount ?? 0);
+      const d = line ? null : readDraft<{ name: string; amount: number }>(draftKey);
+      setName(line?.name ?? d?.name ?? '');
+      setAmount(line?.amount ?? d?.amount ?? 0);
     }
-  }, [open, line]);
+  }, [open, line, draftKey]);
+  useSaveDraft(draftKey, { name, amount }, !name.trim() && amount < 1, open && !line);
   const busy = plan.addBudget.isPending || plan.updateBudget.isPending || plan.deleteBudget.isPending;
   const s = summarize(pact);
   const save = async () => {
     const body = { name: name.trim(), amount: toKobo(amount) };
     const ok = line ? await run(() => plan.updateBudget.mutateAsync({ id: line.id, ...body }), 'Budget updated') : await run(() => plan.addBudget.mutateAsync(body), 'Added to the budget');
-    if (ok) onClose();
+    if (ok) {
+      clearDraft(draftKey);
+      onClose();
+    }
   };
   return (
     <Modal

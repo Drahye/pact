@@ -3,6 +3,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import type { AuthTokensDTO, MeDTO, OtpVerifyDTO } from '../../shared/contracts';
 import { setCurrentUserId } from '../data/users';
 import { api, onSessionEnded, refreshSession, setAccessToken } from './client';
+import { clearAllDrafts, setDraftOwner } from '../lib/drafts';
 import { register } from './mappers';
 
 type Status = 'loading' | 'signedOut' | 'signedIn';
@@ -65,6 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const setUser = useCallback((u: MeDTO) => {
     setUserState(u);
     setCurrentUserId(u.id);
+    setDraftOwner(u.id);
     register([u]);
   }, []);
 
@@ -82,6 +84,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSignOutReason(reason);
     setAccessToken(null);
     setUserState(null);
+    setDraftOwner(null);
+    // Choosing to sign out wipes saved drafts on this device; an expired session keeps them for when you're back.
+    if (reason === 'explicit') clearAllDrafts();
     setStatus('signedOut');
     hint.set(false);
     qc.clear();

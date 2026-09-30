@@ -10,6 +10,7 @@ import { AmountInput } from '../../../components/ui/AmountInput';
 import { Button } from '../../../components/ui/Button';
 import { Segmented } from '../../../components/ui/Segmented';
 import { TopBar } from '../../../components/ui/TopBar';
+import { clearDraft, readDraft, useSaveDraft } from '../../../lib/drafts';
 import { formatNaira, formatNairaKobo, toKobo } from '../../../lib/format';
 import { safeAppPath } from '../auth/flow';
 import { Screen } from '../Screen';
@@ -24,8 +25,10 @@ export function TopupScreen() {
   const navigate = useNavigate();
   const wallet = useWallet();
   const start = useStartTopup();
-  const [amount, setAmount] = useState(() => Math.max(0, Number(params.get('amount')) || 10_000));
-  const [channel, setChannel] = useState<'bank_transfer' | 'card'>('bank_transfer');
+  // A link with an amount wins; otherwise pick up where the last visit left off.
+  const [saved] = useState(() => (params.get('amount') ? null : readDraft<{ amount: number; channel: 'bank_transfer' | 'card' }>('topup')));
+  const [amount, setAmount] = useState(() => Math.max(0, Number(params.get('amount')) || saved?.amount || 10_000));
+  const [channel, setChannel] = useState<'bank_transfer' | 'card'>(saved?.channel ?? 'bank_transfer');
   const [error, setError] = useState<{ message: string; remaining?: number }>();
   const [key, setKey] = useState(newIdempotencyKey);
   const rawPact = params.get('pact');
@@ -38,6 +41,8 @@ export function TopupScreen() {
   const fee = topupFee(kobo, channel);
   const valid = kobo >= MIN_TOPUP;
 
+  useSaveDraft('topup', { amount, channel }, amount === 10_000 && channel === 'bank_transfer' && !saved);
+
   const change = (fn: () => void) => {
     fn();
     setError(undefined);
@@ -48,6 +53,7 @@ export function TopupScreen() {
     setError(undefined);
     try {
       const t = await start.mutateAsync({ amount: kobo, channel, key, pactId });
+      clearDraft('topup');
       try {
         if (returnTo) sessionStorage.setItem(TOPUP_RETURN_KEY, returnTo);
         else sessionStorage.removeItem(TOPUP_RETURN_KEY);

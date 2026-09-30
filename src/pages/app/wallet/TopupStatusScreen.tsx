@@ -4,7 +4,8 @@ import { useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { keys, usePact, useTopup } from '../../../api/hooks';
-import { ErrorState, Loading } from '../../../components/app/States';
+import { ErrorState } from '../../../components/app/States';
+import { FormSkeleton } from '../../../components/app/Skeleton';
 import { Button } from '../../../components/ui/Button';
 import { formatNairaKobo } from '../../../lib/format';
 import { spring } from '../../../tokens/tokens';
@@ -45,7 +46,7 @@ export function TopupStatusScreen() {
   }, [t?.status, qc]);
 
   if (q.error) return <Screen><ErrorState onRetry={() => q.refetch()} /></Screen>;
-  if (!t) return <Screen><Loading /></Screen>;
+  if (!t) return <Screen><FormSkeleton fields={1} label="Checking your payment" /></Screen>;
 
   const back = t.pactId ? `/app/pact/${t.pactId}` : readReturn();
   const done = () => {

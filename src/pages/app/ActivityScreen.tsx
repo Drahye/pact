@@ -1,6 +1,7 @@
 import { Activity as ActivityIcon } from 'lucide-react';
 import { useActivity, usePacts } from '../../api/hooks';
-import { Empty, ErrorState, Loading } from '../../components/app/States';
+import { Empty, ErrorState } from '../../components/app/States';
+import { PactListSkeleton } from '../../components/app/Skeleton';
 import { FeedGroup } from '../../components/pact/FeedGroup';
 import { TopBar } from '../../components/ui/TopBar';
 import type { Activity, PactId } from '../../data/types';
@@ -22,7 +23,7 @@ export function ActivityScreen() {
   return (
     <Screen topBar={<TopBar backTo="/app/home" title="Activity" />}>
       {activity.isLoading ? (
-        <Loading />
+        <PactListSkeleton count={2} label="Loading activity" />
       ) : activity.error ? (
         <ErrorState onRetry={() => activity.refetch()} />
       ) : !groups.length ? (

@@ -7,6 +7,7 @@ import { getUser } from '../../data/users';
 import { isoDay } from '../../lib/dates';
 import { formatDate } from '../../lib/format';
 import { Button } from '../ui/Button';
+import { clearDraft, readDraft, useSaveDraft } from '../../lib/drafts';
 import { Input } from '../ui/Input';
 import { Modal } from '../ui/Modal';
 import { useToast } from '../ui/Toast';
@@ -117,13 +118,17 @@ function MemorySheet({ pact, open, onClose }: { pact: Pact; open: boolean; onClo
   const [uploading, setUploading] = useState(0);
   const [error, setError] = useState<string>();
   const photos = pact.memory?.photoIds ?? [];
+  // Words typed but not saved come back if the sheet is closed or the page reloads.
+  const draftKey = `memory.${pact.id}`;
   useEffect(() => {
     if (open) {
-      setNote(pact.memory?.note ?? '');
-      setDay(pact.memory?.happenedOn ?? '');
+      const d = readDraft<{ note: string; day: string }>(draftKey);
+      setNote(d?.note ?? pact.memory?.note ?? '');
+      setDay(d?.day ?? pact.memory?.happenedOn ?? '');
       setError(undefined);
     }
-  }, [open, pact.memory]);
+  }, [open, pact.memory, draftKey]);
+  useSaveDraft(draftKey, { note, day }, note === (pact.memory?.note ?? '') && day === (pact.memory?.happenedOn ?? ''), open);
 
   const pick = async (files: FileList | null) => {
     if (!files?.length) return;
@@ -156,6 +161,7 @@ function MemorySheet({ pact, open, onClose }: { pact: Pact; open: boolean; onClo
   const save = async () => {
     try {
       await plan.saveMemory.mutateAsync({ note: note.trim() || null, happenedOn: day || null });
+      clearDraft(draftKey);
       toast('Memory saved');
       onClose();
     } catch (err) {
@@ -176,7 +182,7 @@ function MemorySheet({ pact, open, onClose }: { pact: Pact; open: boolean; onClo
       }
     >
       <div className="sheet-form">
-        <Input label="When did it happen?" type="date" max={isoDay(new Date())} value={day} onChange={(e) => setDay(e.target.value)} />
+        <Input label="When did it happen?" autoComplete="off" type="date" max={isoDay(new Date())} value={day} onChange={(e) => setDay(e.target.value)} />
         <div className="field">
           <label className="field__label" htmlFor="memory-note">
             How did it go?

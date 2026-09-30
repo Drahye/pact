@@ -1,0 +1,71 @@
+/* Skeleton loaders: shapes that match the content they stand in for. */
+.bone {
+  display: block;
+  flex: none;
+  border-radius: var(--radius-xs);
+  background: linear-gradient(90deg, rgba(15, 23, 19, 0.07), rgba(15, 23, 19, 0.13), rgba(15, 23, 19, 0.07));
+  background-size: 200% 100%;
+  animation: shimmer 1.2s linear infinite;
+}
+
+.bone--round {
+  border-radius: 50%;
+}
+
+.sk {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sk-list {
+  gap: 12px;
+}
+
+.sk-rows {
+  gap: 0;
+}
+
+.sk-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sk-row--between {
+  justify-content: space-between;
+}
+
+.sk-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sk-center {
+  align-items: center;
+  text-align: center;
+}
+
+.sk-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+  border-radius: var(--radius-xl);
+  background: var(--color-surface);
+}
+
+.sk-rowitem {
+  padding: 12px 0;
+}
+
+.sk-form {
+  gap: 20px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bone {
+    animation: none;
+  }
+}

@@ -4,7 +4,7 @@ import { useAuth } from '../../api/auth';
 import { newIdempotencyKey } from '../../api/client';
 import { useContribute, usePact, useWallet } from '../../api/hooks';
 import { PinSheet } from '../../components/app/PinSheet';
-import { Loading } from '../../components/app/States';
+import { AmountSkeleton } from '../../components/app/Skeleton';
 import { SegmentedBar } from '../../components/pact/SegmentedBar';
 import { SegmentedRing } from '../../components/pact/SegmentedRing';
 import { AnimatedNumber } from '../../components/pact/AnimatedNumber';
@@ -16,6 +16,7 @@ import { AmountInput } from '../../components/ui/AmountInput';
 import { Button } from '../../components/ui/Button';
 import { Segmented } from '../../components/ui/Segmented';
 import { TopBar } from '../../components/ui/TopBar';
+import { clearDraft, readDraft, useSaveDraft } from '../../lib/drafts';
 import { formatNaira, formatNairaCompact, formatNairaKobo, formatPercent, fromKobo, toKobo } from '../../lib/format';
 import { sharesOf, summarize } from '../../lib/pact';
 import { ease, spring } from '../../tokens/tokens';
@@ -46,8 +47,11 @@ export function ContributeScreen() {
   const pact = q.data?.pact;
   const [params] = useSearchParams();
   // "Cover the rest" and "Add your share" arrive with an amount.
-  const [amount, setAmount] = useState<number | null>(() => (Number(params.get('amount')) > 0 ? Math.floor(Number(params.get('amount'))) : null));
-  const [choice, setChoice] = useState<Choice | null>(null);
+  // A typed amount is remembered unless the link brought one.
+  const draftKey = `contribute.${id}`;
+  const [saved] = useState(() => (Number(params.get('amount')) > 0 ? null : readDraft<{ amount: number }>(draftKey)));
+  const [amount, setAmount] = useState<number | null>(() => (Number(params.get('amount')) > 0 ? Math.floor(Number(params.get('amount'))) : saved?.amount ?? null));
+  const [choice, setChoice] = useState<Choice | null>(saved ? (PRESETS.includes(saved.amount) ? (String(saved.amount) as Choice) : 'custom') : null);
   const [phase, setPhase] = useState<'enter' | 'done'>('enter');
   const [pinOpen, setPinOpen] = useState(false);
   const [before, setBefore] = useState(0);
@@ -58,8 +62,9 @@ export function ContributeScreen() {
   // Set while our own contribution is in flight, so completing the goal shows the confirmation
   // instead of the "already funded" redirect.
   const paying = useRef(false);
+  useSaveDraft(draftKey, { amount: amount ?? 0 }, !amount, phase === 'enter');
 
-  if (q.isLoading) return <Screen topBar={<TopBar leading="close" backTo={`/app/pact/${id}`} title="Contribute" />}><Loading /></Screen>;
+  if (q.isLoading) return <Screen topBar={<TopBar leading="close" backTo={`/app/pact/${id}`} title="Contribute" />}><AmountSkeleton label="Loading" /></Screen>;
   if (!pact) return <Navigate to="/app/home" replace />;
   const s = summarize(pact);
   const base = `/app/pact/${pact.id}`;
@@ -98,6 +103,7 @@ export function ContributeScreen() {
       paying.current = false;
       throw err;
     }
+    clearDraft(draftKey);
     setBefore(raisedBefore);
     setGiven(capped);
     setPinOpen(false);

@@ -8,6 +8,7 @@ import { Notice } from '../../../components/app/States';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { Modal } from '../../../components/ui/Modal';
+import { clearDraft, readDraft, useSaveDraft } from '../../../lib/drafts';
 import './wallet.css';
 
 interface Props {
@@ -27,6 +28,17 @@ export function AddBankSheet({ open, onClose, onAdded }: Props) {
   const [error, setError] = useState<string>();
   const [pinOpen, setPinOpen] = useState(false);
 
+  // Coming back to the sheet after a refresh or a trip to your banking app picks up where you were.
+  useEffect(() => {
+    if (!open) return;
+    const d = readDraft<{ bankCode: string; number: string }>('add-bank');
+    if (d) {
+      setBankCode(d.bankCode);
+      setNumber(d.number);
+    }
+  }, [open]);
+  useSaveDraft('add-bank', { bankCode, number }, !bankCode && !number, open);
+
   useEffect(() => {
     setResolved(null);
     setError(undefined);
@@ -43,6 +55,7 @@ export function AddBankSheet({ open, onClose, onAdded }: Props) {
   }, [bankCode, number]);
 
   const reset = () => {
+    clearDraft('add-bank');
     setBankCode('');
     setNumber('');
     setResolved(null);

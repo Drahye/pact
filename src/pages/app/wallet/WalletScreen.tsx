@@ -4,7 +4,8 @@ import { Link } from 'react-router-dom';
 import type { WalletTxnDTO } from '../../../../shared/contracts';
 import { TIER_LIMITS } from '../../../../shared/policy';
 import { useTransactions, useWallet } from '../../../api/hooks';
-import { Empty, ErrorState, Loading } from '../../../components/app/States';
+import { Empty, ErrorState } from '../../../components/app/States';
+import { RowListSkeleton } from '../../../components/app/Skeleton';
 import { TxnRow, txnLabel } from '../../../components/app/TxnRow';
 import { WalletCard } from '../../../components/app/WalletCard';
 import { BottomNav } from '../../../components/ui/BottomNav';
@@ -82,7 +83,7 @@ export function WalletScreen() {
           />
         </div>
         {txns.isLoading ? (
-          <Loading />
+          <RowListSkeleton label="Loading transactions" />
         ) : txns.error ? (
           <ErrorState onRetry={() => txns.refetch()} />
         ) : !items.length ? (

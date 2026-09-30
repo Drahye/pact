@@ -1,7 +1,8 @@
 import { Landmark, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { useBankAccounts, useRemoveBankAccount } from '../../../api/hooks';
-import { Empty, Loading } from '../../../components/app/States';
+import { Empty } from '../../../components/app/States';
+import { RowListSkeleton } from '../../../components/app/Skeleton';
 import { Badge } from '../../../components/ui/Badge';
 import { Button } from '../../../components/ui/Button';
 import { IconButton } from '../../../components/ui/IconButton';
@@ -26,7 +27,7 @@ export function BankAccountsScreen() {
       }
     >
       {accounts.isLoading ? (
-        <Loading />
+        <RowListSkeleton count={3} trailing={false} label="Loading bank accounts" />
       ) : !accounts.data?.length ? (
         <Empty icon={<Landmark />} title="No bank accounts yet" body="Add an account in your name to withdraw from your wallet." />
       ) : (

@@ -1,4 +1,4 @@
-import { CalendarDays, Check, ChevronRight, ListChecks, Phone, Plus, RotateCcw, Scale, Wallet, X } from 'lucide-react';
+import { CalendarDays, Check, ChevronRight, History, ListChecks, Phone, Plus, RotateCcw, Scale, Wallet, X } from 'lucide-react';
 import { useMemo, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ApiError, newIdempotencyKey } from '../../api/client';
@@ -16,7 +16,8 @@ import { TopBar } from '../../components/ui/TopBar';
 import { useToast } from '../../components/ui/Toast';
 import type { PactCategory } from '../../data/types';
 import { getUser } from '../../data/users';
-import { isoDay } from '../../lib/dates';
+import { addDaysIso, isoDay } from '../../lib/dates';
+import { clearDraft, pushRecent, readDraft, readRecents, useSaveDraft } from '../../lib/drafts';
 import { daysUntil, formatDate, formatDaysLeft, formatNaira, joinNames, parseAmount, formatAmountInput, toKobo } from '../../lib/format';
 import { PACT_TYPES, TEMPLATES } from '../../../shared/templates';
 import { inferCategory } from '../../lib/pact';
@@ -41,6 +42,23 @@ interface ItemDraft {
   stock: string;
 }
 
+/** Everything on the form except the idempotency key. Kept on this device until the Pact is created. */
+interface CreateDraft {
+  title: string;
+  target: number;
+  deadline: string;
+  invitees: string[];
+  phones: string[];
+  picked: PactCategory | null;
+  policy: 'refund' | 'release';
+  split: 'flexible' | 'equal';
+  mode: 'target' | 'budget' | 'orders';
+  items: ItemDraft[];
+  lines: Line[];
+  tasks: string[];
+}
+const DRAFT_KEY = 'create-pact';
+
 const normalizePhone = (raw: string) => {
   const d = raw.replace(/\D/g, '').replace(/^234/, '').replace(/^0/, '');
   return /^[789][01]\d{8}$/.test(d) ? `0${d}` : null;
@@ -52,26 +70,38 @@ export function CreatePactScreen() {
   const create = useCreatePact();
   const people = useRecentPeople();
   const minDate = isoDay(new Date(Date.now() + 86_400_000));
-  const [title, setTitle] = useState('');
-  const [target, setTarget] = useState(0);
-  const [deadline, setDeadline] = useState('');
-  const [invitees, setInvitees] = useState<string[]>([]);
-  const [phones, setPhones] = useState<string[]>([]);
+  // A half-finished Pact comes back after a refresh, a dropped connection or an expired session.
+  const [saved] = useState(() => {
+    const d = readDraft<CreateDraft>(DRAFT_KEY);
+    if (!d) return null;
+    // Rows need fresh keys, and a date that has since passed isn't worth keeping.
+    d.lines = (d.lines ?? []).map((l) => ({ ...l, key: lineKey++ }));
+    d.items = (d.items ?? []).map((i) => ({ ...i, key: lineKey++ }));
+    if (d.deadline && d.deadline < minDate) d.deadline = '';
+    return d;
+  });
+  const [recentPhones] = useState(() => readRecents<{ phone: string }>('invite-phones'));
+  const [restored, setRestored] = useState(!!saved);
+  const [title, setTitle] = useState(saved?.title ?? '');
+  const [target, setTarget] = useState(saved?.target ?? 0);
+  const [deadline, setDeadline] = useState(saved?.deadline ?? '');
+  const [invitees, setInvitees] = useState<string[]>(saved?.invitees ?? []);
+  const [phones, setPhones] = useState<string[]>(saved?.phones ?? []);
   const [phoneDraft, setPhoneDraft] = useState('');
   const [phoneError, setPhoneError] = useState<string>();
   const [pickerOpen, setPickerOpen] = useState(false);
   const [touched, setTouched] = useState(false);
-  const [picked, setPicked] = useState<PactCategory | null>(null);
-  const [policy, setPolicy] = useState<'refund' | 'release'>('refund');
-  const [split, setSplit] = useState<'flexible' | 'equal'>('flexible');
+  const [picked, setPicked] = useState<PactCategory | null>(saved?.picked ?? null);
+  const [policy, setPolicy] = useState<'refund' | 'release'>(saved?.policy ?? 'refund');
+  const [split, setSplit] = useState<'flexible' | 'equal'>(saved?.split ?? 'flexible');
   const [error, setError] = useState<string>();
   const [key] = useState(newIdempotencyKey);
-  const [mode, setMode] = useState<'target' | 'budget' | 'orders'>('target');
-  const [items, setItems] = useState<ItemDraft[]>([]);
+  const [mode, setMode] = useState<'target' | 'budget' | 'orders'>(saved?.mode ?? 'target');
+  const [items, setItems] = useState<ItemDraft[]>(saved?.items ?? []);
   const addItem = () => setItems((l) => [...l, { key: lineKey++, name: '', price: 0, options: '', stock: '' }]);
   const setItem = (key: number, patch: Partial<ItemDraft>) => setItems((all) => all.map((x) => (x.key === key ? { ...x, ...patch } : x)));
-  const [lines, setLines] = useState<Line[]>([]);
-  const [tasks, setTasks] = useState<string[]>([]);
+  const [lines, setLines] = useState<Line[]>(saved?.lines ?? []);
+  const [tasks, setTasks] = useState<string[]>(saved?.tasks ?? []);
   const [taskDraft, setTaskDraft] = useState('');
   const category = picked ?? inferCategory(title);
   const template = TEMPLATES[category];
@@ -103,6 +133,26 @@ export function CreatePactScreen() {
   );
   const valid = !errors.title && !errors.target && !errors.deadline;
   const count = invitees.length + phones.length;
+
+  const untouched = !title.trim() && !target && !deadline && !count && !picked && !lines.length && !items.length && !tasks.length;
+  useSaveDraft<CreateDraft>(DRAFT_KEY, { title, target, deadline, invitees, phones, picked, policy, split, mode, items, lines, tasks }, untouched, !create.isSuccess);
+  const startOver = () => {
+    clearDraft(DRAFT_KEY);
+    setTitle('');
+    setTarget(0);
+    setDeadline('');
+    setInvitees([]);
+    setPhones([]);
+    setPicked(null);
+    setPolicy('refund');
+    setSplit('flexible');
+    setMode('target');
+    setItems([]);
+    setLines([]);
+    setTasks([]);
+    setTouched(false);
+    setRestored(false);
+  };
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -137,6 +187,8 @@ export function CreatePactScreen() {
           invitePhones: phones,
         },
       });
+      clearDraft(DRAFT_KEY);
+      phones.forEach((phone) => pushRecent('invite-phones', { phone }, (x) => x.phone, 6));
       toast('Pact created');
       navigate(`/app/pact/${r.data.pact.id}/invite`, { replace: true });
     } catch (err) {
@@ -165,6 +217,15 @@ export function CreatePactScreen() {
     >
       <h1 className="large-title">What are you planning?</h1>
       <p className="screen-lede">Name it, pick a date and a target. Everything else is optional.</p>
+
+      {restored && (
+        <Notice tone="accent" icon={<History />}>
+          We kept what you’d filled in.{' '}
+          <button type="button" className="link" onClick={startOver}>
+            Start over
+          </button>
+        </Notice>
+      )}
 
       <form id="create-pact" className="create__form" onSubmit={submit} noValidate>
         <Input
@@ -203,7 +264,22 @@ export function CreatePactScreen() {
           trailing={<CalendarDays />}
           hint={deadline && !errors.deadline ? `${formatDate(deadline)} · ${formatDaysLeft(daysUntil(deadline))}` : 'Up to a year from today'}
           className={deadline ? '' : 'is-empty'}
+          autoComplete="off"
         />
+        <div className="suggest" role="group" aria-label="Quick dates">
+          {[
+            { label: 'In 1 week', days: 7 },
+            { label: 'In 2 weeks', days: 14 },
+            { label: 'In a month', days: 30 },
+          ].map((q) => {
+            const v = addDaysIso(isoDay(new Date()), q.days);
+            return (
+              <button key={q.label} type="button" className={`suggest__chip ${deadline === v ? 'is-on' : ''}`} aria-pressed={deadline === v} onClick={() => setDeadline(v)}>
+                {deadline === v && <Check aria-hidden />} {q.label}
+              </button>
+            );
+          })}
+        </div>
 
 
         <div className="field">
@@ -445,11 +521,29 @@ export function CreatePactScreen() {
             }}
             leading={<Phone />}
             error={phoneError}
+            type="tel"
+            name="invite-phone"
+            autoComplete="off"
+            enterKeyHint="done"
           />
           <Button size="md" variant="secondary" onClick={addPhone}>
             Add
           </Button>
         </div>
+        {recentPhones.filter((r) => !phones.includes(r.phone)).length > 0 && (
+          <div className="field">
+            <span className="field__label">Invited before</span>
+            <div className="suggest">
+              {recentPhones
+                .filter((r) => !phones.includes(r.phone))
+                .map((r) => (
+                  <button key={r.phone} type="button" className="suggest__chip" onClick={() => setPhones((l) => [...l, r.phone])}>
+                    <Plus aria-hidden /> <span className="num">{r.phone}</span>
+                  </button>
+                ))}
+            </div>
+          </div>
+        )}
         {phones.length > 0 && (
           <ul className="create__phones">
             {phones.map((p) => (

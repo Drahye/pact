@@ -1,0 +1,111 @@
+{
+  "overflow": [],
+  "axe": [],
+  "console": [],
+  "links": [],
+  "routes": [
+    {
+      "path": "/",
+      "status": 200
+    },
+    {
+      "path": "/download",
+      "status": 200
+    },
+    {
+      "path": "/terms",
+      "status": 200
+    },
+    {
+      "path": "/privacy",
+      "status": 200
+    },
+    {
+      "path": "/refunds",
+      "status": 200
+    },
+    {
+      "path": "/cookies",
+      "status": 200
+    },
+    {
+      "path": "/styleguide",
+      "status": 200
+    },
+    {
+      "path": "/app/home",
+      "status": 200,
+      "landed": "/app/home"
+    },
+    {
+      "path": "/app/pacts",
+      "status": 200,
+      "landed": "/app/pacts"
+    },
+    {
+      "path": "/app/pact/398a25dc-5c9b-40a0-b0af-95b62179610f",
+      "status": 200,
+      "landed": "/app/pact/398a25dc-5c9b-40a0-b0af-95b62179610f"
+    },
+    {
+      "path": "/app/pact/398a25dc-5c9b-40a0-b0af-95b62179610f/invite",
+      "status": 200,
+      "landed": "/app/pact/398a25dc-5c9b-40a0-b0af-95b62179610f/invite"
+    },
+    {
+      "path": "/app/pact/398a25dc-5c9b-40a0-b0af-95b62179610f/contribute",
+      "status": 200,
+      "landed": "/app/pact/398a25dc-5c9b-40a0-b0af-95b62179610f/contribute"
+    },
+    {
+      "path": "/app/create",
+      "status": 200,
+      "landed": "/app/create"
+    },
+    {
+      "path": "/app/wallet",
+      "status": 200,
+      "landed": "/app/wallet"
+    },
+    {
+      "path": "/app/wallet/topup",
+      "status": 200,
+      "landed": "/app/wallet/topup"
+    },
+    {
+      "path": "/app/wallet/withdraw",
+      "status": 200,
+      "landed": "/app/wallet/withdraw"
+    },
+    {
+      "path": "/app/activity",
+      "status": 200,
+      "landed": "/app/activity"
+    },
+    {
+      "path": "/app/notifications",
+      "status": 200,
+      "landed": "/app/notifications"
+    },
+    {
+      "path": "/app/profile",
+      "status": 200,
+      "landed": "/app/profile"
+    },
+    {
+      "path": "/app/profile/verify",
+      "status": 200,
+      "landed": "/app/profile/verify"
+    },
+    {
+      "path": "/app/profile/security",
+      "status": 200,
+      "landed": "/app/profile/security"
+    },
+    {
+      "path": "/app/profile/banks",
+      "status": 200,
+      "landed": "/app/profile/banks"
+    }
+  ]
+}

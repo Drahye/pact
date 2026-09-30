@@ -6,10 +6,12 @@ import { MIN_WITHDRAWAL, TIER_LIMITS, WITHDRAWAL_FEE } from '../../../../shared/
 import { newIdempotencyKey } from '../../../api/client';
 import { useBankAccounts, useWallet, useWithdraw, useWithdrawal } from '../../../api/hooks';
 import { PinSheet } from '../../../components/app/PinSheet';
-import { Loading, Notice } from '../../../components/app/States';
+import { Notice } from '../../../components/app/States';
+import { RowListSkeleton } from '../../../components/app/Skeleton';
 import { AmountInput } from '../../../components/ui/AmountInput';
 import { Button } from '../../../components/ui/Button';
 import { TopBar } from '../../../components/ui/TopBar';
+import { clearDraft, readDraft, useSaveDraft } from '../../../lib/drafts';
 import { formatNairaKobo, fromKobo, toKobo } from '../../../lib/format';
 import { spring } from '../../../tokens/tokens';
 import { Screen } from '../Screen';
@@ -22,13 +24,15 @@ export function WithdrawScreen() {
   const wallet = useWallet();
   const accounts = useBankAccounts();
   const withdraw = useWithdraw();
-  const [amount, setAmount] = useState(0);
-  const [chosen, setChosen] = useState<string | null>(null);
+  const [saved] = useState(() => readDraft<{ amount: number; chosen: string | null }>('withdraw'));
+  const [amount, setAmount] = useState(saved?.amount ?? 0);
+  const [chosen, setChosen] = useState<string | null>(saved?.chosen ?? null);
   const [addOpen, setAddOpen] = useState(false);
   const [pinOpen, setPinOpen] = useState(false);
   const [key, setKey] = useState(newIdempotencyKey);
   const [reference, setReference] = useState<string>();
   const status = useWithdrawal(reference);
+  useSaveDraft('withdraw', { amount, chosen }, !amount && !chosen, !reference);
 
   const balance = wallet.data?.balance ?? 0;
   const tier = wallet.data?.tier ?? 1;
@@ -119,7 +123,7 @@ export function WithdrawScreen() {
 
       <p className="menu-label">To</p>
       {accounts.isLoading ? (
-        <Loading />
+        <RowListSkeleton count={2} trailing={false} label="Loading bank accounts" />
       ) : (
         <div className="choices" role="radiogroup" aria-label="Bank account">
           {accounts.data?.map((a) => (
@@ -169,6 +173,7 @@ export function WithdrawScreen() {
         description={account ? <>To {account.bankName} ••{account.last4}. Enter your PIN.</> : undefined}
         onSubmit={async (pin) => {
           const w = await withdraw.mutateAsync({ amount: kobo, bankAccountId: account!.id, pin, key });
+          clearDraft('withdraw');
           setPinOpen(false);
           setReference(w.reference);
         }}

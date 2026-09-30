@@ -5,7 +5,8 @@ import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import type { TopupDTO } from '../../../../shared/contracts';
 import { useAuth } from '../../../api/auth';
 import { api, ApiError } from '../../../api/client';
-import { ErrorState, Loading, Notice } from '../../../components/app/States';
+import { ErrorState, Notice } from '../../../components/app/States';
+import { FormSkeleton } from '../../../components/app/Skeleton';
 import { Button } from '../../../components/ui/Button';
 import { TopBar } from '../../../components/ui/TopBar';
 import { useToast } from '../../../components/ui/Toast';
@@ -28,7 +29,7 @@ export function CheckoutScreen() {
   const q = useQuery({ queryKey: ['checkout', ref], queryFn: () => api<Checkout>('GET', `/sandbox/checkout/${ref}`), retry: false });
 
   if (config && !config.sandbox) return <Navigate to={`/app/wallet/topup/${ref}`} replace />;
-  if (q.isLoading) return <Screen topBar={<TopBar leading="close" backTo="/app/wallet" />}><Loading /></Screen>;
+  if (q.isLoading) return <Screen topBar={<TopBar leading="close" backTo="/app/wallet" />}><FormSkeleton fields={2} label="Loading checkout" /></Screen>;
   if (q.error || !q.data) return <Screen topBar={<TopBar leading="close" backTo="/app/wallet" />}><ErrorState message={(q.error as ApiError)?.message} /></Screen>;
   const c = q.data;
   if (c.status !== 'pending') return <Navigate to={`/app/wallet/topup/${ref}`} replace />;

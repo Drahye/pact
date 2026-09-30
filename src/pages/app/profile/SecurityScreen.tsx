@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { ApiError } from '../../../api/client';
 import { useProfileActions, useSessions } from '../../../api/hooks';
 import { PinPad } from '../../../components/app/PinPad';
-import { Loading } from '../../../components/app/States';
+import { RowListSkeleton } from '../../../components/app/Skeleton';
 import { Button } from '../../../components/ui/Button';
 import { Modal } from '../../../components/ui/Modal';
 import { TopBar } from '../../../components/ui/TopBar';
@@ -87,7 +87,7 @@ export function SecurityScreen() {
 
       <p className="menu-label">Signed in on</p>
       {sessions.isLoading ? (
-        <Loading />
+        <RowListSkeleton count={3} trailing={false} label="Loading devices" />
       ) : (
         <div className="menu sessions">
           {sessions.data?.map((s) => (

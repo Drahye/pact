@@ -14,6 +14,7 @@ import { Modal } from '../../../components/ui/Modal';
 import { useToast } from '../../../components/ui/Toast';
 import type { Pact, PactPayout, PactTransfer, PayoutStatus } from '../../../data/types';
 import { getUser } from '../../../data/users';
+import { clearDraft, pushRecent, readDraft, readRecents, useSaveDraft } from '../../../lib/drafts';
 import { formatNaira, formatRelative, toKobo } from '../../../lib/format';
 import { colorOf } from '../../../lib/pact';
 import { NGN, PACT_PAYOUT_FEE, VENDOR_APPROVAL_THRESHOLD } from '../../../../shared/policy';
@@ -441,6 +442,13 @@ export function PayoutSheet({ pact, payout, meId, onClose }: { pact: Pact; payou
 
 /* Paying a vendor --------------------------------------------------------- */
 
+interface RecentVendor {
+  bankCode: string;
+  number: string;
+  name: string;
+  bank: string;
+}
+
 export function PayVendorSheet({ pact, open, onClose, onChooseCoOrganizer }: { pact: Pact; open: boolean; onClose: () => void; onChooseCoOrganizer: () => void }) {
   const money = usePactMoney(pact.id);
   const banks = useBanks();
@@ -455,6 +463,20 @@ export function PayVendorSheet({ pact, open, onClose, onChooseCoOrganizer }: { p
   const [error, setError] = useState<string>();
   const [pinOpen, setPinOpen] = useState(false);
   const [key, setKey] = useState(newIdempotencyKey);
+
+  // A vendor payment half-filled (waiting on a quote, say) is still here when you come back.
+  const draftKey = `vendor.${pact.id}`;
+  useEffect(() => {
+    if (!open) return;
+    const d = readDraft<{ purpose: string; lineId: string | null; amount: number; bankCode: string; number: string }>(draftKey);
+    if (!d) return;
+    setPurpose(d.purpose);
+    setLineId(d.lineId);
+    setAmount(d.amount);
+    setBankCode(d.bankCode);
+    setNumber(d.number);
+  }, [open, draftKey]);
+  useSaveDraft(draftKey, { purpose, lineId, amount, bankCode, number }, !purpose.trim() && !amount && !bankCode && !number, open);
 
   useEffect(() => {
     setResolved(null);
@@ -482,8 +504,14 @@ export function PayVendorSheet({ pact, open, onClose, onChooseCoOrganizer }: { p
   const blocked = over && !co;
   const ready = purpose.trim().length > 0 && amount >= 500 && amount <= available && !!resolved && !blocked;
   const lines = pact.budget ?? [];
+  // Vendors you've paid before, so the bank and number don't get typed twice.
+  const [recents, setRecents] = useState(() => readRecents<RecentVendor>('vendors'));
+  useEffect(() => {
+    if (open) setRecents(readRecents<RecentVendor>('vendors'));
+  }, [open]);
 
   const reset = () => {
+    clearDraft(draftKey);
     setPurpose('');
     setLineId(null);
     setAmount(0);
@@ -535,6 +563,26 @@ export function PayVendorSheet({ pact, open, onClose, onChooseCoOrganizer }: { p
           <p className="vendor__available num">
             {formatNaira(available)} available · {formatNaira(FEE)} transfer fee from the Pact
           </p>
+          {recents.length > 0 && !number && (
+            <div className="field">
+              <span className="field__label">Paid before</span>
+              <div className="suggest">
+                {recents.map((v) => (
+                  <button
+                    key={`${v.bankCode}:${v.number}`}
+                    type="button"
+                    className="suggest__chip"
+                    onClick={() => {
+                      setBankCode(v.bankCode);
+                      setNumber(v.number);
+                    }}
+                  >
+                    <Landmark aria-hidden /> {v.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           <div className="field">
             <label className="field__label" htmlFor="vendor-bank">
               Their bank
@@ -592,6 +640,7 @@ export function PayVendorSheet({ pact, open, onClose, onChooseCoOrganizer }: { p
         }
         onSubmit={async (pin) => {
           await money.payVendor.mutateAsync({ key, amount: toKobo(amount), bankCode, accountNumber: number, purpose: purpose.trim(), budgetItemId: lineId, pin });
+          if (resolved) pushRecent<RecentVendor>('vendors', { bankCode, number, name: resolved, bank: banks.data?.find((b) => b.code === bankCode)?.name ?? '' }, (v) => `${v.bankCode}:${v.number}`);
           setPinOpen(false);
           toast(over && co ? `Sent to ${getUser(co).name} to approve` : 'Payment on its way. Everyone can see it.');
           reset();

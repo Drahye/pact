@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../../api/auth';
 import { useActivity, useNotifications, usePacts, useWallet } from '../../api/hooks';
 import { ErrorState } from '../../components/app/States';
+import { PactListSkeleton } from '../../components/app/Skeleton';
 import { WalletStrip } from '../../components/app/WalletCard';
 import { attentionFor } from '../../lib/plan';
 import { isoDay } from '../../lib/dates';
@@ -94,8 +95,7 @@ export function HomeScreen() {
         <ErrorState onRetry={() => pacts.refetch()} />
       ) : pacts.isLoading ? (
         <div className="screen-section list-stack">
-          <span className="skeleton skeleton--card" style={{ height: 300 }} />
-          <span className="skeleton skeleton--card" />
+          <PactListSkeleton label="Loading your Pacts" />
         </div>
       ) : (
         <>

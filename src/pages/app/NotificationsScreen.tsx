@@ -2,7 +2,8 @@ import { Bell, BellRing, CheckCheck, Gift, ShieldAlert, Wallet } from 'lucide-re
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMarkRead, useNotifications } from '../../api/hooks';
-import { Empty, ErrorState, Loading } from '../../components/app/States';
+import { Empty, ErrorState } from '../../components/app/States';
+import { RowListSkeleton } from '../../components/app/Skeleton';
 import { IconButton } from '../../components/ui/IconButton';
 import { TopBar } from '../../components/ui/TopBar';
 import { formatRelative } from '../../lib/format';
@@ -42,7 +43,7 @@ export function NotificationsScreen() {
       }
     >
       {notes.isLoading ? (
-        <Loading />
+        <RowListSkeleton trailing={false} label="Loading notifications" />
       ) : notes.error ? (
         <ErrorState onRetry={() => notes.refetch()} />
       ) : !notes.data?.items.length ? (

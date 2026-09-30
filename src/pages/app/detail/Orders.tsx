@@ -11,6 +11,7 @@ import { useToast } from '../../../components/ui/Toast';
 import type { Pact, PactItem, PactOrder } from '../../../data/types';
 import { getUser } from '../../../data/users';
 import { isoDay } from '../../../lib/dates';
+import { clearDraft, readDraft, useSaveDraft } from '../../../lib/drafts';
 import { formatDate, formatNaira, toKobo } from '../../../lib/format';
 import { isOrganizerOf } from './Money';
 import '../create.css';
@@ -194,13 +195,17 @@ function ItemSheet({ pact, item, open, onClose }: { pact: Pact; item: PactItem |
   const [price, setPrice] = useState(0);
   const [options, setOptions] = useState('');
   const [stock, setStock] = useState('');
+  // A new item is remembered while you work out the details; editing one starts from what's saved.
+  const draftKey = `item.${pact.id}`;
   useEffect(() => {
     if (!open) return;
-    setName(item?.name ?? '');
-    setPrice(item?.price ?? 0);
-    setOptions(item?.options.join(', ') ?? '');
-    setStock(item?.stock ? String(item.stock) : '');
-  }, [open, item]);
+    const d = item ? null : readDraft<{ name: string; price: number; options: string; stock: string }>(draftKey);
+    setName(item?.name ?? d?.name ?? '');
+    setPrice(item?.price ?? d?.price ?? 0);
+    setOptions(item?.options.join(', ') ?? d?.options ?? '');
+    setStock(item?.stock ? String(item.stock) : d?.stock ?? '');
+  }, [open, item, draftKey]);
+  useSaveDraft(draftKey, { name, price, options, stock }, !name.trim() && !price && !options && !stock, open && !item);
   const body = {
     name: name.trim(),
     price: toKobo(price),
@@ -225,7 +230,7 @@ function ItemSheet({ pact, item, open, onClose }: { pact: Pact; item: PactItem |
             fullWidth
             disabled={!ready}
             loading={money.addItem.isPending || money.updateItem.isPending}
-            onClick={() => run(() => (item ? money.updateItem.mutateAsync({ id: item.id, ...body }) : money.addItem.mutateAsync(body)), item ? 'Saved' : 'Item added').then((ok) => ok && onClose())}
+            onClick={() => run(() => (item ? money.updateItem.mutateAsync({ id: item.id, ...body }) : money.addItem.mutateAsync(body)), item ? 'Saved' : 'Item added').then((ok) => ok && (clearDraft(draftKey), onClose()))}
           >
             {item ? 'Save' : 'Add item'}
           </Button>

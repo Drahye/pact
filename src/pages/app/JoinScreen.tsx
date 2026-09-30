@@ -1,4 +1,4 @@
-import { CalendarDays, Users } from 'lucide-react';
+import { CalendarDays, Copy, Landmark, Users } from 'lucide-react';
 import { useState } from 'react';
 import type { Participation } from '../../data/types';
 import { ParticipationPicker } from './detail/Sheets';
@@ -16,6 +16,7 @@ import { daysUntil, formatDate, formatDaysLeft, formatNairaKobo } from '../../li
 import { setReturnTo } from './auth/flow';
 import { Screen } from './Screen';
 import './join.css';
+import './detail/money.css';
 
 /** Where an invite link lands. Anyone can see what it's for; joining needs an account. */
 export function JoinScreen() {
@@ -44,7 +45,7 @@ export function JoinScreen() {
     );
   }
   const p = preview.data;
-  const pct = Math.min(100, (p.raised / p.target) * 100);
+  const pct = p.target > 0 ? Math.min(100, (p.raised / p.target) * 100) : 0;
   const open = p.status === 'open';
 
   const onJoin = async () => {
@@ -88,10 +89,18 @@ export function JoinScreen() {
       <div className="join__card">
         <CategoryIcon category={p.category} size="lg" />
         <h1 className="join__title">{p.title}</h1>
-        <p className="join__amount num">
-          <strong>{formatNairaKobo(p.raised)}</strong> of {formatNairaKobo(p.target)}
-        </p>
-        <ProgressBar value={pct} label={`${Math.round(pct)}% funded`} />
+        {p.mode === 'orders' ? (
+          <p className="join__amount num">
+            {p.target ? <><strong>{formatNairaKobo(p.target)}</strong> ordered so far</> : 'Taking orders now'}
+          </p>
+        ) : (
+          <>
+            <p className="join__amount num">
+              <strong>{formatNairaKobo(p.raised)}</strong> of {formatNairaKobo(p.target)}
+            </p>
+            <ProgressBar value={pct} label={`${Math.round(pct)}% funded`} />
+          </>
+        )}
         <ul className="join__facts">
           <li>
             <Users aria-hidden /> {p.memberCount} {p.memberCount === 1 ? 'person' : 'people'} in
@@ -102,6 +111,34 @@ export function JoinScreen() {
         </ul>
       </div>
       {!open && <Notice>This Pact isn’t taking new people. It’s {p.status === 'funded' ? 'already fully funded' : 'closed'}.</Notice>}
+      {p.bankAccount && (
+        <section className="pay-transfer" aria-labelledby="join-pay">
+          <div className="pay-transfer__head">
+            <span className="pay-transfer__icon tint--mint" aria-hidden>
+              <Landmark />
+            </span>
+            <div>
+              <h2 id="join-pay" className="pay-transfer__title">
+                Just want to pay?
+              </h2>
+              <p className="pay-transfer__sub">Transfer from any bank app. No account needed.</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            className="pay-transfer__number"
+            onClick={() => navigator.clipboard?.writeText(p.bankAccount!.accountNumber).then(() => toast('Account number copied'))}
+            aria-label={`Copy account number ${p.bankAccount.accountNumber}`}
+          >
+            <span className="num">{p.bankAccount.accountNumber.replace(/(\d{3})(\d{3})(\d{4})/, '$1 $2 $3')}</span>
+            <Copy aria-hidden />
+          </button>
+          <p className="pay-transfer__meta">
+            {p.bankAccount.bankName} · {p.bankAccount.accountName}
+          </p>
+          <p className="pay-transfer__hint">Your name shows in the Pact as a guest, with what you sent.</p>
+        </section>
+      )}
       {open && (
         <section className="join__choose" aria-labelledby="join-how">
           <h2 id="join-how" className="join__how-title">

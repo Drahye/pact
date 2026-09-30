@@ -38,12 +38,12 @@ export function SegmentedRing({ shares, target, size = 220, stroke = 18, tone = 
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
   const total = shares.reduce((s, x) => s + x.value, 0);
-  const pct = Math.min(100, (total / target) * 100);
+  const pct = Math.min(100, (total / Math.max(1, target)) * 100);
   let offset = 0;
   const segs = shares
     .filter((s) => s.value > 0)
     .map((s, i) => {
-      const full = (s.value / target) * c;
+      const full = (s.value / Math.max(1, target)) * c;
       const seg = { ...s, start: offset, len: Math.max(1, full - GAP_PX), i };
       offset += full;
       return seg;

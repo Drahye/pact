@@ -1,8 +1,8 @@
 import { motion, useReducedMotion } from 'framer-motion';
-import { Check, CheckCheck, ShieldCheck, Wallet } from 'lucide-react';
+import { Check, CheckCheck, ChevronRight, Clock, ShieldCheck, Wallet } from 'lucide-react';
 import { MemorySection } from '../../components/pact/Memory';
 import { useAuth } from '../../api/auth';
-import { usePactAction } from '../../api/hooks';
+import { usePactAction, usePactMoney } from '../../api/hooks';
 import { PinSheet } from '../../components/app/PinSheet';
 import { Notice } from '../../components/app/States';
 import { useToast } from '../../components/ui/Toast';
@@ -14,7 +14,10 @@ import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
 import { SegmentedRing } from '../../components/pact/SegmentedRing';
 import { TopBar } from '../../components/ui/TopBar';
-import type { Activity, Pact } from '../../data/types';
+import type { Activity, Pact, PactPayout } from '../../data/types';
+import { ApprovalCards, CoOrganizerSheet, coOrganizerOf, PaidFromPact, PayoutSheet, PayVendorSheet } from './detail/Money';
+import { isOrderPact, MyOrders, OrderMenu, OrderSheetSection } from './detail/Orders';
+import './detail/money.css';
 import { getUser } from '../../data/users';
 import { formatNaira } from '../../lib/format';
 import { colorOf, joinedMembers, sharesOf, summarize } from '../../lib/pact';
@@ -31,6 +34,13 @@ export function CompletedScreen({ pact, activity = [] }: { pact: Pact; activity?
   const [open, setOpen] = useState(false);
   const [releaseOpen, setReleaseOpen] = useState(false);
   const release = usePactAction(pact.id, 'release');
+  const money = usePactMoney(pact.id);
+  const [payout, setPayout] = useState<PactPayout | null>(null);
+  const [payOpen, setPayOpen] = useState(false);
+  const [coOpen, setCoOpen] = useState(false);
+  const co = coOrganizerOf(pact);
+  const coName = co ? getUser(co).name : null;
+  const request = pact.releaseRequest ?? null;
   const s = summarize(pact);
   const isOrganizer = pact.organizerId === CURRENT_USER_ID;
   const released = pact.status === 'released';
@@ -49,9 +59,13 @@ export function CompletedScreen({ pact, activity = [] }: { pact: Pact; activity?
       footer={
         <>
           {isOrganizer && !released ? (
-            canRelease ? (
+            request ? (
+              <Button fullWidth variant="secondary" iconLeft={<Clock />} loading={money.declineRelease.isPending} onClick={() => money.declineRelease.mutateAsync(undefined).then(() => toast('Request withdrawn'))}>
+                Waiting for {coName ?? 'your co-organiser'} · withdraw request
+              </Button>
+            ) : canRelease ? (
               <Button fullWidth iconLeft={<Wallet />} onClick={() => setReleaseOpen(true)}>
-                Release {formatNaira(pact.poolBalance ?? s.raised)} to your wallet
+                {coName ? `Ask ${coName} to release ${formatNaira(pact.poolBalance ?? s.raised)}` : `Release ${formatNaira(pact.poolBalance ?? s.raised)} to your wallet`}
               </Button>
             ) : (
               <Button fullWidth iconLeft={<ShieldCheck />} to="/app/profile/verify">
@@ -98,9 +112,11 @@ export function CompletedScreen({ pact, activity = [] }: { pact: Pact; activity?
             {pact.title} is fully funded.
             {released
               ? ` The money was released to ${isOrganizer ? 'your wallet' : getUser(pact.organizerId).name}.`
-              : isOrganizer
-                ? ' Release it to your wallet whenever you’re ready.'
-                : ` ${getUser(pact.organizerId).name} will release the funds.`}
+              : request
+                ? ` ${isOrganizer ? 'You’ve' : `${getUser(pact.organizerId).name} has`} asked to release the funds. ${coName ? `${co === CURRENT_USER_ID ? 'You' : coName} approve${co === CURRENT_USER_ID ? '' : 's'} it.` : ''}`
+                : isOrganizer
+                  ? ` Pay vendors straight from the Pact${coName ? `, or ask ${coName} to release it to your wallet` : ', or release it to your wallet'}.`
+                  : ` ${getUser(pact.organizerId).name} pays vendors from the Pact or releases the funds.`}
           </p>
         </motion.div>
       </div>
@@ -162,6 +178,33 @@ export function CompletedScreen({ pact, activity = [] }: { pact: Pact; activity?
         </section>
       )}
 
+      {!released && (
+        <div className="completed__money">
+          <ApprovalCards pact={pact} meId={CURRENT_USER_ID} onOpen={setPayout} />
+          {isOrderPact(pact) && (
+            <>
+              <OrderSheetSection pact={pact} meId={CURRENT_USER_ID} />
+              <MyOrders pact={pact} meId={CURRENT_USER_ID} />
+              <OrderMenu pact={pact} meId={CURRENT_USER_ID} />
+            </>
+          )}
+          <PaidFromPact pact={pact} meId={CURRENT_USER_ID} onPay={() => setPayOpen(true)} onOpen={setPayout} />
+          {isOrganizer && (
+            <button type="button" className="pay-transfer-cta" onClick={() => setCoOpen(true)}>
+              <span className="pay-transfer__icon tint--lilac" aria-hidden>
+                <ShieldCheck />
+              </span>
+              <span className="pay-transfer-cta__text">
+                <strong>{coName ? `Co-organiser: ${coName}` : 'Add a co-organiser'}</strong>
+                <span>{coName ? 'Approves large payments and the release' : 'A second person to approve large payments'}</span>
+              </span>
+              <ChevronRight aria-hidden />
+            </button>
+          )}
+        </div>
+      )}
+      {released && <PaidFromPact pact={pact} meId={CURRENT_USER_ID} onPay={() => undefined} onOpen={setPayout} />}
+
       <div className="completed__memory">
         <MemorySection pact={pact} meId={CURRENT_USER_ID} />
       </div>
@@ -175,14 +218,23 @@ export function CompletedScreen({ pact, activity = [] }: { pact: Pact; activity?
       <PinSheet
         open={releaseOpen}
         onClose={() => setReleaseOpen(false)}
-        title="Release the funds"
-        description={<><span className="num">{formatNaira(pact.poolBalance ?? s.raised)}</span> moves from {pact.title} into your wallet. Everyone in the Pact is told.</>}
+        title={coName ? 'Ask for the release' : 'Release the funds'}
+        description={
+          coName ? (
+            <><span className="num">{formatNaira(pact.poolBalance ?? s.raised)}</span> moves to your wallet once {coName} approves. Everyone in the Pact is told.</>
+          ) : (
+            <><span className="num">{formatNaira(pact.poolBalance ?? s.raised)}</span> moves from {pact.title} into your wallet. Everyone in the Pact is told.</>
+          )
+        }
         onSubmit={async (pin) => {
           await release.mutateAsync({ pin });
           setReleaseOpen(false);
-          toast('Funds released to your wallet');
+          toast(coName ? `Sent to ${coName} to approve` : 'Funds released to your wallet');
         }}
       />
+      <PayoutSheet pact={pact} payout={payout} meId={CURRENT_USER_ID} onClose={() => setPayout(null)} />
+      <PayVendorSheet pact={pact} open={payOpen} onClose={() => setPayOpen(false)} onChooseCoOrganizer={() => { setPayOpen(false); setCoOpen(true); }} />
+      <CoOrganizerSheet pact={pact} open={coOpen} onClose={() => setCoOpen(false)} />
 
       <Modal open={open} onClose={() => setOpen(false)} title="Contributions" description={`${formatNaira(s.raised)} from ${members.length} people`}>
         <ul className="contributions">

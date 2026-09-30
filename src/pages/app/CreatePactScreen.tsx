@@ -33,6 +33,14 @@ interface Line {
 }
 let lineKey = 0;
 
+interface ItemDraft {
+  key: number;
+  name: string;
+  price: number;
+  options: string;
+  stock: string;
+}
+
 const normalizePhone = (raw: string) => {
   const d = raw.replace(/\D/g, '').replace(/^234/, '').replace(/^0/, '');
   return /^[789][01]\d{8}$/.test(d) ? `0${d}` : null;
@@ -58,7 +66,10 @@ export function CreatePactScreen() {
   const [split, setSplit] = useState<'flexible' | 'equal'>('flexible');
   const [error, setError] = useState<string>();
   const [key] = useState(newIdempotencyKey);
-  const [mode, setMode] = useState<'target' | 'budget'>('target');
+  const [mode, setMode] = useState<'target' | 'budget' | 'orders'>('target');
+  const [items, setItems] = useState<ItemDraft[]>([]);
+  const addItem = () => setItems((l) => [...l, { key: lineKey++, name: '', price: 0, options: '', stock: '' }]);
+  const setItem = (key: number, patch: Partial<ItemDraft>) => setItems((all) => all.map((x) => (x.key === key ? { ...x, ...patch } : x)));
   const [lines, setLines] = useState<Line[]>([]);
   const [tasks, setTasks] = useState<string[]>([]);
   const [taskDraft, setTaskDraft] = useState('');
@@ -73,7 +84,11 @@ export function CreatePactScreen() {
     () => ({
       title: !title.trim() ? 'Give your Pact a name.' : undefined,
       target:
-        mode === 'budget'
+        mode === 'orders'
+          ? !items.length || items.some((i) => !i.name.trim() || i.price < 100)
+            ? 'Give every item a name and a price of at least ₦100.'
+            : undefined
+          : mode === 'budget'
           ? lines.some((l) => !l.name.trim() || l.amount < 1)
             ? 'Give every line a name and an amount.'
             : budgetTotal < 1_000
@@ -84,7 +99,7 @@ export function CreatePactScreen() {
             : undefined,
       deadline: !deadline ? 'Pick a date.' : deadline < minDate ? 'Choose a date after today.' : undefined,
     }),
-    [title, target, deadline, minDate, mode, lines, budgetTotal],
+    [title, target, deadline, minDate, mode, lines, budgetTotal, items],
   );
   const valid = !errors.title && !errors.target && !errors.deadline;
   const count = invitees.length + phones.length;
@@ -101,7 +116,19 @@ export function CreatePactScreen() {
           title: title.trim(),
           category,
           // With a budget the server works out the target from the lines.
-          ...(mode === 'budget' ? { budget: lines.map((l) => ({ name: l.name.trim(), amount: toKobo(l.amount) })) } : { target: toKobo(target) }),
+          ...(mode === 'orders'
+            ? {
+                mode: 'orders' as const,
+                items: items.map((i) => ({
+                  name: i.name.trim(),
+                  price: toKobo(i.price),
+                  options: i.options.split(',').map((o) => o.trim()).filter(Boolean),
+                  stock: i.stock ? Number(i.stock) : null,
+                })),
+              }
+            : mode === 'budget'
+              ? { budget: lines.map((l) => ({ name: l.name.trim(), amount: toKobo(l.amount) })) }
+              : { target: toKobo(target) }),
           tasks: tasks.map((t) => ({ title: t })),
           deadline,
           missedGoalPolicy: policy,
@@ -181,21 +208,53 @@ export function CreatePactScreen() {
 
         <div className="field">
           <span className="field__label">How much do you need?</span>
-          <Segmented<'target' | 'budget'>
-            label="Target or budget"
+          <Segmented<'target' | 'budget' | 'orders'>
+            label="Target, budget or orders"
             value={mode}
             onChange={(m) => {
               setMode(m);
               if (m === 'budget' && !lines.length) setLines(template.budget.slice(0, 3).map((name) => ({ key: lineKey++, name, amount: 0 })));
+              if (m === 'orders' && !items.length) addItem();
             }}
             options={[
               { value: 'target', label: 'One target' },
-              { value: 'budget', label: 'Plan the budget' },
+              { value: 'budget', label: 'Budget' },
+              { value: 'orders', label: 'Take orders' },
             ]}
           />
+          {mode === 'orders' && <p className="field__hint">For aso-ebi, souvenirs or tickets: people order what they want, and the total is what they order.</p>}
         </div>
 
-        {mode === 'target' ? (
+        {mode === 'orders' ? (
+          <div className="budget-edit">
+            <ul className="item-edit">
+              {items.map((it, i) => (
+                <li key={it.key} className="item-edit__card">
+                  <div className="budget-edit__line">
+                    <input className="budget-edit__name" aria-label={`Item ${i + 1} name`} placeholder="e.g. Aso-oke + gele" value={it.name} maxLength={60} onChange={(e) => setItem(it.key, { name: e.target.value })} />
+                    <span className="budget-edit__amount">
+                      <span aria-hidden>₦</span>
+                      <input className="num" inputMode="numeric" aria-label={`Item ${i + 1} price`} placeholder="0" value={formatAmountInput(it.price)} onChange={(e) => setItem(it.key, { price: Math.min(50_000_000, parseAmount(e.target.value)) })} />
+                    </span>
+                    <button type="button" className="budget-edit__remove" aria-label={`Remove ${it.name || 'item'}`} onClick={() => setItems((all) => all.filter((x) => x.key !== it.key))}>
+                      <X />
+                    </button>
+                  </div>
+                  <div className="item-edit__extra">
+                    <input aria-label={`Item ${i + 1} sizes or colours`} placeholder="Sizes or colours: S, M, L" value={it.options} maxLength={200} onChange={(e) => setItem(it.key, { options: e.target.value })} />
+                    <input className="num" inputMode="numeric" aria-label={`Item ${i + 1} how many available`} placeholder="Stock: no limit" value={it.stock} onChange={(e) => setItem(it.key, { stock: e.target.value.replace(/\D/g, '').slice(0, 5) })} />
+                  </div>
+                </li>
+              ))}
+            </ul>
+            <div className="suggest">
+              <button type="button" className="suggest__chip suggest__chip--own" onClick={addItem}>
+                <Plus aria-hidden /> Add an item
+              </button>
+            </div>
+            {touched && errors.target && <p className="field__error">{errors.target}</p>}
+          </div>
+        ) : mode === 'target' ? (
           <div className={`create__amount ${touched && errors.target ? 'has-error' : ''}`}>
             <AmountInput label="Target" hideLabel value={target} onChange={setTarget} placeholder="500,000" max={50_000_000} />
             {touched && errors.target && <p className="field__error">{errors.target}</p>}
@@ -303,6 +362,7 @@ export function CreatePactScreen() {
           <p className="field__hint">People can pick these up once they join. {tasks.length ? `${tasks.length} selected.` : ''}</p>
         </div>
 
+        {mode !== 'orders' && (
         <div className="field">
           <span className="field__label">How should people chip in?</span>
           <Segmented<'flexible' | 'equal'>
@@ -320,7 +380,13 @@ export function CreatePactScreen() {
               : 'Everyone gives what they can.'}
           </p>
         </div>
+        )}
 
+        {mode === 'orders' ? (
+          <Notice icon={<Scale />}>
+            The date above is the pay-by date. People pay for their own orders by then, and PACT reminds them on the day. Unpaid orders are released after it.
+          </Notice>
+        ) : (
         <div className="field">
           <span className="field__label" id="rule-label">
             <Scale aria-hidden className="create__label-icon" /> If the goal isn’t reached by the deadline
@@ -345,6 +411,7 @@ export function CreatePactScreen() {
           </div>
           <p className="field__hint">Everyone sees this rule before they contribute. It can’t be changed later.</p>
         </div>
+        )}
 
         {error && <Notice tone="danger">{error}</Notice>}
       </form>

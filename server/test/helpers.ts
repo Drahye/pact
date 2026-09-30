@@ -2,6 +2,8 @@ import { buildApp } from '../src/app.js';
 import { loadConfig } from '../src/config.js';
 import { createDb } from '../src/db/index.js';
 import { migrate } from '../src/db/migrate.js';
+import { readFile } from 'node:fs/promises';
+import type { Db } from '../src/db/index.js';
 import { seedDemo } from '../src/db/seed.js';
 import { resetLedgerCache } from '../src/modules/ledger.js';
 import { runDueJobs } from '../src/jobs/worker.js';
@@ -13,7 +15,9 @@ export async function setup(opts: { seed?: boolean; now?: () => Date } = {}) {
   await migrate(db);
   let clock = opts.now ?? (() => new Date());
   const { app, ctx } = await buildApp({ config, db, now: () => clock() });
+  // Demo data backdates ledger rows, which the runtime role can't do; it never runs in production.
   if (opts.seed) await seedDemo(ctx);
+  if (process.env.TEST_DB_ROLE === 'service') await useServiceRole(db);
   await app.ready();
 
   let keyN = 0;
@@ -67,4 +71,15 @@ export async function setup(opts: { seed?: boolean; now?: () => Date } = {}) {
     setClock: (fn: () => Date) => (clock = fn),
     close: async () => { await app.close(); await db.close(); },
   };
+}
+
+/**
+ * Production role model (`npm run test:roles`): an administrator runs roles.sql, the owner
+ * runs migrations, and everything after that, the app included, runs as pact_service.
+ */
+export async function useServiceRole(db: Db) {
+  await db.exec(await readFile(new URL('../src/db/roles.sql', import.meta.url), 'utf8'));
+  await db.exec('SET ROLE pact_owner');
+  await migrate(db);
+  await db.exec('SET ROLE pact_service');
 }

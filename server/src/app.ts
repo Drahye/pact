@@ -13,9 +13,13 @@ import type { AuthTokensDTO } from '../../shared/contracts.js';
 import type { Config } from './config.js';
 import type { Ctx, ReqMeta } from './context.js';
 import type { Db } from './db/index.js';
+import { postgresRateLimitStore, rateLimitKey } from './lib/rateLimitStore.js';
 import { AppError, badRequest, conflict, notFound, unauthorized } from './lib/errors.js';
 import * as auth from './modules/auth.js';
 import { reconcile } from './modules/ledger.js';
+import * as pactMoney from './modules/pactMoney.js';
+import * as pledges from './modules/pledges.js';
+import * as orders from './modules/orders.js';
 import * as pacts from './modules/pacts.js';
 import * as plan from './modules/plan.js';
 import * as users from './modules/users.js';
@@ -108,12 +112,17 @@ export async function buildApp({ config, db, provider, sms, now = () => new Date
     maxAge: 600,
   });
   await app.register(cookie, { secret: config.HASH_SECRET });
-  // In-memory limits per instance; point this at Redis when running more than one API instance.
+  // Counters live in Postgres so every instance shares them (RATE_LIMIT_STORE=memory for one process).
   await app.register(rateLimit, {
     global: config.RATE_LIMIT_ENABLED,
+    ...(config.RATE_LIMIT_STORE === 'postgres' ? { store: postgresRateLimitStore(db) } : {}),
+    // A counter hiccup shouldn't take the API down; the sensitive limits (OTP, PIN, invites) are enforced separately.
+    skipOnError: true,
     max: 300,
     timeWindow: '1 minute',
-    keyGenerator: (req) => req.ip,
+    // IPv6 counts per /64: one household or phone gets a whole block, so rotating
+    // addresses inside it would otherwise skip the limit and flood the counters table.
+    keyGenerator: (req) => rateLimitKey(req.ip),
     onExceeded: (req) => {
       req.log.warn({ route: req.routeOptions.url, ip: req.ip }, 'rate limit exceeded');
       void db
@@ -419,6 +428,9 @@ export async function buildApp({ config, db, provider, sms, now = () => new Date
           uploads.post<{ Params: { id: string } }>('/pacts/:id/memory/photos', { bodyLimit: 8 * 1024 * 1024, ...strict(12, 10) }, async (req) =>
             plan.addPhoto(ctx, req.userId, req.params.id, req.body as Buffer),
           );
+          uploads.post<{ Params: { id: string; payoutId: string } }>('/pacts/:id/payouts/:payoutId/receipt', { bodyLimit: 8 * 1024 * 1024, ...strict(12, 10) }, async (req) =>
+            pactMoney.addReceipt(ctx, req.userId, req.params.id, req.params.payoutId, req.body as Buffer),
+          );
         });
         priv.post<{ Params: { id: string } }>('/pacts/:id/leave', async (req) => {
           await pacts.leave(ctx, req.userId, req.params.id);
@@ -427,10 +439,61 @@ export async function buildApp({ config, db, provider, sms, now = () => new Date
         priv.post<{ Params: { id: string } }>('/pacts/:id/release', strict(5), async (req, reply) =>
           idempotent(req, reply, `release:${req.params.id}`, () => pacts.release(ctx, req.userId, req.params.id, parse(C.PinBody, req.body).pin, meta(req))),
         );
+        priv.post<{ Params: { id: string } }>('/pacts/:id/release/approve', strict(5), async (req) =>
+          pacts.decideRelease(ctx, req.userId, req.params.id, 'approve', parse(C.PinBody, req.body).pin, meta(req)),
+        );
+        priv.post<{ Params: { id: string } }>('/pacts/:id/release/decline', strict(10), async (req) => pacts.decideRelease(ctx, req.userId, req.params.id, 'decline', null, meta(req)));
         priv.post<{ Params: { id: string } }>('/pacts/:id/cancel', strict(5), async (req, reply) =>
           idempotent(req, reply, `cancel:${req.params.id}`, () => pacts.cancel(ctx, req.userId, req.params.id, parse(C.PinBody, req.body).pin, meta(req))),
         );
         priv.post<{ Params: { id: string } }>('/pacts/:id/nudge', strict(5), async (req) => pacts.nudge(ctx, req.userId, req.params.id));
+
+        priv.post<{ Params: { id: string } }>('/pacts/:id/items', strict(30), async (req) => orders.addItem(ctx, req.userId, req.params.id, parse(C.ItemBody, req.body)));
+        priv.patch<{ Params: { id: string; itemId: string } }>('/pacts/:id/items/:itemId', strict(30), async (req) =>
+          orders.updateItem(ctx, req.userId, req.params.id, req.params.itemId, parse(C.ItemPatchBody, req.body)),
+        );
+        priv.post<{ Params: { id: string } }>('/pacts/:id/orders', strict(30), async (req, reply) =>
+          idempotent(req, reply, `order:${req.params.id}`, () => orders.placeOrder(ctx, req.userId, req.params.id, parse(C.OrderBody, req.body), meta(req))),
+        );
+        priv.delete<{ Params: { id: string; orderId: string } }>('/pacts/:id/orders/:orderId', strict(30), async (req) =>
+          orders.cancelOrder(ctx, req.userId, req.params.id, req.params.orderId, meta(req)),
+        );
+        priv.put<{ Params: { id: string } }>('/pacts/:id/pledge', strict(20), async (req) => pledges.setPledge(ctx, req.userId, req.params.id, parse(C.PledgeBody, req.body)));
+        priv.delete<{ Params: { id: string } }>('/pacts/:id/pledge', strict(20), async (req) => pledges.cancelPledge(ctx, req.userId, req.params.id));
+
+        /* ---------- money in by bank transfer, money out to vendors */
+        priv.post<{ Params: { id: string } }>('/pacts/:id/bank-account', strict(5), async (req) => pactMoney.openPactAccount(ctx, req.userId, req.params.id, meta(req)));
+        priv.patch<{ Params: { id: string; transferId: string } }>('/pacts/:id/transfers/:transferId', strict(30), async (req) =>
+          pactMoney.assignTransfer(ctx, req.userId, req.params.id, req.params.transferId, parse(C.AssignTransferBody, req.body).userId, meta(req)),
+        );
+        priv.put<{ Params: { id: string } }>('/pacts/:id/co-organizer', strict(10), async (req) =>
+          pactMoney.setCoOrganizer(ctx, req.userId, req.params.id, parse(C.CoOrganizerBody, req.body).userId, meta(req)),
+        );
+        priv.post<{ Params: { id: string } }>('/pacts/:id/payouts/resolve', strict(10), async (req) => {
+          const body = parse(C.ResolveBankBody, req.body);
+          return pactMoney.resolveVendor(ctx, req.userId, req.params.id, body.bankCode, body.accountNumber);
+        });
+        priv.post<{ Params: { id: string } }>('/pacts/:id/payouts', strict(5), async (req, reply) =>
+          idempotent(req, reply, `payout:${req.params.id}`, () => pactMoney.requestVendorPayment(ctx, req.userId, req.params.id, parse(C.VendorPayBody, req.body), meta(req))),
+        );
+        priv.post<{ Params: { id: string; payoutId: string } }>('/pacts/:id/payouts/:payoutId/approve', strict(10), async (req) =>
+          pactMoney.decideVendorPayment(ctx, req.userId, req.params.id, req.params.payoutId, 'approve', parse(C.PinBody, req.body).pin, meta(req)),
+        );
+        priv.post<{ Params: { id: string; payoutId: string } }>('/pacts/:id/payouts/:payoutId/reject', strict(10), async (req) =>
+          pactMoney.decideVendorPayment(ctx, req.userId, req.params.id, req.params.payoutId, 'reject', null, meta(req)),
+        );
+        priv.post<{ Params: { id: string; payoutId: string } }>('/pacts/:id/payouts/:payoutId/cancel', strict(10), async (req) =>
+          pactMoney.decideVendorPayment(ctx, req.userId, req.params.id, req.params.payoutId, 'cancel', null, meta(req)),
+        );
+        priv.get<{ Params: { id: string; payoutId: string } }>('/pacts/:id/payouts/:payoutId/receipt', async (req, reply) => {
+          const r = await pactMoney.getReceipt(ctx, req.userId, req.params.id, req.params.payoutId);
+          return reply
+            .header('Content-Type', r.mime)
+            .header('Cache-Control', 'private, max-age=3600')
+            .header('Content-Disposition', 'inline')
+            .header('X-Content-Type-Options', 'nosniff')
+            .send(r.data);
+        });
         priv.post<{ Params: { code: string } }>('/invites/:code/join', strict(20), async (req) =>
           pacts.joinByCode(ctx, req.userId, req.params.code, parse(C.ParticipationBody.partial(), req.body).participation ?? null),
         );
@@ -464,6 +527,37 @@ export async function buildApp({ config, db, provider, sms, now = () => new Date
             // Delivered through the public webhook route, signature and all.
             await app.inject({ method: 'POST', url: `/api/webhooks/sandbox`, headers: { 'content-type': 'application/json', 'x-paystack-signature': sandbox.sign(body) }, payload: body });
             return wallet.getTopup(ctx, req.userId, req.params.ref);
+          });
+          // Stands in for someone paying a Pact's account number from their bank app.
+          priv.post<{ Params: { number: string } }>('/sandbox/pact-accounts/:number/transfers', async (req) => {
+            const body = parse(
+              z.object({
+                amount: z.number().int().min(100).max(100_000_000_00),
+                senderName: z.string().trim().min(2).max(60),
+                senderBank: z.string().trim().max(60).default('Guaranty Trust Bank'),
+                senderAccount: z.string().regex(/^\d{10}$/).optional(),
+              }),
+              req.body,
+            );
+            const payload = JSON.stringify({
+              event: 'charge.success',
+              data: {
+                id: Date.now(),
+                reference: `DVA_${randomUUID()}`,
+                amount: body.amount,
+                currency: 'NGN',
+                channel: 'dedicated_nuban',
+                authorization: {
+                  channel: 'dedicated_nuban',
+                  receiver_bank_account_number: req.params.number,
+                  sender_name: body.senderName.toUpperCase(),
+                  sender_bank: body.senderBank,
+                  sender_bank_account_number: body.senderAccount ?? '0123456789',
+                },
+              },
+            });
+            const res = await app.inject({ method: 'POST', url: `/api/webhooks/sandbox`, headers: { 'content-type': 'application/json', 'x-paystack-signature': sandbox.sign(payload) }, payload });
+            return { ok: res.statusCode === 200 };
           });
         }
       });

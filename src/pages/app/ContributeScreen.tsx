@@ -72,7 +72,7 @@ export function ContributeScreen() {
   const balance = wallet.data ? fromKobo(wallet.data.balance) : undefined;
   const short = balance !== undefined && capped > balance ? Math.ceil(capped - balance) : 0;
   const after = s.raised + capped;
-  const afterPct = (after / s.target) * 100;
+  const afterPct = (after / Math.max(1, s.target)) * 100;
 
   const pick = (c: Choice) => {
     setChoice(c);
@@ -170,7 +170,7 @@ export function ContributeScreen() {
             </div>
             <SegmentedBar shares={sharesOf(pact)} target={pact.target} size="md" label="Funded" />
             <p className="confirm__meta num">
-              <AnimatedNumber value={((before + given) / pact.target) * 100} from={(before / pact.target) * 100} format="percent" /> funded · {s.daysLeft} days left
+              <AnimatedNumber value={((before + given) / Math.max(1, pact.target)) * 100} from={(before / Math.max(1, pact.target)) * 100} format="percent" /> funded · {s.daysLeft} days left
             </p>
           </motion.div>
         </div>

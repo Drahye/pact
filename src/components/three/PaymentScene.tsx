@@ -29,8 +29,6 @@ interface Props {
   running: boolean;
   reduced: boolean;
   compact: boolean;
-  /** In-app size: closer camera, smaller orbs, rounder dial. */
-  tight?: boolean;
   /** Drag velocity written by the wrapper's pointer handlers. */
   spin: MutableRefObject<number>;
 }
@@ -91,7 +89,7 @@ function GoalRing({ percent, pulse }: { percent: number; pulse: MutableRefObject
 }
 
 /** A friend: a glossy colour orb with their portrait floating in front. */
-function FriendOrb({ friend, index, anchor, onTap, compact, tight }: { friend: Friend; index: number; anchor: (el: THREE.Object3D | null) => void; onTap: () => void; compact: boolean; tight: boolean }) {
+function FriendOrb({ friend, index, anchor, onTap, compact }: { friend: Friend; index: number; anchor: (el: THREE.Object3D | null) => void; onTap: () => void; compact: boolean }) {
   const user = getUser(friend.userId);
   const bob = useRef<THREE.Group>(null);
   useFrame(({ clock }) => {
@@ -100,10 +98,10 @@ function FriendOrb({ friend, index, anchor, onTap, compact, tight }: { friend: F
   return (
     <group ref={bob}>
       <mesh ref={anchor}>
-        <sphereGeometry args={[tight ? 0.42 : 0.52, 40, 40]} />
+        <sphereGeometry args={[0.52, 40, 40]} />
         <meshPhysicalMaterial color={friend.color} roughness={0.2} clearcoat={1} clearcoatRoughness={0.1} />
       </mesh>
-      <Html center distanceFactor={tight ? 7 : compact ? 9 : 7.5} zIndexRange={[20, 0]}>
+      <Html center distanceFactor={compact ? 9 : 7.5} zIndexRange={[20, 0]}>
         <button type="button" className="orb" style={{ ['--c' as string]: friend.color }} onClick={onTap} aria-label={`Send a payment from ${user.name}`}>
           {user.photo ? <img src={user.photo} alt="" draggable={false} /> : <span>{user.name[0]}</span>}
           <span className="orb__name">{user.name}</span>
@@ -248,8 +246,7 @@ function Rig({ spin, running, reduced }: { spin: MutableRefObject<number>; runni
   return null;
 }
 
-function Orbit({ friends, spin, running, reduced, compact, tight, anchors, onTapFriend }: {
-  tight: boolean;
+function Orbit({ friends, spin, running, reduced, compact, anchors, onTapFriend }: {
   friends: Friend[];
   spin: MutableRefObject<number>;
   running: boolean;
@@ -260,8 +257,8 @@ function Orbit({ friends, spin, running, reduced, compact, tight, anchors, onTap
 }) {
   const group = useRef<THREE.Group>(null);
   // Friends sit on a dial around the ring's face, so nobody ever covers the total.
-  const rx = tight ? 2.85 : compact ? 2.55 : 4.6;
-  const ry = tight ? 3.2 : compact ? 3.5 : 3.1;
+  const rx = compact ? 2.55 : 4.6;
+  const ry = compact ? 3.5 : 3.1;
   const angle = useRef(0);
   const place = (i: number, a: number) =>
     [Math.cos(a) * rx, Math.sin(a) * ry, Math.sin(a * 2 + i) * 0.9] as [number, number, number];
@@ -279,21 +276,21 @@ function Orbit({ friends, spin, running, reduced, compact, tight, anchors, onTap
       {friends.map((f, i) => (
         // initial position set here too, so a static (reduced-motion) scene is laid out correctly
         <group key={f.userId} position={place(i, (i / friends.length) * TAU)}>
-          <FriendOrb friend={f} index={i} anchor={(el) => (anchors.current[i] = el)} onTap={() => onTapFriend(i)} compact={compact} tight={tight} />
+          <FriendOrb friend={f} index={i} anchor={(el) => (anchors.current[i] = el)} onTap={() => onTapFriend(i)} compact={compact} />
         </group>
       ))}
     </group>
   );
 }
 
-export default function PaymentScene({ friends, percent, payments, onArrive, onTapFriend, center, running, reduced, compact, tight = false, spin }: Props) {
+export default function PaymentScene({ friends, percent, payments, onArrive, onTapFriend, center, running, reduced, compact, spin }: Props) {
   const anchors = useRef<(THREE.Object3D | null)[]>([]);
   const pulse = useRef(0);
   return (
     <Canvas
       className="payment-scene"
       dpr={[1, 2]}
-      camera={{ position: [0, 0.4, tight ? 9.6 : compact ? 13.5 : 11], fov: tight ? 42 : compact ? 44 : 38 }}
+      camera={{ position: [0, 0.4, compact ? 13.5 : 11], fov: compact ? 44 : 38 }}
       gl={{ antialias: true, alpha: true }}
       frameloop={running || payments.length ? 'always' : 'demand'}
     >
@@ -306,12 +303,12 @@ export default function PaymentScene({ friends, percent, payments, onArrive, onT
       </Environment>
 
       <Rig spin={spin} running={running} reduced={reduced} />
-      {!tight && <Shapes compact={compact} />}
+      <Shapes compact={compact} />
       <GoalRing percent={percent} pulse={pulse} />
       <Html center zIndexRange={[10, 0]}>
         {center}
       </Html>
-      <Orbit friends={friends} spin={spin} running={running} reduced={reduced} compact={compact} tight={tight} anchors={anchors} onTapFriend={onTapFriend} />
+      <Orbit friends={friends} spin={spin} running={running} reduced={reduced} compact={compact} anchors={anchors} onTapFriend={onTapFriend} />
       {payments.map((p) => (
         <Coin
           key={p.id}

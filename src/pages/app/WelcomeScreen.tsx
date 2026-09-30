@@ -1,13 +1,13 @@
 import { Link2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { HeroStage } from '../site/sections/HeroStage';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Logo } from '../../components/ui/Logo';
 import { Modal } from '../../components/ui/Modal';
 import { setReturnTo } from './auth/flow';
 import { Screen } from './Screen';
+import { WelcomeVisual } from './WelcomeVisual';
 import './welcome.css';
 
 /** Accepts a full invite link, a path, or just the code. */
@@ -56,7 +56,7 @@ export function WelcomeScreen() {
         </Button>
       </div>
       <div className="welcome__visual">
-        <HeroStage variant="app" />
+        <WelcomeVisual />
       </div>
       <div className="welcome__copy">
         <h1 className="welcome__title">

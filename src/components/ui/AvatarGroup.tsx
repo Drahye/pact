@@ -22,10 +22,10 @@ export function AvatarGroup({ userIds, max = 4, size = 'sm', ring = 'surface', t
   return (
     <span className={`avatar-group avatar-group--${size} ${className}`} role="group" aria-label={`${count} people`}>
       {shown.map((id) => (
-        <Avatar key={id} userId={id} size={size} ring={ring} />
+        <Avatar key={id} userId={id} size={size} ring={ring} letters={1} />
       ))}
       {pending.map((id) => (
-        <Avatar key={id} userId={id} size={size} ring={ring} pending />
+        <Avatar key={id} userId={id} size={size} ring={ring} pending letters={1} />
       ))}
       {overflow > 0 && (
         <span className={`avatar avatar--${size} avatar--ring-${ring} avatar__overflow`} aria-label={`and ${overflow} more`}>

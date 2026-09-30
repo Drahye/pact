@@ -14,7 +14,7 @@ const MAX_TASKS = 40;
 const MAX_BUDGET_LINES = 12;
 
 interface Me {
-  role: 'organizer' | 'member';
+  role: 'organizer' | 'co_organizer' | 'member';
   status: 'invited' | 'joined' | 'left';
   pactStatus: string;
   deadline: string;
@@ -328,7 +328,12 @@ const ACCEPTED = new Set(['jpeg', 'png', 'webp']);
  * re-encoded to WebP at a bounded size, rotated upright, and stripped of all metadata
  * (including GPS location) before anything is stored.
  */
-export async function addPhoto(ctx: Ctx, userId: string, pactId: string, body: Buffer) {
+/**
+ * Checks an upload really is a JPEG, PNG or WebP photo (by content, not by name or header),
+ * then re-encodes it to WebP, which also drops EXIF and GPS metadata. Used for memory
+ * photos and payment receipts.
+ */
+export async function reencodePhoto(body: Buffer) {
   if (!Buffer.isBuffer(body) || body.length === 0) throw badRequest('no_file', 'Choose a photo to upload.');
   let meta;
   try {
@@ -345,7 +350,11 @@ export async function addPhoto(ctx: Ctx, userId: string, pactId: string, body: B
     .webp({ quality: 80 })
     .toBuffer({ resolveWithObject: true });
   if (data.length > 2_000_000) throw new AppError(413, 'too_large', 'That photo is too large even after compressing. Try a smaller one.');
+  return { data, info };
+}
 
+export async function addPhoto(ctx: Ctx, userId: string, pactId: string, body: Buffer) {
+  const { data, info } = await reencodePhoto(body);
   const today = ctx.now().toISOString().slice(0, 10);
   await inPact(ctx, userId, pactId, async (q, me) => {
     if (!canRemember(me, today)) throw badRequest('too_early', 'You can add photos once the goal is reached or the day has passed.');

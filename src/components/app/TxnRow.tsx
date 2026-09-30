@@ -11,6 +11,7 @@ const meta: Record<WalletTxnDTO['kind'], { icon: JSX.Element; tint: string; labe
   withdrawal: { icon: <ArrowUpRight />, tint: 'lilac', label: 'Withdrawal' },
   withdrawal_reversal: { icon: <Undo2 />, tint: 'coral', label: 'Returned' },
   refund: { icon: <RotateCcw />, tint: 'pink', label: 'Refund' },
+  vendor_payment_reversal: { icon: <Undo2 />, tint: 'coral', label: 'Vendor payment returned' },
 };
 
 export function TxnRow({ txn, onClick }: { txn: WalletTxnDTO; onClick?: () => void }) {

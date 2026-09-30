@@ -65,6 +65,13 @@
 .activity__complete.avatar--md { --avatar-size: 40px; }
 .activity__complete.avatar--lg { --avatar-size: 56px; }
 
+.activity__guest {
+  background: var(--sand-100);
+  color: var(--color-text);
+  font-weight: var(--weight-semibold);
+  font-size: calc(var(--avatar-size, 40px) * 0.4);
+}
+
 .activity__complete svg {
   width: 45%;
   height: 45%;

@@ -1,6 +1,30 @@
 {
   "version": "0.0.1",
   "configurations": [
-    { "name": "pact", "runtimeExecutable": "npm", "runtimeArgs": ["run", "dev"], "port": 5173 }
+    {
+      "name": "pact",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
+      "port": 5173
+    },
+    {
+      "name": "pact-loadtest-api",
+      "runtimeExecutable": "env",
+      "runtimeArgs": [
+        "NODE_ENV=development",
+        "PORT=8799",
+        "RATE_LIMIT_ENABLED=false",
+        "SEED_DEMO=false",
+        "PGLITE_DIR=.data/loadtest",
+        "LOG_LEVEL=warn",
+        "npx",
+        "tsx",
+        "server/src/index.ts"
+      ],
+      "port": 8799
+    }
   ]
 }

@@ -308,3 +308,11 @@ button.budget__row:hover {
   width: 18px;
   height: 18px;
 }
+
+.budget__paid {
+  display: block;
+  margin-top: 6px;
+  font-size: var(--text-caption);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-secondary);
+}

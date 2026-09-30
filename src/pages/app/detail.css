@@ -144,7 +144,7 @@
 
 .detail__actions {
   display: grid;
-  grid-template-columns: 1.35fr 1fr;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
   gap: var(--space-3);
   margin-top: var(--space-5);
 }

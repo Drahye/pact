@@ -314,6 +314,57 @@ export function usePlan(pactId: string) {
   };
 }
 
+/* ---------------------------------------------------------------- money in and out of a Pact */
+
+export function usePactMoney(pactId: string) {
+  const base = `/pacts/${pactId}`;
+  const setPact = useSetPact();
+  const invalidate = useInvalidateMoney();
+  const money = <V,>(run: (v: V) => Promise<PactDetail>) =>
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    useMutation({ mutationFn: run, onSuccess: (r: PactDetail) => (setPact(r), invalidate(pactId)) });
+  return {
+    openAccount: money(() => api<PactDetail>('POST', `${base}/bank-account`, {})),
+    assignTransfer: money(({ id, userId }: { id: string; userId: string | null }) => api<PactDetail>('PATCH', `${base}/transfers/${id}`, { userId })),
+    setCoOrganizer: money((userId: string | null) => api<PactDetail>('PUT', `${base}/co-organizer`, { userId })),
+    payVendor: money(({ key, ...body }: { key: string; amount: number; bankCode: string; accountNumber: string; purpose: string; budgetItemId?: string | null; pin: string }) =>
+      api<PactDetail>('POST', `${base}/payouts`, body, { idempotencyKey: key }),
+    ),
+    approve: money(({ id, pin }: { id: string; pin: string }) => api<PactDetail>('POST', `${base}/payouts/${id}/approve`, { pin })),
+    reject: money((id: string) => api<PactDetail>('POST', `${base}/payouts/${id}/reject`, {})),
+    cancelPayout: money((id: string) => api<PactDetail>('POST', `${base}/payouts/${id}/cancel`, {})),
+    addItem: money((body: { name: string; price: number; options?: string[]; stock?: number | null }) => api<PactDetail>('POST', `${base}/items`, body)),
+    updateItem: money(({ id, ...body }: { id: string; name?: string; price?: number; options?: string[]; stock?: number | null; active?: boolean }) =>
+      api<PactDetail>('PATCH', `${base}/items/${id}`, body),
+    ),
+    placeOrder: money(({ key, ...body }: { key: string; itemId: string; option?: string | null; quantity: number }) => api<PactDetail>('POST', `${base}/orders`, body, { idempotencyKey: key })),
+    cancelOrder: money((id: string) => api<PactDetail>('DELETE', `${base}/orders/${id}`)),
+    setPledge: money((body: { amount: number; dueOn: string }) => api<PactDetail>('PUT', `${base}/pledge`, body)),
+    cancelPledge: money(() => api<PactDetail>('DELETE', `${base}/pledge`)),
+    approveRelease: money((pin: string) => api<PactDetail>('POST', `${base}/release/approve`, { pin })),
+    declineRelease: money(() => api<PactDetail>('POST', `${base}/release/decline`, {})),
+    addReceipt: money(({ id, file }: { id: string; file: File }) => uploadPhoto<PactDetail>(`${base}/payouts/${id}/receipt`, file)),
+    /** Sandbox only: stands in for someone paying the number from their bank app. */
+    testTransfer: useMutation({
+      mutationFn: (body: { accountNumber: string; amount: number; senderName: string }) =>
+        api<{ ok: boolean }>('POST', `/sandbox/pact-accounts/${body.accountNumber}/transfers`, { amount: body.amount, senderName: body.senderName }),
+      onSuccess: () => invalidate(pactId),
+    }),
+  };
+}
+
+export const resolveVendor = (pactId: string, bankCode: string, accountNumber: string) =>
+  api<{ accountName: string }>('POST', `/pacts/${pactId}/payouts/resolve`, { bankCode, accountNumber });
+
+export function useReceipt(pactId: string, payoutId: string | null, enabled: boolean) {
+  return useQuery({
+    queryKey: ['receipt', pactId, payoutId],
+    enabled: enabled && !!payoutId,
+    staleTime: Infinity,
+    queryFn: async () => URL.createObjectURL(await fetchPhoto(`/pacts/${pactId}/payouts/${payoutId}/receipt`)),
+  });
+}
+
 /** Photos are private: fetched with the session and shown from a local object URL. */
 export function usePhoto(pactId: string, photoId: string) {
   return useQuery({

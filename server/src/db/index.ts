@@ -53,7 +53,10 @@ async function withRetry<T>(fn: () => Promise<T>, attempts = 3): Promise<T> {
 async function createPglite(dir: string | undefined): Promise<Omit<Db, 'asUser'>> {
   const { PGlite } = await import('@electric-sql/pglite');
   if (dir) (await import('node:fs')).mkdirSync(dir, { recursive: true });
-  const pg: PGlite = new PGlite(dir, {
+  // One options object: PGlite ignores a second argument when the data dir is undefined
+  // (in-memory, as in tests), which silently dropped these parsers there.
+  const pg: PGlite = new PGlite({
+    dataDir: dir,
     parsers: { [DATE_OID]: (v: string) => v, [INT8_OID]: toSafeNumber, [NUMERIC_OID]: (v: string) => Number(v) },
   });
   await pg.waitReady;

@@ -414,3 +414,38 @@
   outline: none;
   box-shadow: inset 0 0 0 2px var(--color-text);
 }
+
+/* order items */
+.item-edit {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.item-edit__card {
+  padding: var(--space-2) var(--space-3) var(--space-3);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: inset 0 0 0 1px var(--color-border);
+}
+
+.item-edit__card .budget-edit__line {
+  padding-left: 0;
+  padding-right: 0;
+  box-shadow: none;
+}
+
+.item-edit__extra {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: var(--space-2);
+}
+
+.item-edit__extra input {
+  min-width: 0;
+  min-height: 44px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-sunken);
+  font-size: var(--text-sm);
+}

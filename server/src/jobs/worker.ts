@@ -1,6 +1,8 @@
 import type { Ctx } from '../context.js';
 import { reconcile } from '../modules/ledger.js';
 import { sweepDeadlines } from '../modules/pacts.js';
+import { processPactPayout } from '../modules/pactMoney.js';
+import { sweepPledges } from '../modules/pledges.js';
 import { processPayout, reconcileTopupByRef } from '../modules/wallet.js';
 import { handleWebhook } from '../modules/webhooks.js';
 import { enqueue } from '../modules/platform.js';
@@ -18,10 +20,14 @@ type Handler = (ctx: Ctx, payload: Record<string, unknown>) => Promise<unknown>;
 const handlers: Record<string, Handler> = {
   'payout.process': (ctx, p) => processPayout(ctx, String(p.reference)),
   'topup.reconcile': (ctx, p) => reconcileTopupByRef(ctx, String(p.reference)),
+  'pact_payout.process': (ctx, p) => processPactPayout(ctx, String(p.reference)),
+  'pact_account.close': (ctx, p) => ctx.provider.closePactAccount(String(p.providerRef)),
   'pacts.sweep': async (ctx) => {
     // Replaced refresh tokens are only needed for the grace window and reuse detection.
     await ctx.db.query(`DELETE FROM refresh_tokens WHERE superseded_at < now() - interval '2 days'`);
     await ctx.db.query(`DELETE FROM otp_challenges WHERE created_at < now() - interval '2 days'`);
+    await ctx.db.query(`DELETE FROM http_rate_limits WHERE expires_at < now()`);
+    await sweepPledges(ctx);
     return sweepDeadlines(ctx);
   },
   'ledger.reconcile': async (ctx) => {

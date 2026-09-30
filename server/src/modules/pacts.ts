@@ -1,4 +1,4 @@
-import type { ActivityDTO, BudgetItemDTO, CreatePactInput, PactDTO, PactPreviewDTO, Participation, PersonDTO, TaskDTO, WithPeople } from '../../../shared/contracts.js';
+import type { ActivityDTO, BudgetItemDTO, CreatePactInput, PactDTO, PactItemDTO, PactOrderDTO, PactPayoutDTO, PactPledgeDTO, PactTransferDTO, PactPreviewDTO, Participation, PersonDTO, TaskDTO, WithPeople } from '../../../shared/contracts.js';
 import { MAX_PACT_TARGET, MIN_PACT_TARGET, SMS_INVITES_PER_DAY, MAX_PACT_DAYS, MAX_PACT_MEMBERS, MISSED_GOAL_GRACE_DAYS, NUDGE_COOLDOWN_HOURS, TIER_LIMITS, type KycTier } from '../../../shared/policy.js';
 import type { Ctx, ReqMeta } from '../context.js';
 import type { Queryable } from '../db/index.js';
@@ -9,9 +9,12 @@ import { normalizeNgPhone } from '../lib/phone.js';
 import { addDays, lagosToday } from '../lib/time.js';
 import { getUser, verifyPin } from './auth.js';
 import { createAccount, post, walletAccountId } from './ledger.js';
+import { closePactAccountTx, refundGuestsTx, settleWaitingPayouts } from './pactMoney.js';
+import { checkPledgeKept, closePledgesTx } from './pledges.js';
+import { insertItems, lapseUnpaidOrders, orderOutstanding, paidOrders } from './orders.js';
 import { audit, enqueue, notify, recordActivity } from './platform.js';
 
-interface PactRow {
+export interface PactRow {
   id: string;
   slug: string;
   invite_code: string;
@@ -29,12 +32,15 @@ interface PactRow {
   created_at: Date;
   funded_at: Date | null;
   closed_at: Date | null;
+  release_requested_by: string | null;
+  release_requested_at: Date | null;
+  mode: 'goal' | 'orders';
 }
 
-interface MemberRow {
+export interface MemberRow {
   pact_id: string;
   user_id: string;
-  role: 'organizer' | 'member';
+  role: 'organizer' | 'co_organizer' | 'member';
   status: 'invited' | 'joined' | 'left';
   contributed: number;
   joined_at: Date | null;
@@ -74,15 +80,19 @@ export async function colorFor(q: Queryable, pactId: string, userId: string): Pr
   return PALETTE.find((c) => !used.has(c)) ?? own;
 }
 
-/** Raised money fills budget lines in order, so the plan shows which parts are covered. */
-export function allocate(raised: number, items: { id: string; name: string; amount: number; position: number }[]): BudgetItemDTO[] {
-  let left = raised;
+/**
+ * Raised money fills budget lines in order, so the plan shows which parts are covered.
+ * A line a vendor has already been paid for counts as covered by that payment first.
+ */
+export function allocate(raised: number, items: { id: string; name: string; amount: number; position: number }[], paid: Map<string, number> = new Map()): BudgetItemDTO[] {
+  const spent = (i: { id: string; amount: number }) => Math.min(i.amount, paid.get(i.id) ?? 0);
+  let left = raised - items.reduce((s, i) => s + spent(i), 0);
   return [...items]
     .sort((a, b) => a.position - b.position)
     .map((i) => {
-      const funded = Math.min(i.amount, Math.max(0, left));
-      left -= funded;
-      return { id: i.id, name: i.name, amount: i.amount, funded, position: i.position };
+      const more = Math.min(i.amount - spent(i), Math.max(0, left));
+      left -= more;
+      return { id: i.id, name: i.name, amount: i.amount, funded: spent(i) + more, paid: paid.get(i.id) ?? 0, position: i.position };
     });
 }
 
@@ -93,7 +103,7 @@ export function allocate(raised: number, items: { id: string; name: string; amou
 async function hydrate(q: Queryable, rows: PactRow[], viewerId: string): Promise<PactDTO[]> {
   if (!rows.length) return [];
   const ids = rows.map((p) => p.id);
-  const [members, invites, budget, tasks, memories, photos] = await Promise.all([
+  const [members, invites, budget, tasks, memories, photos, banks, transfers, payouts, pledges, items, counts, orderRows] = await Promise.all([
     q.query<MemberRow>(
       `SELECT pact_id, user_id, role, status, contributed, joined_at, participation, color, requested_amount FROM pact_members
         WHERE pact_id = ANY($1::uuid[]) AND status <> 'left' ORDER BY joined_at NULLS LAST, created_at`,
@@ -114,6 +124,45 @@ async function hydrate(q: Queryable, rows: PactRow[], viewerId: string): Promise
       [ids],
     ),
     q.query<{ id: string; pact_id: string }>(`SELECT id, pact_id FROM memory_photos WHERE pact_id = ANY($1::uuid[]) ORDER BY created_at`, [ids]),
+    q.query<{ pact_id: string; account_number: string; bank_name: string; account_name: string; status: 'active' | 'closed' }>(
+      `SELECT pact_id, account_number, bank_name, account_name, status FROM pact_bank_accounts WHERE pact_id = ANY($1::uuid[])`,
+      [ids],
+    ),
+    // Only the columns people in the Pact may see (the grants allow no more).
+    q.query<{ id: string; pact_id: string; amount: number; sender_name: string; sender_bank: string | null; user_id: string | null; matched_by: PactTransferDTO['matchedBy']; status: PactTransferDTO['status']; created_at: Date }>(
+      `SELECT id, pact_id, amount, sender_name, sender_bank, user_id, matched_by, status, created_at FROM pact_transfers
+        WHERE pact_id = ANY($1::uuid[]) ORDER BY created_at`,
+      [ids],
+    ),
+    q.query<{
+      id: string; pact_id: string; kind: PactPayoutDTO['kind']; amount: number; fee: number; bank_name: string; last4: string; account_name: string;
+      purpose: string | null; budget_item_id: string | null; status: PactPayoutDTO['status']; requested_by: string | null; decided_by: string | null;
+      decided_at: Date | null; failure_reason: string | null; receipt_bytes: number | null; created_at: Date; completed_at: Date | null;
+    }>(
+      `SELECT id, pact_id, kind, amount, fee, bank_name, last4, account_name, purpose, budget_item_id, status, requested_by, decided_by,
+              decided_at, failure_reason, receipt_bytes, created_at, completed_at
+         FROM pact_payouts WHERE pact_id = ANY($1::uuid[]) ORDER BY created_at`,
+      [ids],
+    ),
+    q.query<{ id: string; pact_id: string; user_id: string; amount: number; goal_total: number; due_on: string; source: PactPledgeDTO['source']; status: PactPledgeDTO['status']; reminders: number }>(
+      `SELECT id, pact_id, user_id, amount, goal_total, due_on, source, status, reminders FROM pact_pledges
+        WHERE pact_id = ANY($1::uuid[]) AND status IN ('open', 'kept') ORDER BY due_on`,
+      [ids],
+    ),
+    q.query<{ id: string; pact_id: string; name: string; price: number; options: string[]; stock: number | null; active: boolean; position: number }>(
+      `SELECT id, pact_id, name, price, options, stock, active, position FROM pact_items WHERE pact_id = ANY($1::uuid[]) ORDER BY position, created_at`,
+      [ids],
+    ),
+    q.query<{ pact_id: string; item_id: string; ordered: number }>(
+      `SELECT p AS pact_id, c.item_id, c.ordered FROM unnest($1::uuid[]) AS p, LATERAL pact_item_counts(p) c`,
+      [ids],
+    ),
+    // Policies decide whose orders come back: your own, or all of them for organisers.
+    q.query<{ id: string; pact_id: string; item_id: string; user_id: string; option: string | null; quantity: number; unit_price: number; amount: number; status: PactOrderDTO['status']; created_at: Date }>(
+      `SELECT id, pact_id, item_id, user_id, option, quantity, unit_price, amount, status, created_at FROM pact_orders
+        WHERE pact_id = ANY($1::uuid[]) AND status IN ('active', 'lapsed') ORDER BY created_at`,
+      [ids],
+    ),
   ]);
   const group = <T extends { pact_id: string }>(list: T[]) => {
     const m = new Map<string, T[]>();
@@ -126,6 +175,15 @@ async function hydrate(q: Queryable, rows: PactRow[], viewerId: string): Promise
   const photosBy = group(photos.rows);
   const memoryBy = new Map(memories.rows.map((m) => [m.pact_id, m]));
   const pending = new Map(invites.rows.map((i) => [i.pact_id, i.n]));
+  const bankBy = new Map(banks.rows.map((b) => [b.pact_id, b]));
+  const transfersBy = group(transfers.rows);
+  const payoutsBy = group(payouts.rows);
+  const pledgesBy = group(pledges.rows);
+  const itemsBy = group(items.rows);
+  const countsBy = new Map(counts.rows.map((c) => [`${c.pact_id}:${c.item_id}`, c.ordered]));
+  const ordersBy = group(orderRows.rows);
+  // Held for or paid to a vendor: out of the pool, even before the bank confirms.
+  const spends = (x: { kind: string; status: string }) => x.kind === 'vendor' && ['awaiting_approval', 'pending', 'processing', 'succeeded'].includes(x.status);
 
   return rows.map((p) => {
     const ms = byPact.get(p.id) ?? [];
@@ -136,8 +194,15 @@ async function hydrate(q: Queryable, rows: PactRow[], viewerId: string): Promise
     const heads = ms.length + (pending.get(p.id) ?? 0);
     const share = Math.ceil(p.target_amount / Math.max(1, heads, joined) / 100) * 100;
     const ask = me?.requested_amount ? Math.max(0, me.requested_amount) : 0;
-    const suggested = me ? Math.min(remaining, ask || Math.max(0, share - me.contributed)) : 0;
+    // In an order Pact, your share is what you still owe on your own orders.
+    const owedOnOrders = (ordersBy.get(p.id) ?? []).filter((o) => o.user_id === viewerId && o.status === 'active').reduce((sum, o) => sum + o.amount, 0);
+    const suggested = !me ? 0 : p.mode === 'orders' ? Math.max(0, owedOnOrders - me.contributed) : Math.min(remaining, ask || Math.max(0, share - me.contributed));
     const memory = memoryBy.get(p.id);
+    const pactPayouts = payoutsBy.get(p.id) ?? [];
+    const spent = pactPayouts.filter(spends).reduce((sum, x) => sum + x.amount + x.fee, 0);
+    const paidByLine = new Map<string, number>();
+    for (const x of pactPayouts.filter(spends)) if (x.budget_item_id) paidByLine.set(x.budget_item_id, (paidByLine.get(x.budget_item_id) ?? 0) + x.amount);
+    const bank = bankBy.get(p.id);
     return {
       id: p.id,
       slug: p.slug,
@@ -147,8 +212,8 @@ async function hydrate(q: Queryable, rows: PactRow[], viewerId: string): Promise
       category: p.category,
       target: p.target_amount,
       raised: p.raised_amount,
-      // The pool holds everything raised until it is released or refunded.
-      poolBalance: p.status === 'open' || p.status === 'funded' ? p.raised_amount : 0,
+      // The pool holds everything raised, less vendor payments, until it is released or refunded.
+      poolBalance: p.status === 'open' || p.status === 'funded' ? Math.max(0, p.raised_amount - spent) : 0,
       deadline: p.deadline,
       createdAt: p.created_at.toISOString(),
       organizerId: p.organizer_id,
@@ -168,7 +233,7 @@ async function hydrate(q: Queryable, rows: PactRow[], viewerId: string): Promise
         requestedAmount: m.requested_amount,
       })),
       pendingPhoneInvites: pending.get(p.id) ?? 0,
-      budget: allocate(p.raised_amount, budgetBy.get(p.id) ?? []),
+      budget: allocate(p.raised_amount, budgetBy.get(p.id) ?? [], paidByLine),
       tasks: (tasksBy.get(p.id) ?? []).map((t) => ({
         id: t.id,
         title: t.title,
@@ -182,6 +247,65 @@ async function hydrate(q: Queryable, rows: PactRow[], viewerId: string): Promise
       memory: memory || photosBy.has(p.id)
         ? { note: memory?.note ?? null, happenedOn: memory?.happened_on ?? null, photoIds: (photosBy.get(p.id) ?? []).map((x) => x.id), updatedAt: (memory?.updated_at ?? p.created_at).toISOString() }
         : null,
+      mode: p.mode,
+      items: (itemsBy.get(p.id) ?? []).map(
+        (i): PactItemDTO => ({ id: i.id, name: i.name, price: i.price, options: i.options, stock: i.stock, ordered: countsBy.get(`${p.id}:${i.id}`) ?? 0, active: i.active }),
+      ),
+      orders: (() => {
+        const list = ordersBy.get(p.id) ?? [];
+        const paid = new Set<string>();
+        for (const uid of new Set(list.map((o) => o.user_id))) {
+          const theirs = list.filter((o) => o.user_id === uid && o.status === 'active');
+          for (const id of paidOrders(theirs, ms.find((m) => m.user_id === uid)?.contributed ?? 0)) paid.add(id);
+        }
+        return list.map(
+          (o): PactOrderDTO => ({ id: o.id, itemId: o.item_id, userId: o.user_id, option: o.option, quantity: o.quantity, amount: o.amount, status: o.status, paid: paid.has(o.id), createdAt: o.created_at.toISOString() }),
+        );
+      })(),
+      pledges: (pledgesBy.get(p.id) ?? []).map((x) => {
+        const paid = ms.find((m) => m.user_id === x.user_id)?.contributed ?? 0;
+        return {
+          id: x.id,
+          userId: x.user_id,
+          amount: x.amount,
+          dueOn: x.due_on,
+          source: x.source,
+          status: x.status,
+          remaining: x.status === 'open' ? Math.max(0, x.goal_total - paid) : 0,
+          reminded: x.reminders,
+        };
+      }),
+      releaseRequest: p.release_requested_by ? { requestedBy: p.release_requested_by, requestedAt: p.release_requested_at!.toISOString() } : null,
+      bankAccount: bank ? { accountNumber: bank.account_number, bankName: bank.bank_name, accountName: bank.account_name, status: bank.status } : null,
+      transfers: (transfersBy.get(p.id) ?? []).map((t) => ({
+        id: t.id,
+        amount: t.amount,
+        senderName: t.sender_name,
+        senderBank: t.sender_bank,
+        userId: t.user_id,
+        matchedBy: t.matched_by,
+        status: t.status,
+        createdAt: t.created_at.toISOString(),
+      })),
+      payouts: pactPayouts.map((x) => ({
+        id: x.id,
+        kind: x.kind,
+        amount: x.amount,
+        fee: x.fee,
+        accountName: x.account_name,
+        bankName: x.bank_name,
+        last4: x.last4,
+        purpose: x.purpose,
+        budgetItemId: x.budget_item_id,
+        status: x.status,
+        requestedBy: x.requested_by,
+        decidedBy: x.decided_by,
+        decidedAt: x.decided_at?.toISOString() ?? null,
+        hasReceipt: !!x.receipt_bytes,
+        failureReason: x.failure_reason,
+        createdAt: x.created_at.toISOString(),
+        completedAt: x.completed_at?.toISOString() ?? null,
+      })),
       viewer: { role: me?.role ?? null, status: me?.status ?? null, suggestedShare: suggested },
     };
   });
@@ -202,7 +326,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
  * Loads a Pact the viewer may see, for service-context commands. Non-members get a
  * 404, not a 403, so ids can't be probed.
  */
-async function loadVisible(q: Queryable, pactId: string, viewerId: string, lock = false): Promise<{ pact: PactRow; member: MemberRow | null }> {
+export async function loadVisible(q: Queryable, pactId: string, viewerId: string, lock = false): Promise<{ pact: PactRow; member: MemberRow | null }> {
   if (!UUID.test(pactId)) throw notFound('Pact');
   const p = await q.query<PactRow>(`SELECT * FROM pacts WHERE id = $1 ${lock ? 'FOR UPDATE' : ''}`, [pactId]);
   if (!p.rows[0]) throw notFound('Pact');
@@ -288,10 +412,13 @@ export async function recentPeople(ctx: Ctx, userId: string): Promise<PersonDTO[
 }
 
 export async function preview(ctx: Ctx, code: string): Promise<PactPreviewDTO & { id: string }> {
-  const r = await ctx.db.query<PactRow & { first_name: string; color: string; photo_url: string | null; member_count: number }>(
+  const r = await ctx.db.query<PactRow & { first_name: string; color: string; photo_url: string | null; member_count: number; account_number: string | null; bank_name: string | null; account_name: string | null }>(
     `SELECT p.*, u.first_name, u.color, u.photo_url,
-            (SELECT COUNT(*)::int FROM pact_members m WHERE m.pact_id = p.id AND m.status = 'joined') AS member_count
-       FROM pacts p JOIN users u ON u.id = p.organizer_id WHERE p.invite_code = $1`,
+            (SELECT COUNT(*)::int FROM pact_members m WHERE m.pact_id = p.id AND m.status = 'joined') AS member_count,
+            b.account_number, b.bank_name, b.account_name
+       FROM pacts p JOIN users u ON u.id = p.organizer_id
+       LEFT JOIN pact_bank_accounts b ON b.pact_id = p.id AND b.status = 'active'
+      WHERE p.invite_code = $1`,
     [code.toUpperCase()],
   );
   const p = r.rows[0];
@@ -304,8 +431,14 @@ export async function preview(ctx: Ctx, code: string): Promise<PactPreviewDTO & 
     raised: p.raised_amount,
     deadline: p.deadline,
     status: p.status,
+    mode: p.mode,
     memberCount: p.member_count,
     organizer: { firstName: p.first_name, color: p.color, photoUrl: p.photo_url },
+    // Anyone with the link can pay by transfer, app or not.
+    bankAccount:
+      p.account_number && (p.status === 'open' || p.status === 'funded')
+        ? { accountNumber: p.account_number, bankName: p.bank_name!, accountName: p.account_name! }
+        : null,
   };
 }
 
@@ -319,10 +452,13 @@ export async function createPact(ctx: Ctx, userId: string, input: CreateInput, m
   const today = lagosToday(ctx.now());
   if (input.deadline <= today) throw badRequest('invalid_deadline', 'Choose a date after today.');
   if (input.deadline > addDays(today, MAX_PACT_DAYS)) throw badRequest('invalid_deadline', 'Pacts can run for up to a year.');
-  // With a budget, the target is the budget total. The server works it out; the client's number is ignored.
-  const target = input.budget.length ? input.budget.reduce((sum, b) => sum + b.amount, 0) : input.target!;
+  const orders = input.mode === 'orders';
+  if (orders && !input.items.length) throw badRequest('no_items', 'Add at least one item people can order.');
+  // With a budget, the target is the budget total; with orders, it grows with the orders.
+  // The server works it out; the client's number is ignored.
+  const target = orders ? 0 : input.budget.length ? input.budget.reduce((sum, b) => sum + b.amount, 0) : input.target!;
   if ([...input.budget.map((b) => b.amount), target].some((a) => a % 100 !== 0)) throw badRequest('invalid_target', 'Use whole naira amounts.');
-  if (target < MIN_PACT_TARGET) throw badRequest('invalid_target', 'The target needs to be at least ₦1,000.');
+  if (!orders && target < MIN_PACT_TARGET) throw badRequest('invalid_target', 'The target needs to be at least ₦1,000.');
   if (target > MAX_PACT_TARGET) throw badRequest('invalid_target', 'That target is higher than PACT allows.');
   const phones = [...new Set(input.invitePhones.map((p) => normalizeNgPhone(p)))];
   if (phones.includes(null)) throw badRequest('invalid_phone', 'One of the phone numbers isn’t a valid Nigerian mobile number.');
@@ -338,10 +474,12 @@ export async function createPact(ctx: Ctx, userId: string, input: CreateInput, m
     const pactId = (await q.query<{ id: string }>('SELECT gen_random_uuid() AS id')).rows[0].id;
     const accountId = await createAccount(q, 'pact_pool', pactId);
     await q.query(
-      `INSERT INTO pacts (id, slug, invite_code, title, note, category, target_amount, deadline, organizer_id, account_id, missed_goal_policy, split_mode)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
-      [pactId, slug, randomCode(8), input.title.trim(), input.note?.trim() || null, input.category, target, input.deadline, userId, accountId, input.missedGoalPolicy, input.splitMode],
+      `INSERT INTO pacts (id, slug, invite_code, title, note, category, target_amount, deadline, organizer_id, account_id, missed_goal_policy, split_mode, mode)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+      // People buy what they order, so an order Pact can pay its suppliers before every order is in.
+      [pactId, slug, randomCode(8), input.title.trim(), input.note?.trim() || null, input.category, target, input.deadline, userId, accountId, orders ? 'release' : input.missedGoalPolicy, input.splitMode, input.mode],
     );
+    if (orders) await insertItems(q, pactId, userId, input.items);
     await q.query(
       `INSERT INTO pact_members (pact_id, user_id, role, status, joined_at, participation, color) VALUES ($1, $2, 'organizer', 'joined', now(), 'both', $3)`,
       [pactId, userId, await colorFor(q, pactId, userId)],
@@ -354,7 +492,7 @@ export async function createPact(ctx: Ctx, userId: string, input: CreateInput, m
     }
     await recordActivity(q, { pactId, actorId: userId, type: 'created' });
     await invite(ctx, q, pactId, userId, input.title.trim(), input.inviteUserIds, phones as string[]);
-    await audit(q, { actorId: userId, action: 'pact.created', targetType: 'pact', targetId: pactId, ip: meta.ip, metadata: { target, budgetLines: input.budget.length } });
+    await audit(q, { actorId: userId, action: 'pact.created', targetType: 'pact', targetId: pactId, ip: meta.ip, metadata: { target, budgetLines: input.budget.length, mode: input.mode, items: input.items.length } });
     // Reminders and the missed-goal rule run from the deadline sweep.
     return pactId;
   });
@@ -423,7 +561,7 @@ export async function inviteMore(ctx: Ctx, userId: string, pactId: string, userI
   return getPact(ctx, userId, pactId);
 }
 
-async function joinTx(q: Queryable, pact: PactRow, userId: string, participation: Participation | null = null) {
+export async function joinTx(q: Queryable, pact: PactRow, userId: string, participation: Participation | null = null) {
   if (pact.status !== 'open') throw badRequest('pact_closed', 'This Pact isn’t taking new people.');
   const count = await q.query<{ n: number }>(`SELECT COUNT(*)::int AS n FROM pact_members WHERE pact_id = $1 AND status = 'joined'`, [pact.id]);
   if (count.rows[0].n >= MAX_PACT_MEMBERS) throw badRequest('pact_full', 'This Pact is full.');
@@ -470,11 +608,15 @@ export async function leave(ctx: Ctx, userId: string, pactId: string) {
   });
 }
 
-/**
- * Wallet → Pact pool. The Pact row is locked first, then the ledger locks both
- * accounts, so concurrent contributions can't push a Pact past its target or a
- * wallet below zero.
- */
+/** In an order Pact, people pay for their own orders: no more than they owe. */
+async function ordersBlocker(q: Queryable, pact: PactRow, userId: string, amount: number): Promise<AppError | null> {
+  if (pact.mode !== 'orders') return null;
+  const owed = await orderOutstanding(q, pact.id, userId);
+  if (owed <= 0) return badRequest('nothing_owed', 'You don’t owe anything here. Order something first.');
+  if (amount > owed) return new AppError(422, 'exceeds_owed', `You owe ${formatNgn(owed)} for your orders.`, { remaining: owed });
+  return null;
+}
+
 /** Why a contribution can't go ahead right now, or null if it can. Checked under the Pact's row lock. */
 function contributionBlocker(pact: PactRow, amount: number, today: string): AppError | null {
   if (pact.status !== 'open') return badRequest('pact_closed', pact.status === 'funded' ? 'This Pact is already fully funded.' : 'This Pact is closed.');
@@ -491,7 +633,6 @@ function contributionBlocker(pact: PactRow, amount: number, today: string): AppE
 async function contributeTx(q: Queryable, pact: PactRow, member: MemberRow, userId: string, amount: number, via: 'wallet' | 'direct') {
   if (member.status === 'invited') await joinTx(q, pact, userId);
   const wallet = await walletAccountId(q, userId);
-  const user = await getUser(q, userId);
   await post(q, {
     kind: 'contribution',
     reference: `contribution:${pact.id}:${randomCode(16)}`,
@@ -504,17 +645,33 @@ async function contributeTx(q: Queryable, pact: PactRow, member: MemberRow, user
       { accountId: pact.account_id, amount },
     ],
   });
-  // A "split the rest" ask is settled once this person has put in at least that much since.
-  await q.query(
-    `UPDATE pact_members SET contributed = contributed + $3,
-       participation = CASE WHEN participation IS NULL OR participation = 'later' THEN 'money' WHEN participation = 'task' THEN 'both' ELSE participation END,
-       requested_amount = CASE WHEN requested_amount IS NOT NULL AND $3 >= requested_amount THEN NULL
-                               WHEN requested_amount IS NOT NULL THEN requested_amount - $3 END
-     WHERE pact_id = $1 AND user_id = $2`,
-    [pact.id, userId, amount],
-  );
+  return applyToPact(q, pact, { userId }, amount);
+}
+
+/**
+ * What every payment into a Pact does once the money is in the pool, whether it came
+ * from a wallet, a direct payment or a bank transfer: count it for the member (or show
+ * the guest), move the total, mark milestones and the goal, tell the organiser.
+ * Runs inside the caller's transaction with the Pact row locked.
+ */
+export async function applyToPact(q: Queryable, pact: PactRow, from: { userId: string } | { guestName: string }, amount: number) {
+  const userId = 'userId' in from ? from.userId : null;
+  if (userId) {
+    // A "split the rest" ask is settled once this person has put in at least that much since.
+    await q.query(
+      `UPDATE pact_members SET contributed = contributed + $3,
+         participation = CASE WHEN participation IS NULL OR participation = 'later' THEN 'money' WHEN participation = 'task' THEN 'both' ELSE participation END,
+         requested_amount = CASE WHEN requested_amount IS NOT NULL AND $3 >= requested_amount THEN NULL
+                                 WHEN requested_amount IS NOT NULL THEN requested_amount - $3 END
+       WHERE pact_id = $1 AND user_id = $2`,
+      [pact.id, userId, amount],
+    );
+    await checkPledgeKept(q, pact.id, userId);
+  }
   const upd = await q.query<{ raised_amount: number }>('UPDATE pacts SET raised_amount = raised_amount + $2 WHERE id = $1 RETURNING raised_amount', [pact.id, amount]);
-  await recordActivity(q, { pactId: pact.id, actorId: userId, type: 'contribution', amount });
+  const guestName = 'guestName' in from ? from.guestName : null;
+  if (guestName) await recordActivity(q, { pactId: pact.id, actorId: null, type: 'guest_contribution', amount, detail: guestName });
+  else await recordActivity(q, { pactId: pact.id, actorId: userId, type: 'contribution', amount });
   // Momentum markers at halfway and 80%, recorded once each.
   const before = (upd.rows[0].raised_amount - amount) / pact.target_amount;
   const after = upd.rows[0].raised_amount / pact.target_amount;
@@ -522,13 +679,15 @@ async function contributeTx(q: Queryable, pact: PactRow, member: MemberRow, user
     if (before < mark && after >= mark && after < 1) await recordActivity(q, { pactId: pact.id, actorId: null, type: 'milestone', detail: `${mark * 100}%` });
   }
   const members = await q.query<{ user_id: string }>(`SELECT user_id FROM pact_members WHERE pact_id = $1 AND status = 'joined'`, [pact.id]);
-  const completed = upd.rows[0].raised_amount >= pact.target_amount;
+  // Bank transfers can still arrive after the goal is reached; only the first crossing completes it.
+  const completed = pact.status === 'open' && upd.rows[0].raised_amount >= pact.target_amount;
   if (completed) {
     await q.query(`UPDATE pacts SET status = 'funded', funded_at = now() WHERE id = $1`, [pact.id]);
     await recordActivity(q, { pactId: pact.id, actorId: userId, type: 'completed' });
     await notify(q, members.rows.map((m) => m.user_id), { type: 'funded', title: 'Goal reached', body: `${pact.title} is fully funded. ${formatNgn(pact.target_amount)} raised together.`, pactId: pact.id });
   } else if (userId !== pact.organizer_id) {
-    await notify(q, [pact.organizer_id], { type: 'contribution', title: 'New contribution', body: `${user.first_name} added ${formatNgn(amount)} to ${pact.title}.`, pactId: pact.id });
+    const who = guestName ?? (await getUser(q, userId!)).first_name;
+    await notify(q, [pact.organizer_id], { type: 'contribution', title: 'New contribution', body: `${who} added ${formatNgn(amount)} to ${pact.title}.`, pactId: pact.id });
   }
   return completed;
 }
@@ -545,7 +704,7 @@ export async function contribute(ctx: Ctx, userId: string, pactId: string, amoun
   const today = lagosToday(ctx.now());
   const completed = await ctx.db.tx(async (q) => {
     const { pact, member } = await loadVisible(q, pactId, userId, true);
-    const blocked = contributionBlocker(pact, amount, today);
+    const blocked = contributionBlocker(pact, amount, today) ?? (await ordersBlocker(q, pact, userId, amount));
     if (blocked) throw blocked;
     const done = await contributeTx(q, pact, member!, userId, amount, 'wallet');
     await audit(q, { actorId: userId, action: 'pact.contribution', targetType: 'pact', targetId: pactId, ip: meta.ip, metadata: { amount } });
@@ -559,7 +718,7 @@ export async function contribute(ctx: Ctx, userId: string, pactId: string, amoun
 export async function assertCanPayInto(ctx: Ctx, userId: string, pactId: string, amount: number) {
   if (amount % 100 !== 0) throw badRequest('invalid_amount', 'Contribute whole naira amounts.');
   const { pact } = await loadVisible(ctx.db, pactId, userId);
-  const blocked = contributionBlocker(pact, amount, lagosToday(ctx.now()));
+  const blocked = contributionBlocker(pact, amount, lagosToday(ctx.now())) ?? (await ordersBlocker(ctx.db, pact, userId, amount));
   if (blocked) throw blocked;
   return pact.title;
 }
@@ -601,20 +760,66 @@ export async function release(ctx: Ctx, userId: string, pactId: string, pin: str
   await ctx.db.tx(async (q) => {
     const { pact, member: m } = await loadVisible(q, pactId, userId, true);
     if (m!.role !== 'organizer') throw forbidden('Only the organiser can release the funds.');
+    await settleWaitingPayouts(q, pact, 'block');
+    assertReleasable(ctx, pact);
+    // With a co-organiser, the pool doesn't go to the organiser's wallet on one person's word.
+    const co = await q.query<{ user_id: string }>(`SELECT user_id FROM pact_members WHERE pact_id = $1 AND role = 'co_organizer' AND status = 'joined'`, [pactId]);
+    if (co.rows[0]) {
+      if (pact.release_requested_by) throw badRequest('release_requested', 'You’ve already asked. Your co-organiser will decide.');
+      await q.query('UPDATE pacts SET release_requested_by = $2, release_requested_at = now() WHERE id = $1', [pactId, userId]);
+      const pool = (await q.query<{ balance: number }>('SELECT balance FROM accounts WHERE id = $1', [pact.account_id])).rows[0].balance;
+      await recordActivity(q, { pactId, actorId: userId, type: 'release_requested', amount: pool });
+      await notify(q, [co.rows[0].user_id], { type: 'approval', title: 'Approve the release', body: `${user.first_name} wants to release ${formatNgn(pool)} from ${pact.title} to their wallet.`, pactId });
+      await audit(q, { actorId: userId, action: 'pact.release_requested', targetType: 'pact', targetId: pactId, ip: meta.ip, metadata: { amount: pool } });
+      return;
+    }
     await releaseTx(ctx, q, pact, userId, 'organizer');
+    await audit(q, { actorId: userId, action: 'pact.released', targetType: 'pact', targetId: pactId, ip: meta.ip });
   });
-  await audit(ctx.db, { actorId: userId, action: 'pact.released', targetType: 'pact', targetId: pactId, ip: meta.ip });
   return getPact(ctx, userId, pactId);
 }
 
-async function releaseTx(ctx: Ctx, q: Queryable, pact: PactRow, actorId: string | null, by: 'organizer' | 'rule') {
-  const today = lagosToday(ctx.now());
-  const missed = pact.status === 'open' && pact.deadline < today;
-  if (pact.status !== 'funded' && !(missed && pact.missed_goal_policy === 'release')) {
-    if (pact.status === 'open' && !missed) throw badRequest('not_funded', 'Funds can be released once the goal is reached.');
-    if (missed) throw badRequest('refund_policy', 'Everyone agreed to refunds if the goal was missed, so this Pact will refund.');
-    throw badRequest('pact_closed', 'This Pact is already closed.');
+/** The co-organiser decides on the organiser's release request. */
+export async function decideRelease(ctx: Ctx, userId: string, pactId: string, decision: 'approve' | 'decline', pin: string | null, meta: ReqMeta) {
+  const { member } = await loadVisible(ctx.db, pactId, userId);
+  if (member!.role !== 'co_organizer' && !(decision === 'decline' && member!.role === 'organizer')) {
+    throw forbidden('Only the co-organiser can approve a release.');
   }
+  if (decision === 'approve') {
+    if (!pin) throw badRequest('pin_required', 'Enter your PIN to approve.');
+    await verifyPin(ctx, userId, pin, meta);
+    const me = await getUser(ctx.db, userId);
+    if (!TIER_LIMITS[me.kyc_tier as KycTier].canRelease) throw new AppError(403, 'kyc_required', 'Verify your BVN to approve a release.');
+  }
+  await ctx.db.tx(async (q) => {
+    const { pact, member: m } = await loadVisible(q, pactId, userId, true);
+    if (!pact.release_requested_by) throw badRequest('no_release_request', 'Nobody has asked to release the funds.');
+    if (decision === 'approve') {
+      if (m!.role !== 'co_organizer') throw forbidden('Only the co-organiser can approve a release.');
+      await settleWaitingPayouts(q, pact, 'block');
+      await releaseTx(ctx, q, pact, pact.organizer_id, 'organizer');
+    } else {
+      await q.query('UPDATE pacts SET release_requested_by = NULL, release_requested_at = NULL WHERE id = $1', [pactId]);
+      if (m!.role === 'co_organizer') {
+        await notify(q, [pact.organizer_id], { type: 'approval', title: 'Release not approved', body: `The funds stay in ${pact.title}. You can still pay vendors from it.`, pactId });
+      }
+    }
+    await audit(q, { actorId: userId, action: `pact.release_${decision === 'approve' ? 'approved' : 'declined'}`, targetType: 'pact', targetId: pactId, ip: meta.ip });
+  });
+  return getPact(ctx, userId, pactId);
+}
+
+/** Funded, or past the deadline with a Pact whose rule is to release: otherwise a clear reason. */
+function assertReleasable(ctx: Ctx, pact: PactRow) {
+  const missed = pact.status === 'open' && pact.deadline < lagosToday(ctx.now());
+  if (pact.status === 'funded' || (missed && pact.missed_goal_policy === 'release')) return;
+  if (pact.status === 'open' && !missed) throw badRequest('not_funded', 'Funds can be released once the goal is reached.');
+  if (missed) throw badRequest('refund_policy', 'Everyone agreed to refunds if the goal was missed, so this Pact will refund.');
+  throw badRequest('pact_closed', 'This Pact is already closed.');
+}
+
+async function releaseTx(ctx: Ctx, q: Queryable, pact: PactRow, actorId: string | null, by: 'organizer' | 'rule') {
+  assertReleasable(ctx, pact);
   const pool = await q.query<{ balance: number }>('SELECT balance FROM accounts WHERE id = $1', [pact.account_id]);
   const amount = pool.rows[0].balance;
   if (amount > 0) {
@@ -631,35 +836,90 @@ async function releaseTx(ctx: Ctx, q: Queryable, pact: PactRow, actorId: string 
       ],
     });
   }
-  await q.query(`UPDATE pacts SET status = 'released', closed_at = now() WHERE id = $1`, [pact.id]);
+  await q.query(`UPDATE pacts SET status = 'released', closed_at = now(), release_requested_by = NULL, release_requested_at = NULL WHERE id = $1`, [pact.id]);
+  await closePactAccountTx(q, pact.id);
+  await closePledgesTx(q, pact.id);
   await recordActivity(q, { pactId: pact.id, actorId: pact.organizer_id, type: 'released', amount });
   const members = await q.query<{ user_id: string }>(`SELECT user_id FROM pact_members WHERE pact_id = $1 AND status = 'joined' AND user_id <> $2`, [pact.id, pact.organizer_id]);
   await notify(q, members.rows.map((m) => m.user_id), { type: 'released', title: 'Funds released', body: `${formatNgn(amount)} from ${pact.title} was released to the organiser.`, pactId: pact.id });
   await notify(q, [pact.organizer_id], { type: 'released', title: 'Funds in your wallet', body: `${formatNgn(amount)} from ${pact.title} is in your wallet.`, pactId: pact.id });
 }
 
-/** Returns every contribution to the wallet it came from, in one balanced ledger transaction. */
+/**
+ * Splits `available` across what each person is owed, in proportion, to the kobo.
+ * Leftover kobo from rounding go one each to the largest remainders.
+ */
+export function prorate(owed: { key: string; amount: number }[], available: number): Map<string, number> {
+  const total = owed.reduce((s, o) => s + o.amount, 0);
+  const out = new Map<string, number>();
+  if (total <= 0) return out;
+  if (available >= total) {
+    for (const o of owed) out.set(o.key, o.amount);
+    return out;
+  }
+  const exact = owed.map((o) => ({ key: o.key, raw: (o.amount * available) / total }));
+  let left = available;
+  for (const e of exact) {
+    const v = Math.floor(e.raw);
+    out.set(e.key, v);
+    left -= v;
+  }
+  for (const e of [...exact].sort((a, b) => (b.raw % 1) - (a.raw % 1))) {
+    if (left <= 0) break;
+    out.set(e.key, out.get(e.key)! + 1);
+    left--;
+  }
+  return out;
+}
+
+/**
+ * Gives the pool back the way it came in: wallet contributions to wallets, and every bank
+ * transfer to the account it was sent from. Who a transfer is shown under never decides
+ * where its refund goes, so reassigning a stranger's transfer can't redirect their money.
+ * If vendors were already paid, everyone gets the same share of what's left.
+ */
 async function refundTx(q: Queryable, pact: PactRow, finalStatus: 'refunded' | 'cancelled', actorId: string | null) {
   if (!['open', 'funded'].includes(pact.status)) throw badRequest('pact_closed', 'This Pact is already closed.');
   const contributors = await q.query<{ user_id: string; contributed: number }>(
     'SELECT user_id, contributed FROM pact_members WHERE pact_id = $1 AND contributed > 0',
     [pact.id],
   );
-  const total = contributors.rows.reduce((s, c) => s + c.contributed, 0);
-  if (total > 0) {
-    const postings = [{ accountId: pact.account_id, amount: -total }];
-    for (const c of contributors.rows) postings.push({ accountId: await walletAccountId(q, c.user_id), amount: c.contributed });
+  const transfers = await q.query<{ id: string; amount: number; user_id: string | null }>(
+    `SELECT id, amount, user_id FROM pact_transfers WHERE pact_id = $1 AND status = 'credited'`,
+    [pact.id],
+  );
+  const byTransfer = new Map<string, number>();
+  for (const t of transfers.rows) if (t.user_id) byTransfer.set(t.user_id, (byTransfer.get(t.user_id) ?? 0) + t.amount);
+  const fromWallet = (c: { user_id: string; contributed: number }) => Math.max(0, c.contributed - (byTransfer.get(c.user_id) ?? 0));
+  const pool = (await q.query<{ balance: number }>('SELECT balance FROM accounts WHERE id = $1', [pact.account_id])).rows[0].balance;
+  const shares = prorate(
+    [...contributors.rows.map((c) => ({ key: `m:${c.user_id}`, amount: fromWallet(c) })), ...transfers.rows.map((t) => ({ key: `t:${t.id}`, amount: t.amount }))],
+    pool,
+  );
+  const walletShare = (userId: string) => shares.get(`m:${userId}`) ?? 0;
+  const toWallets = contributors.rows.reduce((s, c) => s + walletShare(c.user_id), 0);
+  if (toWallets > 0) {
+    const postings = [{ accountId: pact.account_id, amount: -toWallets }];
+    for (const c of contributors.rows) if (walletShare(c.user_id) > 0) postings.push({ accountId: await walletAccountId(q, c.user_id), amount: walletShare(c.user_id) });
     await post(q, { kind: 'refund', reference: `refund:${pact.id}`, description: `Refund from ${pact.title}`, userId: actorId, pactId: pact.id, postings });
   }
-  await q.query(`UPDATE pacts SET status = $2, closed_at = now() WHERE id = $1`, [pact.id, finalStatus]);
-  await recordActivity(q, { pactId: pact.id, actorId, type: finalStatus === 'cancelled' ? 'cancelled' : 'refunded', amount: total });
+  await refundGuestsTx(q, pact, new Map(transfers.rows.map((t) => [t.id, shares.get(`t:${t.id}`) ?? 0])));
+  const refunded = [...shares.values()].reduce((s, v) => s + v, 0);
+  await q.query(`UPDATE pacts SET status = $2, closed_at = now(), release_requested_by = NULL, release_requested_at = NULL WHERE id = $1`, [pact.id, finalStatus]);
+  await closePactAccountTx(q, pact.id);
+  await closePledgesTx(q, pact.id);
+  await recordActivity(q, { pactId: pact.id, actorId, type: finalStatus === 'cancelled' ? 'cancelled' : 'refunded', amount: refunded });
   const members = await q.query<{ user_id: string }>(`SELECT user_id FROM pact_members WHERE pact_id = $1 AND status = 'joined'`, [pact.id]);
   for (const c of contributors.rows) {
-    await notify(q, [c.user_id], { type: 'refund', title: 'Refund in your wallet', body: `${formatNgn(c.contributed)} from ${pact.title} is back in your wallet.`, pactId: pact.id });
+    const wallet = walletShare(c.user_id);
+    const bank = transfers.rows.filter((t) => t.user_id === c.user_id).reduce((s, t) => s + (shares.get(`t:${t.id}`) ?? 0), 0);
+    const parts = [wallet ? `${formatNgn(wallet)} is back in your wallet` : '', bank ? `${formatNgn(bank)} is on its way back to the bank account you paid from` : ''].filter(Boolean);
+    const short = wallet + bank < c.contributed ? ' The rest had already been paid to vendors.' : '';
+    await notify(q, [c.user_id], { type: 'refund', title: 'Refunded', body: `${parts.join(', and ')} from ${pact.title}.${short}`, pactId: pact.id });
   }
   const others = members.rows.map((m) => m.user_id).filter((id) => !contributors.rows.some((c) => c.user_id === id));
   await notify(q, others, { type: 'closed', title: `${pact.title} closed`, body: finalStatus === 'cancelled' ? 'The organiser closed this Pact.' : 'The goal wasn’t reached, so everyone was refunded.', pactId: pact.id });
-  return total;
+  return refunded;
 }
 
 export async function cancel(ctx: Ctx, userId: string, pactId: string, pin: string, meta: ReqMeta) {
@@ -668,6 +928,7 @@ export async function cancel(ctx: Ctx, userId: string, pactId: string, pin: stri
   await ctx.db.tx(async (q) => {
     const { pact, member } = await loadVisible(q, pactId, userId, true);
     if (member!.role !== 'organizer') throw forbidden('Only the organiser can close the Pact.');
+    await settleWaitingPayouts(q, pact, 'block');
     await refundTx(q, pact, 'cancelled', userId);
     await audit(q, { actorId: userId, action: 'pact.cancelled', targetType: 'pact', targetId: pactId, ip: meta.ip });
   });
@@ -739,6 +1000,19 @@ export async function sweepDeadlines(ctx: Ctx) {
       await ctx.db.tx(async (q) => {
         const p = (await q.query<PactRow>(`SELECT * FROM pacts WHERE id = $1 AND status = 'open' FOR UPDATE SKIP LOCKED`, [id])).rows[0];
         if (!p) return;
+        await settleWaitingPayouts(q, p, 'reject');
+        if (p.mode === 'orders') {
+          // Pay-by date passed: unpaid orders lapse; what was bought is the Pact's total.
+          const after = await lapseUnpaidOrders(q, p);
+          if (after.target_amount > 0) {
+            await q.query(`UPDATE pacts SET status = 'funded', funded_at = COALESCE(funded_at, now()) WHERE id = $1`, [p.id]);
+            await recordActivity(q, { pactId: p.id, actorId: null, type: 'completed' });
+          } else {
+            await refundTx(q, after, 'refunded', null);
+          }
+          await audit(q, { action: 'pact.orders_closed', targetType: 'pact', targetId: id, metadata: { total: after.target_amount } });
+          return;
+        }
         const organizer = await getUser(q, p.organizer_id);
         const canRelease = TIER_LIMITS[organizer.kyc_tier as KycTier].canRelease;
         if (p.missed_goal_policy === 'release' && canRelease) await releaseTx(ctx, q, p, null, 'rule');

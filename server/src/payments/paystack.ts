@@ -81,5 +81,22 @@ export function createPaystackProvider(config: Config): PaymentProvider {
       const status = data.status === 'success' ? 'succeeded' : data.status === 'failed' ? 'failed' : 'pending';
       return { providerRef: data.transfer_code, status };
     },
+    // Dedicated virtual accounts: one Paystack customer per Pact, so each Pact gets its own
+    // number. Needs dedicated accounts enabled on the Paystack business; not yet exercised
+    // against the live API.
+    async createPactAccount({ pactId, name }) {
+      const customer = await call<{ customer_code: string }>('/customer', {
+        method: 'POST',
+        body: JSON.stringify({ email: `${pactId}@pacts.pact.invalid`, first_name: 'PACT', last_name: name.slice(0, 40), metadata: { pact_id: pactId } }),
+      });
+      const dva = await call<{ id: number; account_number: string; account_name: string; bank: { name: string } }>('/dedicated_account', {
+        method: 'POST',
+        body: JSON.stringify({ customer: customer.customer_code, preferred_bank: config.PAYSTACK_DVA_BANK }),
+      });
+      return { providerRef: String(dva.id), accountNumber: dva.account_number, bankName: dva.bank.name, accountName: dva.account_name };
+    },
+    async closePactAccount(providerRef) {
+      await call(`/dedicated_account/${encodeURIComponent(providerRef)}`, { method: 'DELETE' });
+    },
   };
 }

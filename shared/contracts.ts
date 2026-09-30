@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { MAX_PACT_TARGET, MIN_CONTRIBUTION, MIN_PACT_TARGET, MIN_TOPUP, MIN_WITHDRAWAL, type KycTier } from './policy';
+import { MAX_PACT_TARGET, MIN_CONTRIBUTION, MIN_PACT_TARGET, MIN_TOPUP, MIN_VENDOR_PAYMENT, MIN_WITHDRAWAL, type KycTier } from './policy';
 
 /* ==========================================================================
    Request bodies: validated by the API with these exact schemas.
@@ -44,6 +44,13 @@ export const RefreshBody = z.object({ refreshToken: z.string().min(20).optional(
 
 const budgetLine = z.object({ name: text(1, 60), amount: kobo(100) });
 
+const itemLine = z.object({
+  name: text(1, 60),
+  price: kobo(100_00),
+  options: z.array(text(1, 30)).max(12).default([]),
+  stock: z.number().int().min(1).max(10_000).nullable().optional(),
+});
+
 export const CreatePactBody = z
   .object({
     title: text(1, 60),
@@ -58,8 +65,15 @@ export const CreatePactBody = z
     tasks: z.array(z.object({ title: text(1, 80) })).max(12).default([]),
     inviteUserIds: z.array(z.string().uuid()).max(50).default([]),
     invitePhones: z.array(phone).max(50).default([]),
+    /** `orders`: people order items and the total is what they order (aso-ebi, souvenirs, tickets). */
+    mode: z.enum(['goal', 'orders']).default('goal'),
+    items: z.array(itemLine).max(20).default([]),
   })
-  .refine((b) => b.budget.length > 0 || b.target !== undefined, { message: 'Set a target or add what the money covers.', path: ['target'] });
+  .refine((b) => b.mode === 'orders' || b.budget.length > 0 || b.target !== undefined, { message: 'Set a target or add what the money covers.', path: ['target'] })
+  .refine((b) => b.mode !== 'orders' || b.items.length > 0, { message: 'Add at least one item people can order.', path: ['items'] });
+export const ItemBody = itemLine;
+export const ItemPatchBody = itemLine.partial().extend({ active: z.boolean().optional() });
+export const OrderBody = z.object({ itemId: z.string().uuid(), option: text(1, 30).nullable().optional(), quantity: z.number().int().min(1).max(50) });
 export const InviteBody = z.object({
   userIds: z.array(z.string().uuid()).max(50).default([]),
   phones: z.array(phone).max(50).default([]),
@@ -83,6 +97,20 @@ export const TopupBody = z.object({ amount: kobo(MIN_TOPUP), channel: z.enum(['c
 export const WithdrawBody = z.object({ amount: kobo(MIN_WITHDRAWAL), bankAccountId: z.string().uuid(), pin });
 export const ResolveBankBody = z.object({ bankCode: z.string().regex(/^\d{3,6}$/), accountNumber: z.string().regex(/^\d{10}$/, 'Account numbers are 10 digits') });
 export const AddBankBody = ResolveBankBody.extend({ pin });
+
+/** Paying a vendor from a Pact. The account is checked with the bank before anything moves. */
+export const VendorPayBody = ResolveBankBody.extend({
+  amount: kobo(MIN_VENDOR_PAYMENT),
+  purpose: text(1, 80),
+  budgetItemId: z.string().uuid().nullable().optional(),
+  pin,
+});
+/** "I'll add this much by this date." */
+export const PledgeBody = z.object({ amount: kobo(MIN_CONTRIBUTION), dueOn: isoDate });
+/** A transfer that came in: count it for this member, or `null` to show it as a guest. */
+export const AssignTransferBody = z.object({ userId: z.string().uuid().nullable() });
+/** `null` removes the co-organiser. */
+export const CoOrganizerBody = z.object({ userId: z.string().uuid().nullable() });
 
 export const VerifyBvnBody = z.object({ bvn: z.string().regex(/^\d{11}$/, 'BVN is 11 digits'), dateOfBirth: isoDate });
 export const ChangePinBody = z.object({ currentPin: pin, newPin: pin });
@@ -131,7 +159,7 @@ export interface WalletDTO {
   usage: { topupToday: number; withdrawnToday: number };
 }
 
-export type WalletTxnKind = 'topup' | 'contribution' | 'pact_release' | 'withdrawal' | 'withdrawal_reversal' | 'refund';
+export type WalletTxnKind = 'topup' | 'contribution' | 'pact_release' | 'withdrawal' | 'withdrawal_reversal' | 'refund' | 'vendor_payment_reversal';
 
 export interface WalletTxnDTO {
   id: string;
@@ -149,9 +177,11 @@ export type PactStatus = 'open' | 'funded' | 'released' | 'refunded' | 'cancelle
 
 export type Participation = (typeof participations)[number];
 
+export type PactRole = 'organizer' | 'co_organizer' | 'member';
+
 export interface PactMemberDTO {
   userId: string;
-  role: 'organizer' | 'member';
+  role: PactRole;
   status: 'invited' | 'joined' | 'left';
   contributed: number;
   joinedAt: string | null;
@@ -168,7 +198,90 @@ export interface BudgetItemDTO {
   amount: number;
   /** Raised money fills items in order. */
   funded: number;
+  /** Paid to vendors against this line (sent or on the way). */
+  paid: number;
   position: number;
+}
+
+/** The Pact's own account number: anyone can pay it from any bank app. */
+export interface PactBankAccountDTO {
+  accountNumber: string;
+  bankName: string;
+  accountName: string;
+  status: 'active' | 'closed';
+}
+
+/** A bank transfer into the Pact. `userId` null means a guest, shown by their bank name. */
+export interface PactTransferDTO {
+  id: string;
+  amount: number;
+  senderName: string;
+  senderBank: string | null;
+  userId: string | null;
+  matchedBy: 'name' | 'organizer' | null;
+  status: 'credited' | 'returned' | 'refunded' | 'held';
+  createdAt: string;
+}
+
+/** Something people can order in an order Pact. `ordered` counts everyone's active orders. */
+export interface PactItemDTO {
+  id: string;
+  name: string;
+  price: number;
+  options: string[];
+  stock: number | null;
+  ordered: number;
+  active: boolean;
+}
+
+/** An order. Members see their own; organisers see everyone's (the order sheet). */
+export interface PactOrderDTO {
+  id: string;
+  itemId: string;
+  userId: string;
+  option: string | null;
+  quantity: number;
+  amount: number;
+  status: 'active' | 'lapsed';
+  /** Covered by the person's payments, oldest order first. */
+  paid: boolean;
+  createdAt: string;
+}
+
+/** "I'll add ₦X by this date." `remaining` is what's still to add before it's kept. */
+export interface PactPledgeDTO {
+  id: string;
+  userId: string;
+  amount: number;
+  dueOn: string;
+  source: 'member' | 'orders';
+  status: 'open' | 'kept' | 'cancelled' | 'closed';
+  remaining: number;
+  /** Reminders PACT has sent so far (at most two). */
+  reminded: number;
+}
+
+export type PactPayoutStatus = 'awaiting_approval' | 'pending' | 'processing' | 'succeeded' | 'failed' | 'rejected' | 'cancelled';
+
+/** Money that left the Pact to a bank account, visible to every member. */
+export interface PactPayoutDTO {
+  id: string;
+  kind: 'vendor' | 'guest_refund' | 'transfer_return';
+  amount: number;
+  fee: number;
+  accountName: string;
+  bankName: string;
+  last4: string;
+  purpose: string | null;
+  budgetItemId: string | null;
+  status: PactPayoutStatus;
+  requestedBy: string | null;
+  decidedBy: string | null;
+  decidedAt: string | null;
+  hasReceipt: boolean;
+  failureReason: string | null;
+  createdAt: string;
+  completedAt: string | null;
 }
 
 export interface TaskDTO {
@@ -212,7 +325,16 @@ export interface PactDTO {
   budget: BudgetItemDTO[];
   tasks: TaskDTO[];
   memory: MemoryDTO | null;
-  viewer: { role: 'organizer' | 'member' | null; status: 'invited' | 'joined' | 'left' | null; suggestedShare: number };
+  mode: 'goal' | 'orders';
+  items: PactItemDTO[];
+  orders: PactOrderDTO[];
+  pledges: PactPledgeDTO[];
+  /** Waiting for the co-organiser to approve releasing the pool to the organiser. */
+  releaseRequest: { requestedBy: string; requestedAt: string } | null;
+  bankAccount: PactBankAccountDTO | null;
+  transfers: PactTransferDTO[];
+  payouts: PactPayoutDTO[];
+  viewer: { role: PactRole | null; status: 'invited' | 'joined' | 'left' | null; suggestedShare: number };
 }
 
 export interface PactPreviewDTO {
@@ -222,8 +344,11 @@ export interface PactPreviewDTO {
   raised: number;
   deadline: string;
   status: PactStatus;
+  mode: 'goal' | 'orders';
   memberCount: number;
   organizer: { firstName: string; color: string; photoUrl: string | null };
+  /** Set while the Pact is taking money and has an account number: pay by transfer without the app. */
+  bankAccount: { accountNumber: string; bankName: string; accountName: string } | null;
 }
 
 export interface ActivityDTO {
@@ -231,7 +356,8 @@ export interface ActivityDTO {
   pactId: string;
   type:
     | 'created' | 'join' | 'contribution' | 'completed' | 'released' | 'refunded' | 'cancelled' | 'nudge' | 'left'
-    | 'committed' | 'task_added' | 'task_claimed' | 'task_done' | 'milestone' | 'split_requested' | 'memory_added';
+    | 'committed' | 'task_added' | 'task_claimed' | 'task_done' | 'milestone' | 'split_requested' | 'memory_added'
+    | 'guest_contribution' | 'vendor_paid' | 'co_organizer' | 'release_requested' | 'pledged' | 'pledge_kept' | 'ordered' | 'orders_closed';
   actorId: string | null;
   amount: number | null;
   /** Short context, e.g. a task title or a milestone percentage. */

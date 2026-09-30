@@ -1,6 +1,10 @@
 import type { Ctx } from '../context.js';
 import { audit } from './platform.js';
+import { completePactPayout, failPactPayout, receiveTransfer } from './pactMoney.js';
 import { failTopup, reverseWithdrawal, completeWithdrawal, settleTopup } from './wallet.js';
+
+/** Withdrawals are WDR_…; everything else we send is money leaving a Pact. */
+const isWithdrawal = (reference: string) => reference.startsWith('WDR_');
 
 /**
  * Verified, deduplicated processing of processor events. The raw event is stored
@@ -36,15 +40,20 @@ export async function handleWebhook(ctx: Ctx, rawBody: string, headers: Record<s
         if (event.currency && event.currency !== 'NGN') await failTopup(ctx, event.reference, 'currency_mismatch');
         else await settleTopup(ctx, event.reference, event.amount, 'webhook');
         break;
+      case 'transfer.received':
+        if (event.inbound) await receiveTransfer(ctx, { reference: event.reference, amount: event.amount, currency: event.currency, inbound: event.inbound });
+        break;
       case 'charge.failed':
         await failTopup(ctx, event.reference, event.reason);
         break;
       case 'transfer.success':
-        await completeWithdrawal(ctx, event.reference);
+        if (isWithdrawal(event.reference)) await completeWithdrawal(ctx, event.reference);
+        else await completePactPayout(ctx, event.reference);
         break;
       case 'transfer.failed':
       case 'transfer.reversed':
-        await reverseWithdrawal(ctx, event.reference, event.reason ?? 'The bank returned the transfer');
+        if (isWithdrawal(event.reference)) await reverseWithdrawal(ctx, event.reference, event.reason ?? 'The bank returned the transfer');
+        else await failPactPayout(ctx, event.reference, event.reason ?? 'The bank returned the transfer');
         break;
       default:
         break;

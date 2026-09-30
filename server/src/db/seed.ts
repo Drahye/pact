@@ -9,17 +9,17 @@ import { colorFor } from '../modules/pacts.js';
 export const DEMO_PIN = '1357';
 
 const people = [
-  { key: 'abraham', first: 'Abraham', last: 'Okafor', photo: '/avatars/men-30.jpg', tint: 'mint', color: '#3dd68c', tier: 2 },
-  { key: 'sarah', first: 'Sarah', last: 'Adeyemi', photo: '/avatars/women-30.jpg', tint: 'peach', color: '#ff7a5c', tier: 2 },
-  { key: 'david', first: 'David', last: 'Eze', photo: '/avatars/men-16.jpg', tint: 'sky', color: '#4da3ff', tier: 1 },
-  { key: 'maya', first: 'Maya', last: 'Bello', photo: '/avatars/women-36.jpg', tint: 'lilac', color: '#9b7bff', tier: 1 },
-  { key: 'tolu', first: 'Tolu', last: 'Martins', photo: null, tint: 'sand', color: '#ffc53d', tier: 1 },
-  { key: 'kemi', first: 'Kemi', last: 'Adebayo', photo: '/avatars/women-92.jpg', tint: 'mint', color: '#ff6fb5', tier: 2 },
-  { key: 'femi', first: 'Femi', last: 'Johnson', photo: '/avatars/men-91.jpg', tint: 'peach', color: '#22b8a6', tier: 1 },
-  { key: 'zara', first: 'Zara', last: 'Musa', photo: '/avatars/women-70.jpg', tint: 'sky', color: '#ff9f43', tier: 1 },
-  { key: 'james', first: 'James', last: 'Obi', photo: '/avatars/men-53.jpg', tint: 'lilac', color: '#4da3ff', tier: 2 },
-  { key: 'ada', first: 'Ada', last: 'Nwosu', photo: null, tint: 'sand', color: '#ff6fb5', tier: 1 },
-  { key: 'chidi', first: 'Chidi', last: 'Okeke', photo: '/avatars/men-83.jpg', tint: 'sky', color: '#ffc53d', tier: 1 },
+  { key: 'abraham', first: 'Abraham', last: 'Okafor', tint: 'mint', color: '#3dd68c', tier: 2 },
+  { key: 'sarah', first: 'Sarah', last: 'Adeyemi', tint: 'peach', color: '#ff7a5c', tier: 2 },
+  { key: 'david', first: 'David', last: 'Eze', tint: 'sky', color: '#4da3ff', tier: 1 },
+  { key: 'maya', first: 'Maya', last: 'Bello', tint: 'lilac', color: '#9b7bff', tier: 1 },
+  { key: 'tolu', first: 'Tolu', last: 'Martins', tint: 'sand', color: '#ffc53d', tier: 1 },
+  { key: 'kemi', first: 'Kemi', last: 'Adebayo', tint: 'mint', color: '#ff6fb5', tier: 2 },
+  { key: 'femi', first: 'Femi', last: 'Johnson', tint: 'peach', color: '#22b8a6', tier: 1 },
+  { key: 'zara', first: 'Zara', last: 'Musa', tint: 'sky', color: '#ff9f43', tier: 1 },
+  { key: 'james', first: 'James', last: 'Obi', tint: 'lilac', color: '#4da3ff', tier: 2 },
+  { key: 'ada', first: 'Ada', last: 'Nwosu', tint: 'sand', color: '#ff6fb5', tier: 1 },
+  { key: 'chidi', first: 'Chidi', last: 'Okeke', tint: 'sky', color: '#ffc53d', tier: 1 },
 ] as const;
 
 export const demoPhone = (i: number) => `+23480100000${String(i + 1).padStart(2, '0')}`;
@@ -120,7 +120,7 @@ export async function seedDemo(ctx: Ctx) {
       const r = await q.query<{ id: string }>(
         `INSERT INTO users (phone, first_name, last_name, color, tint, photo_url, pin_hash, kyc_tier, bvn_last4, referral_code, created_at)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id`,
-        [demoPhone(i), p.first, p.last, p.color, p.tint, p.photo, pinHash, p.tier, p.tier > 1 ? '4821' : null, randomCode(7), at(2000)],
+        [demoPhone(i), p.first, p.last, p.color, p.tint, null, pinHash, p.tier, p.tier > 1 ? '4821' : null, randomCode(7), at(2000)],
       );
       ids[p.key] = r.rows[0].id;
       wallets[p.key] = await createAccount(q, 'user_wallet', ids[p.key]);

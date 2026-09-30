@@ -1,0 +1,109 @@
+.welcome-visual {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+.welcome-visual__blobs {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.welcome-visual__blobs span {
+  position: absolute;
+  width: 70%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  opacity: 0.75;
+}
+
+.welcome-visual__blobs span:nth-child(1) { left: -10%; top: 0; background: radial-gradient(closest-side, var(--sun-100), transparent); }
+.welcome-visual__blobs span:nth-child(2) { right: -12%; top: 8%; background: radial-gradient(closest-side, var(--sky-50), transparent); }
+.welcome-visual__blobs span:nth-child(3) { left: 20%; bottom: -25%; background: radial-gradient(closest-side, var(--pink-100), transparent); }
+
+.welcome-visual__dial {
+  position: relative;
+  width: min(92%, 380px, 100% - 8px);
+  aspect-ratio: 1;
+}
+
+.welcome-visual__ring {
+  position: absolute;
+  inset: 12%;
+  width: 76%;
+  height: 76%;
+  filter: drop-shadow(0 18px 24px rgb(19 122 74 / 0.18));
+}
+
+.welcome-visual__track,
+.welcome-visual__arc {
+  fill: none;
+  stroke-width: 20;
+}
+
+.welcome-visual__track {
+  stroke: #dedacf;
+}
+
+.welcome-visual__arc {
+  stroke-linecap: round;
+}
+
+.welcome-visual__center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.welcome-visual__title {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-secondary);
+}
+
+.welcome-visual__amount {
+  font-size: 34px;
+  line-height: 1.05;
+  font-weight: var(--weight-bold);
+  letter-spacing: -0.05em;
+}
+
+.welcome-visual__meta {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.welcome-visual__orb {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  margin: -26px 0 0 -26px;
+  border-radius: 50%;
+  background: var(--c);
+  box-shadow: 0 0 0 4px #fff, 0 10px 24px -8px var(--c);
+  color: var(--color-text);
+  font-size: 20px;
+  font-weight: var(--weight-bold);
+  animation: welcome-float 3.2s ease-in-out infinite alternate;
+}
+
+@keyframes welcome-float {
+  from { transform: translateY(-4px); }
+  to { transform: translateY(4px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .welcome-visual__orb {
+    animation: none;
+  }
+}

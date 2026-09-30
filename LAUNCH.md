@@ -78,7 +78,8 @@ PACT should not hold customer funds itself. The architecture assumes a licensed 
 - [ ] Secrets in a manager (never in `.env` on disk in production); rotation plan for `JWT_SECRET` and `HASH_SECRET`; `DATA_ENCRYPTION_KEY` backed up offline.
 - [ ] Paystack webhook URL configured, IP allowlist considered, and a daily settlement reconciliation between the processor's report and `provider_clearing`.
 - [ ] Alerts on `LEDGER DRIFT DETECTED`, `OPS ALERT`, dead jobs, webhook 5xx and elevated 4xx on auth routes.
-- [ ] Redis-backed rate limiting once there is more than one API instance.
+- [ ] `server/src/db/roles.sql` applied; API on `pact_service`, migrations on `pact_owner` (`MIGRATION_DATABASE_URL`).
+- [ ] `scripts/loadtest.mjs` run against staging with two API instances and a separate worker.
 - [ ] Error tracking and uptime monitoring.
 - [ ] Penetration test and a review of the threat model in the README.
 - [ ] Support inbox (`support@`), a refunds runbook, and an account-freeze runbook (`users.status = 'frozen'` blocks sign-in and API access).

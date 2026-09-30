@@ -1,4 +1,4 @@
-import { createHmac } from 'node:crypto';
+import { createHash, createHmac } from 'node:crypto';
 import type { Config } from '../config.js';
 import { AppError } from '../lib/errors.js';
 import { safeEqual } from '../lib/crypto.js';
@@ -52,10 +52,16 @@ export function createSandboxProvider(config: Config): PaymentProvider & { sign(
     async createRecipient({ accountNumber, bankCode }) {
       return { recipientCode: `RCP_sandbox_${bankCode}_${accountNumber.slice(-4)}` };
     },
-    async initiateTransfer({ reference, amount }) {
-      // Amounts ending in 13 kobo fail, for testing reversals.
-      if (amount % 100 === 13) return { providerRef: `TRF_${reference}`, status: 'failed', reason: 'Beneficiary bank unavailable' };
+    async initiateTransfer({ reference, amount, recipientCode }) {
+      // Amounts ending in 13 kobo, or accounts ending 9999, fail: for testing reversals.
+      if (amount % 100 === 13 || recipientCode.endsWith('_9999')) return { providerRef: `TRF_${reference}`, status: 'failed', reason: 'Beneficiary bank unavailable' };
       return { providerRef: `TRF_${reference}`, status: 'pending' };
     },
+    async createPactAccount({ pactId, name }) {
+      // Stable per Pact, so a retry returns the same number.
+      const digits = createHash('sha256').update(pactId).digest('hex').replace(/\D/g, '').padEnd(8, '7').slice(0, 8);
+      return { providerRef: `DVA_sandbox_${pactId}`, accountNumber: `88${digits}`, bankName: 'Sandbox Partner Bank', accountName: `PACT/${name}`.toUpperCase().slice(0, 60) };
+    },
+    async closePactAccount() {},
   };
 }

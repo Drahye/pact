@@ -210,23 +210,3 @@
 @media (prefers-reduced-motion: reduce) {
   .live-dot { animation: none; }
 }
-
-
-/* In-app variant (Welcome): fills its container, no feed or controls */
-.stage--app {
-  height: 100%;
-  margin-top: 0;
-}
-
-.stage--app .stage-center__amount {
-  font-size: 28px;
-}
-
-.stage--app .orb {
-  width: 60px;
-  height: 60px;
-}
-
-.stage--app .orb__name {
-  display: none;
-}

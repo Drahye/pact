@@ -44,6 +44,8 @@ const Env = z.object({
 
   PAYMENTS_PROVIDER: z.enum(['sandbox', 'paystack']).default('sandbox'),
   PAYSTACK_SECRET_KEY: z.string().default(''),
+  /** Partner bank for Pact account numbers (Paystack dedicated accounts). */
+  PAYSTACK_DVA_BANK: z.string().default('wema-bank'),
   PAYSTACK_BASE_URL: z.string().url().default('https://api.paystack.co'),
   /** Secret the sandbox provider signs its webhooks with. */
   SANDBOX_WEBHOOK_SECRET: z.string().default('sandbox-webhook-secret'),
@@ -63,6 +65,8 @@ const Env = z.object({
   TRUST_PROXY: bool(false),
   /** Per-IP HTTP rate limits. Business limits (OTP per number, PIN attempts) always apply. */
   RATE_LIMIT_ENABLED: bool(true),
+  /** Where per-IP counters live: postgres is shared by every instance; memory is per process. */
+  RATE_LIMIT_STORE: z.enum(['postgres', 'memory']).default('postgres'),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
 });
 

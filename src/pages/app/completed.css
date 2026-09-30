@@ -246,3 +246,12 @@
   background: color-mix(in srgb, var(--c, var(--color-accent)) 26%, transparent);
   color: var(--color-text);
 }
+
+.completed__money {
+  position: relative;
+  z-index: 1;
+}
+
+.completed__money .screen-section:first-child {
+  margin-top: var(--space-5);
+}

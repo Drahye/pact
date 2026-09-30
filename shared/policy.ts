@@ -46,6 +46,14 @@ export const TIER_LIMITS: Record<KycTier, TierLimits> = {
 export const MIN_TOPUP = 100 * NGN;
 export const MIN_CONTRIBUTION = 100 * NGN;
 export const MIN_WITHDRAWAL = 500 * NGN;
+export const MIN_VENDOR_PAYMENT = 500 * NGN;
+/**
+ * Vendor payments need the co-organiser's approval once this much would have gone out
+ * without approval in 24 hours, so a large payment can't be split into small ones.
+ */
+export const VENDOR_APPROVAL_THRESHOLD = 200_000 * NGN;
+/** Late transfers below this aren't sent back automatically (each return costs a transfer fee). */
+export const MIN_AUTO_RETURN = 100 * NGN;
 export const MIN_PACT_TARGET = 1_000 * NGN;
 export const MAX_PACT_TARGET = 50_000_000 * NGN;
 export const MAX_PACT_MEMBERS = 100;
@@ -55,6 +63,8 @@ export const MAX_PACT_DAYS = 365;
 export const CARD_FEE_RATE = 0.015;
 export const CARD_FEE_CAP = 2_000 * NGN;
 export const WITHDRAWAL_FEE = 50 * NGN;
+/** Bank transfer fee on money leaving a Pact (vendors, returns to guests), paid from the pool. */
+export const PACT_PAYOUT_FEE = 50 * NGN;
 
 export const topupFee = (amount: number, channel: 'card' | 'bank_transfer') =>
   channel === 'card' ? Math.min(CARD_FEE_CAP, Math.ceil(amount * CARD_FEE_RATE)) : 0;

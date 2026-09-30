@@ -87,6 +87,21 @@ for (const path of appPages) {
   await checkOverflow(path);
 }
 
+// Optional second pass as someone else, e.g. an organiser on a Pact with an account number
+// and vendor payments: AUDIT_EXTRA_PHONE=08010000001 AUDIT_EXTRA_PATHS=/app/pact/<id>
+if (process.env.AUDIT_EXTRA_PHONE && process.env.AUDIT_EXTRA_PATHS) {
+  await context.clearCookies();
+  await page.evaluate(() => localStorage.clear());
+  await signIn(process.env.AUDIT_EXTRA_PHONE);
+  for (const path of process.env.AUDIT_EXTRA_PATHS.split(',')) {
+    const res = await page.goto(`${BASE}${path}`, { waitUntil: 'load' });
+    await page.waitForTimeout(1400);
+    results.routes.push({ path, status: res?.status(), landed: new URL(page.url()).pathname });
+    await runAxe(path);
+    await checkOverflow(path);
+  }
+}
+
 await browser.close();
 writeFileSync(out, JSON.stringify(results, null, 2));
 const byRule = {};

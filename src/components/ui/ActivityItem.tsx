@@ -1,4 +1,4 @@
-import { Camera, Check, CheckCheck, Divide, Flag, Hand, ListPlus, LogOut, Plus, RotateCcw, Sparkles, UserPlus, Wallet, X } from 'lucide-react';
+import { CalendarCheck, ShoppingBag, Camera, Check, CheckCheck, Divide, Flag, Hand, Landmark, ListPlus, LogOut, Plus, Receipt, RotateCcw, ShieldCheck, Sparkles, UserPlus, Wallet, X } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import type { Activity } from '../../data/types';
@@ -51,6 +51,22 @@ export function describeActivity(activity: Activity, viewerId: string | null = C
       return { name, verb: `split the rest between ${activity.detail ?? 'the group'}`, amount: activity.amount ? formatNaira(activity.amount) : undefined };
     case 'memory_added':
       return { name, verb: 'added a memory' };
+    case 'guest_contribution':
+      return { name: activity.detail ?? 'A guest', verb: 'sent by bank transfer', amount: formatNaira(activity.amount ?? 0) };
+    case 'vendor_paid':
+      return { name, verb: `paid ${activity.detail ?? 'a vendor'}`, amount: activity.amount ? formatNaira(activity.amount) : undefined };
+    case 'ordered':
+      return { name, verb: `ordered ${activity.detail ?? 'something'}`, amount: activity.amount ? formatNaira(activity.amount) : undefined };
+    case 'orders_closed':
+      return { name: 'Orders closed.', verb: 'Unpaid orders were released after the pay-by date' };
+    case 'pledged':
+      return { name, verb: `pledged to add ${activity.amount ? formatNaira(activity.amount) : 'their share'} by ${activity.detail ?? 'the deadline'}` };
+    case 'pledge_kept':
+      return { name, verb: isYou ? 'kept your pledge' : 'kept their pledge', amount: activity.amount ? formatNaira(activity.amount) : undefined };
+    case 'release_requested':
+      return { name, verb: 'asked to release the funds', amount: activity.amount ? formatNaira(activity.amount) : undefined };
+    case 'co_organizer':
+      return { name, verb: isYou ? 'are now a co-organiser' : 'is now a co-organiser' };
   }
 }
 
@@ -70,6 +86,14 @@ const glyph = {
   milestone: <Flag strokeWidth={2.5} />,
   split_requested: <Divide strokeWidth={2.5} />,
   memory_added: <Camera strokeWidth={2.5} />,
+  guest_contribution: <Landmark strokeWidth={2.5} />,
+  vendor_paid: <Receipt strokeWidth={2.5} />,
+  co_organizer: <ShieldCheck strokeWidth={2.5} />,
+  release_requested: <Wallet strokeWidth={2.5} />,
+  pledged: <CalendarCheck strokeWidth={2.5} />,
+  ordered: <ShoppingBag strokeWidth={2.5} />,
+  orders_closed: <Flag strokeWidth={2.5} />,
+  pledge_kept: <CheckCheck strokeWidth={2.5} />,
 };
 
 /** Events with no single person behind them get a badge instead of an avatar. */
@@ -80,7 +104,11 @@ export function ActivityItem({ activity, viewerId = CURRENT_USER_ID, to, meta, s
   const body = (
     <>
       <span className="activity__avatar">
-        {systemEvent(activity) ? (
+        {activity.type === 'guest_contribution' ? (
+          <span className={`activity__complete activity__guest avatar--${size}`} aria-hidden>
+            {(activity.detail ?? 'G').charAt(0)}
+          </span>
+        ) : systemEvent(activity) ? (
           <span className={`activity__complete avatar--${size}`} aria-hidden>
             {activity.type === 'refunded' ? <RotateCcw strokeWidth={2.5} /> : activity.type === 'milestone' ? <Flag strokeWidth={2.5} /> : <Check strokeWidth={3} />}
           </span>

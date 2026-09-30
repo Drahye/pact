@@ -7,10 +7,12 @@ Date: September 26, 2026 · Commit: see `git log -1` · Scope: web app, API, dat
 How to reproduce every check in this document:
 
 ```bash
-npm test                       # 34 API tests, 19 of them adversarial (server/test/security.test.ts)
+npm test                       # 69 API tests: 20 adversarial (security.test.ts), 16 on Pact accounts and vendor payments, 6 on pledges, 7 on order Pacts, 5 on database roles
+npm run test:roles             # the same 69 tests with the API connected as the least-privilege runtime role
 npm run dev                    # then, in another terminal:
 node scripts/e2e.mjs out/      # full user journey in a browser, with screenshots
 node scripts/audit.mjs out.json   # axe-core WCAG 2.1 AA, overflow at 6 widths, console errors, links
+node scripts/loadtest.mjs --base https://staging.example   # concurrent users against staging (see the script header)
 npm audit --omit=dev           # production dependency advisories
 ```
 
@@ -33,6 +35,11 @@ npm audit --omit=dev           # production dependency advisories
 | Memory: note, date, up to six private photos | Works | e2e (upload), security tests |
 | Release to organiser, close and refund, missed-goal rule | Works | API tests |
 | Wallet: top up, history, withdraw to own-name account, reversals | Works | e2e, API tests |
+| Pact account number: pay by transfer from any bank, match by name, named guests, organiser reassigns, late transfers returned | Works (sandbox) | API tests, browser run |
+| Vendor payments from the pool: verified account, co-organiser approval over ₦200,000 a day, receipts, reversals, fair refunds after spending | Works (sandbox) | API tests, browser run |
+| Release needs the co-organiser's approval when there is one | Works | API tests, browser run |
+| Pledges with reminders on the day and the day after | Works | API tests (clock moved through the due date), browser run |
+| Order Pacts: items, sizes, stock, order sheet, pay-by date | Works | API tests, browser run (create, join, order) |
 | Notifications, personalised reminders | Works | API tests |
 | Data export, account closure, PIN reset | Works | security tests, screens |
 
@@ -43,7 +50,7 @@ Deliberately not built (per the brief's "what not to build"): chat, loans, cards
 | Check | Result |
 | --- | --- |
 | Typecheck (web + API) | Pass |
-| API tests | 34/34 pass |
+| API tests | 69/69 pass, and 69/69 again as the runtime role `pact_service` (`npm run test:roles`) |
 | Browser journey (sign up → top up → create → contribute with PIN → direct pay to complete → memory photo → BVN → add bank → withdraw) | Pass, repeated runs |
 | Routes checked for errors (7 site, 15 app) | 22/22 load, no console errors |
 | Horizontal overflow at 390, 430, 768, 1024, 1280, 1440 px | None on any of the 22 routes |
@@ -84,6 +91,20 @@ Every row is an automated test that calls the API or the database directly. Resu
 | Stolen refresh token reused after rotation | Whole session revoked |
 | Cookie refresh from a foreign origin (CSRF) | 401 |
 | Other people's phone numbers, PIN hashes or balances in responses | Not present |
+| Per-IP limit shared across two API instances on one database (the sixth request is refused on either) | 429 |
+| Runtime role `pact_service` tries DDL, disabling RLS, new policies, rewriting or deleting ledger and audit rows, faking a migration | Refused, `42501` |
+| Replay a Pact transfer webhook three times; unsigned; transfer to an unknown account number | Credited once; 401; held in suspense, never credited to a Pact |
+| Member or outsider opens a Pact account, reassigns a transfer, pays a vendor, adds a receipt | 403 / 404 |
+| Organiser approves their own large vendor payment; a plain member approves | 403 |
+| Pay a vendor from a refund-promised Pact before it's funded; pay more than the pool | 422 |
+| Read sender account numbers, vendor account numbers or receipt bytes with raw SQL as a member; write Pact transfer or account rows | Refused, `42501` |
+| Organiser reassigns a stranger's transfer to themselves, then closes the Pact to collect the refund (found in the September 27 code audit) | Fixed: transfer refunds always go back to the sending account; the organiser receives nothing |
+| Split ₦1M into five ₦200k vendor payments to skip approval | Needs approval once more than ₦200k goes out in 24 hours |
+| Make an unverified second account the co-organiser; replace a receipt after members saw it | 422 (co-organiser needs a verified BVN); 409 (receipts are write-once) |
+| Release the pool to your own wallet with a co-organiser in place; approve it yourself | Held for the co-organiser; 403 |
+| ₦1 transfers to a closed Pact to make PACT pay return fees | Under ₦100 held for a person, not auto-returned |
+| Pledge for someone else, past the deadline, over what's left; order a size that doesn't exist or past stock; pay more than you owe on orders; cancel a paid order or someone else's | 404 / 400 / 422 |
+| Read other people's orders (sizes) or pledges with raw SQL; edit orders or items | Only your own orders are visible to a member; writes refused, `42501` |
 | Row-level security: outsider sees 0 Pacts/tasks; member can't read `accounts`, `ledger_entries`, `sessions`, `bank_accounts`, `audit_log`, `users.phone`, `users.pin_hash` | Enforced by Postgres (`42501`) |
 
 ### Controls in place
@@ -112,7 +133,7 @@ Every row is an automated test that calls the API or the database directly. Resu
 
 ### Rate limits
 
-Per IP, per minute unless stated. Per-IP limits are held in memory per instance (see risks).
+Per IP, per minute unless stated. Counters live in Postgres (`RATE_LIMIT_STORE=postgres`, the default), so every API instance shares them.
 
 | Route | Limit |
 | --- | --- |
@@ -171,16 +192,21 @@ No analytics, tracking, advertising, chat or AI SDKs are included.
 ## 6. Performance readiness
 
 - API: stateless; bounded query counts per list; indexed hot paths; cursor pagination; outbox worker with `SKIP LOCKED`.
-- Web: routes are code-split. The main bundle is 712 KB (230 KB gzipped); the marketing pages, style guide and legal pages load on demand (11–34 KB each). The 3D payment scene is its own lazy chunk (899 KB, 248 KB gzipped) but still loads on the app's Welcome screen. Before launch on low-end Android devices, show a static image there instead and keep the 3D scene for the website.
-- Not load-tested. Run a load test against the staging stack (Postgres, two API instances, one worker) before public launch.
+- Web: routes are code-split. The main bundle is 712 KB (230 KB gzipped); the marketing pages, style guide and legal pages load on demand (11–34 KB each). The 3D payment scene is its own lazy chunk (899 KB, 248 KB gzipped) and now loads only on the website. The app's Welcome screen draws the same Pact as a still SVG ring with CSS orbs: no WebGL, no three.js download (verified: `/app` requests no 3D chunk).
+- Load test: `scripts/loadtest.mjs` signs in a pool of people, funds wallets through the sandbox, then runs virtual users on a mix of reads and contributions, and fails on any 5xx, unexpected 4xx or a p95 over budget. Local baseline (dev laptop, embedded single-connection PGlite, 20 virtual users, 30 s): 1,949 requests, 65/s, p50 106 ms, p95 366 ms, 0 errors. That number says the script and the code paths hold up under concurrency, not what production can take. **Still to do: run it against staging** (managed Postgres, two API instances, one worker, `RATE_LIMIT_ENABLED=false` on the target only for the run).
 
 ## 7. Known limitations
 
-- **Per-IP rate limits are in memory per instance.** With more than one API instance they must move to Redis. Business limits (OTP, PIN, invites, reminders) are already in Postgres.
-- **Least-privilege database roles are written but untested on managed Postgres.** `server/src/db/roles.sql` and `MIGRATION_DATABASE_URL` separate migration and runtime credentials. Until they're applied, the API connects as the table owner and the service context bypasses RLS (person-scoped reads still run under RLS).
+- **Per-IP rate limits cost one Postgres write per request** (an UNLOGGED table, swept by the worker). Fine at launch scale; if request volume makes that write noticeable, move the counters to Redis behind the same store interface (`server/src/lib/rateLimitStore.ts`).
+- **Least-privilege database roles are tested on Postgres 17 (PGlite), not yet on the managed provider.** `server/src/db/roles.sql` creates `pact_owner` and `pact_service` and hands the schema to the owner; every migration run re-applies the runtime grants and service policies, so later tables are covered. On the provider, check the admin user can create roles and `SET ROLE pact_owner` (Postgres 16+), then boot with `MIGRATION_DATABASE_URL`. Until that's done, the API connects as the table owner and the service context bypasses RLS (person-scoped reads still run under RLS).
 - **Photos are stored in Postgres** (≤2 MB each after re-encoding, 6 per Pact). Fine for launch scale; move to private object storage with signed URLs when volume grows.
 - **Push notifications** are a queued stub (in-app notifications work).
 - **Referral codes** carry no reward logic.
+- **Pact account numbers** need a partner that issues one virtual account per Pact. The Paystack adapter creates one customer and one dedicated account per Pact; it is written to Paystack's documented API but untested against the live service, and Paystack must enable dedicated accounts for the business.
+- **Matching transfers by name** is a heuristic: a bank name that matches two members, or none, lands as a guest for an organiser to assign. Nothing moves money on a guess; reassigning only changes whose name a contribution shows under.
+- **Order Pacts with part-payments:** when an order lapses, money a person paid towards it (but not enough to cover it) stays in the pool as their contribution. It's counted and shown, not refunded automatically.
+- **Test database dates:** until September 27, the embedded Postgres used in tests silently ignored its type parsers, so dates compared as objects and the "past the deadline" check never ran in tests (production Postgres was unaffected). Fixed, with a regression test.
+- **Money in suspense** (unknown account number, late transfer with no sender account, a guest refund the bank returned) needs a person to resolve it. There is an alert for each, but no admin screen yet.
 - **SMS delivery**: `SMS_PROVIDER=termii` is implemented but untested against the live Termii API.
 - The earlier design-submission export scripts (`npm run export:screens`) capture the old prototype, not the current product.
 
@@ -193,7 +219,7 @@ Everything in `.env.example`, plus:
 - `PAYMENTS_PROVIDER=paystack` with a live key and the webhook URL `https://<domain>/api/webhooks/paystack`.
 - `SMS_PROVIDER=termii` with a registered sender ID.
 - `TRUST_PROXY=true` behind a TLS-terminating proxy; `APP_ORIGIN` set to the real domain.
-- Redis for rate limiting if running more than one instance.
+- `roles.sql` applied; `DATABASE_URL` as `pact_service`, `MIGRATION_DATABASE_URL` as `pact_owner`.
 - Separate worker process (`npm run worker`) with `RUN_WORKER=false` on API instances.
 - Alerting on `LEDGER DRIFT DETECTED`, `OPS ALERT`, dead jobs, webhook 5xx and spikes in auth failures; uptime and error monitoring.
 
@@ -203,9 +229,9 @@ Everything in `.env.example`, plus:
 - Terms, Privacy, Refund and Cookie policies: reviewed by Nigerian counsel; confirm record-retention periods (the policy says "at least five years, subject to legal review").
 - NDPC registration, a named Data Protection Officer, and a DPIA.
 - KYC tier limits in `shared/policy.ts` confirmed with the partner against CBN requirements.
-- AML/CFT: transaction monitoring rules, suspicious-activity escalation, sanctions screening, a compliance owner.
+- AML/CFT: transaction monitoring rules, suspicious-activity escalation, sanctions screening, a compliance owner. Pact account numbers accept money from people with no PACT account, and vendor payments send pool money to third parties: both need the partner's sign-off and monitoring rules of their own.
 - Company identity: registered name, number and address on the legal pages (currently a stated placeholder). Real support, privacy and security mailboxes (currently `@pact.africa` placeholders).
-- **Asset licence:** the demo avatar photos in `public/avatars/` came from randomuser.me and their licence for commercial use is unverified. Replace them with licensed or commissioned images, or initials, before public launch. Geist (OFL), Lucide (ISC) and the code libraries are permissively licensed.
+- **Asset licence:** the unlicensed demo portraits were removed; demo people show tinted initials (migration 007 clears any stored portrait URLs). The app ships no third-party photos. Geist (OFL), Lucide (ISC) and the code libraries are permissively licensed.
 - Penetration test by an independent party.
 
 ## 10. Launch blockers
@@ -214,8 +240,8 @@ Everything in `.env.example`, plus:
 2. Identity verification provider not integrated (BVN checks refuse in production by design).
 3. Company details and real contact mailboxes missing from the legal pages.
 4. Legal review of the four policies; NDPC registration.
-5. Demo avatar photos with unverified licences.
-6. Least-privilege roles applied and tested on the production database; Redis rate limiting if more than one instance.
-7. Replace the 3D scene on the app's Welcome screen with a static image for low-end devices, and load-test staging.
+5. ~~Demo avatar photos with unverified licences.~~ Done: removed; initials everywhere.
+6. Apply `roles.sql` on the production database and boot with the two role URLs. The role model is written and tested (52/52 as `pact_service`, plus 5 attack tests); per-IP rate limits are shared across instances through Postgres.
+7. Run `scripts/loadtest.mjs` against staging. (The Welcome screen no longer loads the 3D scene.)
 
 Everything else in this document passed or is intentionally out of scope for the MVP.

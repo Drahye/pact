@@ -66,6 +66,7 @@ export function BudgetList({ lines, editable, onEdit, onAdd }: { lines: BudgetLi
                 <span className="budget__bar" role="progressbar" aria-label={`${l.name} funded`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(pct)}>
                   <span style={{ width: `${pct}%` }} />
                 </span>
+                {!!l.paid && <span className="budget__paid num">{formatNairaCompact(l.paid)} paid to vendors</span>}
               </Row>
             </li>
           );

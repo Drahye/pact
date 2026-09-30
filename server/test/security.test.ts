@@ -6,6 +6,7 @@ import assert from 'node:assert/strict';
 import { after, before, describe, it } from 'node:test';
 import sharp from 'sharp';
 import { buildApp } from '../src/app.js';
+import { loadConfig } from '../src/config.js';
 import type { PaymentProvider } from '../src/payments/provider.js';
 import { setup } from './helpers.js';
 
@@ -105,7 +106,9 @@ describe('security: authorization, RLS, payments, uploads, abuse', () => {
     assert.ok(!/pin_hash|pinHash|scrypt\$/.test(text), 'PIN hash leaked');
     assert.ok(!/balance/i.test(text.replace(/poolBalance/g, '')), 'wallet balance leaked');
     const preview = await t.call('GET', `/invites/${r.body.data.pact.inviteCode}`);
-    assert.deepEqual(Object.keys(preview.body).sort(), ['category', 'deadline', 'memberCount', 'organizer', 'raised', 'status', 'target', 'title']);
+    // Public by design: the Pact's account number (so anyone can pay by transfer), and nothing personal.
+    assert.deepEqual(Object.keys(preview.body).sort(), ['bankAccount', 'category', 'deadline', 'memberCount', 'mode', 'organizer', 'raised', 'status', 'target', 'title']);
+    assert.equal(preview.body.bankAccount, null, 'no account number until an organiser sets one up');
   });
 
   /* ---------------- the database refuses on its own (RLS) ---------------- */
@@ -207,6 +210,8 @@ describe('security: authorization, RLS, payments, uploads, abuse', () => {
       resolveAccount: async () => ({ accountName: 'X' }),
       createRecipient: async () => ({ recipientCode: 'R' }),
       initiateTransfer: async () => ({ providerRef: 'T', status: 'pending' }),
+      createPactAccount: async () => ({ providerRef: 'D', accountNumber: '9900000000', bankName: 'X', accountName: 'X' }),
+      closePactAccount: async () => {},
     };
     const { app } = await buildApp({ config: t.ctx.config, db: t.db, provider });
     await app.ready();
@@ -220,6 +225,22 @@ describe('security: authorization, RLS, payments, uploads, abuse', () => {
     const wrongProvider = await app.inject({ method: 'POST', url: '/api/webhooks/sandbox', headers: { 'content-type': 'application/json' }, payload: '{}' });
     assert.equal(wrongProvider.statusCode, 404);
     await app.close();
+  });
+
+  it('shares per-IP rate limits across API instances', async () => {
+    const config = loadConfig({ NODE_ENV: 'test', SEED_DEMO: 'false', RATE_LIMIT_ENABLED: 'true' });
+    const one = (await buildApp({ config, db: t.db })).app;
+    const two = (await buildApp({ config, db: t.db })).app;
+    await Promise.all([one.ready(), two.ready()]);
+    const ask = (app: typeof one, i: number, ip = '203.0.113.7') =>
+      app.inject({ method: 'POST', url: '/api/auth/otp/request', remoteAddress: ip, headers: { 'content-type': 'application/json' }, payload: JSON.stringify({ phone: `0807000${String(i).padStart(4, '0')}` }) });
+    // Five a minute per IP, alternating instances: the sixth is refused whichever instance it hits.
+    const codes = [];
+    for (let i = 0; i < 6; i++) codes.push((await ask(i % 2 ? two : one, i)).statusCode);
+    assert.deepEqual(codes, [200, 200, 200, 200, 200, 429]);
+    assert.equal((await ask(one, 99)).statusCode, 429);
+    assert.equal((await ask(two, 98, '203.0.113.8')).statusCode, 200, 'other addresses are unaffected');
+    await Promise.all([one.close(), two.close()]);
   });
 
   it('never credits a payment in another currency', async () => {

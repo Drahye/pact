@@ -37,11 +37,9 @@ function hasWebGL() {
  * The hero's live Pact: friends orbit the goal, their payments fly in as coins,
  * the ring fills. Drag to spin, tap a friend to send, and it plays itself when idle.
  */
-export function HeroStage({ variant = 'site' }: { variant?: 'site' | 'app' }) {
-  const app = variant === 'app';
+export function HeroStage() {
   const reduce = !!useReducedMotion();
-  const narrow = useMediaQuery('(max-width: 767px)');
-  const compact = narrow || variant === 'app';
+  const compact = useMediaQuery('(max-width: 767px)');
   const wrap = useRef<HTMLDivElement>(null);
   const inView = useInView(wrap, { margin: '-15% 0px' });
   const [raised, setRaised] = useState(START);
@@ -123,7 +121,7 @@ export function HeroStage({ variant = 'site' }: { variant?: 'site' | 'app' }) {
   return (
     <div
       ref={wrap}
-      className={`stage stage--${variant}`}
+      className="stage"
       onPointerDown={(e) => {
         lastTouch.current = Date.now();
         drag.current = { x: e.clientX, t: performance.now() };
@@ -159,7 +157,6 @@ export function HeroStage({ variant = 'site' }: { variant?: 'site' | 'app' }) {
             running={running}
             reduced={reduce}
             compact={compact}
-            tight={app}
             spin={spin}
           />
         </Suspense>
@@ -167,7 +164,6 @@ export function HeroStage({ variant = 'site' }: { variant?: 'site' | 'app' }) {
         <div className="stage__loading">{center}</div>
       )}
 
-      {!app && (
       <div className="stage__feed" aria-live="polite">
         <p className="stage__feed-title">
           <span className={`live-dot ${running ? '' : 'is-paused'}`} aria-hidden /> {showcaseMembers.length} friends · {showcase.title}
@@ -188,9 +184,6 @@ export function HeroStage({ variant = 'site' }: { variant?: 'site' | 'app' }) {
         </ul>
       </div>
 
-      )}
-
-      {!app && (
       <div className="stage__controls">
         <span className="stage__hint">
           <Hand aria-hidden /> Drag to spin · tap a friend to send ₦25,000
@@ -202,7 +195,6 @@ export function HeroStage({ variant = 'site' }: { variant?: 'site' | 'app' }) {
           </button>
         )}
       </div>
-      )}
       <p className="visually-hidden">
         Live demo: {showcaseMembers.length} friends paying into {showcase.title}. {formatNaira(raised)} of {formatNaira(TARGET)} raised
         {pending ? `, ${formatNaira(pending)} on the way` : ''}.

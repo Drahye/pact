@@ -17,7 +17,7 @@ interface Props {
 export function SegmentedBar({ shares, target, preview, size = 'md', tone = 'light', label }: Props) {
   const reduce = useReducedMotion();
   const total = shares.reduce((s, x) => s + x.value, 0);
-  const pct = Math.min(100, (total / target) * 100);
+  const pct = Math.min(100, (total / Math.max(1, target)) * 100);
   const t = reduce ? { duration: 0 } : transition.progress;
   return (
     <div className={`sbar sbar--${size} sbar--${tone}`} role="progressbar" aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(pct)}>
@@ -29,7 +29,7 @@ export function SegmentedBar({ shares, target, preview, size = 'md', tone = 'lig
             className="sbar__seg"
             style={{ background: s.color }}
             initial={false}
-            animate={{ width: `${(s.value / target) * 100}%` }}
+            animate={{ width: `${(s.value / Math.max(1, target)) * 100}%` }}
             transition={t}
           />
         ))}
@@ -38,7 +38,7 @@ export function SegmentedBar({ shares, target, preview, size = 'md', tone = 'lig
           className="sbar__seg sbar__preview"
           style={{ ['--c' as string]: preview.color }}
           initial={{ width: 0 }}
-          animate={{ width: `${Math.min(100 - pct, (preview.amount / target) * 100)}%` }}
+          animate={{ width: `${Math.min(100 - pct, (preview.amount / Math.max(1, target)) * 100)}%` }}
           transition={reduce ? { duration: 0 } : transition.base}
         />
       )}

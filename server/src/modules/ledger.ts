@@ -1,7 +1,7 @@
 import type { Queryable } from '../db/index.js';
 import { AppError, conflict } from '../lib/errors.js';
 
-export type SystemAccount = 'provider_clearing' | 'payout_clearing' | 'fee_revenue';
+export type SystemAccount = 'provider_clearing' | 'payout_clearing' | 'fee_revenue' | 'suspense';
 
 export interface Posting {
   accountId: string;
@@ -10,7 +10,9 @@ export interface Posting {
 }
 
 export interface PostInput {
-  kind: 'topup' | 'contribution' | 'pact_release' | 'withdrawal' | 'withdrawal_reversal' | 'refund' | 'fee' | 'adjustment';
+  kind:
+    | 'topup' | 'contribution' | 'pact_release' | 'withdrawal' | 'withdrawal_reversal' | 'refund' | 'fee' | 'adjustment'
+    | 'bank_transfer_in' | 'transfer_return' | 'vendor_payment' | 'vendor_payment_reversal' | 'guest_refund' | 'payout_settled';
   /** Unique per movement of money. Posting the same reference twice is rejected. */
   reference: string;
   description: string;

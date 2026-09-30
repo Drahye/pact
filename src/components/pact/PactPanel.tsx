@@ -61,8 +61,8 @@ export function PactPanel({
   className = '',
   id,
 }: Props) {
-  const pct = Math.min(100, (raised / target) * 100);
-  const fromPct = fromRaised !== undefined ? Math.min(100, (fromRaised / target) * 100) : undefined;
+  const pct = Math.min(100, (raised / Math.max(1, target)) * 100);
+  const fromPct = fromRaised !== undefined ? Math.min(100, (fromRaised / Math.max(1, target)) * 100) : undefined;
   const part = (p: PanelPart) => (highlight ? (highlight === p ? 'is-lit' : 'is-dim') : '');
   return (
     <div id={id} className={`panel panel--${size} ${highlight ? 'has-highlight' : ''} ${className}`}>

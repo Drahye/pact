@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { BellRing, CalendarDays, ChevronRight, Divide, Ellipsis, LogOut, RotateCcw, Scale, Share, Target, UserPlus, Users, XCircle } from 'lucide-react';
+import { BellRing, CalendarDays, ChevronRight, Divide, Ellipsis, LogOut, RotateCcw, Scale, Share, ShieldCheck, Store, Target, UserPlus, Users, XCircle } from 'lucide-react';
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../api/auth';
@@ -19,14 +19,17 @@ import { Modal } from '../../components/ui/Modal';
 import { SectionHeading } from '../../components/ui/SectionHeading';
 import { TopBar } from '../../components/ui/TopBar';
 import { useToast } from '../../components/ui/Toast';
-import type { Activity, BudgetLine, Pact, Task } from '../../data/types';
+import type { Activity, BudgetLine, Pact, PactPayout, Task } from '../../data/types';
 import { getUser } from '../../data/users';
 import { addDaysIso } from '../../lib/dates';
 import { formatDate, formatNaira, formatNairaCompact, formatPercent } from '../../lib/format';
-import { colorOf, invitedMembers, joinedMembers, sharesOf, summarize } from '../../lib/pact';
+import { colorOf, GUEST_SHARE_ID, guestTotalOf, invitedMembers, joinedMembers, sharesOf, summarize } from '../../lib/pact';
 import { attentionFor, participationLabel, stageOf, type AttentionItem } from '../../lib/plan';
 import { spring } from '../../tokens/tokens';
 import { MISSED_GOAL_GRACE_DAYS } from '../../../shared/policy';
+import { ApprovalCards, AssignGuestSheet, canPayVendors, CoOrganizerSheet, GuestAvatar, guestsOf, isOrganizerOf, PaidFromPact, PayByTransfer, PayoutSheet, PayVendorSheet, type GuestGroup } from './detail/Money';
+import { isOrderPact, MyOrders, OrderMenu, OrderSheetSection, owedOnOrders } from './detail/Orders';
+import { MyPledge, pledgeLabel } from './detail/Pledges';
 import { AddTaskSheet, BudgetLineSheet, ParticipationSheet, SplitSheet, TaskSheet } from './detail/Sheets';
 import { Screen } from './Screen';
 import './detail.css';
@@ -47,6 +50,10 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
   const [line, setLine] = useState<BudgetLine | null>(null);
   const [lineOpen, setLineOpen] = useState(false);
   const [splitOpen, setSplitOpen] = useState(false);
+  const [payout, setPayout] = useState<PactPayout | null>(null);
+  const [payOpen, setPayOpen] = useState(false);
+  const [coOpen, setCoOpen] = useState(false);
+  const [guest, setGuest] = useState<GuestGroup | null>(null);
   const cmd = usePactCommand(pact.id);
   const plan = usePlan(pact.id);
   const cancel = usePactAction(pact.id, 'cancel');
@@ -56,6 +63,11 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
   const joined = joinedMembers(pact);
   const invited = invitedMembers(pact);
   const isOrganizer = pact.organizerId === me;
+  // Organiser or co-organiser: can set up the account number, pay vendors, match transfers.
+  const runsMoney = isOrganizerOf(pact, me);
+  const guests = guestsOf(pact);
+  const orders = isOrderPact(pact);
+  const owed = orders ? owedOnOrders(pact, me) : 0;
   const isOpen = pact.status === 'open';
   const mine = pact.members.find((m) => m.userId === me);
   const organizer = isOrganizer ? 'you' : getUser(pact.organizerId).name;
@@ -91,6 +103,16 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
 
   /* The main action depends on where the Pact is. */
   const actions = (() => {
+    if (orders && ['just-you', 'open', 'almost'].includes(stage)) {
+      return {
+        primary: owed > 0 ? (
+          <Button to={`${base}/contribute?amount=${Math.ceil(owed)}`} fullWidth>Pay for orders · {formatNairaCompact(owed)}</Button>
+        ) : (
+          <Button fullWidth onClick={() => document.getElementById('order-menu')?.scrollIntoView({ behavior: 'smooth' })}>Order something</Button>
+        ),
+        secondary: <Button to={`${base}/invite`} variant="secondary" fullWidth>Invite people</Button>,
+      };
+    }
     switch (stage) {
       case 'just-you':
         return { primary: <Button to={`${base}/invite`} fullWidth>Invite people</Button>, secondary: <Button to={`${base}/contribute`} variant="secondary" fullWidth>Add to Pact</Button> };
@@ -153,7 +175,7 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
 
       {stage === 'closed' && (
         <Notice tone="neutral" icon={<RotateCcw />}>
-          {pact.status === 'cancelled' ? 'The organiser closed this Pact.' : 'The goal wasn’t reached by the deadline.'} Every contribution went back to the wallet it came from.
+          {pact.status === 'cancelled' ? 'The organiser closed this Pact.' : 'The goal wasn’t reached by the deadline.'} What was left went back to where it came from: wallets for members, bank accounts for guests.
         </Notice>
       )}
 
@@ -171,7 +193,13 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
           label={`${pact.title}: ${Math.round(s.percent)}% funded`}
         >
           <AnimatePresence mode="wait" initial={false}>
-            {picked ? (
+            {selected === GUEST_SHARE_ID ? (
+              <motion.div key="guests" className="detail__center" initial={{ opacity: 0, scale: 0.94 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.94 }} transition={{ duration: 0.18 }}>
+                <p className="detail__center-name">Guests</p>
+                <p className="detail__center-amount num">{formatNaira(guestTotalOf(pact))}</p>
+                <p className="detail__center-meta">by bank transfer</p>
+              </motion.div>
+            ) : picked ? (
               <motion.div key={picked.userId} className="detail__center" initial={{ opacity: 0, scale: 0.94 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.94 }} transition={{ duration: 0.18 }}>
                 <Avatar userId={picked.userId} size="md" accent accentColor={colorOf(pact, picked.userId)} label={false} />
                 <p className="detail__center-name">{name(picked.userId)}</p>
@@ -184,10 +212,10 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
                   <AnimatedNumber value={s.raised} from={fromRaised ?? 0} />
                 </p>
                 <p className="detail__center-meta">
-                  of <span className="num">{formatNaira(s.target)}</span>
+                  {orders ? (s.target ? <>paid of <span className="num">{formatNaira(s.target)}</span> ordered</> : 'No orders yet') : <>of <span className="num">{formatNaira(s.target)}</span></>}
                 </p>
                 <p className="detail__center-pct num">
-                  <AnimatedNumber value={s.percent} from={fromRaised !== undefined ? (fromRaised / s.target) * 100 : 0} format="percent" /> funded
+                  <AnimatedNumber value={s.percent} from={fromRaised !== undefined ? (fromRaised / Math.max(1, s.target)) * 100 : 0} format="percent" /> funded
                 </p>
               </motion.div>
             )}
@@ -226,7 +254,9 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
           {actions.secondary}
         </div>
       )}
-      {stage === 'almost' && <p className="detail__almost">We’re almost there. {formatNaira(s.remaining)} left.</p>}
+      {stage === 'almost' && !orders && <p className="detail__almost">We’re almost there. {formatNaira(s.remaining)} left.</p>}
+      <ApprovalCards pact={pact} meId={me} onOpen={setPayout} />
+      {stage !== 'closed' && <PayByTransfer pact={pact} meId={me} />}
       {stage === 'past-deadline' && (
         <Notice tone="sun" icon={<Scale />}>
           The deadline has passed. Within {MISSED_GOAL_GRACE_DAYS} days the Pact’s rule runs: {pact.missedGoalPolicy === 'refund' ? 'everyone is refunded' : 'what was raised goes to the organiser'}.
@@ -244,13 +274,15 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
         </button>
       )}
 
+      {mine && stage !== 'invited' && stage !== 'closed' && <MyPledge pact={pact} meId={me} onPay={(amount) => navigate(`${base}/contribute?amount=${Math.ceil(amount)}`)} />}
+
       {attention.length > 0 && (
         <div className="screen-section">
           <AttentionCard items={attention} onAction={onAttention} />
         </div>
       )}
 
-      {(budget.length > 0 || (isOrganizer && isOpen)) && (
+      {(budget.length > 0 || (isOrganizer && isOpen && !orders)) && (
         <section className="screen-section" aria-labelledby="the-plan">
           <SectionHeading id="the-plan" title="The plan" />
           {budget.length ? (
@@ -262,6 +294,15 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
           )}
         </section>
       )}
+
+      {orders && (
+        <>
+          <OrderMenu pact={pact} meId={me} />
+          <MyOrders pact={pact} meId={me} />
+          <OrderSheetSection pact={pact} meId={me} />
+        </>
+      )}
+      <PaidFromPact pact={pact} meId={me} onPay={() => setPayOpen(true)} onOpen={setPayout} />
 
       {(tasks.length > 0 || (isOpen && stage !== 'invited')) && (
         <section className="screen-section" aria-labelledby="pact-tasks">
@@ -279,6 +320,11 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
                 <Avatar userId={m.userId} size="md" accent accentColor={colorOf(pact, m.userId)} label={false} />
                 <span className="person__name">{name(m.userId)}</span>
                 <span className="person__amount num">{m.contributed ? formatNairaCompact(m.contributed) : m.participation === 'task' ? 'Task' : 'None yet'}</span>
+                {m.role === 'co_organizer' && <span className="person__guest">Co-organiser</span>}
+                {(() => {
+                  const p = pledgeLabel(pact, m.userId);
+                  return p && <span className={`person__pledge ${p.late ? 'is-late' : ''}`}>{p.text}</span>;
+                })()}
               </button>
             </li>
           ))}
@@ -291,6 +337,31 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
               </span>
             </li>
           ))}
+          {guests.map((g) => {
+            // Organisers can say who a guest really is; everyone else just sees the name.
+            const content = (
+              <>
+                <GuestAvatar name={g.name} />
+                <span className="person__name">{g.name.split(' ')[0]}</span>
+                <span className="person__amount num">{formatNairaCompact(g.amount)}</span>
+                <span className="person__guest">Guest</span>
+              </>
+            );
+            const label = `${g.name}, guest, ${formatNaira(g.amount)} by bank transfer`;
+            return (
+              <li key={g.name}>
+                {runsMoney && (pact.status === 'open' || pact.status === 'funded') ? (
+                  <button type="button" className="person" onClick={() => setGuest(g)} aria-label={`${label}. Say who this is`}>
+                    {content}
+                  </button>
+                ) : (
+                  <span className="person" role="img" aria-label={label}>
+                    {content}
+                  </span>
+                )}
+              </li>
+            );
+          })}
         </ul>
       </section>
 
@@ -298,8 +369,10 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
         <div className="detail__rule">
           <Scale aria-hidden />
           <p>
-            <strong>If the goal isn’t reached</strong>{' '}
-            {pact.missedGoalPolicy === 'refund'
+            <strong>{orders ? 'Pay-by date' : 'If the goal isn’t reached'}</strong>{' '}
+            {orders
+              ? `by ${formatDate(pact.deadline, { month: 'short', day: 'numeric' })}: unpaid orders are released, and what was paid for goes ahead.`
+              : pact.missedGoalPolicy === 'refund'
               ? `by ${formatDate(pact.deadline, { month: 'short', day: 'numeric' })}, everyone is refunded automatically on ${formatDate(addDaysIso(pact.deadline, MISSED_GOAL_GRACE_DAYS), { month: 'short', day: 'numeric' })}.`
               : `by ${formatDate(pact.deadline, { month: 'short', day: 'numeric' })}, what was raised is released to ${organizer}.`}
           </p>
@@ -329,12 +402,30 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
             <span className="menu__icon tint--sky"><UserPlus /></span>
             <span className="menu__text"><span className="menu__title">Invite people</span></span>
           </button>
-          {isOrganizer && s.remaining > 0 && (
+          {isOrganizer && s.remaining > 0 && !orders && (
             <button type="button" className="menu__row" onClick={() => { setMenuOpen(false); setSplitOpen(true); }}>
               <span className="menu__icon tint--mint"><Divide /></span>
               <span className="menu__text">
                 <span className="menu__title">Split the rest</span>
                 <span className="menu__sub">Ask everyone contributing for an equal share of what’s left</span>
+              </span>
+            </button>
+          )}
+          {runsMoney && canPayVendors(pact) && (
+            <button type="button" className="menu__row" onClick={() => { setMenuOpen(false); setPayOpen(true); }}>
+              <span className="menu__icon tint--sun"><Store /></span>
+              <span className="menu__text">
+                <span className="menu__title">Pay a vendor</span>
+                <span className="menu__sub">Straight from the Pact to their bank</span>
+              </span>
+            </button>
+          )}
+          {isOrganizer && (
+            <button type="button" className="menu__row" onClick={() => { setMenuOpen(false); setCoOpen(true); }}>
+              <span className="menu__icon tint--lilac"><ShieldCheck /></span>
+              <span className="menu__text">
+                <span className="menu__title">Co-organiser</span>
+                <span className="menu__sub">Approves large vendor payments with you</span>
               </span>
             </button>
           )}
@@ -352,7 +443,7 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
               <span className="menu__icon tint--coral"><XCircle /></span>
               <span className="menu__text">
                 <span className="menu__title">Close and refund everyone</span>
-                <span className="menu__sub">Every contribution goes back to its wallet</span>
+                <span className="menu__sub">What’s in the Pact goes back to whoever paid it</span>
               </span>
             </button>
           ) : (
@@ -371,12 +462,16 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
       <AddTaskSheet pact={pact} meId={me} open={addTaskOpen} onClose={() => setAddTaskOpen(false)} />
       <BudgetLineSheet pact={pact} line={line} open={lineOpen} onClose={() => setLineOpen(false)} />
       <SplitSheet pact={pact} open={splitOpen} onClose={() => setSplitOpen(false)} />
+      <PayoutSheet pact={pact} payout={payout} meId={me} onClose={() => setPayout(null)} />
+      <PayVendorSheet pact={pact} open={payOpen} onClose={() => setPayOpen(false)} onChooseCoOrganizer={() => { setPayOpen(false); setCoOpen(true); }} />
+      <CoOrganizerSheet pact={pact} open={coOpen} onClose={() => setCoOpen(false)} />
+      <AssignGuestSheet pact={pact} guest={guest} onClose={() => setGuest(null)} />
 
       <PinSheet
         open={cancelOpen}
         onClose={() => setCancelOpen(false)}
         title="Close this Pact?"
-        description={<>This refunds <span className="num">{formatNaira(s.raised)}</span> to {joined.filter((m) => m.contributed > 0).length} people and can’t be undone. Enter your PIN to confirm.</>}
+        description={<>This refunds <span className="num">{formatNaira(pact.poolBalance ?? s.raised)}</span> to the {joined.filter((m) => m.contributed > 0).length + guests.length} people who paid in, and can’t be undone. Enter your PIN to confirm.</>}
         onSubmit={async (pin) => {
           await cancel.mutateAsync({ pin });
           setCancelOpen(false);

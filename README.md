@@ -29,6 +29,10 @@ Open `http://localhost:5173/app`. Sign up with any Nigerian mobile number (the S
 | Pacts | Create from a type (birthday, trip, wedding, gift, event, dinner, home) with suggested budget lines and tasks. Set one target or a budget whose total becomes the target. Pick a split mode and a missed-goal rule (refund everyone, or keep what was raised). Invite by link, WhatsApp, SMS or phone number; people not on PACT get a text and the invite waits for them. |
 | The plan | Budget lines fill in order as money arrives. Lightweight tasks: add, claim, progress, done, assign. Each member says how they're showing up (money, a task, both, or later). A needs-attention card on each Pact and on Home. |
 | Contributing | Hold to contribute from the wallet, confirm with PIN, or pay straight into a Pact by transfer or card. Cover the rest in one move, or split the rest as an ask (never a charge). Contributions can't overshoot the goal. |
+| Pay by transfer | Each Pact can get its own account number. Anyone pays it from any bank app, no download needed. A transfer counts for the member whose name matches the sender's bank name; anyone else shows as a named guest, and organisers can say who it was. The number is on the public invite page. Transfers after a Pact closes go back to the sender. |
+| Paying vendors | Organisers pay a vendor's bank account straight from the Pact, checked with the bank first and tied to a budget line. Once more than ₦200,000 would go out without approval in a day, the co-organiser (BVN-verified, never the person who asked) approves. With a co-organiser, releasing the pool to the organiser's wallet needs their approval too. Every member sees each payment, its verified account name and its receipt (write-once). Refund-if-missed Pacts can pay vendors only once funded, so the refund promise holds. |
+| Pledges | "I'll add ₦20,000 by Friday." PACT reminds the person on the day and once the day after, tells the organiser then, and stops. Kept automatically when the money arrives, whichever way it's paid. |
+| Order Pacts | For aso-ebi, souvenirs or tickets: the organiser lists items with prices, sizes and stock; people order now and pay by the Pact's date (each order becomes a pledge). The total is what people order. Members see their own orders; organisers get an order sheet by item and size, ready to copy or send to the tailor. Unpaid orders lapse after the pay-by date. |
 | Completion | We did it: people, contributions and tasks done. The organiser releases the pool (BVN required) or closes the Pact and refunds everyone. The group keeps a memory: a note, the date and up to six private photos. Reminders are personal and at most once a day. |
 | Deadlines | Three days out, people who haven't contributed are reminded. After the deadline plus a 3-day grace period the Pact's rule runs automatically. |
 | Trust | Notifications for every movement of money and every security event, tiered limits (Starter, Verified, Plus), withdrawals only to accounts in your own name, data export and account closure, forgotten-PIN reset. |
@@ -82,6 +86,8 @@ src/                   web app (/app), marketing site (/), style guide, legal pa
 - Accounts are locked in a stable order with `SELECT ... FOR UPDATE` before balances change, and a `CHECK` constraint keeps wallets and pools from going negative. Concurrent contributions can't overdraw a wallet or overshoot a goal (covered by a test that fires five at once).
 - Top-ups are credited **only** on a signature-verified webhook or a server-side verification call to the processor, never on the client's word. The amount paid is checked against what was expected.
 - Withdrawals debit the wallet first, then pay out from the outbox. A failed or returned transfer is reversed in full, fee included.
+- Bank transfers into a Pact's account number are credited once per processor reference, straight from `provider_clearing` to the Pact pool. Money that can't be placed (an unknown number, a late transfer with no sender account) goes to a fourth system account, `suspense`, and raises an ops alert.
+- Vendor payments are held from the pool the moment they're requested (pool to `payout_clearing`, fee to `fee_revenue`), so nothing can be spent twice while waiting for approval, and are put back if turned down or returned by the bank. Refunds after vendors were paid share what's left in proportion to what each person put in, to the kobo.
 - An hourly job reconciles every cached balance against its entries and alerts on drift. `GET /api/ops/reconcile` exposes the same check behind `OPS_TOKEN`.
 
 ### Scalability
@@ -91,7 +97,7 @@ src/                   web app (/app), marketing site (/), style guide, legal pa
 - Recurring jobs (deadline sweep, reconciliation) are scheduled with dedupe keys, safe to trigger from every instance.
 - Lists are cursor-paginated; hot paths are indexed; Pact lists are hydrated with a fixed number of queries whatever their size.
 - Serialization failures and deadlocks are retried automatically.
-- Per-IP rate limits are in memory per instance. Point `@fastify/rate-limit` at Redis when running several instances. Business limits (OTPs per number, PIN attempts, daily wallet limits) live in Postgres and hold across instances.
+- Per-IP rate limits are counted in Postgres (`RATE_LIMIT_STORE=postgres`, the default), so they hold across instances; `memory` suits a single process. Business limits (OTPs per number, PIN attempts, daily wallet limits) live in Postgres too.
 
 ---
 

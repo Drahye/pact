@@ -26,6 +26,11 @@ export function Modal({ open, onClose, title, description, children, footer }: P
   const titleId = useId();
   const descId = useId();
 
+  // Parents usually pass a fresh onClose every render. Reading it through a ref keeps the effect (and its
+  // focus handling) from re-running on every keystroke, which used to pull focus out of inputs while typing.
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
   useEffect(() => {
     if (!open) return;
     const previous = document.activeElement as HTMLElement | null;
@@ -34,7 +39,7 @@ export function Modal({ open, onClose, title, description, children, footer }: P
       (first ?? panel.current)?.focus();
     }, 30);
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') onCloseRef.current();
       if (e.key !== 'Tab' || !panel.current) return;
       const nodes = Array.from(panel.current.querySelectorAll<HTMLElement>(FOCUSABLE));
       if (!nodes.length) return;
@@ -54,7 +59,7 @@ export function Modal({ open, onClose, title, description, children, footer }: P
       document.removeEventListener('keydown', onKey);
       previous?.focus?.();
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (!root) return null;
   const inFrame = root !== document.body;

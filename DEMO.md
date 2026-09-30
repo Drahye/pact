@@ -4,6 +4,8 @@ A 2½-minute recorded walkthrough is in [`docs/demo/pact-demo.mp4`](docs/demo/pa
 
 ## Before you start
 
+Live, against your normal dev stack:
+
 ```bash
 npm run db:reset   # fresh demo data (stop `npm run dev` first)
 npm run dev
@@ -13,40 +15,48 @@ Open `http://localhost:5173/app` in a desktop browser. The phone frame sits in t
 
 | Who | Number | PIN | Role in the story |
 | --- | --- | --- | --- |
-| Abraham | 0801 000 0001 | 1357 | Organises Sarah's Birthday, verified |
-| New friend | any new number, e.g. 0803 555 0142 | you choose | Joins from the invite link |
+| Abraham | 0801 000 0001 | 1357 | Organiser, BVN-verified |
+| Ngozi | 0803 555 0142 (a new number) | you choose | Joins from the invite link |
 
-The organiser's invite link: sign in as Abraham, open Sarah's Birthday, tap **Invite people**, copy the link. Open it in a private window for the friend's side.
+The organiser's invite link is on the invite screen after creating a Pact. Open it in a private window for the friend's side.
 
-## The story (about 5 minutes live)
+## The story (about 8 minutes live)
 
 **The problem (15s).** "Group plans die in the group chat. Nobody knows what the money covers, who has paid, or who's doing what, and one person ends up chasing everyone. PACT puts the people, the money, the tasks and the deadline in one place."
 
-### 1. The invite (friend, private window)
-- Open the invite link. *"Anyone can see what it's for and how far along it is before signing up."*
-- Scroll to **How do you want to show up?** *"Money is one way. Taking a task is another. Or both, or 'I'm in, I'll confirm later'."* Pick **Contributing and taking a task**, then **Sign up to join**.
-- Enter the number, tap **Fill it in**, add a name, create a PIN twice. *"Every payment needs this PIN. Guessable ones are refused."*
-- You land back on the invite with your choice remembered. Tap **Join this Pact**.
+The recorded video follows this order, in eight chapters. The talk track below matches it.
 
-### 2. The plan
-- *"One goal, one ring. Every colour is someone's part."* Tap a name to see their share.
-- **Needs attention**: *"PACT surfaces what's missing so nobody has to chase."* Tap **I'll do it** on "Find a photographer". *"That counts as showing up too."*
-- Scroll to **The plan**: *"What the money covers. Raised money fills the lines in order, so you can see Dinner and Cake are covered and Photography isn't."*
-- **Tasks**: tap one to show the sheet (claim, progress, done; the organiser can assign).
+### 1. Plan it together (Abraham)
+- Sign in: number, one-time code. *"The code fills itself in (Android reads it straight from the SMS)."* Tap **Pacts**: *"While things load you see the shape of the page, not a spinner."*
+- **Create a Pact**: name, **Trip**, a quick date chip. Switch to **Budget**: *"Break the target into what it covers."* Fill three lines; the target adds up. Pick tasks from the chips. **Invite people** and add a number: *"Numbers not on PACT get a text."*
+- **Reload the page.** *"Nothing is lost."* The banner reads "We kept what you'd filled in", with **Start over**. *"Every form and sheet saves itself on this device, per person, and sign-out wipes it."*
+- **Create Pact**.
 
-### 3. Paying in
-- **Contribute**, then **Cover the rest**. *"No wallet balance? Pay straight into the Pact."* Tap **Pay ₦180,000 by transfer or card**.
-- *"Transfer is free; card shows its fee first."* Tap **Pay**. On the sandbox checkout: *"In production this is Paystack. Nothing counts until the processor confirms to our server."* Tap **I've sent the money**.
-- "You're in." Then **Back to the Pact**: *"We did it. Nine people, one plan."*
-- To show the wallet path instead: top up first, then press and hold to contribute and confirm with the PIN. *"Holding is deliberate; let go early and nothing happens."*
+### 2. Bring people in, and let them pay
+- On the Pact, **Get an account number for this Pact**. *"Friends pay from any bank app. No download, no signup."*
+- **Test a transfer** (sandbox stands in for the bank): a name that isn't a member, ₦60,000. *"He shows up as a guest; the organiser can match him to a member later."*
 
-### 4. The organiser (Abraham, normal window)
-- Sign in as Abraham. **Home** shows what needs him across all his Pacts.
-- **Pacts** → Sarah's Birthday. *"Only a BVN-verified organiser can release the money."* Tap **Release**, PIN 1357.
-- Near the end of Tasks, as organiser: **Split the rest** on an open Pact asks everyone for an equal share. *"It's a note, never a charge."*
+### 3. A friend joins (Ngozi, from the invite)
+- Open the invite link. *"Anyone can see what it's for and how far along it is."* Pick **Contributing and taking a task**, **Sign up to join**, number, code, name, PIN.
+- On the Pact: the ring, **Needs attention** (**I'll do it** on a task), **The plan** filling line by line.
+- **Pledge a date**: an amount and *In 3 days*. *"PACT reminds you, so nobody chases."* Then **Pay now**: pay straight into the Pact by transfer or card, no wallet balance needed. On the sandbox checkout, **I've sent the money**.
 
-### 5. The memory
-- On the completed Pact: **Add the memory**, a line about how it went, and a photo. *"Photos are checked, re-encoded and stripped of location data. Only people in the Pact can see them."*
+### 4. Finish the goal (Abraham)
+- The ring shows Tunde as a guest and Ngozi in. **Contribute**, press and hold from the wallet, PIN. *"Holding is deliberate; let go early and nothing happens."* "You're in", then the completed Pact.
+
+### 5. Pay vendors from the Pact
+- **Pay a vendor from the Pact**: what it's for, ₦90,000. Close the sheet, reopen it: *"It kept what you typed."* Pick a bank, type the account number: *"PACT asks the bank who owns it, so a typo can't send money to a stranger."* Pay with the PIN. Over ₦200,000 in a day needs a co-organiser.
+- **Release** what's left to the wallet (only a BVN-verified organiser can).
+
+### 6. Wallet and security
+- **Wallet**: history loads as a skeleton. **Withdraw** → **Add a bank account**: the bank confirms the name matches yours. Withdraw ₦50,000 with the PIN; the fee is shown first.
+- **Profile → PIN and devices**: every signed-in device, sign others out, change the PIN.
+
+### 7. Take orders
+- **Create a Pact → Take orders**: an item, its price, sizes and stock. *"The total is whatever people order."* Open it, **Order**, pick a size and quantity, then **Pay for orders**.
+
+### 8. The memory
+- On the completed Pact: **Add the memory**, a line and a photo. *"Photos are checked, re-encoded and stripped of location data. Only people in the Pact can see them."*
 
 **Close (15s).** "Plan it, fund it, split the work, and keep the memory. Make it happen together."
 
@@ -62,10 +72,13 @@ The organiser's invite link: sign in as Abraham, open Sarah's Birthday, tap **In
 
 ## Recording it again
 
+The recording runs its own copy of the app on separate ports and a throwaway database, so it never touches your dev data and can be repeated:
+
 ```bash
-npm run db:reset && npm run dev        # in one terminal, fresh data
-node scripts/demo-video.mjs exports/demo   # in another, writes pact-demo.webm
-ffmpeg -i exports/demo/pact-demo.webm -ss 0.8 -c:v libx264 -crf 18 -pix_fmt yuv420p -movflags +faststart docs/demo/pact-demo.mp4
+scripts/demo-stack.sh                                            # API :8788, web :5174, fresh seeded data
+DEMO_BASE=http://localhost:5174 node scripts/demo-video.mjs exports/demo   # about 7 minutes → pact-demo.webm
+ffmpeg -i exports/demo/pact-demo.webm -ss 0.8 -c:v libx264 -crf 22 -pix_fmt yuv420p -movflags +faststart docs/demo/pact-demo.mp4
+scripts/demo-stack.sh stop
 ```
 
-The recording changes the data (Sarah's Birthday gets funded and released), so reset again before a live demo.
+`DEMO_SPEED=0.4` runs the same script faster (no useful video) to check it still passes after a change. The script signs up Ngozi with a fixed number, so run `scripts/demo-stack.sh` again between recordings.

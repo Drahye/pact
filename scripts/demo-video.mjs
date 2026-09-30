@@ -1,7 +1,9 @@
-// Records a captioned walkthrough of the live app (needs `npm run dev` on a freshly seeded database).
-// Story: a friend joins Sarah's Birthday from an invite link, takes a task and pays straight in
-// to complete the goal; then the organiser releases the funds and adds the memory.
-// Usage: node scripts/demo-video.mjs [outDir]   → <outDir>/pact-demo.webm
+// Records a captioned walkthrough of the live app (needs the app running on a freshly seeded database).
+// Story: Abraham plans a Lagos weekend (budget, tasks, a draft that survives a reload, an account number
+// anyone can pay), a friend joins from the invite and pledges then pays, Abraham completes the goal from his
+// wallet, pays a vendor straight from the Pact, releases the rest, withdraws to his bank, checks his devices
+// and keeps the memory.
+// Usage: DEMO_BASE=http://localhost:5173 node scripts/demo-video.mjs [outDir]   → <outDir>/pact-demo.webm
 import { chromium } from 'playwright';
 import sharp from 'sharp';
 import { existsSync, mkdirSync, readdirSync, renameSync } from 'node:fs';
@@ -9,25 +11,9 @@ import { homedir } from 'node:os';
 
 const out = process.argv[2] ?? 'exports/demo';
 mkdirSync(out, { recursive: true });
-const BASE = 'http://localhost:5173';
+const BASE = process.env.DEMO_BASE ?? 'http://localhost:5173';
 const W = 720;
 const H = 1080;
-
-/* ---------- setup: find Sarah's Birthday invite code as the organiser, via the API ---------- */
-const j = async (path, body, token) => {
-  const r = await fetch(`${BASE}/api${path}`, {
-    method: body ? 'POST' : 'GET',
-    headers: { 'content-type': 'application/json', ...(token ? { authorization: `Bearer ${token}` } : {}) },
-    body: body ? JSON.stringify(body) : undefined,
-  });
-  return r.json();
-};
-const otp = await j('/auth/otp/request', { phone: '08010000001' });
-const auth = await j('/auth/otp/verify', { phone: '08010000001', code: otp.devCode });
-const pacts = await j('/pacts', undefined, auth.accessToken);
-const sarah = pacts.data.find((p) => p.title === "Sarah's Birthday");
-if (!sarah || sarah.status !== 'open') throw new Error('Reset the database first: Sarah’s Birthday must be open (npm run db:reset, restart dev).');
-const code = sarah.inviteCode;
 
 /* ---------- recording ---------- */
 const shell = `${homedir()}/Library/Caches/ms-playwright/chromium_headless_shell-1148/chrome-mac/headless_shell`;
@@ -95,9 +81,12 @@ await context.addInitScript(() => {
 });
 
 const page = await context.newPage();
-const wait = (ms) => page.waitForTimeout(ms);
+const SPEED = Number(process.env.DEMO_SPEED ?? 1);
+const wait = (ms) => page.waitForTimeout(ms * SPEED);
 let step = 0;
+let lastCap = '';
 const cap = async (text, hold = 1800) => {
+  lastCap = text;
   await page.evaluate(([t, n]) => window.__cap(t, n), [text, ++step]);
   await wait(hold);
 };
@@ -118,7 +107,7 @@ const btn = (name) => page.getByRole('button', { name }).first();
 const lnk = (name) => page.getByRole('link', { name }).first();
 const typeSlow = async (locator, text) => {
   await tap(locator, 200);
-  await locator.pressSequentially(text, { delay: 90 });
+  await locator.pressSequentially(text, { delay: 90 * SPEED });
   await wait(500);
 };
 const pin = async (digits) => {
@@ -131,95 +120,312 @@ const hold = async (locator) => {
   await page.evaluate(([a, b]) => window.__tap(a, b), [x, y]);
   await page.mouse.move(x, y);
   await page.mouse.down();
-  await wait(1250);
+  await page.waitForTimeout(1400); // the button needs a real hold, whatever the playback speed
   await page.mouse.up();
   await wait(900);
 };
 
+
+const chapter = async (n, title, sub) => {
+  await page.evaluate(([nn, t, s]) => window.__card(`<small style="margin:0;font-weight:700;letter-spacing:.14em;color:#22b872">CHAPTER ${nn}</small><h1 style="font-size:52px">${t}</h1><p>${s}</p>`), [n, title, sub]);
+  await wait(2400);
+  await page.evaluate(() => window.__card(''));
+  await wait(500);
+};
+const signInAs = async (digits) => {
+  await page.goto(`${BASE}/app/auth/phone`, { waitUntil: 'load' });
+  await page.getByText('What’s your number?').waitFor();
+  await wait(600);
+  await typeSlow(page.getByLabel('Mobile number'), digits);
+  await tap(btn('Send code'), 1300);
+  await tap(btn('Fill it in'), 2000);
+};
+const signOut = async () => {
+  await page.goto(`${BASE}/app/profile`, { waitUntil: 'load' });
+  await tap(btn('Sign out'), 900);
+};
+const ABRAHAM = '8010000001';
+const NGOZI = '8035550142';
+let invite = '';
+let pactUrl = '';
+
 try {
-  // Title
-  await page.goto(`${BASE}/app/join/${code}`, { waitUntil: 'load' });
+  await page.goto(`${BASE}/app`, { waitUntil: 'load' });
   await card(`<h1>pact</h1><p>Make it happen <span>together</span>.</p><small>Product walkthrough · sandbox payments, no real money</small>`, 3200);
+  await card(
+    `<small style="margin:0;font-weight:700;letter-spacing:.14em;color:#22b872">IN THIS WALKTHROUGH</small>
+     <p style="text-align:left;font-size:24px;line-height:1.7;color:#0f1713">1 &nbsp;Plan it together<br>2 &nbsp;Bring people in, and let them pay<br>3 &nbsp;A friend joins<br>4 &nbsp;Finish the goal<br>5 &nbsp;Pay vendors from the Pact<br>6 &nbsp;Wallet and security<br>7 &nbsp;Take orders for aso-ebi<br>8 &nbsp;Keep the memory</p>`,
+    5800,
+  );
   await card('', 600);
 
-  // 1. The invite
-  await page.getByText('invited you to').waitFor();
-  await cap('Abraham shares an invite in the group chat. Anyone can see what it’s for.', 3000);
-  await page.getByText('How do you want to show up?').scrollIntoViewIfNeeded();
-  await cap('Money is one way to show up. A task is another.', 2200);
-  await tap(page.getByRole('radio', { name: /Contributing and taking a task/ }), 900);
-  await tap(btn('Sign up to join'));
+  /* ---------- 1. Plan it together ---------- */
+  await chapter(1, 'Plan it together', 'Abraham is organising a weekend in Lagos for six friends.');
+  await signInAs(ABRAHAM);
+  await cap('Abraham signs in with his number and a one-time code. The code fills itself in.', 2600);
+  await page.locator('.wallet-strip').waitFor();
+  await cap('Home shows what needs him across every Pact.', 2600);
 
-  // 2. Sign up
-  await cap('Signing up takes a phone number and a one-time code.', 1200);
-  await typeSlow(page.getByLabel('Mobile number'), '8035550142');
-  await tap(btn('Send code'), 1400);
+  // Skeleton loaders: hold the Pacts list back for a moment so the loading state is visible.
+  let slow = true;
+  await page.route('**/api/pacts', async (route) => {
+    if (slow) await new Promise((r) => setTimeout(r, 2600));
+    await route.continue().catch(() => undefined);
+  });
+  await tap(lnk('Pacts'), 400);
+  await cap('While data loads, PACT shows the shape of what’s coming, not a spinner.', 2400);
+  await page.getByRole('heading', { name: /Pacts/ }).first().waitFor();
+  slow = false;
+  await wait(1400);
+
+  await tap(page.getByRole('link', { name: 'Create a Pact' }), 900);
+  await cap('Name it, pick a date, set the money.', 1600);
+  await typeSlow(page.getByLabel('Name', { exact: true }), 'Detty December in Lagos');
+  await tap(page.getByRole('radio', { name: 'Trip' }), 500);
+  await tap(page.getByRole('button', { name: 'In a month' }), 900);
+  await cap('Quick date chips, or pick any day.', 1600);
+
+  await tap(page.getByRole('radio', { name: 'Budget' }), 900);
+  await cap('Break the target into what it covers. Each line is a real cost.', 2400);
+  const amount = async (label, value) => {
+    const f = page.getByLabel(label);
+    await tap(f, 150);
+    await f.pressSequentially(value, { delay: 70 });
+  };
+  await amount('Line 1 amount', '100000');
+  await amount('Line 2 amount', '100000');
+  await amount('Line 3 amount', '40000');
+  await wait(800);
+  await cap('Flights, stay and transport add up to a ₦240,000 target.', 2200);
+
+  await page.getByText('Anything that needs doing?').scrollIntoViewIfNeeded();
+  await tap(page.getByRole('button', { name: /Book the flights/ }), 500);
+  await tap(page.getByRole('button', { name: /Choose the accommodation/ }), 700);
+  await cap('Tasks count as showing up too, so not everyone has to pay to help.', 2400);
+
+  await page.getByText('Who are you doing this with?').scrollIntoViewIfNeeded();
+  await tap(page.getByRole('button', { name: /Invite people/ }).last(), 900);
+  await typeSlow(page.getByLabel('Add by phone number'), '08035550142');
+  await tap(page.getByRole('button', { name: 'Add', exact: true }), 700);
+  await cap('Numbers not on PACT yet get a text with the link.', 2200);
+  await tap(btn(/^Add 1 person|^Done/), 900);
+
+  // Saved drafts: life happens mid-form.
+  await cap('Your phone rings mid-way. The page reloads…', 1600);
+  await page.waitForTimeout(600);
+  await page.reload({ waitUntil: 'load' });
+  await page.getByText('We kept what you’d filled in.').waitFor();
+  await cap('…and nothing is lost. Forms and sheets save themselves on this device.', 3200);
+  await page.evaluate(() => scrollTo(0, 0));
+  await wait(800);
+  await tap(btn(/Create Pact/), 1800);
+  await page.waitForURL(/\/invite/);
+  invite = await page.evaluate(() => document.body.innerText.match(/join\/([A-Z0-9]{8})/)?.[1] ?? '');
+  await cap('The Pact is live. One link for the group chat, or send it from here.', 2800);
+
+  /* ---------- 2. Bring people in, and let them pay ---------- */
+  await chapter(2, 'Bring people in', 'Not everyone has the app. Everyone can still pay.');
+  await tap(page.getByRole('link', { name: /Detty December/ }).or(page.getByRole('button', { name: /Back/ })).first(), 1200);
+  pactUrl = page.url();
+  await cap('Every Pact can have its own bank account number.', 2000);
+  await tap(page.getByRole('button', { name: /Get an account number/ }), 1800);
+  await page.getByText('Pay by bank transfer').scrollIntoViewIfNeeded();
+  await cap('Friends pay from any bank app. No download, no signup.', 2800);
+  await tap(btn('Test a transfer'), 900);
+  await typeSlow(page.getByLabel('Name on the sender’s bank account'), 'Tunde Bakare');
+  const amt = page.getByRole('textbox', { name: 'Amount' });
+  await tap(amt, 150);
+  await amt.pressSequentially('60000', { delay: 80 });
+  await cap('Tunde pays from his bank app. Sandbox stands in for the bank.', 2200);
+  await tap(btn(/^Send/), 1800);
+  await cap('He isn’t a member, so he shows up as a guest. The organiser can match him later.', 3200);
+
+  /* ---------- 3. A friend joins ---------- */
+  await chapter(3, 'A friend joins', 'Ngozi opens the invite from the group chat.');
+  await signOut();
+  await page.goto(`${BASE}/app/join/${invite}`, { waitUntil: 'load' });
+  await page.getByText('invited you to').waitFor();
+  await cap('Anyone can see what it’s for, and how far along it is, before signing up.', 3000);
+  await page.getByText('How do you want to show up?').scrollIntoViewIfNeeded();
+  await tap(page.getByRole('radio', { name: /Contributing and taking a task/ }), 900);
+  await tap(btn('Sign up to join'), 900);
+  await typeSlow(page.getByLabel('Mobile number'), NGOZI);
+  await tap(btn('Send code'), 1300);
   await tap(btn('Fill it in'), 1500);
   await typeSlow(page.getByLabel('First name'), 'Ngozi');
   await typeSlow(page.getByLabel('Last name'), 'Adebayo');
-  await tap(btn('Continue'), 1000);
+  await tap(btn('Continue'), 900);
   await cap('A 4-digit PIN approves every payment.', 1400);
   await pin('2580');
   await wait(700);
   await pin('2580');
   await page.getByText('Join this Pact').waitFor();
   await tap(btn('Join this Pact'), 2000);
-
-  // 3. The plan
   await page.locator('.detail__ring').waitFor();
   await cap('One goal, one ring. Every colour is someone’s part.', 2600);
   await page.locator('.attention').scrollIntoViewIfNeeded();
-  await cap('PACT shows what needs attention, so nobody has to chase.', 2800);
-  await tap(page.locator('.attention__action').filter({ hasText: 'I’ll do it' }).first(), 1600);
-  await cap('Ngozi takes the photography. That counts as showing up too.', 2400);
+  await cap('PACT shows what needs attention, so nobody has to chase.', 2600);
+  await tap(page.locator('.attention__action').filter({ hasText: 'I’ll do it' }).first(), 1500);
+  await cap('Ngozi takes the flights. That counts as showing up.', 2200);
   await page.locator('.budget').scrollIntoViewIfNeeded();
-  await cap('The plan: what the money covers, and what’s already funded.', 2800);
-  await page.locator('.tasks').scrollIntoViewIfNeeded();
-  await wait(1600);
+  await cap('The plan fills line by line as money comes in.', 2600);
 
-  // 4. Cover the rest by paying straight in
-  await page.goto(`${page.url()}/contribute?amount=180000`);
+  await page.evaluate(() => scrollTo(0, 0));
+  await wait(600);
+  await tap(page.getByRole('button', { name: /Pledge a date/ }), 1000);
+  const how = page.getByRole('textbox', { name: 'How much' });
+  await tap(how, 150);
+  await how.fill('');
+  await how.pressSequentially('100000', { delay: 70 * SPEED });
+  await tap(page.getByRole('radio', { name: 'In 3 days' }), 800);
+  await cap('Can’t pay yet? Pledge an amount and a date. PACT reminds you, so nobody chases.', 3200);
+  await tap(btn(/^Pledge ₦/), 1800);
+  await cap('The group sees the pledge next to her name.', 2200);
+  await tap(btn('Pay now'), 1400);
   await page.getByText('From your wallet').waitFor();
-  await cap('She covers the rest. No wallet balance needed: pay straight into the Pact.', 3000);
-  await tap(page.getByRole('link', { name: /Pay ₦180,000 by transfer or card/ }), 1400);
-  await cap('Bank transfer is free. Cards show their 1.5% fee before you pay.', 2600);
-  await tap(btn(/Pay ₦180,000/), 1400);
-  await cap('Sandbox checkout. In production this is Paystack’s secure page.', 2400);
-  await cap('Nothing counts until the processor confirms to our server.', 2200);
+  await cap('She pays now instead: straight into the Pact, no wallet balance needed.', 2800);
+  await tap(page.getByRole('link', { name: /by transfer or card/ }), 1400);
+  await cap('Transfer is free. Cards show their fee first.', 2200);
+  await tap(btn(/^Pay ₦/), 1400);
+  await cap('Sandbox checkout. In production this is Paystack’s secure page.', 2200);
   await tap(btn('I’ve sent the money'), 1800);
   await page.getByText('You’re in.').waitFor();
-  await cap('And that completed the goal. Everyone is told.', 2600);
-  await tap(btn('Back to the Pact'), 3000);
-  await cap('We did it: nine people, one plan, nobody chased anybody.', 3200);
+  await cap('Nothing counts until the payment processor confirms to our server.', 2800);
+  await tap(btn('Back to the Pact'), 2200);
 
-  // 5. The organiser
-  await page.goto(`${BASE}/app/profile`);
-  await cap('Now the organiser’s side.', 1400);
-  await tap(btn('Sign out'), 600);
-  await page.goto(`${BASE}/app/auth/phone`);
-  await wait(800);
-  await typeSlow(page.getByLabel('Mobile number'), '8010000001');
-  await tap(btn('Send code'), 1200);
-  await tap(btn('Fill it in'), 2200);
-  await cap('Abraham’s home: what needs him, and his Pacts.', 2600);
-  await tap(lnk('Pacts'), 1200);
-  await tap(page.getByRole('link', { name: /Sarah/ }).first(), 2400);
-  await cap('Only a BVN-verified organiser can release the money.', 2400);
-  await tap(btn(/Release ₦500,000/), 1400);
+  /* ---------- 4. Finish the goal ---------- */
+  await chapter(4, 'Finish the goal', 'Back with the organiser, ₦80,000 short.');
+  await signOut();
+  await signInAs(ABRAHAM);
+  await page.goto(pactUrl, { waitUntil: 'load' });
+  await page.locator('.detail__ring').waitFor();
+  await cap('The ring shows who has covered what. Tunde is a guest, Ngozi is in.', 3000);
+  await tap(page.getByRole('link', { name: /Cover the rest|Add your share|Contribute/ }).first(), 1200);
+  await page.getByText('From your wallet').waitFor();
+  await cap('Abraham pays the rest from his wallet. Press and hold, so it’s never by accident.', 3000);
+  const holdBtn = page.getByRole('button', { name: /Hold to contribute|Hold/ }).first();
+  await hold(holdBtn);
   await pin('1357');
-  await wait(1600);
+  await page.getByText('You’re in.').waitFor({ timeout: 15000 });
+  await cap('And that completes the goal. Everyone is told.', 2600);
+  await tap(btn(/See it complete|Back to/), 2600);
+  await page.getByText('We did it.').waitFor();
+  await cap('We did it. The group made it happen.', 3200);
+
+  /* ---------- 5. Pay vendors from the Pact ---------- */
+  await chapter(5, 'Pay vendors from the Pact', 'The money goes to who it’s for, and everyone can see it.');
+  await page.locator('.completed__money').scrollIntoViewIfNeeded();
+  await cap('The organiser pays vendors straight from the Pact, so nobody fronts money.', 3000);
+  await tap(page.getByRole('button', { name: /Pay a vendor from the Pact/ }), 1000);
+  await typeSlow(page.getByLabel('What it’s for'), 'Hotel deposit');
+  const vamt = page.getByRole('textbox', { name: 'Amount' });
+  await tap(vamt, 150);
+  await vamt.pressSequentially('90000', { delay: 70 });
+  await cap('Half-filled? Close it. The sheet keeps what you typed.', 2400);
+  await page.keyboard.press('Escape');
+  await wait(900);
+  await tap(page.getByRole('button', { name: /Pay a vendor from the Pact/ }), 1200);
+  await cap('Back where they left off.', 1800);
+  await page.selectOption('#vendor-bank', { index: 1 });
+  const acct = page.getByLabel('Their account number');
+  await tap(acct, 150);
+  await acct.pressSequentially('0123456789', { delay: 70 });
+  await page.getByText('The bank says this account belongs to').waitFor();
+  await cap('PACT asks the bank who owns the account, so a typo can’t send money to a stranger.', 3200);
+  await tap(btn(/^Pay ₦/), 900);
+  await pin('1357');
+  await wait(1400);
+  await cap('Paid. Members see the vendor, the amount and, later, the receipt.', 3000);
+
+  // Release the rest
+  await page.evaluate(() => scrollTo(0, 0));
+  await wait(500);
+  await cap('What’s left can move to the organiser’s wallet. Only a BVN-verified organiser can release it.', 3000);
+  await tap(btn(/^Release ₦/), 1200);
+  await pin('1357');
+  await wait(1800);
   await cap('It lands in his wallet, and every member is told.', 2400);
 
-  // 6. The memory
+  /* ---------- 6. Wallet and security ---------- */
+  await chapter(6, 'Wallet and security', 'Take the money out, and stay in control.');
+  let slowTxns = true;
+  await page.route('**/api/wallet/transactions*', async (route) => {
+    if (slowTxns) await new Promise((r) => setTimeout(r, 2200));
+    await route.continue().catch(() => undefined);
+  });
+  await page.goto(`${BASE}/app/wallet`, { waitUntil: 'commit' });
+  await page.locator('.sk').first().waitFor();
+  await cap('Every naira in and out is on the ledger. It loads as a skeleton first.', 2200);
+  await page.getByText('History').first().waitFor();
+  slowTxns = false;
+  await wait(2200);
+  await page.goto(`${BASE}/app/wallet/withdraw`, { waitUntil: 'load' });
+  await page.getByRole('heading', { name: 'Withdraw to bank' }).waitFor();
+  await cap('Withdrawals only go to a bank account in the same name as the wallet.', 2800);
+  const add = page.getByRole('button', { name: 'Add a bank account' }).first();
+  await tap(add, 1000);
+  await page.selectOption('#bank', { index: 1 });
+  const num = page.getByLabel('Account number');
+  await tap(num, 150);
+  await num.pressSequentially('0123456789', { delay: 70 });
+  await page.getByText('ABRAHAM OKAFOR').waitFor();
+  await cap('The bank confirms the name matches before anything is saved.', 2600);
+  await tap(btn('Save account'), 900);
+  await pin('1357');
+  await wait(1400);
+  const wamt = page.getByRole('textbox', { name: /Amount/ });
+  await tap(wamt, 150);
+  await wamt.pressSequentially('50000', { delay: 70 });
+  await cap('Fee up front, always. No surprises.', 2200);
+  await tap(btn(/^Withdraw ₦/), 900);
+  await pin('1357');
+  await page.getByText(/on its way|Sent|sent/).first().waitFor({ timeout: 20000 }).catch(() => undefined);
+  await wait(2200);
+
+  await page.goto(`${BASE}/app/profile`, { waitUntil: 'load' });
+  await tap(page.getByRole('link', { name: /PIN and devices/ }).or(page.getByRole('button', { name: /PIN and devices/ })).first(), 1400);
+  await cap('Every signed-in device is listed. Sign any of them out, or change the PIN.', 3200);
+
+  /* ---------- 7. Take orders ---------- */
+  await chapter(7, 'Take orders', 'Aso-ebi, souvenirs, tickets: people order what they want.');
+  await page.goto(`${BASE}/app/create`, { waitUntil: 'load' });
+  await typeSlow(page.getByLabel('Name', { exact: true }), 'Tolu and Femi’s aso-ebi');
+  await tap(page.getByRole('radio', { name: 'Wedding' }), 500);
+  await tap(page.getByRole('button', { name: 'In a month' }), 700);
+  await tap(page.getByRole('radio', { name: 'Take orders' }), 900);
+  await cap('Instead of one target, list what’s on offer. The total is whatever people order.', 3000);
+  await typeSlow(page.getByLabel('Item 1 name'), 'Aso-oke and gele');
+  const price = page.getByLabel('Item 1 price');
+  await tap(price, 150);
+  await price.pressSequentially('45000', { delay: 70 * SPEED });
+  await typeSlow(page.getByLabel('Item 1 sizes or colours'), 'S, M, L');
+  await typeSlow(page.getByLabel('Item 1 how many available'), '20');
+  await tap(btn(/Create Pact/), 1800);
+  await page.waitForURL(/\/invite/);
+  await page.goto(page.url().replace('/invite', ''), { waitUntil: 'load' });
+  await page.getByRole('heading', { name: 'Order', exact: true }).scrollIntoViewIfNeeded();
+  await cap('Members see the menu, what’s left, and the pay-by date.', 2600);
+  await tap(page.getByRole('button', { name: 'Order', exact: true }).first(), 1000);
+  await tap(page.getByRole('radio', { name: 'M', exact: true }), 600);
+  await tap(page.getByRole('button', { name: 'One more' }), 600);
+  await cap('Pick a size and a quantity. Stock is tracked, so nobody orders what’s gone.', 2800);
+  await tap(btn(/^Order · ₦/), 1600);
+  await cap('The order is placed. PACT reminds you on the pay-by day.', 2400);
+  await page.getByRole('link', { name: /Pay for orders/ }).waitFor();
+  await wait(1400);
+
+  /* ---------- 8. Keep the memory ---------- */
+  await chapter(8, 'Keep the memory', 'The plan is done. The story is worth keeping.');
+  await page.goto(pactUrl, { waitUntil: 'load' });
   await page.locator('.memory').scrollIntoViewIfNeeded();
-  await cap('Afterwards, the group keeps the memory. Only people in the Pact can see it.', 2600);
+  await cap('Afterwards, the group keeps the memory. Only people in the Pact can see it.', 2800);
   await tap(page.getByRole('button', { name: /Add the memory/ }), 1000);
-  await typeSlow(page.getByLabel('How did it go?'), 'Sarah cried twice. The cake survived the drive.');
+  await typeSlow(page.getByLabel('How did it go?'), 'Six of us, one weekend, and nobody chased anybody.');
   const photo = await sharp({ create: { width: 900, height: 700, channels: 3, background: '#ffc53d' } })
     .composite([{ input: Buffer.from('<svg width="900" height="700"><circle cx="450" cy="350" r="220" fill="#ff7a5c"/><circle cx="450" cy="350" r="120" fill="#3dd68c"/></svg>') }])
     .jpeg()
     .toBuffer();
-  await page.locator('input[type=file]').setInputFiles({ name: 'party.jpg', mimeType: 'image/jpeg', buffer: photo });
+  await page.locator('input[type=file]').setInputFiles({ name: 'lagos.jpg', mimeType: 'image/jpeg', buffer: photo });
   await page.getByText('Photos · 1/6').waitFor({ timeout: 15000 });
   await cap('Photos are checked, re-encoded and stripped of location data.', 2600);
   await tap(btn('Save'), 1600);
@@ -227,12 +433,11 @@ try {
   await page.locator('.memory').scrollIntoViewIfNeeded();
   await wait(2600);
 
-  // End
   await page.evaluate(() => window.__cap(''));
-  await card(`<h1>pact</h1><p>Make the plan. Make it happen <span>together</span>.</p><small>Web app live now · iOS and Android coming soon</small>`, 3600);
+  await card(`<h1>pact</h1><p>Plan it. Fund it. Split the work. Keep the memory.<br>Make it happen <span>together</span>.</p><small>Web app live now · iOS and Android coming soon</small>`, 4200);
 } catch (err) {
   await page.screenshot({ path: `${out}/demo-FAILED.png` });
-  console.error('FAILED at caption', step, err.message);
+  console.error('FAILED after caption', step, `“${lastCap}”`, err.message.split('\n').slice(0, 3).join(' | '));
   process.exitCode = 1;
 } finally {
   await context.close();

@@ -21,6 +21,7 @@ export const users: Record<UserId, User> = {
   kemi: { id: 'kemi', name: 'Kemi', fullName: 'Kemi Adebayo', photo: portrait('women', 92), tint: 'mint', color: '#ff6fb5' },
   femi: { id: 'femi', name: 'Femi', fullName: 'Femi Johnson', photo: portrait('men', 91), tint: 'peach', color: '#22b8a6' },
   zara: { id: 'zara', name: 'Zara', fullName: 'Zara Musa', photo: portrait('women', 70), tint: 'sky', color: '#ff9f43' },
+  daniel: { id: 'daniel', name: 'Daniel', fullName: 'Daniel Ojo', tint: 'sky', color: '#7bc96f' },
   james: { id: 'james', name: 'James', fullName: 'James Obi', photo: portrait('men', 53), tint: 'lilac', color: '#4da3ff' },
   ada: { id: 'ada', name: 'Ada', fullName: 'Ada Nwosu', tint: 'sand', color: '#ff6fb5' },
   chidi: { id: 'chidi', name: 'Chidi', fullName: 'Chidi Okeke', photo: portrait('men', 83), tint: 'sky', color: '#ffc53d' },

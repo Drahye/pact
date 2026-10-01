@@ -1,0 +1,59 @@
+.orbit {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.orbit__ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  border-radius: 50%;
+  border: 1.5px solid var(--ink-100);
+  translate: -50% -50%;
+  animation: orbit-spin var(--dur, 60s) linear infinite;
+  will-change: transform;
+}
+
+.orbit__ring.is-dashed { border-style: dashed; border-color: var(--ink-200); }
+.orbit__ring.is-reverse { animation-direction: reverse; }
+
+.orbit__pin {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+
+.orbit__face,
+.orbit__dot {
+  position: absolute;
+  translate: -50% -50%;
+  border-radius: 50%;
+}
+
+.orbit__face {
+  display: grid;
+  width: var(--s, 52px);
+  height: var(--s, 52px);
+  box-shadow: 0 0 0 3px var(--c), 0 10px 20px -8px rgba(15, 23, 19, 0.35);
+  /* hold the face upright while the ring turns */
+  animation: orbit-spin var(--dur, 60s) linear infinite reverse;
+}
+
+.orbit__ring.is-reverse .orbit__face { animation-direction: normal; }
+
+.orbit__face .avatar {
+  --avatar-size: 100%;
+  width: 100%;
+  height: 100%;
+  border: 3px solid #fff;
+  font-size: 15px;
+}
+
+@keyframes orbit-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .orbit__ring, .orbit__face { animation: none; }
+}

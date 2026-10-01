@@ -40,6 +40,8 @@
 }
 
 .hero__copy {
+  position: relative;
+  z-index: 2;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -156,66 +158,90 @@
   }
 }
 
-/* The live orbit sits in its own column; two real product moments float over it. */
+/* The hero phone plays a short loop; rings and people travel around it. */
 .hero__visual {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 560px;
+  padding: var(--space-4) 0 var(--space-8);
+}
+
+.hero__orbit {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(150vw, 820px);
+  aspect-ratio: 1;
+  translate: -50% -50%;
+}
+
+.hero__phone-wrap {
+  position: relative;
+  z-index: 2;
+  --phone-w: min(300px, 76vw);
+  width: var(--phone-w);
+}
+
+.hero-phone {
   position: relative;
 }
 
-.hero__visual .stage {
-  height: clamp(540px, 120vw, 680px);
-  margin-top: 0;
+.hero-event {
+  position: absolute;
+  z-index: 3;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 9px 14px;
+  border-radius: var(--radius-full);
+  background: var(--white);
+  box-shadow: inset 0 0 0 1px var(--ink-100), var(--shadow-md);
+  font-size: 13px;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateY(10px) scale(0.94);
+  transition: opacity 400ms var(--ease-out), transform 400ms var(--ease-out);
+}
+
+.hero-event.is-on {
+  opacity: 1;
+  transform: none;
+}
+
+.hero-event b { font-weight: var(--weight-semibold); }
+.hero-event span { color: var(--ink-600); }
+.hero-event--a b { color: var(--green-700); }
+.hero-event--b b { color: var(--green-700); }
+
+.hero-event--a { left: -22px; top: 24%; }
+.hero-event--b { right: -22px; top: 40%; }
+.hero-event--c { left: -26px; bottom: 30%; }
+.hero-event--d { right: -14px; bottom: 16%; }
+
+@media (min-width: 768px) {
+  .hero__phone-wrap { --phone-w: 330px; }
+  .hero-event--a { left: -70px; }
+  .hero-event--b { right: -78px; }
+  .hero-event--c { left: -80px; }
+  .hero-event--d { right: -56px; }
 }
 
 @media (min-width: 1024px) {
-  /* let the orbit run out to the edge of the screen instead of stopping at the grid */
+  .hero { padding-top: 96px; }
+
+  .hero__grid {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-8);
+  }
+
   .hero__visual {
-    margin-right: calc(var(--gutter) * -1 - max(0px, (100vw - var(--container-max) - var(--gutter) * 2) / 2));
+    min-height: 760px;
+    padding: 0;
   }
 
-  /* the Next step card tells that part of the story, so the payment feed steps aside */
-  .hero__visual .stage__feed {
-    display: none;
-  }
-
-  .hero__visual .stage__blobs {
-    overflow: visible;
-  }
-
-  .hero__visual .stage {
-    height: clamp(600px, 52vw, 720px);
-  }
-}
-
-.hero__float {
-  position: absolute;
-  z-index: 45;
-  pointer-events: none;
-}
-
-.hero__float--a {
-  right: calc(var(--gutter) + 8px);
-  bottom: 96px;
-}
-
-.hero__float--b {
-  left: 0;
-  top: 6%;
-}
-
-@media (max-width: 767px) {
-  .hero__float--a {
-    right: -4px;
-    bottom: 92px;
-  }
-
-  .hero__float--a .mock {
-    width: 190px;
-  }
-
-  .hero__float--b {
-    left: -4px;
-    top: 2%;
-  }
+  .hero__orbit { width: 860px; }
+  .hero__phone-wrap { --phone-w: clamp(310px, 25vw, 360px); }
 }
 
 /* Why PACT ----------------------------------------------------------------------- */
@@ -317,194 +343,196 @@
   }
 }
 
-/* How it works ----------------------------------------------------------------------- */
-.how {
+/* Product story: one phone, one Pact, five scenes -------------------------------------------- */
+.story {
+  position: relative;
+  padding: var(--space-16) 0 var(--space-8);
+}
+
+.story__kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 30px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-full);
   background: var(--color-surface);
-  border-radius: 48px;
-  margin-inline: var(--space-2);
+  box-shadow: inset 0 0 0 1px var(--color-border);
+  font-size: 13px;
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-secondary);
 }
 
-.how__steps {
-  display: grid;
-  gap: var(--space-10);
-  margin-top: var(--space-12);
-}
+.story__kicker .num { color: var(--color-text); }
 
-.how__step {
-  display: flex;
-  flex-direction: column;
-}
-
-.how__stage {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  justify-content: center;
-  padding: var(--space-6) var(--space-5);
-  border-radius: var(--radius-3xl);
-  background: var(--tint);
-}
-
-.how__step--sun { --tint: var(--sun-100); --fg: var(--tone-sun-fg); }
-.how__step--sky { --tint: var(--sky-50); --fg: var(--tone-sky-fg); }
-.how__step--coral { --tint: var(--coral-100); --fg: var(--tone-coral-fg); }
-.how__step--lilac { --tint: var(--lilac-50); --fg: var(--tone-lilac-fg); }
-
-.how__n {
-  display: grid;
-  place-items: center;
-  width: 32px;
-  height: 32px;
-  margin-top: var(--space-5);
-  border-radius: 50%;
-  background: var(--ink-900);
-  color: var(--paper-50);
-  font-size: 14px;
+.story__title {
+  margin-top: var(--space-4);
+  max-width: 14ch;
+  font-size: clamp(36px, 4.6vw, 64px);
+  line-height: 1;
+  letter-spacing: -0.05em;
   font-weight: var(--weight-semibold);
 }
 
-.how__title {
-  margin-top: var(--space-3);
-  font-size: var(--text-title);
-  line-height: var(--leading-title);
-  letter-spacing: -0.03em;
-}
-
-.how__body {
-  margin-top: var(--space-2);
-  max-width: 34ch;
+.story__body {
+  margin-top: var(--space-4);
+  max-width: 36ch;
+  font-size: var(--text-lg);
+  line-height: var(--leading-lg);
   color: var(--color-text-secondary);
-  line-height: 24px;
 }
 
-@media (min-width: 640px) {
-  .how__steps {
-    grid-template-columns: 1fr 1fr;
-    column-gap: var(--space-6);
-    row-gap: var(--space-12);
-  }
+/* phones and reduced motion: a card per scene, each phone scrubbed by its own scroll */
+.story__stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-16);
 }
 
-@media (min-width: 1100px) {
-  .how__steps {
-    grid-template-columns: repeat(4, 1fr);
-    gap: var(--space-5);
-  }
-
-  .how__stage {
-    padding: var(--space-5) var(--space-4);
-  }
-
+.story__card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
 }
 
-/* What makes PACT different --------------------------------------------------------------- */
-.diff__grid {
-  display: grid;
-  gap: var(--space-12);
+.story__card-copy {
+  display: flex;
+  flex-direction: column;
   align-items: center;
 }
 
-.diff__points {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  margin-top: var(--space-8);
-}
+.story__card .story__title { max-width: 16ch; font-size: clamp(32px, 9vw, 44px); }
+.story__card .story__body { font-size: var(--text-body); }
 
-.diff__point {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-4);
-  width: 100%;
-  padding: var(--space-4);
-  border: 0;
-  border-radius: var(--radius-xl);
-  background: transparent;
-  text-align: left;
-  cursor: pointer;
-  transition: background-color var(--duration-base) var(--ease-out);
-}
-
-.diff__point:hover,
-.diff__point.is-on {
-  background: var(--color-surface);
-  box-shadow: inset 0 0 0 1px var(--color-border);
-}
-
-.diff__point:focus-visible {
-  outline: none;
-  box-shadow: var(--shadow-focus);
-}
-
-.diff__point > span:last-child {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.diff__point strong {
-  font-size: var(--text-lg);
-  line-height: 24px;
-  font-weight: var(--weight-semibold);
-  letter-spacing: -0.02em;
-}
-
-.diff__point > span:last-child > span {
-  color: var(--color-text-secondary);
-  line-height: 22px;
-}
-
-.diff__icon {
+.story__card-stage {
+  position: relative;
   display: grid;
   place-items: center;
-  width: 40px;
-  height: 40px;
-  flex-shrink: 0;
-  border-radius: 50%;
-  background: var(--mint-100);
-  color: var(--green-700);
-}
-
-.diff__icon svg {
-  width: 20px;
-  height: 20px;
-}
-
-.diff__cta {
-  margin-top: var(--space-6);
-}
-
-.diff__visual {
-  position: relative;
+  width: 100%;
+  margin-top: var(--space-8);
   padding: var(--space-8) 0;
+  border-radius: var(--radius-3xl);
+  background: var(--tint);
+  overflow: hidden;
+}
+
+.story__card-stage .story__phone { --phone-w: min(300px, 74vw); }
+
+/* desktop: copy scrolls on the left, the phone stays on the right and changes state */
+.story__grid {
+  display: grid;
+  grid-template-columns: 5fr 6fr;
+  gap: var(--space-8);
+}
+
+.story__copy { padding: 0; }
+
+.story__block {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 92vh;
+}
+
+/* the scene on screen gets the inked tag; the rest stay fully readable */
+.story__block.is-active .story__kicker { background: var(--ink-900); color: var(--paper-50); box-shadow: none; }
+.story__block.is-active .story__kicker .num { color: var(--paper-50); }
+.story__kicker { transition: background-color 400ms var(--ease-out), color 400ms; }
+
+.story__sticky {
+  position: sticky;
+  top: 0;
+  display: grid;
+  place-items: center;
+  height: 100vh;
   isolation: isolate;
 }
 
-/* round shapes drift behind the screen: the hero's orbit motif, quieter */
-.diff__orb {
+.story__stage { position: relative; }
+
+.story__disc {
+  position: absolute;
+  z-index: -2;
+  top: 50%;
+  left: 50%;
+  width: min(100%, 700px);
+  aspect-ratio: 1;
+  translate: -50% -50%;
+  border-radius: 50%;
+  background: var(--tint);
+  transition: background-color 700ms var(--ease-out);
+}
+
+.story__orbit {
   position: absolute;
   z-index: -1;
+  top: 50%;
+  left: 50%;
+  width: min(112%, 780px);
+  aspect-ratio: 1;
+  translate: -50% -50%;
+}
+
+/* the funding motif, as scroll progress: the ring fills as the story does */
+.story__arc {
+  position: absolute;
+  inset: 0;
+  rotate: -90deg;
+  overflow: visible;
+}
+
+.story__arc circle {
+  fill: none;
+  stroke: var(--solid);
+  stroke-width: 0.9;
+  stroke-linecap: round;
+  transition: stroke 700ms var(--ease-out);
+}
+
+.story__tilt { --phone-w: clamp(300px, 24vw, 360px); width: var(--phone-w); will-change: transform; }
+.story__phone { --phone-w: 100%; }
+
+.story__layer {
+  position: absolute;
+  inset: 0;
+  will-change: transform, opacity;
+}
+
+.story__dots {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  translate: 0 -50%;
+}
+
+.story__dots li {
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
-  animation: drift 9s ease-in-out infinite alternate;
+  background: var(--ink-200);
+  transition: transform 300ms var(--ease-out), background-color 300ms;
 }
 
-.diff__orb--a { width: 220px; height: 220px; left: 0; top: 4%; background: var(--sun-400); }
-.diff__orb--b { width: 150px; height: 150px; right: 2%; top: 38%; background: var(--sky-400); animation-delay: -3s; }
-.diff__orb--c { width: 120px; height: 120px; left: 12%; bottom: 2%; background: var(--pink-400); animation-delay: -6s; }
+.story__dots li.is-on { background: var(--ink-900); transform: scale(1.5); }
 
-@keyframes drift {
-  from { transform: translate3d(0, 0, 0); }
-  to { transform: translate3d(14px, -18px, 0); }
+.story__cta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-16) 0 var(--space-8);
+  text-align: center;
 }
 
-@media (min-width: 1024px) {
-  .diff__grid {
-    grid-template-columns: 6fr 5fr;
-    gap: var(--space-16);
-  }
-
-  .diff__orb--a { width: 300px; height: 300px; left: -2%; }
-  .diff__orb--b { width: 200px; height: 200px; right: -4%; }
+.story__cta p {
+  font-size: var(--text-lg);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-secondary);
 }
 
 /* Use cases ---------------------------------------------------------------------------------- */

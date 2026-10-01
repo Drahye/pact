@@ -1,5 +1,5 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { Check, LockKeyhole, Plus, Wallet } from 'lucide-react';
+import { Check, CreditCard, LockKeyhole, Wallet } from 'lucide-react';
 import { useAuth } from '../../api/auth';
 import { newIdempotencyKey } from '../../api/client';
 import { useContribute, usePact, useWallet } from '../../api/hooks';
@@ -11,7 +11,7 @@ import { AnimatedNumber } from '../../components/pact/AnimatedNumber';
 import { HoldButton } from '../../components/ui/HoldButton';
 import { getUser } from '../../data/users';
 import { useRef, useState } from 'react';
-import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { AmountInput } from '../../components/ui/AmountInput';
 import { Button } from '../../components/ui/Button';
 import { Segmented } from '../../components/ui/Segmented';
@@ -53,6 +53,7 @@ export function ContributeScreen() {
   const [amount, setAmount] = useState<number | null>(() => (Number(params.get('amount')) > 0 ? Math.floor(Number(params.get('amount'))) : saved?.amount ?? null));
   const [choice, setChoice] = useState<Choice | null>(saved ? (PRESETS.includes(saved.amount) ? (String(saved.amount) as Choice) : 'custom') : null);
   const [phase, setPhase] = useState<'enter' | 'done'>('enter');
+  const [source, setSource] = useState<'balance' | 'other' | null>(null);
   const [pinOpen, setPinOpen] = useState(false);
   const [before, setBefore] = useState(0);
   const [given, setGiven] = useState(0);
@@ -76,6 +77,9 @@ export function ContributeScreen() {
   const capped = Math.min(value, s.remaining);
   const balance = wallet.data ? fromKobo(wallet.data.balance) : undefined;
   const short = balance !== undefined && capped > balance ? Math.ceil(capped - balance) : 0;
+  const have = Math.floor(balance ?? 0);
+  // Start from the PACT balance when there is one (topping up only the difference); otherwise a card or transfer.
+  const payWith: 'balance' | 'other' = source ?? (have > 0 ? 'balance' : 'other');
   const after = s.raised + capped;
   const afterPct = (after / Math.max(1, s.target)) * 100;
 
@@ -189,27 +193,23 @@ export function ContributeScreen() {
       topBar={<TopBar leading="close" backTo={base} title="Contribute" />}
       footer={
         <>
-          {short > 0 ? (
-            <>
-              <Button fullWidth to={`/app/wallet/topup?amount=${capped}&pact=${pact.id}`}>
-                Pay {formatNaira(capped)} by transfer or card
-              </Button>
-              <Button variant="ghost" fullWidth iconLeft={<Plus />} to={`/app/wallet/topup?amount=${Math.max(100, short)}&return=${encodeURIComponent(`/app/pact/${pact.id}/contribute`)}`}>
-                Or top up the {formatNaira(Math.max(100, short))} difference
-              </Button>
-            </>
+          {capped < 100 ? (
+            <Button fullWidth disabled>
+              Enter at least ₦100
+            </Button>
+          ) : payWith === 'balance' && short === 0 ? (
+            <HoldButton label={`Hold to add ${formatNaira(capped)}`} onComplete={() => setPinOpen(true)} disabled={balance === undefined} />
+          ) : payWith === 'balance' && have > 0 ? (
+            <Button fullWidth to={`/app/wallet/topup?amount=${Math.max(100, short)}&return=${encodeURIComponent(`/app/pact/${pact.id}/contribute?amount=${capped}`)}`}>
+              Pay the remaining {formatNaira(Math.max(100, short))} by transfer or card
+            </Button>
           ) : (
-            <>
-              <HoldButton label={capped >= 100 ? `Hold to contribute ${formatNaira(capped)}` : 'Enter at least ₦100'} onComplete={() => setPinOpen(true)} disabled={capped < 100 || balance === undefined} />
-              {capped >= 100 && (
-                <Link className="contribute__direct" to={`/app/wallet/topup?amount=${capped}&pact=${pact.id}`}>
-                  Pay by transfer or card instead
-                </Link>
-              )}
-            </>
+            <Button fullWidth to={`/app/wallet/topup?amount=${capped}&pact=${pact.id}`}>
+              Add {formatNaira(capped)} by transfer or card
+            </Button>
           )}
           <p className="contribute__secure">
-            <LockKeyhole aria-hidden /> Hold, then confirm with your PIN · Everyone in the Pact sees it
+            <LockKeyhole aria-hidden /> {payWith === 'balance' && short === 0 ? 'Hold, then confirm with your PIN · ' : ''}Everyone in the Pact sees it
           </p>
         </>
       }
@@ -257,16 +257,36 @@ export function ContributeScreen() {
         options={[...PRESETS.map((p) => ({ value: String(p) as Choice, label: formatNairaCompact(p) })), { value: 'custom', label: 'Custom' }]}
       />
 
-      <div className={`contribute__from ${short > 0 ? 'is-short' : ''}`}>
-        <span className="contribute__from-icon" aria-hidden>
-          <Wallet />
-        </span>
-        <span className="contribute__from-text">
-          <span>From your wallet</span>
-          <strong className="num">{wallet.data ? formatNairaKobo(wallet.data.balance) : '…'} available</strong>
-        </span>
-        {short > 0 && <span className="contribute__from-short num">Short by {formatNaira(short)}</span>}
-      </div>
+      {capped >= 100 && (
+        <div className="contribute__pay">
+          <p className="menu-label">Pay with</p>
+          <div className="choices" role="radiogroup" aria-label="Pay with">
+            {have > 0 && (
+              <button type="button" role="radio" aria-checked={payWith === 'balance'} className={`choice ${payWith === 'balance' ? 'is-on' : ''}`} onClick={() => setSource('balance')}>
+                <span className="choice__icon tint--sun"><Wallet /></span>
+                <span className="choice__text">
+                  <span className="choice__title">PACT balance</span>
+                  <span className="choice__sub num">{formatNairaKobo(wallet.data?.balance ?? 0)} available</span>
+                </span>
+                <span className="choice__radio" aria-hidden />
+              </button>
+            )}
+            <button type="button" role="radio" aria-checked={payWith === 'other'} className={`choice ${payWith === 'other' ? 'is-on' : ''}`} onClick={() => setSource('other')}>
+              <span className="choice__icon tint--sky"><CreditCard /></span>
+              <span className="choice__text">
+                <span className="choice__title">Bank transfer or card</span>
+                <span className="choice__sub">Transfer is free. Cards show their fee first.</span>
+              </span>
+              <span className="choice__radio" aria-hidden />
+            </button>
+          </div>
+          {payWith === 'balance' && short > 0 && have > 0 && (
+            <p className="contribute__shortfall num">
+              You have {formatNaira(have)} in PACT. Pay the remaining {formatNaira(short)} by transfer or card, then this goes in.
+            </p>
+          )}
+        </div>
+      )}
 
       <PinSheet
         open={pinOpen}

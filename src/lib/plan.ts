@@ -10,6 +10,21 @@ export const participationLabel: Record<Participation, { short: string; long: st
   later: { short: 'Confirming later', long: 'I’m in, I’ll confirm later' },
 };
 
+/** What someone brings to the Pact, in a few words: money, a task, or both. "₦50k · Cake". */
+export function bringsOf(pact: Pact, userId: string): string {
+  const m = pact.members.find((x) => x.userId === userId);
+  if (!m) return '';
+  const tasks = (pact.tasks ?? []).filter((t) => t.assigneeId === userId);
+  const parts: string[] = [];
+  if (m.contributed > 0) parts.push(formatNairaCompact(m.contributed));
+  if (tasks.length) parts.push(tasks.length === 1 ? tasks[0].title : `${tasks[0].title} +${tasks.length - 1}`);
+  if (parts.length) return parts.join(' · ');
+  if (m.participation === 'money') return 'Adding money';
+  if (m.participation === 'task') return 'Taking a task';
+  if (m.participation === 'both') return 'Money + a task';
+  return 'Confirming later';
+}
+
 export type Stage = 'invited' | 'just-you' | 'open' | 'almost' | 'past-deadline' | 'done' | 'closed';
 
 /** Where the Pact is, which decides the primary action. */
@@ -60,6 +75,10 @@ export function attentionFor(pact: Pact, meId: string): AttentionItem[] {
   for (const t of tasks.filter((x) => x.assigneeId === meId && x.status !== 'done').slice(0, 2)) {
     items.push({ key: `mine-${t.id}`, tone: 'lilac', title: `You’re handling “${t.title}”`, action: { label: 'Mark done', kind: 'done', taskId: t.id } });
   }
+  if (me && s.remaining > 0 && me.contributed === 0 && !(me.requestedAmount && me.requestedAmount > 0) && (me.participation === 'money' || me.participation === 'both')) {
+    const share = pact.viewer?.suggestedShare ? Math.min(pact.viewer.suggestedShare, s.remaining) : 0;
+    items.push({ key: 'share', tone: 'accent', title: 'Add your share', body: 'You said you’d contribute. Every bit shows up for the group.', action: { label: 'Add', kind: 'contribute', amount: share || undefined } });
+  }
   const unowned = tasks.find((x) => !x.assigneeId && x.status !== 'done');
   if (unowned) {
     items.push({ key: `claim-${unowned.id}`, tone: 'sun', title: `Nobody has “${unowned.title}” yet`, body: 'Taking a task counts as showing up too.', action: { label: 'I’ll do it', kind: 'claim', taskId: unowned.id } });
@@ -69,10 +88,24 @@ export function attentionFor(pact: Pact, meId: string): AttentionItem[] {
   if (emptiest && s.remaining > 0) {
     items.push({ key: `budget-${emptiest.id}`, tone: 'coral', title: `${emptiest.name} is still ${formatNairaCompact(emptiest.amount - emptiest.funded)} short` });
   }
-  if (s.daysLeft <= 3 && s.remaining > 0) {
-    items.push({ key: 'soon', tone: 'coral', title: s.daysLeft === 0 ? 'Today’s the day' : `${s.daysLeft} ${s.daysLeft === 1 ? 'day' : 'days'} left`, body: `${formatNaira(s.remaining)} to go.` });
+  if (s.remaining > 0 && (s.daysLeft <= 3 || (s.daysLeft <= 7 && s.percent < 70))) {
+    items.push({
+      key: 'soon',
+      tone: 'coral',
+      title: s.daysLeft === 0 ? 'Today’s the day' : `${s.daysLeft} ${s.daysLeft === 1 ? 'day' : 'days'} left and ${formatNaira(s.remaining)} still to go`,
+      body: 'If the goal is missed, the Pact’s rule decides what happens to the money.',
+    });
+  } else if (s.remaining > 0 && s.percent >= 80) {
+    items.push({ key: 'rest', tone: 'accent', title: `${formatNaira(s.remaining)} left. Cover the rest?`, action: { label: 'Cover it', kind: 'contribute', amount: s.remaining } });
   }
   if (isOrganizer) {
+    const waiting = pact.members.filter((m) => m.status === 'invited').length + (pact.pendingPhoneInvites ?? 0);
+    const joinedCount = pact.members.filter((m) => m.status === 'joined').length;
+    if (waiting > 0 && joinedCount >= 1) {
+      items.push({ key: 'waiting', tone: 'sun', title: waiting === 1 ? '1 person hasn’t joined yet' : `${waiting} people haven’t joined yet`, body: 'A nudge in the group chat usually does it.', action: { label: 'Share link', kind: 'invite' } });
+    } else if (waiting === 0 && joinedCount >= 3 && s.raised === 0) {
+      items.push({ key: 'everyone-in', tone: 'accent', title: 'Everyone’s in. Start moving the plan.', body: 'Add your share and hand out the tasks.' });
+    }
     const quiet = pact.members.filter((m) => m.status === 'joined' && m.userId !== meId && m.contributed === 0 && m.participation !== 'task');
     if (quiet.length) {
       const names = quiet.slice(0, 2).map((m) => getUser(m.userId).name);

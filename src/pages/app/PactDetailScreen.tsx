@@ -24,9 +24,9 @@ import { getUser } from '../../data/users';
 import { addDaysIso } from '../../lib/dates';
 import { formatDate, formatNaira, formatNairaCompact, formatPercent } from '../../lib/format';
 import { colorOf, GUEST_SHARE_ID, guestTotalOf, invitedMembers, joinedMembers, sharesOf, summarize } from '../../lib/pact';
-import { attentionFor, participationLabel, stageOf, type AttentionItem } from '../../lib/plan';
+import { attentionFor, bringsOf, participationLabel, stageOf, type AttentionItem } from '../../lib/plan';
 import { spring } from '../../tokens/tokens';
-import { MISSED_GOAL_GRACE_DAYS } from '../../../shared/policy';
+import { MISSED_GOAL_GRACE_DAYS, NGN, VENDOR_APPROVAL_THRESHOLD } from '../../../shared/policy';
 import { ApprovalCards, AssignGuestSheet, canPayVendors, CoOrganizerSheet, GuestAvatar, guestsOf, isOrganizerOf, PaidFromPact, PayByTransfer, PayoutSheet, PayVendorSheet, type GuestGroup } from './detail/Money';
 import { isOrderPact, MyOrders, OrderMenu, OrderSheetSection, owedOnOrders } from './detail/Orders';
 import { MyPledge, pledgeLabel } from './detail/Pledges';
@@ -256,7 +256,6 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
       )}
       {stage === 'almost' && !orders && <p className="detail__almost">We’re almost there. {formatNaira(s.remaining)} left.</p>}
       <ApprovalCards pact={pact} meId={me} onOpen={setPayout} />
-      {stage !== 'closed' && <PayByTransfer pact={pact} meId={me} />}
       {stage === 'past-deadline' && (
         <Notice tone="sun" icon={<Scale />}>
           The deadline has passed. Within {MISSED_GOAL_GRACE_DAYS} days the Pact’s rule runs: {pact.missedGoalPolicy === 'refund' ? 'everyone is refunded' : 'what was raised goes to the organiser'}.
@@ -302,7 +301,7 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
           <OrderSheetSection pact={pact} meId={me} />
         </>
       )}
-      <PaidFromPact pact={pact} meId={me} onPay={() => setPayOpen(true)} onOpen={setPayout} />
+      {(canPayVendors(pact) || (pact.payouts ?? []).some((p) => p.kind === 'vendor')) && <PaidFromPact pact={pact} meId={me} onPay={() => setPayOpen(true)} onOpen={setPayout} />}
 
       {(tasks.length > 0 || (isOpen && stage !== 'invited')) && (
         <section className="screen-section" aria-labelledby="pact-tasks">
@@ -319,7 +318,7 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
               <button type="button" className={`person ${selected === m.userId ? 'is-selected' : ''}`} onClick={() => setSelected(selected === m.userId ? null : m.userId)} aria-pressed={selected === m.userId}>
                 <Avatar userId={m.userId} size="md" accent accentColor={colorOf(pact, m.userId)} label={false} />
                 <span className="person__name">{name(m.userId)}</span>
-                <span className="person__amount num">{m.contributed ? formatNairaCompact(m.contributed) : m.participation === 'task' ? 'Task' : 'None yet'}</span>
+                <span className="person__amount">{bringsOf(pact, m.userId)}</span>
                 {m.role === 'co_organizer' && <span className="person__guest">Co-organiser</span>}
                 {(() => {
                   const p = pledgeLabel(pact, m.userId);
@@ -364,6 +363,8 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
           })}
         </ul>
       </section>
+
+      {stage !== 'closed' && stage !== 'invited' && <PayByTransfer pact={pact} meId={me} />}
 
       {isOpen && (
         <div className="detail__rule">
@@ -425,7 +426,7 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
               <span className="menu__icon tint--lilac"><ShieldCheck /></span>
               <span className="menu__text">
                 <span className="menu__title">Co-organiser</span>
-                <span className="menu__sub">Approves large vendor payments with you</span>
+                <span className="menu__sub">{`Payments over ${formatNaira(VENDOR_APPROVAL_THRESHOLD / NGN)} need them to approve`}</span>
               </span>
             </button>
           )}

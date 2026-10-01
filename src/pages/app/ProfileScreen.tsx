@@ -48,10 +48,10 @@ export function ProfileScreen() {
   const tier = TIER_LIMITS[user.kycTier];
 
   const shareInvite = async () => {
-    const text = `I use PACT to pool money with friends. Sign up with my code ${user.referralCode}: ${window.location.origin}/download`;
+    const text = `I use PACT to actually get group plans done: the people, money and tasks in one place. Join with my code ${user.referralCode}: ${window.location.origin}/download`;
     if (navigator.share) {
       try {
-        await navigator.share({ title: 'Join me on PACT', text });
+        await navigator.share({ title: 'Make it happen together on PACT', text });
       } catch {
         /* dismissed */
       }
@@ -79,17 +79,16 @@ export function ProfileScreen() {
         </div>
       </div>
 
-      <Link to="/app/profile/verify" className={`profile__tier ${user.kycTier >= 2 ? 'is-verified' : ''}`}>
-        {user.kycTier >= 2 ? <BadgeCheck aria-hidden /> : <ShieldCheck aria-hidden />}
-        <span>
-          <strong>{user.kycTier >= 2 ? `${tier.label} account` : 'Verify your identity'}</strong>
-          <span>{user.kycTier >= 2 ? `BVN ••${user.bvnLast4 ?? '••••'} · higher limits on` : 'Raise your limits and release Pact funds'}</span>
-        </span>
-        <ChevronRight aria-hidden />
-      </Link>
-
-      <p className="menu-label">Money</p>
+      <p className="menu-label">Payments</p>
       <div className="menu">
+        <Link to="/app/profile/verify" className="menu__row">
+          <span className={`menu__icon ${user.kycTier >= 2 ? 'tint--mint' : 'tint--sun'}`}>{user.kycTier >= 2 ? <BadgeCheck /> : <ShieldCheck />}</span>
+          <span className="menu__text">
+            <span className="menu__title">{user.kycTier >= 2 ? 'Identity verified' : 'Verify your identity'}</span>
+            <span className="menu__sub">{user.kycTier >= 2 ? `BVN ••${user.bvnLast4 ?? '••••'} · ${tier.label} account` : 'Needed to release a Pact’s funds or withdraw more'}</span>
+          </span>
+          <span className="menu__end"><ChevronRight /></span>
+        </Link>
         <Link to="/app/profile/banks" className="menu__row">
           <span className="menu__icon tint--lilac"><Landmark /></span>
           <span className="menu__text"><span className="menu__title">Bank accounts</span><span className="menu__sub">Where withdrawals go</span></span>
@@ -133,7 +132,7 @@ export function ProfileScreen() {
       <div className="menu">
         <button type="button" className="menu__row" onClick={shareInvite}>
           <span className="menu__icon tint--sun"><Gift /></span>
-          <span className="menu__text"><span className="menu__title">Invite friends</span><span className="menu__sub num">Your code {user.referralCode}</span></span>
+          <span className="menu__text"><span className="menu__title">Tell a friend about PACT</span><span className="menu__sub">Your code {user.referralCode}</span></span>
           <span className="menu__end"><ChevronRight /></span>
         </button>
         <a href="mailto:support@pact.africa?subject=PACT%20help" className="menu__row">

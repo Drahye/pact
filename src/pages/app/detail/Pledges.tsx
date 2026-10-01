@@ -1,4 +1,4 @@
-import { CalendarCheck, CalendarClock, ChevronRight } from 'lucide-react';
+import { CalendarCheck, CalendarClock } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { ApiError } from '../../../api/client';
 import { usePactMoney } from '../../../api/hooks';
@@ -42,7 +42,7 @@ export function MyPledge({ pact, meId, onPay }: { pact: Pact; meId: string; onPa
           </span>
           <span className="pledge-card__text">
             <strong>
-              {orders ? 'Your order' : 'Your pledge'}: <span className="num">{formatNaira(mine.remaining)}</span> {isLate(mine) ? `was due ${day(mine.dueOn)}` : `by ${day(mine.dueOn)}`}
+              {orders ? 'Your order' : 'You’ll pay'}: <span className="num">{formatNaira(mine.remaining)}</span> {isLate(mine) ? `was due ${day(mine.dueOn)}` : `by ${day(mine.dueOn)}`}
             </strong>
             <span>{isLate(mine) ? 'The group is counting on it.' : 'PACT reminds you on the day. No one has to chase you.'}</span>
           </span>
@@ -59,15 +59,8 @@ export function MyPledge({ pact, meId, onPay }: { pact: Pact; meId: string; onPa
         </div>
       ) : (
         !mine && (
-          <button type="button" className="pay-transfer-cta" onClick={() => setOpen(true)}>
-            <span className="pay-transfer__icon tint--sky" aria-hidden>
-              <CalendarCheck />
-            </span>
-            <span className="pay-transfer-cta__text">
-              <strong>Can’t pay yet? Pledge a date</strong>
-              <span>Say how much and when. PACT reminds you, so nobody has to chase.</span>
-            </span>
-            <ChevronRight aria-hidden />
+          <button type="button" className="pledge-link" onClick={() => setOpen(true)}>
+            <CalendarCheck aria-hidden /> Can’t pay yet? Pick a pay date
           </button>
         )
       )}
@@ -104,7 +97,7 @@ export function PledgeSheet({ pact, current, open, onClose }: { pact: Pact; curr
   const save = async () => {
     try {
       await money.setPledge.mutateAsync({ amount: toKobo(amount), dueOn });
-      toast(`Pledged. PACT will remind you on ${day(dueOn)}.`);
+      toast(`Done. PACT will remind you on ${day(dueOn)}.`);
       onClose();
     } catch (err) {
       toast((err as ApiError).message, 'neutral');
@@ -115,8 +108,8 @@ export function PledgeSheet({ pact, current, open, onClose }: { pact: Pact; curr
     <Modal
       open={open}
       onClose={onClose}
-      title={current ? 'Change your pledge' : 'Pledge a date'}
-      description="The group sees what you pledged and when. PACT reminds you on the day, and once more the day after if it’s still short."
+      title={current ? 'Change your pay date' : 'Pick a pay date'}
+      description="Say how much and when. The group sees it, and PACT reminds you on the day, so nobody has to chase."
       footer={
         <div className="pledge-sheet__footer">
           {current && (
@@ -125,7 +118,7 @@ export function PledgeSheet({ pact, current, open, onClose }: { pact: Pact; curr
             </Button>
           )}
           <Button fullWidth disabled={amount < 100 || !dueOn} loading={money.setPledge.isPending} onClick={save}>
-            {amount >= 100 && dueOn ? `Pledge ${formatNaira(amount)}` : 'Pledge'}
+            {amount >= 100 && dueOn ? `Remind me · ${formatNaira(amount)}` : 'Pick an amount and date'}
           </Button>
         </div>
       }

@@ -262,3 +262,18 @@
   text-decoration: underline;
   text-underline-offset: 3px;
 }
+
+.contribute__pay {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-6);
+}
+
+.contribute__shortfall {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--sun-100);
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+}

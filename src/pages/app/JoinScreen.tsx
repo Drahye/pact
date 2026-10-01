@@ -112,6 +112,14 @@ export function JoinScreen() {
         </ul>
       </div>
       {!open && <Notice>This Pact isn’t taking new people. It’s {p.status === 'funded' ? 'already fully funded' : 'closed'}.</Notice>}
+      {open && (
+        <section className="join__choose" aria-labelledby="join-how">
+          <h2 id="join-how" className="join__how-title">
+            Everyone brings something. How will you show up?
+          </h2>
+          <ParticipationPicker value={choice} onChange={setChoice} />
+        </section>
+      )}
       {p.bankAccount && (
         <section className="pay-transfer" aria-labelledby="join-pay">
           <div className="pay-transfer__head">
@@ -120,7 +128,7 @@ export function JoinScreen() {
             </span>
             <div>
               <h2 id="join-pay" className="pay-transfer__title">
-                Just want to pay?
+                Just want to pay, without an account?
               </h2>
               <p className="pay-transfer__sub">Transfer from any bank app. No account needed.</p>
             </div>
@@ -138,14 +146,6 @@ export function JoinScreen() {
             {p.bankAccount.bankName} · {p.bankAccount.accountName}
           </p>
           <p className="pay-transfer__hint">Your name shows in the Pact as a guest, with what you sent.</p>
-        </section>
-      )}
-      {open && (
-        <section className="join__choose" aria-labelledby="join-how">
-          <h2 id="join-how" className="join__how-title">
-            Make it happen together. How do you want to show up?
-          </h2>
-          <ParticipationPicker value={choice} onChange={setChoice} />
         </section>
       )}
       <ul className="join__how">

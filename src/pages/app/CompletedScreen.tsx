@@ -15,13 +15,13 @@ import { Modal } from '../../components/ui/Modal';
 import { SegmentedRing } from '../../components/pact/SegmentedRing';
 import { TopBar } from '../../components/ui/TopBar';
 import type { Activity, Pact, PactPayout } from '../../data/types';
+import { bringsOf } from '../../lib/plan';
 import { ApprovalCards, CoOrganizerSheet, coOrganizerOf, PaidFromPact, PayoutSheet, PayVendorSheet } from './detail/Money';
 import { isOrderPact, MyOrders, OrderMenu, OrderSheetSection } from './detail/Orders';
 import './detail/money.css';
 import { getUser } from '../../data/users';
 import { formatNaira } from '../../lib/format';
 import { colorOf, joinedMembers, sharesOf, summarize } from '../../lib/pact';
-import { formatNairaCompact } from '../../lib/format';
 import { ease, spring } from '../../tokens/tokens';
 import { Screen } from './Screen';
 import './completed.css';
@@ -69,7 +69,7 @@ export function CompletedScreen({ pact, activity = [] }: { pact: Pact; activity?
               </Button>
             ) : (
               <Button fullWidth iconLeft={<ShieldCheck />} to="/app/profile/verify">
-                Verify your BVN to release funds
+                Verify your identity to release this Pact’s funds
               </Button>
             )
           ) : (
@@ -139,7 +139,7 @@ export function CompletedScreen({ pact, activity = [] }: { pact: Pact; activity?
               <Avatar userId={m.userId} size="md" label={false} accent />
               <span>{name(m.userId)}</span>
               <span className="completed__share num" style={{ ['--c' as string]: colorOf(pact, m.userId) }}>
-                {formatNairaCompact(m.contributed)}
+                {bringsOf(pact, m.userId)}
               </span>
             </motion.li>
           ))}
@@ -196,7 +196,7 @@ export function CompletedScreen({ pact, activity = [] }: { pact: Pact; activity?
               </span>
               <span className="pay-transfer-cta__text">
                 <strong>{coName ? `Co-organiser: ${coName}` : 'Add a co-organiser'}</strong>
-                <span>{coName ? 'Approves large payments and the release' : 'A second person to approve large payments'}</span>
+                <span>{coName ? 'Approves big payments and the release' : 'Optional: someone to approve big payments with you'}</span>
               </span>
               <ChevronRight aria-hidden />
             </button>

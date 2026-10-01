@@ -2,7 +2,6 @@ import { ArrowDownToLine, Eye, EyeOff, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { formatNairaKobo } from '../../lib/format';
-import { TIER_LIMITS } from '../../../shared/policy';
 import './app-ui.css';
 
 interface Props {
@@ -39,7 +38,7 @@ export function WalletCard({ balance, tier = 1, compact }: Props) {
       <div className="wallet-card__top">
         <p className="wallet-card__label">Wallet balance</p>
         <Link to="/app/profile/verify" className="wallet-card__tier">
-          {TIER_LIMITS[tier].label}
+          {tier >= 2 ? 'Verified' : 'Verify identity'}
         </Link>
       </div>
       <div className="wallet-card__row">

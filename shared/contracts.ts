@@ -80,6 +80,8 @@ export const InviteBody = z.object({
 });
 export const ContributeBody = z.object({ amount: kobo(MIN_CONTRIBUTION), pin });
 export const PinBody = z.object({ pin });
+/** Completing a Pact: with money left in the pool the organiser must say what happens to it, with their PIN. */
+export const CompleteBody = z.object({ releaseRemaining: z.boolean().optional(), pin: pin.optional() });
 export const ParticipationBody = z.object({ participation: z.enum(participations) });
 export const BudgetItemBody = budgetLine;
 export const BudgetItemPatchBody = budgetLine.partial();
@@ -198,8 +200,12 @@ export interface BudgetItemDTO {
   amount: number;
   /** Raised money fills items in order. */
   funded: number;
-  /** Paid to vendors against this line (sent or on the way). */
+  /** Paid to vendors against this line: only payments the bank has confirmed. */
   paid: number;
+  /** On its way but not confirmed yet: waiting for an approval, or with the bank. Never counted as paid. */
+  pending: number;
+  /** The part of `pending` that is waiting for a co-organiser to approve it. */
+  waiting: number;
   position: number;
 }
 
@@ -319,6 +325,8 @@ export interface PactDTO {
   missedGoalPolicy: 'refund' | 'release';
   splitMode: 'flexible' | 'equal';
   fundedAt: string | null;
+  /** Set when the organiser says the plan actually happened. Funded is the money; this is the outcome. */
+  completedAt: string | null;
   closedAt: string | null;
   members: PactMemberDTO[];
   pendingPhoneInvites: number;
@@ -357,7 +365,7 @@ export interface ActivityDTO {
   type:
     | 'created' | 'join' | 'contribution' | 'completed' | 'released' | 'refunded' | 'cancelled' | 'nudge' | 'left'
     | 'committed' | 'task_added' | 'task_claimed' | 'task_done' | 'milestone' | 'split_requested' | 'memory_added'
-    | 'guest_contribution' | 'vendor_paid' | 'co_organizer' | 'release_requested' | 'pledged' | 'pledge_kept' | 'ordered' | 'orders_closed';
+    | 'guest_contribution' | 'vendor_paid' | 'co_organizer' | 'release_requested' | 'pledged' | 'pledge_kept' | 'ordered' | 'orders_closed' | 'pact_completed';
   actorId: string | null;
   amount: number | null;
   /** Short context, e.g. a task title or a milestone percentage. */

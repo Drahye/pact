@@ -134,6 +134,7 @@
 }
 
 .activity__glyph--released { background: var(--sun-400); color: var(--ink-900); }
+.activity__glyph--pact_completed { background: var(--color-accent); color: var(--color-on-accent); }
 .activity__glyph--refunded,
 .activity__glyph--cancelled,
 .activity__glyph--left { background: var(--color-border-strong); color: var(--color-text-secondary); }

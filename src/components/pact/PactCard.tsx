@@ -2,6 +2,7 @@ import { ChevronRight } from 'lucide-react';
 import { memo } from 'react';
 import { Link } from 'react-router-dom';
 import type { Pact } from '../../data/types';
+import { cardStatus } from '../../lib/execution';
 import { formatDaysLeft, formatNaira, formatPercent } from '../../lib/format';
 import { joinedMembers, sharesOf, summarize } from '../../lib/pact';
 import { AvatarGroup } from '../ui/AvatarGroup';
@@ -13,6 +14,7 @@ import './pact-card.css';
 /** Compact list card: category, amount of target, a bar made of everyone's money, people, time. */
 function PactCardBase({ pact, to, attention }: { pact: Pact; to: string; attention?: string }) {
   const s = summarize(pact);
+  const { line, badge } = cardStatus(pact, formatDaysLeft(s.daysLeft));
   return (
     <Link to={to} className="pact-card">
       <div className="pact-card__top">
@@ -20,10 +22,10 @@ function PactCardBase({ pact, to, attention }: { pact: Pact; to: string; attenti
         <div className="pact-card__heading">
           <h3 className="pact-card__title">{pact.title}</h3>
           <p className="pact-card__sub">
-            {s.isComplete ? 'Fully funded' : formatDaysLeft(s.daysLeft)} · <span className="num">{formatPercent(s.percent)}</span>
+            {line} · <span className="num">{formatPercent(s.percent)}</span>
           </p>
         </div>
-        {s.isComplete ? <Badge tone="accent">Funded</Badge> : <ChevronRight className="pact-card__chevron" aria-hidden />}
+        {badge ? <Badge tone={badge.tone}>{badge.text}</Badge> : <ChevronRight className="pact-card__chevron" aria-hidden />}
       </div>
       <p className="pact-card__amount num">
         <span className="pact-card__raised">{formatNaira(s.raised)}</span>

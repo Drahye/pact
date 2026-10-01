@@ -135,7 +135,27 @@ try {
   await page.getByText('added to Lagos Beach Weekend').waitFor();
   await shot('direct-pay-done');
   await tap('Back to the Pact');
-  await page.getByText('We did it.').waitFor();
+  // Funded is not finished: the Pact is ready to use, not complete.
+  await page.getByText('Make it happen').waitFor();
+  await shot('funded-ready');
+
+  // Verify BVN: releasing what is left needs a verified organiser.
+  await page.goto(`${BASE}/app/profile/verify`);
+  await page.getByLabel('BVN').fill(BVN);
+  await page.getByLabel('Date of birth').fill('1994-05-17');
+  await shot('verify');
+  await page.locator('.screen__footer').getByRole('button', { name: 'Verify BVN' }).click();
+  await page.waitForURL((u) => !u.pathname.includes('/profile/verify'));
+
+  // Complete the Pact: the plan happened. With money left the organiser chooses what happens to it.
+  await page.goto(pactUrl.replace(/\/contribute.*$/, ''));
+  await page.getByText('Make it happen').waitFor();
+  await tap('Complete this Pact');
+  await page.getByText('Ready to complete this Pact?').waitFor();
+  await shot('complete-sheet');
+  await tap('and complete');
+  await pin();
+  await page.getByText('We made it happen.').waitFor();
   await shot('completed');
 
   // The memory: a note and a photo (checked and re-encoded by the server)
@@ -153,14 +173,6 @@ try {
   await page.goto(`${BASE}/app/wallet`);
   await page.getByText('History').waitFor();
   await shot('wallet');
-
-  // Verify BVN
-  await page.goto(`${BASE}/app/profile/verify`);
-  await page.getByLabel('BVN').fill(BVN);
-  await page.getByLabel('Date of birth').fill('1994-05-17');
-  await shot('verify');
-  await page.locator('.screen__footer').getByRole('button', { name: 'Verify BVN' }).click();
-  await page.waitForURL((u) => !u.pathname.includes('/profile/verify'));
 
   // Withdraw to a new bank account
   await page.goto(`${BASE}/app/wallet/withdraw`);

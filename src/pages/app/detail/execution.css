@@ -1,0 +1,248 @@
+/* Make it happen: the funded Pact is carried out, not finished ------------------ */
+
+.exec__lead {
+  margin: calc(var(--space-2) * -1) 0 var(--space-4);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.exec__card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  border-radius: var(--radius-xl);
+  background: var(--color-surface);
+  box-shadow: inset 0 0 0 1px var(--color-border);
+}
+
+.exec__money {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.exec__money > div {
+  min-width: 0;
+  container-type: inline-size;
+}
+
+.exec__money dt {
+  font-size: var(--text-caption);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-tertiary);
+}
+
+/* Each figure sizes to its column, so ₦50,000,000 never runs into its neighbour. */
+.exec__money dd {
+  margin: 2px 0 0;
+  font-size: clamp(13px, calc(100cqw / (var(--chars, 8) * 0.62)), 20px);
+  line-height: 1.25;
+  font-weight: var(--weight-semibold);
+  white-space: nowrap;
+}
+
+.exec__money .is-left dd {
+  color: var(--color-accent-text);
+}
+
+.exec__progress {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding-top: var(--space-4);
+  border-top: var(--border-hairline);
+}
+
+.exec__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: 6px;
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.exec__row strong {
+  font-weight: var(--weight-semibold);
+  color: var(--color-text);
+  text-align: right;
+}
+
+.exec__bar,
+.planpay__bar {
+  display: block;
+  height: 6px;
+  overflow: hidden;
+  border-radius: var(--radius-full);
+  background: var(--color-track);
+}
+
+.exec__bar > span,
+.planpay__bar > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--color-accent);
+}
+
+.exec__segments {
+  display: flex;
+  gap: 3px;
+}
+
+.exec__segments > span {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--color-track);
+}
+
+.exec__segments > span.is-done {
+  background: var(--color-accent);
+}
+
+.exec__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.exec__link {
+  min-height: 44px;
+  padding: 0 var(--space-3);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--color-accent-text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.exec__member {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.exec__choices {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.exec__review {
+  display: flex;
+  flex-direction: column;
+  margin: 0 0 var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: inset 0 0 0 1px var(--color-border);
+}
+
+.exec__review > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+}
+
+.exec__review > div + div {
+  border-top: var(--border-hairline);
+}
+
+.exec__review dt {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+.exec__review dd {
+  margin: 0;
+  font-weight: var(--weight-semibold);
+  text-align: right;
+}
+
+.exec__left {
+  margin: var(--space-3) 0;
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+
+/* The plan with payment progress ------------------------------------------------ */
+
+.planpay {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: var(--radius-xl);
+  background: var(--color-surface);
+  box-shadow: inset 0 0 0 1px var(--color-border);
+}
+
+.planpay__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 6px var(--space-3);
+  padding: var(--space-3) var(--space-4) var(--space-4);
+}
+
+.planpay__row + .planpay__row {
+  border-top: var(--border-hairline);
+}
+
+.planpay__head {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.planpay__name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-weight: var(--weight-medium);
+}
+
+.planpay__head .badge {
+  flex-shrink: 0;
+  height: auto;
+  min-height: 26px;
+  padding: 4px var(--space-3);
+  white-space: normal;
+  text-align: right;
+  line-height: 1.2;
+}
+
+/* The amounts sit on the left and the Pay button on the right of the same line. */
+.planpay__sub {
+  grid-column: 1;
+  min-width: 0;
+  font-size: var(--text-caption);
+  color: var(--color-text-tertiary);
+}
+
+.planpay__pay {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+.planpay__bar {
+  grid-column: 1 / -1;
+}
+
+.exec__notices {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.exec__notices:empty {
+  display: none;
+}

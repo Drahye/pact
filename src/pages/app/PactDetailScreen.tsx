@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { BellRing, CalendarDays, ChevronRight, Divide, Ellipsis, LogOut, RotateCcw, Scale, Share, ShieldCheck, Store, Target, UserPlus, Users, XCircle } from 'lucide-react';
+import { BellRing, CalendarDays, CheckCheck, ChevronRight, Divide, Ellipsis, LogOut, RotateCcw, Scale, Share, ShieldCheck, Store, Target, UserPlus, Users, XCircle } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../api/auth';
@@ -27,7 +27,9 @@ import { formatDate, formatNaira, formatNairaCompact, formatPercent } from '../.
 import { colorOf, GUEST_SHARE_ID, guestTotalOf, invitedMembers, joinedMembers, sharesOf, summarize } from '../../lib/pact';
 import { attentionFor, bringsOf, checkpointsFor, nextStepFor, participationLabel, stageOf, type AttentionItem } from '../../lib/plan';
 import { spring } from '../../tokens/tokens';
+import { isExecuting } from '../../lib/execution';
 import { MISSED_GOAL_GRACE_DAYS, NGN, VENDOR_APPROVAL_THRESHOLD } from '../../../shared/policy';
+import { CompleteSheet, ExecutionSection, PlanPayments, presetFor } from './detail/Execution';
 import { ApprovalCards, AssignGuestSheet, canPayVendors, CoOrganizerSheet, GuestAvatar, guestsOf, isOrganizerOf, PaidFromPact, PayByTransfer, PayoutSheet, PayVendorSheet, type GuestGroup } from './detail/Money';
 import { isOrderPact, MyOrders, OrderMenu, OrderSheetSection, owedOnOrders } from './detail/Orders';
 import { MyPledge, pledgeLabel } from './detail/Pledges';
@@ -66,6 +68,8 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
   const [splitOpen, setSplitOpen] = useState(false);
   const [payout, setPayout] = useState<PactPayout | null>(null);
   const [payOpen, setPayOpen] = useState(false);
+  const [payLine, setPayLine] = useState<BudgetLine | null>(null);
+  const [completeOpen, setCompleteOpen] = useState(false);
   const [coOpen, setCoOpen] = useState(false);
   const [guest, setGuest] = useState<GuestGroup | null>(null);
   const cmd = usePactCommand(pact.id);
@@ -83,6 +87,13 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
   const orders = isOrderPact(pact);
   const owed = orders ? owedOnOrders(pact, me) : 0;
   const isOpen = pact.status === 'open';
+  // Funded is not finished: until the organiser completes it, the Pact is still being carried out.
+  const executing = isExecuting(pact);
+  const active = isOpen || executing;
+  const openPay = (line: BudgetLine | null) => {
+    setPayLine(line);
+    setPayOpen(true);
+  };
   const mine = pact.members.find((m) => m.userId === me);
   const organizer = isOrganizer ? 'you' : getUser(pact.organizerId).name;
   const base = `/app/pact/${pact.id}`;
@@ -116,6 +127,8 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
     else if (a.kind === 'remind') void run(() => cmd.nudge.mutateAsync(), 'Reminder sent');
     else if (a.kind === 'split') setSplitOpen(true);
     else if (a.kind === 'invite') navigate(`${base}/invite`);
+    else if (a.kind === 'pay') openPay(a.lineId ? budget.find((b) => b.id === a.lineId) ?? null : null);
+    else if (a.kind === 'complete') setCompleteOpen(true);
   };
 
   /* The main action depends on where the Pact is. */
@@ -159,7 +172,7 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
           backTo="/app/home"
           title={pact.title}
           trailing={
-            stage !== 'invited' && isOpen ? (
+            stage !== 'invited' && active ? (
               <span className="detail__top-actions">
                 <IconButton label="Share invite link" icon={<Share />} to={`${base}/invite`} />
                 <IconButton label="More" icon={<Ellipsis />} onClick={() => setMenuOpen(true)} />
@@ -228,11 +241,17 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
                 <RingLine className="detail__center-amount detail__center-amount--total" deps={[s.raised]}>
                   <AnimatedNumber value={s.raised} from={fromRaised ?? 0} />
                 </RingLine>
-                <RingLine className="detail__center-meta" deps={[s.target, orders]}>
-                  {orders ? (s.target ? <>paid of <span className="num">{formatNaira(s.target)}</span> ordered</> : 'No orders yet') : <>of <span className="num">{formatNaira(s.target)}</span></>}
+                <RingLine className="detail__center-meta" deps={[s.target, orders, executing]}>
+                  {executing ? 'raised together' : orders ? (s.target ? <>paid of <span className="num">{formatNaira(s.target)}</span> ordered</> : 'No orders yet') : <>of <span className="num">{formatNaira(s.target)}</span></>}
                 </RingLine>
-                <RingLine className="detail__center-pct num" deps={[s.percent]}>
-                  <AnimatedNumber value={s.percent} from={fromRaised !== undefined ? (fromRaised / Math.max(1, s.target)) * 100 : 0} format="percent" /> funded
+                <RingLine className="detail__center-pct num" deps={[s.percent, executing]}>
+                  {executing ? (
+                    'Funded'
+                  ) : (
+                    <>
+                      <AnimatedNumber value={s.percent} from={fromRaised !== undefined ? (fromRaised / Math.max(1, s.target)) * 100 : 0} format="percent" /> funded
+                    </>
+                  )}
                 </RingLine>
               </motion.div>
             )}
@@ -241,6 +260,7 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
         {s.raised > 0 && <p className="detail__ring-hint">{picked ? 'Tap the centre to see the total' : 'Tap a colour or a name to see who gave it'}</p>}
       </div>
 
+      {!executing && (
       <ul className="detail__stats">
         <li className="tint--sun" style={chars(String(s.daysLeft))}>
           <CalendarDays aria-hidden />
@@ -264,17 +284,20 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
           <small>to go</small>
         </li>
       </ul>
+      )}
+
+      {executing && <ExecutionSection pact={pact} meId={me} onPay={openPay} onComplete={() => setCompleteOpen(true)} nextKind={next?.action?.kind === 'pay' || next?.action?.kind === 'complete' ? next.action.kind : null} />}
 
       {next ? (
         <>
           <NextStep item={next} onAction={onAttention} />
           <div className="nextstep-more">
-            {next.action?.kind !== 'contribute' && (
+            {!executing && next.action?.kind !== 'contribute' && (
               <Button to={`${base}/contribute`} variant="ghost" size="md">
                 Add to Pact
               </Button>
             )}
-            {next.action?.kind !== 'invite' && (
+            {!executing && next.action?.kind !== 'invite' && (
               <Button to={`${base}/invite`} variant="ghost" size="md">
                 Invite people
               </Button>
@@ -320,7 +343,9 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
       {(budget.length > 0 || (isOrganizer && isOpen && !orders)) && (
         <section className="screen-section" aria-labelledby="the-plan">
           <SectionHeading id="the-plan" title="The plan" />
-          {budget.length ? (
+          {budget.length && executing ? (
+            <PlanPayments pact={pact} canPay={runsMoney && canPayVendors(pact)} onPay={openPay} />
+          ) : budget.length ? (
             <BudgetList lines={budget} editable={isOrganizer && isOpen} onEdit={(l) => { setLine(l); setLineOpen(true); }} onAdd={() => { setLine(null); setLineOpen(true); }} />
           ) : (
             <button type="button" className="detail__plan-empty" onClick={() => { setLine(null); setLineOpen(true); }}>
@@ -337,12 +362,12 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
           <OrderSheetSection pact={pact} meId={me} />
         </>
       )}
-      {(canPayVendors(pact) || (pact.payouts ?? []).some((p) => p.kind === 'vendor')) && <PaidFromPact pact={pact} meId={me} onPay={() => setPayOpen(true)} onOpen={setPayout} />}
+      {(canPayVendors(pact) || (pact.payouts ?? []).some((p) => p.kind === 'vendor')) && <PaidFromPact pact={pact} meId={me} onPay={() => openPay(null)} onOpen={setPayout} hidePayCta={executing} />}
 
-      {(tasks.length > 0 || (isOpen && stage !== 'invited')) && (
+      {(tasks.length > 0 || (active && stage !== 'invited')) && (
         <section className="screen-section" aria-labelledby="pact-tasks">
           <SectionHeading id="pact-tasks" title={`Tasks${tasks.length ? ` · ${tasks.filter((t) => t.status === 'done').length}/${tasks.length} done` : ''}`} />
-          <TaskList pact={pact} tasks={tasks} meId={me} onOpen={(t) => (stage === 'invited' ? undefined : setTask(t))} onAdd={isOpen && stage !== 'invited' ? () => setAddTaskOpen(true) : undefined} />
+          <TaskList pact={pact} tasks={tasks} meId={me} onOpen={(t) => (stage === 'invited' ? undefined : setTask(t))} onAdd={active && stage !== 'invited' ? () => setAddTaskOpen(true) : undefined} />
         </section>
       )}
 
@@ -400,7 +425,7 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
         </ul>
       </section>
 
-      {stage !== 'closed' && stage !== 'invited' && <PayByTransfer pact={pact} meId={me} />}
+      {stage !== 'closed' && stage !== 'invited' && !s.isFunded && <PayByTransfer pact={pact} meId={me} />}
 
       {isOpen && (
         <div className="detail__rule">
@@ -449,11 +474,20 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
             </button>
           )}
           {runsMoney && canPayVendors(pact) && (
-            <button type="button" className="menu__row" onClick={() => { setMenuOpen(false); setPayOpen(true); }}>
+            <button type="button" className="menu__row" onClick={() => { setMenuOpen(false); openPay(null); }}>
               <span className="menu__icon tint--sun"><Store /></span>
               <span className="menu__text">
-                <span className="menu__title">Pay a vendor</span>
+                <span className="menu__title">Pay someone</span>
                 <span className="menu__sub">Straight from the Pact to their bank</span>
+              </span>
+            </button>
+          )}
+          {isOrganizer && executing && (
+            <button type="button" className="menu__row" onClick={() => { setMenuOpen(false); setCompleteOpen(true); }}>
+              <span className="menu__icon tint--mint"><CheckCheck /></span>
+              <span className="menu__text">
+                <span className="menu__title">Complete this Pact</span>
+                <span className="menu__sub">Say the plan happened and decide what to do with what’s left</span>
               </span>
             </button>
           )}
@@ -500,7 +534,8 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
       <BudgetLineSheet pact={pact} line={line} open={lineOpen} onClose={() => setLineOpen(false)} />
       <SplitSheet pact={pact} open={splitOpen} onClose={() => setSplitOpen(false)} />
       <PayoutSheet pact={pact} payout={payout} meId={me} onClose={() => setPayout(null)} />
-      <PayVendorSheet pact={pact} open={payOpen} onClose={() => setPayOpen(false)} onChooseCoOrganizer={() => { setPayOpen(false); setCoOpen(true); }} />
+      <PayVendorSheet pact={pact} open={payOpen} onClose={() => setPayOpen(false)} preset={presetFor(payLine)} onChooseCoOrganizer={() => { setPayOpen(false); setCoOpen(true); }} />
+      <CompleteSheet pact={pact} open={completeOpen} onClose={() => setCompleteOpen(false)} onChooseCoOrganizer={() => { setCompleteOpen(false); setCoOpen(true); }} />
       <CoOrganizerSheet pact={pact} open={coOpen} onClose={() => setCoOpen(false)} />
       <AssignGuestSheet pact={pact} guest={guest} onClose={() => setGuest(null)} />
 

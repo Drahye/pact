@@ -4,11 +4,11 @@ First-party, server-side, pseudonymous. No analytics SDK, no cookies, no third p
 
 ## What is recorded
 
-Thirteen events, in one table (`product_events`, migration 013). Nothing else is accepted: the table has a `CHECK` on the name, and `server/src/lib/events.ts` drops any property that is not on a per-event allow-list.
+Sixteen events, in one table (`product_events`, migrations 013 and 014). Nothing else is accepted: the table has a `CHECK` on the name, and `server/src/lib/events.ts` drops any property that is not on a per-event allow-list.
 
 | Column | Meaning |
 | --- | --- |
-| `name` | One of the thirteen events below |
+| `name` | One of the sixteen events below |
 | `occurred_at` | When it happened (the time of the underlying record) |
 | `actor` | Pseudonym of the person: an HMAC of their id under the server's `HASH_SECRET`. For previews, a per-day visitor pseudonym instead |
 | `pact` | Pseudonym of the Pact, same construction |
@@ -34,8 +34,15 @@ Pseudonyms are keyed hashes, so nobody with only the table can tell who is who, 
 | `task_claimed` | Someone takes a task | `self` |
 | `task_completed` | A task is finished | `by_assignee` |
 | `pact_funded` | The goal is reached (once per Pact) | `mode`, `days_to_fund` |
-| `pact_completed` | The funds were released: the Pact ran to the end (once per Pact) | `days_since_funded` |
+| `pact_completed` | The funds were released to the organiser (once per Pact). Kept with its original meaning so earlier numbers line up; the outcome has its own event below | `days_since_funded` |
+| `pact_execution_started` | The money was put to work: the first payment from the Pact was asked for (once per Pact) | `days_since_funded`, `with_budget_line` |
+| `pact_payment_completed` | A payment from the Pact reached its recipient. Never who was paid or how much exactly | `amount_band` (under 5k, 25k, 100k, over), `with_budget_line`, `needed_approval` |
+| `pact_outcome_completed` | The organiser said the plan happened (once per Pact). Funded is not finished: this is the outcome | `days_since_funded`, `paid_lines` (count), `tasks_done_band` (none, some, most, all, no_tasks), `released_remaining` |
 | `memory_added` | The first memory note or photo (once per Pact) | `has_photo` |
+
+## Funded is not finished
+
+`pact_funded` means the target was reached. `pact_execution_started` (the first payment from the Pact), `pact_payment_completed` and `pact_outcome_completed` follow what happens next, so the funnel can tell a Pact that only collected money from one that made the plan happen. The report shows `executed_pct` (of funded Pacts, how many started paying for the plan) next to `completed_pct`, which now counts outcomes rather than releases.
 
 ## How events are produced
 

@@ -69,7 +69,7 @@ export function ContributeScreen() {
   if (!pact) return <Navigate to="/app/home" replace />;
   const s = summarize(pact);
   const base = `/app/pact/${pact.id}`;
-  if (s.isComplete && phase === 'enter' && !paying.current) return <Navigate to={base} replace />;
+  if (s.isFunded && phase === 'enter' && !paying.current) return <Navigate to={base} replace />;
 
   const suggested = pact.viewer?.suggestedShare || 0;
   const defaultAmount = suggested > 0 ? Math.min(suggested, s.remaining) : Math.min(25_000, s.remaining);

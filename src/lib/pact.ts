@@ -20,7 +20,8 @@ export interface PactSummary {
   percent: number; // 0–100, uncapped values clamp to 100
   daysLeft: number;
   memberCount: number;
-  isComplete: boolean;
+  /** The target was reached. Funded is not finished: see lib/execution.ts for the outcome. */
+  isFunded: boolean;
 }
 
 export const summarize = (pact: Pact): PactSummary => {
@@ -33,8 +34,7 @@ export const summarize = (pact: Pact): PactSummary => {
     percent,
     daysLeft: daysUntil(pact.deadline),
     memberCount: joinedMembers(pact).length,
-    // A Pact counts as complete once funded, including after its money is released.
-    isComplete: pact.target > 0 && raised >= pact.target && pact.status !== 'cancelled' && pact.status !== 'refunded',
+    isFunded: pact.target > 0 && raised >= pact.target && pact.status !== 'cancelled' && pact.status !== 'refunded',
   };
 };
 

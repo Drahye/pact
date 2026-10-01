@@ -33,8 +33,12 @@ export interface BudgetLine {
   name: string;
   amount: number; // naira
   funded: number; // naira
-  /** Paid to vendors against this line, in naira. */
+  /** Paid to vendors against this line, in naira: only what the bank has confirmed. */
   paid?: number;
+  /** On its way (waiting for approval or with the bank), in naira. Not paid yet. */
+  pending?: number;
+  /** The part of `pending` waiting for a co-organiser, in naira. */
+  waiting?: number;
 }
 
 /** A bank transfer into the Pact. No userId: a guest, shown by their bank name. */
@@ -137,6 +141,8 @@ export interface Pact {
   inviteCode?: string;
   note?: string | null;
   poolBalance?: number;
+  /** Set when the organiser says the plan happened. Funded (status) is the money; this is the outcome. */
+  completedAt?: string | null;
   /** Everything paid in, members and guests (the API's total). */
   raised?: number;
   missedGoalPolicy?: 'refund' | 'release';
@@ -159,7 +165,7 @@ export interface Pact {
 export type ActivityType =
   | 'contribution' | 'join' | 'created' | 'completed' | 'released' | 'refunded' | 'cancelled' | 'left'
   | 'committed' | 'task_added' | 'task_claimed' | 'task_done' | 'milestone' | 'split_requested' | 'memory_added'
-  | 'guest_contribution' | 'vendor_paid' | 'co_organizer' | 'release_requested' | 'pledged' | 'pledge_kept' | 'ordered' | 'orders_closed';
+  | 'guest_contribution' | 'vendor_paid' | 'co_organizer' | 'release_requested' | 'pledged' | 'pledge_kept' | 'ordered' | 'orders_closed' | 'pact_completed';
 
 export interface Activity {
   id: string;

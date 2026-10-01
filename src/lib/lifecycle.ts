@@ -2,18 +2,18 @@ import type { Pact } from '../data/types';
 
 /**
  * Where a Pact is in its life, from the person's point of view.
- * - active: still going, or funded and waiting for its money to be released or spent (status open, funded)
- * - completed: ran to the end, the funds were released (status released)
+ * - active: still going, or funded and being carried out: money to use, tasks to finish (status open, funded)
+ * - completed: the plan happened. The organiser completed it (completedAt), or it was released before completion existed
  * - closed: ended without the goal being met (status cancelled, refunded)
- * Funded is not completed: the organiser still has to release or pay out. A Pact with no status
+ * Funded is not completed: the organiser still has to use the money and say the plan happened. A Pact with no status
  * (the website's showcase data) counts as active.
  */
 export type Lifecycle = 'active' | 'completed' | 'closed';
 
 export const lifecycleOf = (p: Pact): Lifecycle => {
+  // Completed means the plan happened (the organiser completed it), or the old lifecycle's end: released.
+  if (p.completedAt || p.status === 'released') return 'completed';
   switch (p.status) {
-    case 'released':
-      return 'completed';
     case 'cancelled':
     case 'refunded':
       return 'closed';

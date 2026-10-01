@@ -37,6 +37,10 @@ const SCENARIOS = {
   small: { title: 'Bread', target: N(5_000), pct: 9 },
   zero: { title: 'Brunch', target: N(500), pct: 0 },
   crowd: { title: 'Family Reunion', target: N(500_000), pct: 64, crowd: 24 },
+  // Funded is not finished: the money is ready, being used, or the plan is complete.
+  execReady: { title: 'Lagos Beach Weekend', target: N(2_500_000), pct: 100, status: 'funded', execute: 'ready' },
+  execBig: { title: 'End of Year University Department Trip to Lagos', target: N(50_000_000), pct: 100, status: 'funded', execute: 'busy', names: true },
+  execDone: { title: "Sarah and Daniel's Destination Wedding Celebration", target: N(5_000_000), pct: 100, status: 'released', execute: 'done', names: true },
 };
 const LONG_NAME = { firstName: 'Oluwadamilare', lastName: 'Chukwuemeka-Adeyemi-Johnson' };
 const SHORT_NAME = { firstName: 'Al', lastName: 'Li' };
@@ -67,6 +71,26 @@ function reshape(pact, people, sc) {
   p.poolBalance = raised;
   p.budget = (p.budget ?? []).map((b) => ({ ...b, amount: Math.round(b.amount * ratio), funded: Math.min(Math.round(b.funded * ratio), Math.round(b.amount * ratio)) }));
   if (p.viewer) p.viewer.suggestedShare = Math.round(sc.target / Math.max(1, joined.length));
+  if (sc.execute) {
+    // Money in use: some lines paid, one partly, one waiting for approval; or all of it for a completed Pact.
+    const lines = p.budget ?? [];
+    const spend = (l, paid, pending = 0, waiting = 0) => Object.assign(l, { paid, pending, waiting });
+    p.payouts = [];
+    const add = (l, amount, status, i) => p.payouts.push({ id: `po${i}`, kind: 'vendor', amount, fee: 5000, accountName: 'ABC EVENTS LIMITED', bankName: 'GTB', last4: '6780', purpose: l.name, budgetItemId: l.id, status, requestedBy: p.organizerId, decidedBy: null, decidedAt: null, hasReceipt: false, failureReason: null, createdAt: new Date().toISOString(), completedAt: status === 'succeeded' ? new Date().toISOString() : null });
+    if (sc.execute === 'busy') {
+      lines.forEach((l, i) => {
+        if (i === 0) { spend(l, l.amount); add(l, l.amount, 'succeeded', i); }
+        else if (i === 1) { spend(l, Math.round(l.amount / 2)); add(l, Math.round(l.amount / 2), 'succeeded', i); }
+        else if (i === 2) { spend(l, 0, l.amount, l.amount); add(l, l.amount, 'awaiting_approval', i); }
+        else spend(l, 0);
+      });
+    } else if (sc.execute === 'done') {
+      lines.forEach((l, i) => { if (i < 3) { spend(l, l.amount); add(l, l.amount, 'succeeded', i); } else spend(l, 0); });
+      p.completedAt = new Date().toISOString();
+    } else lines.forEach((l) => spend(l, 0));
+    const used = p.payouts.filter((x) => ['awaiting_approval', 'pending', 'processing', 'succeeded'].includes(x.status)).reduce((t, x) => t + x.amount + x.fee, 0);
+    p.poolBalance = sc.execute === 'done' ? 0 : Math.max(0, sc.target - used);
+  }
   if (sc.names) {
     const others = people.filter((x) => x.id !== p.organizerId);
     if (others[0]) Object.assign(others[0], LONG_NAME);
@@ -410,7 +434,26 @@ for (const [w, h] of VIEWPORTS) {
     // Detail GET is rewritten for any id, so navigate straight there.
     await page.goto(`${BASE}${real}`);
     await page.waitForTimeout(400);
-    await check(`detail-${key}`, { scrolls: key === 'wedding' || key === 'full' ? [700, 1400, 2100, 2800] : [] });
+    await check(`detail-${key}`, { scrolls: ['wedding', 'full', 'execBig', 'execDone', 'execReady'].includes(key) ? [700, 1400, 2100, 2800] : [] });
+    if (key === 'execBig') {
+      for (const text of ['Complete this Pact', 'Pay someone else']) {
+        const t = page.getByText(text, { exact: false }).first();
+        if (!(await t.count())) continue;
+        await t.scrollIntoViewIfNeeded().catch(() => {});
+        await t.click({ timeout: 4000 }).catch(() => {});
+        await page.waitForTimeout(800);
+        const m = await page.evaluate(measureSheet);
+        const tag = `sheet-${key}-${text.replace(/\W+/g, '_').slice(0, 24)}`;
+        if (m) {
+          for (const i of m.issues) note(vp, tag, 'SHEET', i);
+          if (SHOTS !== 'none' && (SHOTS === 'all' || KEY_WIDTHS.has(w))) await page.screenshot({ path: `${dir}/${tag}.png` });
+          await page.keyboard.press('Escape');
+          await page.waitForTimeout(400);
+          if (await page.locator('.modal__panel').count()) await page.locator('.modal__header .icon-btn').first().click().catch(() => {});
+          await page.waitForTimeout(400);
+        }
+      }
+    }
     if (key === 'wedding' || key === 'crowd') {
       const opens = key === 'wedding'
         ? ['Split the rest', 'Invite people', 'Add a task', 'Add a budget line', 'Contributing and taking a task', 'Buy the gift', 'Get an account number']

@@ -5,22 +5,16 @@ import '../../styles/loader.css';
 import './app-ui.css';
 
 /**
- * PACT's own loader: the segmented ring, one colour per person, fills in and turns. `full` covers the screen
- * (app start, route chunks, signing in); the default sits inside a screen that is waiting for its data.
+ * PACT's own loader: the app icon (dark disc, green loop) with its four pieces lighting up and the loop turning.
+ * It is the same picture Android shows as its launch screen, so the two read as one moment. `full` covers the
+ * screen (app start, route chunks, signing in); the default sits inside a screen waiting for its data.
  */
 export function Loading({ label = 'Loading', full = false }: { label?: string; full?: boolean }) {
   return (
     <div className={`pl ${full ? 'pl--full' : 'pl--inline'}`} role="status" aria-label={label}>
-      <svg className="pl__ring" viewBox="0 0 96 96" aria-hidden>
-        <g transform="rotate(-90 48 48)">
-          {[0, 1, 2, 3, 4, 5].map((i) => (
-            <circle key={i} cx="48" cy="48" r="38" pathLength="100" />
-          ))}
-        </g>
+      <svg className="pl__disc" viewBox="0 0 64 64" aria-hidden>
+        <circle cx="32" cy="32" r="32" fill="#0f1713" /><g className="pl__mark"><path d="M28.786 16.955A15.36 15.36 0 0 1 47.107 29.312" /><path d="M45.786 38.713A15.36 15.36 0 0 1 31.98 47.34" /><path d="M22.952 44.406A15.36 15.36 0 0 1 17.076 35.696" /><path d="M17.739 26.226A15.36 15.36 0 0 1 20.565 21.702" /></g>
       </svg>
-      <span className="pl__word" aria-hidden>
-        PACT
-      </span>
     </div>
   );
 }

@@ -32,6 +32,20 @@ import type { PaymentProvider } from './payments/provider.js';
 import { createSandboxProvider } from './payments/sandbox.js';
 import { createSms, type SmsSender } from './payments/sms.js';
 
+/**
+ * HTML revalidates on every visit, so a deploy reaches people immediately; Vite's content-hashed
+ * files can be cached for a year because a new build gets new names.
+ */
+export function staticCacheControl(filePath: string): string {
+  const path = filePath.replace(/\\/g, '/');
+  if (path.endsWith('.html')) return 'no-cache, no-store, must-revalidate';
+  if (/\/assets\/[^/]*-[A-Za-z0-9_-]{8,}\.[a-z0-9]+$/i.test(path)) return 'public, max-age=31536000, immutable';
+  // Metadata that changes with releases: always revalidate (ETag makes the check cheap).
+  if (/\/(manifest\.webmanifest|favicon\.[a-z]+|sw\.js|robots\.txt)$/.test(path)) return 'no-cache';
+  // Unhashed images and icons: reuse for an hour, then revalidate.
+  return 'public, max-age=3600, must-revalidate';
+}
+
 declare module 'fastify' {
   interface FastifyRequest {
     userId: string;
@@ -608,10 +622,17 @@ export async function buildApp({ config, db, provider, sms, now = () => new Date
 
   const dist = resolve(process.cwd(), 'dist');
   if (config.SERVE_STATIC && existsSync(dist)) {
-    await app.register(fastifyStatic, { root: dist, wildcard: false, maxAge: '1h', immutable: false });
+    // Cache policy is set per file in setHeaders (cacheControl is off), so it applies to every way a
+    // file leaves this server: a direct hit, `/` serving index.html, and the SPA fallback below.
+    await app.register(fastifyStatic, {
+      root: dist,
+      wildcard: false,
+      cacheControl: false,
+      setHeaders: (res, path) => res.header('Cache-Control', staticCacheControl(path)),
+    });
     app.setNotFoundHandler((req, reply) => {
       if (req.url.startsWith('/api/')) return reply.status(404).send({ error: { code: 'not_found', message: 'Not found.' } });
-      return reply.header('Cache-Control', 'no-cache').sendFile('index.html');
+      return reply.sendFile('index.html');
     });
   }
 

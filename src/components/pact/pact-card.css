@@ -81,3 +81,17 @@
   font-size: var(--text-sm);
   color: var(--color-text-tertiary);
 }
+
+/* One line of what this Pact needs from you, never more, so cards keep a steady height. */
+.pact-card__attention {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--color-border);
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-secondary);
+}

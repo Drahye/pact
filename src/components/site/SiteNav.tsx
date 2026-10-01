@@ -2,7 +2,7 @@ import { ArrowRight } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '../ui/Button';
-import { Logo } from '../ui/Logo';
+import { PactLogo } from '../brand/PactLogo';
 import './site-nav.css';
 
 const links = [
@@ -26,7 +26,7 @@ export function SiteNav() {
     <header className={`site-nav ${scrolled ? 'is-scrolled' : ''}`}>
       <div className="site-nav__pill">
         <Link to="/" className="site-nav__logo" aria-label="PACT home">
-          <Logo size="md" />
+          <PactLogo size="md" />
         </Link>
         <nav aria-label="Main" className="site-nav__links">
           {links.map((l) => (

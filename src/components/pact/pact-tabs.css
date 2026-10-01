@@ -1,0 +1,106 @@
+.pact-tabs {
+  display: flex;
+  gap: var(--space-2);
+  margin: 0 calc(var(--space-5) * -1);
+  padding: 0 var(--space-5);
+  overflow-x: auto;
+  scroll-padding-inline: var(--space-5);
+  scrollbar-width: none;
+}
+
+.pact-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.pact-tabs__tab {
+  flex: none;
+  min-height: 44px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  box-shadow: inset 0 0 0 1px var(--color-border);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.pact-tabs__tab.is-on {
+  background: var(--color-selected);
+  box-shadow: none;
+  color: var(--color-on-selected);
+}
+
+.pact-tabs__tab:disabled {
+  opacity: 0.55;
+}
+
+.pact-tabs__count {
+  font-weight: var(--weight-medium);
+  opacity: 0.8;
+}
+
+/* Search ------------------------------------------------------------------------ */
+.pacts-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-top: var(--space-3);
+}
+
+.pacts-search > svg {
+  position: absolute;
+  left: var(--space-4);
+  width: 18px;
+  height: 18px;
+  color: var(--color-text-tertiary);
+  pointer-events: none;
+}
+
+.pacts-search input {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 48px 0 44px;
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: inset 0 0 0 1px var(--color-border);
+  font-size: var(--text-body);
+  appearance: none;
+}
+
+.pacts-search input::-webkit-search-cancel-button {
+  display: none;
+}
+
+.pacts-search input:disabled {
+  opacity: 0.55;
+}
+
+.pacts-search__clear {
+  position: absolute;
+  right: 4px;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  color: var(--color-text-secondary);
+}
+
+.pacts-search__clear svg {
+  width: 18px;
+  height: 18px;
+}
+
+.pacts-panel {
+  margin-top: var(--space-4);
+  /* Cards far off screen are not laid out until they are near: long lists stay responsive. */
+}
+
+.pacts-panel .pact-card {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 190px;
+}
+
+.pacts-notice {
+  margin-top: var(--space-3);
+}

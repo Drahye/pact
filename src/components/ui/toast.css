@@ -23,8 +23,8 @@
   height: 44px;
   padding: 0 var(--space-5) 0 var(--space-3);
   border-radius: var(--radius-full);
-  background: var(--color-surface-inverse);
-  color: var(--color-text-inverse);
+  background: var(--color-selected);
+  color: var(--color-on-selected);
   font-size: var(--text-sm);
   font-weight: var(--weight-medium);
   white-space: nowrap;

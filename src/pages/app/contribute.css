@@ -192,7 +192,7 @@
 .confirm__delta {
   padding: 3px 10px;
   border-radius: var(--radius-full);
-  background: color-mix(in srgb, var(--c) 22%, #fff);
+  background: color-mix(in srgb, var(--c) 22%, var(--color-surface));
   color: var(--color-text);
   font-size: var(--text-sm);
   font-weight: var(--weight-bold);
@@ -225,7 +225,7 @@
   height: 36px;
   border-radius: 50%;
   background: var(--sun-100);
-  color: #8a5a00;
+  color: var(--tone-sun-fg);
 }
 
 .contribute__from-icon svg {
@@ -250,7 +250,7 @@
 .contribute__from-short {
   font-size: var(--text-sm);
   font-weight: var(--weight-semibold);
-  color: #a2381f;
+  color: var(--tone-coral-fg);
 }
 
 .contribute__direct {

@@ -1,12 +1,19 @@
 import { AlertCircle, RefreshCw } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Button } from '../ui/Button';
+import { PactLogo } from '../brand/PactLogo';
 import './app-ui.css';
 
+/** PACT's own loader: the mark's ring draws itself and turns. Used whenever the whole screen is waiting. */
 export function Loading({ label = 'Loading' }: { label?: string }) {
   return (
-    <div className="state state--loading" role="status" aria-label={label}>
-      <span className="state__spinner" aria-hidden />
+    <div className="state state--loading app-loader" role="status" aria-label={label}>
+      <span className="app-loader__mark" aria-hidden>
+        <PactLogo markOnly decorative size="lg" />
+      </span>
+      <span className="app-loader__word" aria-hidden>
+        PACT
+      </span>
     </div>
   );
 }

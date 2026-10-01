@@ -10,7 +10,7 @@
   --ink-800: #1b2520;
   --ink-700: #2e3a34;
   --ink-600: #4a544f;   /* secondary text */
-  --ink-500: #676f6a;   /* tertiary text (AA on paper + white) */
+  --ink-500: #626a65;   /* tertiary text (AA on paper-100, paper-200 and white) */
   --ink-300: #a7aca6;
   --ink-200: #d7d3ca;
   --ink-100: #e7e3da;
@@ -53,7 +53,15 @@
   --color-bg-sunken: var(--paper-200);
   --color-surface: var(--white);
   --color-surface-raised: var(--paper-50);
-  --color-surface-inverse: var(--ink-900);
+  --color-surface-inverse: var(--ink-900);   /* feature cards that stay dark in both themes */
+  --color-selected: var(--ink-900);          /* filled "chosen" controls: active tab, chip, toast */
+  --color-on-selected: var(--paper-50);
+  --color-scrim: rgba(15, 23, 19, 0.36);
+  --color-skeleton: rgba(15, 23, 19, 0.07);
+  --color-skeleton-hi: rgba(15, 23, 19, 0.13);
+  --color-placeholder: var(--ink-300);
+  --color-border-hover: var(--ink-300);
+  --color-warn-text: #8a5a00;                /* sun-toned text on soft sun */
 
   --color-text: var(--ink-900);
   --color-text-secondary: var(--ink-600);
@@ -80,6 +88,17 @@
   --color-danger-soft: var(--red-100);
 
   --color-focus: var(--ink-900);
+
+  /* Tone text: readable foreground for each soft tint (see .tint--* in category.css) */
+  --tone-coral-fg: #a2381f;
+  --tone-sky-fg: #1d5fa8;
+  --tone-lilac-fg: #5b3fc4;
+  --tone-sun-fg: #8a5a00;
+  --tone-pink-fg: #a3246a;
+  --tone-danger-fg: #963831;
+  --tone-mint-fg: var(--green-700);
+
+  color-scheme: light;
 
   /* ---- Typography -------------------------------------------------------- */
   --font-sans: 'Geist Variable', 'Geist', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
@@ -169,6 +188,90 @@
 
   /* Breakpoints (documentation: CSS media queries use literal values):
      --bp-sm: 480px  --bp-md: 768px  --bp-lg: 1024px  --bp-xl: 1280px  --bp-2xl: 1440px */
+}
+
+/* ==========================================================================
+   Dark theme. Same brand, deep green-charcoal instead of paper: elevation is
+   tonal (lighter = higher) with soft borders instead of shadows. Set on <html>
+   by src/theme/ThemeProvider.tsx. Fixed-colour primitives (ink-900, white,
+   paper-50, the -400 vivid tones) are intentionally untouched: they are used
+   as foregrounds on vivid fills and must not flip.
+   ========================================================================== */
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  /* Neutral ramp reused for tracks, borders and hairlines */
+  --ink-100: #27312c;
+  --ink-200: #36423c;
+  --ink-300: #4b5750;
+
+  /* Soft tints become deep, low-chroma tints so tone chips read on dark */
+  --mint-100: #173a2b;
+  --mint-50: #132a21;
+  --sun-100: #3b3015;
+  --coral-100: #3d241e;
+  --pink-100: #3d2234;
+  --sky-50: #17283a;
+  --lilac-50: #261f40;
+  --red-100: #3e211f;
+  --peach-100: #4a3326;
+  --lilac-100: #34304f;
+  --sky-100: #243a4c;
+  --sand-100: #433c24;
+
+  --color-bg: #0f1512;
+  --color-bg-sunken: #131a17;
+  --color-surface: #19221e;
+  --color-surface-raised: #1d2722;
+  --color-surface-inverse: #202b25;
+
+  --color-selected: #efece4;
+  --color-on-selected: #0f1713;
+  --color-scrim: rgba(3, 6, 5, 0.66);
+  --color-skeleton: rgba(239, 236, 228, 0.06);
+  --color-skeleton-hi: rgba(239, 236, 228, 0.12);
+  --color-placeholder: #7d877f;
+  --color-border-hover: #4b5750;
+  --color-warn-text: #f0c25a;
+
+  --color-text: #efece4;
+  --color-text-secondary: #b0b8b1;
+  --color-text-tertiary: #8f9992;
+  --color-text-inverse: #efece4;
+  --color-text-inverse-secondary: #aab3ad;
+
+  --color-accent-hover: #4fe09a;
+  --color-accent-pressed: #2fc67f;
+  --color-accent-text: #5fe3a3;
+  --color-accent-soft: var(--mint-100);
+  --color-accent-subtle: var(--mint-50);
+
+  --color-track: #27312c;
+  --color-track-inverse: #33403a;
+
+  --color-border: #26302b;
+  --color-border-strong: #36423c;
+  --color-border-inverse: rgba(255, 255, 255, 0.08);
+
+  --color-danger: #ee8e84;
+  --color-danger-soft: var(--red-100);
+
+  --color-focus: #efece4;
+
+  --tone-coral-fg: #ff9d85;
+  --tone-sky-fg: #7dbaff;
+  --tone-lilac-fg: #b9a3ff;
+  --tone-sun-fg: #f0c25a;
+  --tone-pink-fg: #ff9cc9;
+  --tone-danger-fg: #f5a29a;
+  --tone-mint-fg: #5fe3a3;
+
+  /* Elevation comes from tone and borders; shadows only deepen the edge */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.32), 0 4px 12px -6px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 1px 2px rgba(0, 0, 0, 0.32), 0 14px 28px -18px rgba(0, 0, 0, 0.55);
+  --shadow-lg: 0 2px 4px rgba(0, 0, 0, 0.3), 0 28px 56px -30px rgba(0, 0, 0, 0.7);
 }
 
 @media (min-width: 768px) {

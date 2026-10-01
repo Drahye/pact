@@ -1,0 +1,51 @@
+/* ==========================================================================
+   Dark theme: structural touches that tokens alone can't express.
+   Colours live in tokens.css; this file is only for edges, native controls
+   and surfaces that sit on a dark page and need a hairline to separate.
+   ========================================================================== */
+
+/* Fixed-dark cards read as raised tiles on a dark page: give them an edge. */
+:root[data-theme='dark'] .featured-pact,
+:root[data-theme='dark'] .checkout__card,
+:root[data-theme='dark'] .hold,
+:root[data-theme='dark'] .btn--inverse {
+  box-shadow: inset 0 0 0 1px var(--color-border-strong);
+}
+
+:root[data-theme='dark'] .hold:focus-visible {
+  box-shadow: inset 0 0 0 1px var(--color-border-strong), var(--shadow-focus);
+}
+
+/* Bottom sheets: a hairline lifts the sheet off the dimmed page. */
+:root[data-theme='dark'] .modal__panel {
+  box-shadow: inset 0 1px 0 var(--color-border-strong), var(--shadow-lg);
+}
+
+/* Native date picker glyph and scrollbars follow the theme via color-scheme (tokens.css).
+   The picker indicator is overlaid invisibly in input.css, so nothing else to restyle. */
+
+/* Browser autofill paints a bright field; keep it on-brand and legible. */
+:root[data-theme='dark'] input:-webkit-autofill,
+:root[data-theme='dark'] input:-webkit-autofill:hover,
+:root[data-theme='dark'] input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--color-text);
+  caret-color: var(--color-text);
+  box-shadow: 0 0 0 1000px var(--color-surface) inset;
+  transition: background-color 9999s ease-out 0s;
+}
+
+:root[data-theme='dark'] ::selection {
+  background: var(--mint-100);
+  color: var(--color-text);
+}
+
+/* The sliding thumb of a segmented control needs an edge to read against its track. */
+:root[data-theme='dark'] .segmented--track .segmented__thumb {
+  box-shadow: inset 0 0 0 1px var(--color-border-strong);
+}
+
+/* The Welcome visual's colour blobs are clipped by its box; fade them out so no hard edge shows on dark. */
+:root[data-theme='dark'] .welcome-visual {
+  -webkit-mask-image: linear-gradient(to bottom, #000 90%, transparent);
+  mask-image: linear-gradient(to bottom, #000 90%, transparent);
+}

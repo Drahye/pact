@@ -95,7 +95,6 @@
 
 .detail__stats small {
   font-size: var(--text-caption);
-  opacity: 0.85;
 }
 
 /* member rail: swipe sideways, tap to single someone out in the ring */
@@ -261,7 +260,7 @@
   flex-shrink: 0;
   width: 18px;
   height: 18px;
-  color: var(--ink-300);
+  color: var(--color-placeholder);
 }
 
 .detail__me:focus-visible,

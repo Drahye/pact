@@ -102,7 +102,7 @@
 
 .btn--secondary:hover:not(:disabled) {
   background: var(--color-surface-raised);
-  box-shadow: inset 0 0 0 1px var(--ink-300);
+  box-shadow: inset 0 0 0 1px var(--color-border-hover);
 }
 
 .btn--secondary:focus-visible {
@@ -123,7 +123,7 @@
 }
 
 .btn--inverse:hover:not(:disabled) {
-  background: var(--ink-800);
+  background: color-mix(in srgb, var(--color-surface-inverse) 88%, var(--color-text-inverse));
 }
 
 /* loading ---------------------------------------------------------------- */

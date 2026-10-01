@@ -26,7 +26,7 @@
 }
 
 .invite__card .cat-icon {
-  background: #fff;
+  background: var(--color-surface);
 }
 
 .invite__link {

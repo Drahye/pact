@@ -8,6 +8,8 @@ import { TIER_LIMITS } from '../../../shared/policy';
 import { useAuth } from '../../api/auth';
 import { usePacts } from '../../api/hooks';
 import { Avatar } from '../../components/ui/Avatar';
+import { Segmented } from '../../components/ui/Segmented';
+import { useTheme, type Theme } from '../../theme/useTheme';
 import { BottomNav } from '../../components/ui/BottomNav';
 import { useToast } from '../../components/ui/Toast';
 import { formatNaira, formatPhone } from '../../lib/format';
@@ -24,6 +26,7 @@ export function ProfileScreen() {
   const { closeAccount } = useProfileActions();
   const [closeOpen, setCloseOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const { theme, setTheme } = useTheme();
   if (!user) return null;
 
   const download = async () => {
@@ -77,6 +80,21 @@ export function ProfileScreen() {
             <strong className="num">{formatNaira(given)}</strong> contributed
           </span>
         </div>
+      </div>
+
+      <p className="menu-label">Appearance</p>
+      <div className="appearance">
+        <Segmented<Theme>
+          label="Appearance"
+          value={theme}
+          onChange={setTheme}
+          options={[
+            { value: 'system', label: 'System' },
+            { value: 'light', label: 'Light' },
+            { value: 'dark', label: 'Dark' },
+          ]}
+        />
+        <p className="appearance__hint">{theme === 'system' ? 'Matches your phone’s setting.' : theme === 'light' ? 'Always light.' : 'Always dark.'}</p>
       </div>
 
       <p className="menu-label">Payments</p>

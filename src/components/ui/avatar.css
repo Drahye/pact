@@ -44,7 +44,7 @@
 .avatar.is-pending {
   background: transparent;
   box-shadow: none;
-  outline: 1.5px dashed var(--ink-300);
+  outline: 1.5px dashed var(--color-border-hover);
   outline-offset: -1.5px;
 }
 

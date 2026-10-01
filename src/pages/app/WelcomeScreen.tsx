@@ -4,7 +4,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../api/auth';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
-import { Logo } from '../../components/ui/Logo';
+import { PactLogo } from '../../components/brand/PactLogo';
 import { Modal } from '../../components/ui/Modal';
 import { setReturnTo } from './auth/flow';
 import { Screen } from './Screen';
@@ -52,7 +52,7 @@ export function WelcomeScreen() {
       }
     >
       <div className="welcome__top">
-        <Logo size="sm" />
+        <PactLogo size="md" />
         <Button variant="ghost" size="sm" to="/app/auth/phone">
           Sign in
         </Button>

@@ -266,7 +266,8 @@ button.budget__row:hover {
   font-size: var(--text-sm);
   font-weight: var(--weight-medium);
   color: var(--color-text-secondary);
-  overflow: hidden;
+  /* Not overflow:hidden: the avatar's colour ring is an outer shadow and would be cut off. The name truncates on its own. */
+  padding-inline: 4px;
   white-space: nowrap;
 }
 

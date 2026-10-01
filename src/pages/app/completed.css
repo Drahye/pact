@@ -89,7 +89,7 @@
 .completed__people ul {
   display: grid;
   /* As many columns as fit at a readable width: 3 on the smallest phones, 4 and more as there is room. */
-  grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(76px, 1fr));
   gap: var(--space-4) var(--space-2);
   margin-top: var(--space-4);
 }
@@ -154,7 +154,7 @@
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
   font-size: 11px;
   font-weight: var(--weight-medium);
 }
@@ -284,4 +284,13 @@
 
 .completed__money .screen-section:first-child {
   margin-top: var(--space-5);
+}
+
+/* What came together: the outcome in numbers. */
+.completed__summary {
+  margin-top: var(--space-6);
+}
+
+.completed__summary .section-heading__title {
+  margin-bottom: var(--space-3);
 }

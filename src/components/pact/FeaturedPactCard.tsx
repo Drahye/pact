@@ -5,6 +5,7 @@ import { formatDaysLeft, formatNaira } from '../../lib/format';
 import { joinedMembers, sharesOf, summarize } from '../../lib/pact';
 import { AvatarGroup } from '../ui/AvatarGroup';
 import { Badge } from '../ui/Badge';
+import { cardStatus } from '../../lib/execution';
 import { useFitText } from '../../lib/useFitText';
 import { AnimatedNumber } from './AnimatedNumber';
 import { CategoryChip } from './category';
@@ -22,7 +23,7 @@ export function FeaturedPactCard({ pact, to }: { pact: Pact; to: string }) {
       <span className="featured-pact__shape featured-pact__shape--b" aria-hidden />
       <div className="featured-pact__top">
         <CategoryChip category={pact.category} />
-        <Badge tone="inverse">{s.isComplete ? 'Funded' : formatDaysLeft(s.daysLeft)}</Badge>
+        <Badge tone="inverse">{cardStatus(pact, formatDaysLeft(s.daysLeft)).line.replace('Funded · ', '')}</Badge>
       </div>
       <h2 className="featured-pact__title">{pact.title}</h2>
       <div className="featured-pact__body">

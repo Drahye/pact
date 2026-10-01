@@ -44,9 +44,10 @@ The recorded video follows this order, in eight chapters. The talk track below m
 ### 4. Finish the goal (Abraham)
 - The ring shows Tunde as a guest and Ngozi in. **Contribute**, press and hold from the wallet, PIN. *"Holding is deliberate; let go early and nothing happens."* "You're in", then the completed Pact.
 
-### 5. Pay vendors from the Pact
-- **Pay a vendor from the Pact**: what it's for, ₦90,000. Close the sheet, reopen it: *"It kept what you typed."* Pick a bank, type the account number: *"PACT asks the bank who owns it, so a typo can't send money to a stranger."* Pay with the PIN. Over ₦200,000 in a day needs a co-organiser.
-- **Release** what's left to the wallet (only a BVN-verified organiser can).
+### 5. Use the money, then complete the Pact
+- Funded is not finished: the Pact now says **Make it happen** with what was raised, used and left. **Pay Hotel** (or **Pay someone**): what it's for, ₦90,000. Close the sheet, reopen it: *"It kept what you typed."* Pick a bank, type the account number: *"PACT asks the bank who owns it, so a typo can't send money to a stranger."* Pay with the PIN. Over ₦200,000 in a day needs a co-organiser.
+- Each budget line reads **Not paid**, **Partly paid** or **Paid**; a payment waiting for approval says so.
+- **Complete this Pact** when the plan happened. If money is left you choose: **Release** it to the wallet (only a BVN-verified organiser can) or keep paying. Completion itself moves no money.
 
 ### 6. Wallet and security
 - **Wallet**: history loads as a skeleton. **Withdraw** → **Add a bank account**: the bank confirms the name matches yours. Withdraw ₦50,000 with the PIN; the fee is shown first.

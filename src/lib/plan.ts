@@ -1,6 +1,7 @@
 import type { Pact, Participation, Task } from '../data/types';
 import { getUser } from '../data/users';
 import { formatNaira, formatNairaCompact } from './format';
+import { isExecuting, lineLeftToPay, lineState, nextLineToPay, paymentsInFlight, phaseOf, progressOf } from './execution';
 import { summarize } from './pact';
 
 export const participationLabel: Record<Participation, { short: string; long: string }> = {
@@ -31,14 +32,18 @@ export function bringsParts(pact: Pact, userId: string): { amount?: string; task
   return { note: 'Confirming later' };
 }
 
-export type Stage = 'invited' | 'just-you' | 'open' | 'almost' | 'past-deadline' | 'done' | 'closed';
+/** `ready`: funded, nothing used yet. `making`: being carried out. `completed`: the plan happened. Funded is not finished. */
+export type Stage = 'invited' | 'just-you' | 'open' | 'almost' | 'past-deadline' | 'ready' | 'making' | 'completed' | 'closed';
 
 /** Where the Pact is, which decides the primary action. */
 export function stageOf(pact: Pact, meId: string): Stage {
   const s = summarize(pact);
   if (pact.viewer?.status === 'invited') return 'invited';
   if (pact.status === 'cancelled' || pact.status === 'refunded') return 'closed';
-  if (pact.status === 'funded' || pact.status === 'released') return 'done';
+  if (pact.status === 'funded' || pact.status === 'released') {
+    const phase = phaseOf(pact);
+    return phase === 'completed' ? 'completed' : phase === 'ready' ? 'ready' : 'making';
+  }
   if (new Date(`${pact.deadline}T23:59:59`) < new Date()) return 'past-deadline';
   const joined = pact.members.filter((m) => m.status === 'joined');
   if (joined.length === 1 && joined[0].userId === meId && s.raised === 0) return 'just-you';
@@ -51,7 +56,7 @@ export interface AttentionItem {
   tone: 'accent' | 'sun' | 'coral' | 'lilac';
   title: string;
   body?: string;
-  action?: { label: string; kind: 'contribute' | 'participation' | 'claim' | 'done' | 'remind' | 'split' | 'invite'; taskId?: string; amount?: number };
+  action?: { label: string; kind: 'contribute' | 'participation' | 'claim' | 'done' | 'remind' | 'split' | 'invite' | 'pay' | 'complete'; taskId?: string; amount?: number; lineId?: string };
 }
 
 /**
@@ -64,6 +69,7 @@ export interface AttentionItem {
  */
 export function attentionFor(pact: Pact, meId: string): AttentionItem[] {
   const s = summarize(pact);
+  if (isExecuting(pact) && pact.viewer?.status === 'joined' && pact.mode !== 'orders') return executionAttention(pact, meId);
   if (pact.status !== 'open' || pact.viewer?.status !== 'joined') return [];
   const orders = pact.mode === 'orders';
   const me = pact.members.find((m) => m.userId === meId);
@@ -159,6 +165,76 @@ export function attentionFor(pact: Pact, meId: string): AttentionItem[] {
         action: { label: 'Send a reminder', kind: 'remind' },
       });
     }
+  }
+  return items.slice(0, 5);
+}
+
+/**
+ * After funding the guidance keeps going: the money is ready, so the next steps are paying for the
+ * plan, finishing the tasks, and completing the Pact. No contribution prompts: the target is met.
+ */
+function executionAttention(pact: Pact, meId: string): AttentionItem[] {
+  const s = summarize(pact);
+  const isOrganizer = pact.organizerId === meId;
+  const runsMoney = isOrganizer || pact.members.some((m) => m.userId === meId && m.role === 'co_organizer' && m.status === 'joined');
+  const items: AttentionItem[] = [];
+  const tasks = pact.tasks ?? [];
+  const lines = pact.budget ?? [];
+  const prog = progressOf(pact);
+  const flight = paymentsInFlight(pact);
+  const phase = phaseOf(pact);
+
+  // A payment waiting on someone: the one thing that blocks the rest.
+  const mineToApprove = runsMoney && flight.find((p) => p.status === 'awaiting_approval' && p.requestedBy !== meId);
+  if (mineToApprove) {
+    items.push({ key: 'approve', tone: 'sun', title: `A payment for ${mineToApprove.purpose ?? 'the plan'} needs your approval.`, body: `${formatNaira(mineToApprove.amount)}, set aside until you decide.` });
+  } else if (flight.length) {
+    const allWaiting = flight.every((p) => p.status === 'awaiting_approval');
+    items.push({ key: 'in-flight', tone: 'sun', title: allWaiting ? (flight.length === 1 ? 'A payment is waiting for approval.' : `${flight.length} payments are waiting for approval.`) : flight.length === 1 ? 'A payment is on its way.' : `${flight.length} payments are on their way.`, body: 'The Pact can be completed once it lands.' });
+  }
+
+  // Your own unfinished task comes before anything about money.
+  for (const t of tasks.filter((x) => x.assigneeId === meId && x.status !== 'done').slice(0, 2)) {
+    items.push({ key: `mine-${t.id}`, tone: 'lilac', title: `You’re handling “${t.title}”.`, body: 'Mark it done when it is, so the group can see.', action: { label: 'Mark done', kind: 'done', taskId: t.id } });
+  }
+
+  if (runsMoney) {
+    const next = nextLineToPay(pact);
+    if (phase === 'ready') {
+      items.push({
+        key: 'use-funds',
+        tone: 'accent',
+        title: 'The money is ready. Start paying for the plan.',
+        body: lines.length ? `${formatNaira(pact.poolBalance ?? s.raised)} is in the Pact for what you planned.` : `${formatNaira(pact.poolBalance ?? s.raised)} is in the Pact. Pay someone, or complete it when the plan is done.`,
+        action: { label: next ? `Pay ${next.name}` : 'Use Pact funds', kind: 'pay', lineId: next?.id },
+      });
+    } else if (next) {
+      const partly = lineState(next) === 'partly_paid';
+      items.push(
+        prog.lines.done > 0
+          ? { key: `pay-${next.id}`, tone: 'accent', title: `${prog.lines.done} of ${prog.lines.total} planned costs are handled.`, body: `${next.name} is next${partly ? `, with ${formatNairaCompact(lineLeftToPay(next))} left` : ''}.`, action: { label: 'Pay the next one', kind: 'pay', lineId: next.id } }
+          : { key: `pay-${next.id}`, tone: 'accent', title: `${next.name} still needs to be paid.`, body: partly ? `${formatNairaCompact(lineLeftToPay(next))} left to pay.` : undefined, action: { label: `Pay ${next.name}`, kind: 'pay', lineId: next.id } },
+      );
+    }
+  }
+
+  // Tasks still open: nobody has them, or somebody else is on them.
+  const unowned = tasks.filter((x) => !x.assigneeId && x.status !== 'done');
+  if (unowned.length) {
+    const t = unowned[0];
+    items.push({ key: `claim-${t.id}`, tone: 'sun', title: unowned.length > 1 && isOrganizer ? `${unowned.length} tasks still need someone.` : `“${t.title}” still needs someone.`, body: 'Taking a task counts as showing up too.', action: { label: 'I’ll do it', kind: 'claim', taskId: t.id } });
+  }
+  const others = tasks.filter((x) => x.assigneeId && x.assigneeId !== meId && x.status !== 'done');
+  if (isOrganizer && others.length && !unowned.length) {
+    items.push({ key: 'others-tasks', tone: 'lilac', title: others.length === 1 ? `“${others[0].title}” is still open.` : `${others.length} tasks are still open.`, body: 'You can complete the Pact without them, but the group will see what was left.', action: { label: 'Remind everyone', kind: 'remind' } });
+  }
+
+  // Everything handled: the last step is the organiser's.
+  if (isOrganizer && !flight.length && prog.lines.done === prog.lines.total && prog.tasks.done === prog.tasks.total && phase !== 'ready') {
+    items.push({ key: 'complete', tone: 'accent', title: 'Everything looks handled.', body: 'Complete the Pact to say it happened and decide what to do with what’s left.', action: { label: 'Complete Pact', kind: 'complete' } });
+  } else if (isOrganizer && phase === 'ready' && !lines.length && !tasks.length) {
+    // A Pact with no plan to carry out can simply be completed.
+    items.push({ key: 'complete', tone: 'accent', title: 'Done with the plan?', body: 'Complete the Pact once it has happened.', action: { label: 'Complete Pact', kind: 'complete' } });
   }
   return items.slice(0, 5);
 }

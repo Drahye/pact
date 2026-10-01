@@ -1,5 +1,5 @@
 import { motion, useReducedMotion } from 'framer-motion';
-import { Check, CheckCheck, ChevronRight, Clock, ShieldCheck, Wallet } from 'lucide-react';
+import { Check, CheckCheck, Clock, ShieldCheck, Wallet } from 'lucide-react';
 import { MemorySection } from '../../components/pact/Memory';
 import { useAuth } from '../../api/auth';
 import { usePactAction, usePactMoney } from '../../api/hooks';
@@ -15,10 +15,12 @@ import { Modal } from '../../components/ui/Modal';
 import { SegmentedRing } from '../../components/pact/SegmentedRing';
 import { TopBar } from '../../components/ui/TopBar';
 import type { Activity, Pact, PactPayout } from '../../data/types';
+import { moneyOf, progressOf } from '../../lib/execution';
 import { bringsParts } from '../../lib/plan';
-import { ApprovalCards, CoOrganizerSheet, coOrganizerOf, PaidFromPact, PayoutSheet, PayVendorSheet } from './detail/Money';
+import { ApprovalCards, coOrganizerOf, PaidFromPact, PayoutSheet } from './detail/Money';
 import { isOrderPact, MyOrders, OrderMenu, OrderSheetSection } from './detail/Orders';
 import './detail/money.css';
+import './detail/execution.css';
 import { getUser } from '../../data/users';
 import { formatNaira } from '../../lib/format';
 import { colorOf, joinedMembers, sharesOf, summarize } from '../../lib/pact';
@@ -36,14 +38,17 @@ export function CompletedScreen({ pact, activity = [] }: { pact: Pact; activity?
   const release = usePactAction(pact.id, 'release');
   const money = usePactMoney(pact.id);
   const [payout, setPayout] = useState<PactPayout | null>(null);
-  const [payOpen, setPayOpen] = useState(false);
-  const [coOpen, setCoOpen] = useState(false);
   const co = coOrganizerOf(pact);
   const coName = co ? getUser(co).name : null;
   const request = pact.releaseRequest ?? null;
   const s = summarize(pact);
   const isOrganizer = pact.organizerId === CURRENT_USER_ID;
   const released = pact.status === 'released';
+  const m = moneyOf(pact);
+  const prog = progressOf(pact);
+  // Completing moves no money: what is left waits here until the organiser releases it.
+  const leftover = !released ? m.left : 0;
+  const showRelease = isOrganizer && leftover > 0;
   const canRelease = (user?.kycTier ?? 1) >= 2;
   const members = [...joinedMembers(pact)].sort((a, b) => b.contributed - a.contributed);
   const contributions = activity.filter((a) => a.type === 'contribution').length || members.filter((m) => m.contributed > 0).length;
@@ -58,18 +63,18 @@ export function CompletedScreen({ pact, activity = [] }: { pact: Pact; activity?
       topBar={<TopBar backTo="/app/home" tone="transparent" />}
       footer={
         <>
-          {isOrganizer && !released ? (
+          {showRelease ? (
             request ? (
               <Button fullWidth variant="secondary" iconLeft={<Clock />} loading={money.declineRelease.isPending} onClick={() => money.declineRelease.mutateAsync(undefined).then(() => toast('Request withdrawn'))}>
                 Waiting for {coName ?? 'your co-organiser'} · withdraw request
               </Button>
             ) : canRelease ? (
               <Button fullWidth iconLeft={<Wallet />} onClick={() => setReleaseOpen(true)}>
-                {coName ? `Ask ${coName} to release ${formatNaira(pact.poolBalance ?? s.raised)}` : `Release ${formatNaira(pact.poolBalance ?? s.raised)} to your wallet`}
+                {coName ? `Ask ${coName} to release ${formatNaira(leftover)}` : `Release the ${formatNaira(leftover)} that’s left`}
               </Button>
             ) : (
               <Button fullWidth iconLeft={<ShieldCheck />} to="/app/profile/verify">
-                Verify your identity to release this Pact’s funds
+                Verify your identity to release what’s left
               </Button>
             )
           ) : (
@@ -87,7 +92,7 @@ export function CompletedScreen({ pact, activity = [] }: { pact: Pact; activity?
       <div className="completed__hero">
         <div className="completed__ring">
           {!reduce && <span className="completed__halo" aria-hidden />}
-          <SegmentedRing shares={sharesOf(pact)} target={pact.target} size={168} stroke={16} delay={0.2} label="Fully funded">
+          <SegmentedRing shares={sharesOf(pact)} target={pact.target} size={168} stroke={16} delay={0.2} label="How the group funded this Pact">
             <motion.span
               className="completed__check"
               initial={reduce ? false : { scale: 0, rotate: -20 }}
@@ -102,21 +107,21 @@ export function CompletedScreen({ pact, activity = [] }: { pact: Pact; activity?
 
         <motion.div className="completed__copy" {...rise(0.4)}>
           <Badge tone="accent" dot>
-            100% funded
+            Completed
           </Badge>
-          <h1 className="completed__title">We did it.</h1>
+          <h1 className="completed__title">We made it happen.</h1>
           <p className="completed__amount">
             <AnimatedNumber value={s.raised} from={s.raised * 0.86} />
           </p>
           <p className="completed__line">
-            {pact.title} is fully funded.
+            {pact.title} happened. {formatNaira(s.raised)} came together{m.used > 0 ? ` and ${formatNaira(m.used)} went to the plan` : ''}.
             {released
-              ? ` The money was released to ${isOrganizer ? 'your wallet' : getUser(pact.organizerId).name}.`
+              ? ` What was left, ${formatNaira(m.released)}, went to ${isOrganizer ? 'your wallet' : getUser(pact.organizerId).name}.`
               : request
-                ? ` ${isOrganizer ? 'You’ve' : `${getUser(pact.organizerId).name} has`} asked to release the funds. ${coName ? `${co === CURRENT_USER_ID ? 'You' : coName} approve${co === CURRENT_USER_ID ? '' : 's'} it.` : ''}`
-                : isOrganizer
-                  ? ` Pay vendors straight from the Pact${coName ? `, or ask ${coName} to release it to your wallet` : ', or release it to your wallet'}.`
-                  : ` ${getUser(pact.organizerId).name} pays vendors from the Pact or releases the funds.`}
+                ? ` ${isOrganizer ? 'You’ve' : `${getUser(pact.organizerId).name} has`} asked to release the ${formatNaira(leftover)} that’s left. ${coName ? `${co === CURRENT_USER_ID ? 'You' : coName} approve${co === CURRENT_USER_ID ? '' : 's'} it.` : ''}`
+                : leftover > 0
+                  ? ` ${formatNaira(leftover)} is still in the Pact.`
+                  : ''}
           </p>
         </motion.div>
       </div>
@@ -155,6 +160,41 @@ export function CompletedScreen({ pact, activity = [] }: { pact: Pact; activity?
         </ul>
       </section>
 
+      <section className="completed__summary" aria-labelledby="came-together">
+        <h2 id="came-together" className="section-heading__title">
+          What came together
+        </h2>
+        <dl className="exec__review">
+          <div>
+            <dt>Raised</dt>
+            <dd className="num">{formatNaira(m.raised)}</dd>
+          </div>
+          <div>
+            <dt>Used for the plan</dt>
+            <dd className="num">{formatNaira(m.used)}</dd>
+          </div>
+          {released ? (
+            <div>
+              <dt>Released</dt>
+              <dd className="num">{formatNaira(m.released)}</dd>
+            </div>
+          ) : (
+            <div>
+              <dt>Still in the Pact</dt>
+              <dd className="num">{formatNaira(leftover)}</dd>
+            </div>
+          )}
+          {prog.lines.total > 0 && (
+            <div>
+              <dt>Plan items paid</dt>
+              <dd className="num">
+                {prog.lines.done} of {prog.lines.total}
+              </dd>
+            </div>
+          )}
+        </dl>
+      </section>
+
       <ul className="completed__stats">
         <li>
           <strong className="num">{members.length}</strong>
@@ -187,32 +227,17 @@ export function CompletedScreen({ pact, activity = [] }: { pact: Pact; activity?
         </section>
       )}
 
-      {!released && (
-        <div className="completed__money">
-          <ApprovalCards pact={pact} meId={CURRENT_USER_ID} onOpen={setPayout} />
-          {isOrderPact(pact) && (
-            <>
-              <OrderSheetSection pact={pact} meId={CURRENT_USER_ID} />
-              <MyOrders pact={pact} meId={CURRENT_USER_ID} />
-              <OrderMenu pact={pact} meId={CURRENT_USER_ID} />
-            </>
-          )}
-          <PaidFromPact pact={pact} meId={CURRENT_USER_ID} onPay={() => setPayOpen(true)} onOpen={setPayout} />
-          {isOrganizer && (
-            <button type="button" className="pay-transfer-cta" onClick={() => setCoOpen(true)}>
-              <span className="pay-transfer__icon tint--lilac" aria-hidden>
-                <ShieldCheck />
-              </span>
-              <span className="pay-transfer-cta__text">
-                <strong>{coName ? `Co-organiser: ${coName}` : 'Add a co-organiser'}</strong>
-                <span>{coName ? 'Approves big payments and the release' : 'Optional: someone to approve big payments with you'}</span>
-              </span>
-              <ChevronRight aria-hidden />
-            </button>
-          )}
-        </div>
-      )}
-      {released && <PaidFromPact pact={pact} meId={CURRENT_USER_ID} onPay={() => undefined} onOpen={setPayout} />}
+      <div className="completed__money">
+        <ApprovalCards pact={pact} meId={CURRENT_USER_ID} onOpen={setPayout} />
+        {isOrderPact(pact) && (
+          <>
+            <OrderSheetSection pact={pact} meId={CURRENT_USER_ID} />
+            <MyOrders pact={pact} meId={CURRENT_USER_ID} />
+            <OrderMenu pact={pact} meId={CURRENT_USER_ID} />
+          </>
+        )}
+        <PaidFromPact pact={pact} meId={CURRENT_USER_ID} onPay={() => undefined} onOpen={setPayout} hidePayCta />
+      </div>
 
       <div className="completed__memory">
         <MemorySection pact={pact} meId={CURRENT_USER_ID} />
@@ -220,19 +245,19 @@ export function CompletedScreen({ pact, activity = [] }: { pact: Pact; activity?
 
       {released && isOrganizer && (
         <Notice tone="accent" icon={<Wallet />}>
-          The funds are in your wallet. Withdraw them to your bank from the Wallet tab.
+          What was left is in your wallet. Withdraw it to your bank from the Wallet tab.
         </Notice>
       )}
 
       <PinSheet
         open={releaseOpen}
         onClose={() => setReleaseOpen(false)}
-        title={coName ? 'Ask for the release' : 'Release the funds'}
+        title={coName ? 'Ask for the release' : 'Release what’s left'}
         description={
           coName ? (
-            <><span className="num">{formatNaira(pact.poolBalance ?? s.raised)}</span> moves to your wallet once {coName} approves. Everyone in the Pact is told.</>
+            <><span className="num">{formatNaira(leftover)}</span> moves to your wallet once {coName} approves. Everyone in the Pact is told.</>
           ) : (
-            <><span className="num">{formatNaira(pact.poolBalance ?? s.raised)}</span> moves from {pact.title} into your wallet. Everyone in the Pact is told.</>
+            <><span className="num">{formatNaira(leftover)}</span> moves from {pact.title} into your wallet. Everyone in the Pact is told.</>
           )
         }
         onSubmit={async (pin) => {
@@ -242,8 +267,6 @@ export function CompletedScreen({ pact, activity = [] }: { pact: Pact; activity?
         }}
       />
       <PayoutSheet pact={pact} payout={payout} meId={CURRENT_USER_ID} onClose={() => setPayout(null)} />
-      <PayVendorSheet pact={pact} open={payOpen} onClose={() => setPayOpen(false)} onChooseCoOrganizer={() => { setPayOpen(false); setCoOpen(true); }} />
-      <CoOrganizerSheet pact={pact} open={coOpen} onClose={() => setCoOpen(false)} />
 
       <Modal open={open} onClose={() => setOpen(false)} title="Contributions" description={`${formatNaira(s.raised)} from ${members.length} people`}>
         <ul className="contributions">

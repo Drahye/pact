@@ -309,10 +309,16 @@ describe('Pact accounts, bank transfers and vendor payments', () => {
     assert.equal((await t.call('PUT', `/pacts/${p.id}/co-organizer`, abraham.accessToken, { userId: sarah.user.id })).status, 200);
     const walletBefore = (await t.call('GET', '/wallet', abraham.accessToken)).body.balance;
 
+    // Release is a step after completing: the Pact has to be completed first.
+    assert.equal((await t.call('POST', `/pacts/${p.id}/release`, abraham.accessToken, { pin: PIN })).body.error.code, 'complete_first');
+    const done = await t.call('POST', `/pacts/${p.id}/complete`, abraham.accessToken, { releaseRemaining: true, pin: PIN });
+    assert.equal(done.status, 200, JSON.stringify(done.body));
+    assert.ok(done.body.data.pact.completedAt, 'completing records the outcome even while the release waits');
     const asked = await t.call('POST', `/pacts/${p.id}/release`, abraham.accessToken, { pin: PIN });
-    assert.equal(asked.status, 200, JSON.stringify(asked.body));
-    assert.equal(asked.body.data.pact.status, 'funded', 'nothing moves until approved');
-    assert.equal(asked.body.data.pact.releaseRequest.requestedBy, abraham.user.id);
+    assert.equal(asked.status, 400, 'the complete-and-release already asked');
+    assert.equal(asked.body.error.code, 'release_requested');
+    assert.equal(done.body.data.pact.status, 'funded', 'nothing moves until approved');
+    assert.equal(done.body.data.pact.releaseRequest.requestedBy, abraham.user.id);
     assert.equal((await t.call('GET', '/wallet', abraham.accessToken)).body.balance, walletBefore);
 
     // Nobody else can approve: not the organiser, not a member, not an outsider.

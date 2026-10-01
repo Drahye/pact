@@ -112,6 +112,41 @@ const sources: Source[] = [
     map: (r, ctx) => ({ pactId: r.pact_id, key: `pk:${pactPseudo(ctx.config, r.pact_id)}`, props: { days_since_funded: r.funded_at ? days(r.ts, r.funded_at) : 0 } }),
   },
   {
+    // The first payment asked for from the pool: the moment funding turns into execution.
+    name: 'pact_execution_started',
+    sql: `SELECT x.pact_id, x.ts, p.funded_at, x.with_line FROM (
+            SELECT pact_id, MIN(created_at) AS ts, BOOL_OR(budget_item_id IS NOT NULL) AS with_line
+              FROM pact_payouts WHERE kind = 'vendor' GROUP BY pact_id) x
+            JOIN pacts p ON p.id = x.pact_id WHERE x.ts > $1 ORDER BY x.ts LIMIT 2000`,
+    map: (r, ctx) => ({ pactId: r.pact_id, key: `xs:${pactPseudo(ctx.config, r.pact_id)}`, props: { days_since_funded: r.funded_at ? days(r.ts, r.funded_at) : 0, with_budget_line: r.with_line } }),
+  },
+  {
+    name: 'pact_payment_completed',
+    sql: `SELECT o.id, o.pact_id, o.completed_at AS ts, o.amount, (o.budget_item_id IS NOT NULL) AS with_line, (o.decided_by IS NOT NULL) AS approved
+            FROM pact_payouts o WHERE o.kind = 'vendor' AND o.status = 'succeeded' AND o.completed_at > $1 ORDER BY o.completed_at LIMIT 4000`,
+    map: (r, ctx) => ({ pactId: r.pact_id, key: `xp:${rowKey(ctx.config, 'o', r.id)}`, props: { amount_band: amountBand(Number(r.amount) / 100), with_budget_line: r.with_line, needed_approval: r.approved } }),
+  },
+  {
+    name: 'pact_outcome_completed',
+    sql: `SELECT p.id AS pact_id, p.completed_by AS user_id, p.completed_at AS ts, p.funded_at,
+                 (SELECT COUNT(DISTINCT o.budget_item_id)::int FROM pact_payouts o WHERE o.pact_id = p.id AND o.kind = 'vendor' AND o.status = 'succeeded' AND o.budget_item_id IS NOT NULL) AS paid_lines,
+                 (SELECT COUNT(*)::int FROM tasks t WHERE t.pact_id = p.id) AS tasks,
+                 (SELECT COUNT(*)::int FROM tasks t WHERE t.pact_id = p.id AND t.status = 'done') AS tasks_done,
+                 (p.status = 'released') AS released
+            FROM pacts p WHERE p.completed_at IS NOT NULL AND p.completed_at > $1 ORDER BY p.completed_at LIMIT 2000`,
+    map: (r, ctx) => ({
+      userId: r.user_id,
+      pactId: r.pact_id,
+      key: `po:${pactPseudo(ctx.config, r.pact_id)}`,
+      props: {
+        days_since_funded: r.funded_at ? days(r.ts, r.funded_at) : 0,
+        paid_lines: r.paid_lines,
+        tasks_done_band: r.tasks === 0 ? 'no_tasks' : r.tasks_done === 0 ? 'none' : r.tasks_done === r.tasks ? 'all' : r.tasks_done / r.tasks >= 0.5 ? 'most' : 'some',
+        released_remaining: r.released,
+      },
+    }),
+  },
+  {
     name: 'memory_added',
     sql: `SELECT pact_id, MIN(ts) AS ts, BOOL_OR(photo) AS has_photo FROM (
             SELECT pact_id, updated_at AS ts, false AS photo FROM pact_memories

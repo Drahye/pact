@@ -33,6 +33,8 @@ export interface PactRow {
   created_at: Date;
   funded_at: Date | null;
   closed_at: Date | null;
+  completed_at: Date | null;
+  completed_by: string | null;
   release_requested_by: string | null;
   release_requested_at: Date | null;
   mode: 'goal' | 'orders';
@@ -85,15 +87,28 @@ export async function colorFor(q: Queryable, pactId: string, userId: string): Pr
  * Raised money fills budget lines in order, so the plan shows which parts are covered.
  * A line a vendor has already been paid for counts as covered by that payment first.
  */
-export function allocate(raised: number, items: { id: string; name: string; amount: number; position: number }[], paid: Map<string, number> = new Map()): BudgetItemDTO[] {
-  const spent = (i: { id: string; amount: number }) => Math.min(i.amount, paid.get(i.id) ?? 0);
+export interface LineSpend {
+  /** Confirmed by the bank. */
+  paid: number;
+  /** On its way: waiting for approval or with the bank. Not paid until the bank says so. */
+  pending: number;
+  /** The part of `pending` still waiting for a co-organiser. */
+  waiting: number;
+}
+
+export function allocate(raised: number, items: { id: string; name: string; amount: number; position: number }[], spend: Map<string, LineSpend> = new Map()): BudgetItemDTO[] {
+  const none: LineSpend = { paid: 0, pending: 0, waiting: 0 };
+  const of = (id: string) => spend.get(id) ?? none;
+  // Money held for or sent to a vendor is out of the pool, so it covers the line whether or not the bank has confirmed it yet.
+  const spent = (i: { id: string; amount: number }) => Math.min(i.amount, of(i.id).paid + of(i.id).pending);
   let left = raised - items.reduce((s, i) => s + spent(i), 0);
   return [...items]
     .sort((a, b) => a.position - b.position)
     .map((i) => {
       const more = Math.min(i.amount - spent(i), Math.max(0, left));
       left -= more;
-      return { id: i.id, name: i.name, amount: i.amount, funded: spent(i) + more, paid: paid.get(i.id) ?? 0, position: i.position };
+      const s = of(i.id);
+      return { id: i.id, name: i.name, amount: i.amount, funded: spent(i) + more, paid: s.paid, pending: s.pending, waiting: s.waiting, position: i.position };
     });
 }
 
@@ -201,8 +216,15 @@ async function hydrate(q: Queryable, rows: PactRow[], viewerId: string): Promise
     const memory = memoryBy.get(p.id);
     const pactPayouts = payoutsBy.get(p.id) ?? [];
     const spent = pactPayouts.filter(spends).reduce((sum, x) => sum + x.amount + x.fee, 0);
-    const paidByLine = new Map<string, number>();
-    for (const x of pactPayouts.filter(spends)) if (x.budget_item_id) paidByLine.set(x.budget_item_id, (paidByLine.get(x.budget_item_id) ?? 0) + x.amount);
+    const spendByLine = new Map<string, LineSpend>();
+    for (const x of pactPayouts.filter(spends)) {
+      if (!x.budget_item_id) continue;
+      const line = spendByLine.get(x.budget_item_id) ?? { paid: 0, pending: 0, waiting: 0 };
+      if (x.status === 'succeeded') line.paid += x.amount;
+      else line.pending += x.amount;
+      if (x.status === 'awaiting_approval') line.waiting += x.amount;
+      spendByLine.set(x.budget_item_id, line);
+    }
     const bank = bankBy.get(p.id);
     return {
       id: p.id,
@@ -222,6 +244,7 @@ async function hydrate(q: Queryable, rows: PactRow[], viewerId: string): Promise
       missedGoalPolicy: p.missed_goal_policy,
       splitMode: p.split_mode,
       fundedAt: p.funded_at?.toISOString() ?? null,
+      completedAt: p.completed_at?.toISOString() ?? null,
       closedAt: p.closed_at?.toISOString() ?? null,
       members: ms.map((m) => ({
         userId: m.user_id,
@@ -234,7 +257,7 @@ async function hydrate(q: Queryable, rows: PactRow[], viewerId: string): Promise
         requestedAmount: m.requested_amount,
       })),
       pendingPhoneInvites: pending.get(p.id) ?? 0,
-      budget: allocate(p.raised_amount, budgetBy.get(p.id) ?? [], paidByLine),
+      budget: allocate(p.raised_amount, budgetBy.get(p.id) ?? [], spendByLine),
       tasks: (tasksBy.get(p.id) ?? []).map((t) => ({
         id: t.id,
         title: t.title,
@@ -688,7 +711,7 @@ export async function applyToPact(q: Queryable, pact: PactRow, from: { userId: s
   if (completed) {
     await q.query(`UPDATE pacts SET status = 'funded', funded_at = now() WHERE id = $1`, [pact.id]);
     await recordActivity(q, { pactId: pact.id, actorId: userId, type: 'completed' });
-    await notify(q, members.rows.map((m) => m.user_id), { type: 'funded', title: 'Goal reached', body: `${pact.title} is fully funded. ${formatNgn(pact.target_amount)} raised together.`, pactId: pact.id });
+    await notify(q, members.rows.map((m) => m.user_id), { type: 'funded', title: 'Goal reached', body: `${pact.title} is funded. ${formatNgn(pact.target_amount)} is ready to make it happen.`, pactId: pact.id });
   } else if (userId !== pact.organizer_id) {
     const who = guestName ?? (await getUser(q, userId!)).first_name;
     await notify(q, [pact.organizer_id], { type: 'contribution', title: 'New contribution', body: `${who} added ${formatNgn(amount)} to ${pact.title}.`, pactId: pact.id });
@@ -764,21 +787,76 @@ export async function release(ctx: Ctx, userId: string, pactId: string, pin: str
   await ctx.db.tx(async (q) => {
     const { pact, member: m } = await loadVisible(q, pactId, userId, true);
     if (m!.role !== 'organizer') throw forbidden('Only the organiser can release the funds.');
-    await settleWaitingPayouts(q, pact, 'block');
-    assertReleasable(ctx, pact);
-    // With a co-organiser, the pool doesn't go to the organiser's wallet on one person's word.
-    const co = await q.query<{ user_id: string }>(`SELECT user_id FROM pact_members WHERE pact_id = $1 AND role = 'co_organizer' AND status = 'joined'`, [pactId]);
-    if (co.rows[0]) {
-      if (pact.release_requested_by) throw badRequest('release_requested', 'You’ve already asked. Your co-organiser will decide.');
-      await q.query('UPDATE pacts SET release_requested_by = $2, release_requested_at = now() WHERE id = $1', [pactId, userId]);
-      const pool = (await q.query<{ balance: number }>('SELECT balance FROM accounts WHERE id = $1', [pact.account_id])).rows[0].balance;
-      await recordActivity(q, { pactId, actorId: userId, type: 'release_requested', amount: pool });
-      await notify(q, [co.rows[0].user_id], { type: 'approval', title: 'Approve the release', body: `${user.first_name} wants to release ${formatNgn(pool)} from ${pact.title} to their wallet.`, pactId });
-      await audit(q, { actorId: userId, action: 'pact.release_requested', targetType: 'pact', targetId: pactId, ip: meta.ip, metadata: { amount: pool } });
-      return;
+    // Releasing moves money; it does not say the plan happened. That is a separate step, taken first.
+    if (pact.status === 'funded' && !pact.completed_at) throw badRequest('complete_first', 'Complete the Pact first, then release what is left.');
+    await startRelease(ctx, q, pact, userId, user.first_name, meta);
+  });
+  return getPact(ctx, userId, pactId);
+}
+
+/** The release itself: asks the co-organiser when there is one, otherwise moves the pool to the organiser's wallet. */
+async function startRelease(ctx: Ctx, q: Queryable, pact: PactRow, userId: string, firstName: string, meta: ReqMeta) {
+  await settleWaitingPayouts(q, pact, 'block');
+  assertReleasable(ctx, pact);
+  // With a co-organiser, the pool doesn't go to the organiser's wallet on one person's word.
+  const co = await q.query<{ user_id: string }>(`SELECT user_id FROM pact_members WHERE pact_id = $1 AND role = 'co_organizer' AND status = 'joined'`, [pact.id]);
+  if (co.rows[0]) {
+    if (pact.release_requested_by) throw badRequest('release_requested', 'You’ve already asked. Your co-organiser will decide.');
+    await q.query('UPDATE pacts SET release_requested_by = $2, release_requested_at = now() WHERE id = $1', [pact.id, userId]);
+    const pool = (await q.query<{ balance: number }>('SELECT balance FROM accounts WHERE id = $1', [pact.account_id])).rows[0].balance;
+    await recordActivity(q, { pactId: pact.id, actorId: userId, type: 'release_requested', amount: pool });
+    await notify(q, [co.rows[0].user_id], { type: 'approval', title: 'Approve the release', body: `${firstName} wants to release ${formatNgn(pool)} from ${pact.title} to their wallet.`, pactId: pact.id });
+    await audit(q, { actorId: userId, action: 'pact.release_requested', targetType: 'pact', targetId: pact.id, ip: meta.ip, metadata: { amount: pool } });
+    return;
+  }
+  await releaseTx(ctx, q, pact, userId, 'organizer');
+  await audit(q, { actorId: userId, action: 'pact.released', targetType: 'pact', targetId: pact.id, ip: meta.ip });
+}
+
+/**
+ * The organiser says the plan actually happened. Funded is not finished: reaching the target
+ * gave the group the money, this records that the group used it. It moves no money by itself.
+ *
+ * If anything is left in the pool the organiser has to say what happens to it, so nothing is
+ * released by silence: `releaseRemaining: true` completes and releases it in one go (through the
+ * normal release rules: PIN, verified identity, co-organiser approval). To keep paying from the
+ * Pact instead, don't complete yet.
+ */
+export async function completePact(ctx: Ctx, userId: string, pactId: string, input: { releaseRemaining?: boolean; pin?: string }, meta: ReqMeta) {
+  const { member } = await loadVisible(ctx.db, pactId, userId);
+  if (member!.role !== 'organizer') throw forbidden('Only the organiser can complete the Pact.');
+  // Releasing what is left is a money move: same checks as a release, done before anything changes.
+  let firstName = '';
+  if (input.releaseRemaining) {
+    if (!input.pin) throw badRequest('pin_required', 'Enter your PIN to release what is left.');
+    await verifyPin(ctx, userId, input.pin, meta);
+    const user = await getUser(ctx.db, userId);
+    if (!TIER_LIMITS[user.kyc_tier as KycTier].canRelease) {
+      throw new AppError(403, 'kyc_required', 'Verify your BVN to release funds. It takes about a minute.');
     }
-    await releaseTx(ctx, q, pact, userId, 'organizer');
-    await audit(q, { actorId: userId, action: 'pact.released', targetType: 'pact', targetId: pactId, ip: meta.ip });
+    firstName = user.first_name;
+  }
+  await ctx.db.tx(async (q) => {
+    const { pact, member: m } = await loadVisible(q, pactId, userId, true);
+    if (m!.role !== 'organizer') throw forbidden('Only the organiser can complete the Pact.');
+    if (pact.completed_at || pact.status === 'released') throw badRequest('already_completed', 'This Pact is already completed.');
+    if (pact.status !== 'funded') {
+      throw badRequest(pact.status === 'open' ? 'not_funded' : 'pact_closed', pact.status === 'open' ? 'A Pact can be completed once it is funded.' : 'This Pact is closed.');
+    }
+    // A payment still on its way decides what is left, so it has to land (or be turned down) first.
+    const inFlight = await q.query(`SELECT 1 FROM pact_payouts WHERE pact_id = $1 AND kind = 'vendor' AND status IN ('awaiting_approval', 'pending', 'processing') LIMIT 1`, [pactId]);
+    if (inFlight.rowCount) throw badRequest('payment_pending', 'A payment is still waiting for approval or on its way. Let it finish before completing the Pact.');
+    if (pact.release_requested_by) throw badRequest('release_requested', 'A release is waiting for your co-organiser. Hear back from them first.');
+    const pool = (await q.query<{ balance: number }>('SELECT balance FROM accounts WHERE id = $1', [pact.account_id])).rows[0].balance;
+    if (pool > 0 && input.releaseRemaining === undefined) {
+      throw new AppError(422, 'remaining_balance', `${formatNgn(pool)} is still in this Pact. Say what should happen to it.`, { remaining: pool });
+    }
+    await q.query('UPDATE pacts SET completed_at = now(), completed_by = $2 WHERE id = $1', [pactId, userId]);
+    await recordActivity(q, { pactId, actorId: userId, type: 'pact_completed' });
+    const others = await q.query<{ user_id: string }>(`SELECT user_id FROM pact_members WHERE pact_id = $1 AND status = 'joined' AND user_id <> $2`, [pactId, userId]);
+    await notify(q, others.rows.map((x) => x.user_id), { type: 'completed', title: 'We made it happen', body: `${pact.title} is complete.`, pactId });
+    await audit(q, { actorId: userId, action: 'pact.completed', targetType: 'pact', targetId: pactId, ip: meta.ip, metadata: { remaining: pool, release: !!input.releaseRemaining && pool > 0 } });
+    if (pool > 0 && input.releaseRemaining) await startRelease(ctx, q, { ...pact, completed_at: new Date() }, userId, firstName, meta);
   });
   return getPact(ctx, userId, pactId);
 }
@@ -932,6 +1010,8 @@ export async function cancel(ctx: Ctx, userId: string, pactId: string, pin: stri
   await ctx.db.tx(async (q) => {
     const { pact, member } = await loadVisible(q, pactId, userId, true);
     if (member!.role !== 'organizer') throw forbidden('Only the organiser can close the Pact.');
+    // Once the plan has happened there is nothing to call off: what is left is released, not refunded.
+    if (pact.completed_at) throw badRequest('pact_completed', 'This Pact is completed. Release what is left instead.');
     await settleWaitingPayouts(q, pact, 'block');
     await refundTx(q, pact, 'cancelled', userId);
     await audit(q, { actorId: userId, action: 'pact.cancelled', targetType: 'pact', targetId: pactId, ip: meta.ip });

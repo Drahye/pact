@@ -24,6 +24,9 @@ export const EVENT_NAMES = [
   'pact_completed',
   'memory_added',
   'second_pact_created',
+  'pact_execution_started',
+  'pact_payment_completed',
+  'pact_outcome_completed',
 ] as const;
 export type EventName = (typeof EVENT_NAMES)[number];
 
@@ -46,6 +49,12 @@ export const EVENT_PROPS: Record<EventName, Record<string, Rule>> = {
   pact_completed: { days_since_funded: 'count' },
   memory_added: { has_photo: 'bool' },
   second_pact_created: {},
+  // The money was put to work: the first vendor payment was asked for.
+  pact_execution_started: { days_since_funded: 'count', with_budget_line: 'bool' },
+  // A payment from the Pact reached its recipient. Bands, never exact amounts or who was paid.
+  pact_payment_completed: { amount_band: ['under_5k', 'under_25k', 'under_100k', 'over_100k'], with_budget_line: 'bool', needed_approval: 'bool' },
+  // The organiser said the plan happened. `tasks_done_pct_band` is how much of the task list was done.
+  pact_outcome_completed: { days_since_funded: 'count', paid_lines: 'count', tasks_done_band: ['none', 'some', 'most', 'all', 'no_tasks'], released_remaining: 'bool' },
 };
 
 export const amountBand = (naira: number) => (naira < 5_000 ? 'under_5k' : naira < 25_000 ? 'under_25k' : naira < 100_000 ? 'under_100k' : 'over_100k');

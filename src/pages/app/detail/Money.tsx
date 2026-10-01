@@ -32,7 +32,7 @@ export const isOrganizerOf = (pact: Pact, userId: string) => ['organizer', 'co_o
 export const coOrganizerOf = (pact: Pact) => pact.members.find((m) => m.role === 'co_organizer' && m.status === 'joined')?.userId ?? null;
 const takingMoney = (pact: Pact) => pact.status === 'open' || pact.status === 'funded';
 /** Refund-if-missed Pacts pay vendors only once funded, so the refund promise always holds. */
-export const canPayVendors = (pact: Pact) => pact.status === 'funded' || (pact.status === 'open' && pact.missedGoalPolicy === 'release');
+export const canPayVendors = (pact: Pact) => !pact.completedAt && (pact.status === 'funded' || (pact.status === 'open' && pact.missedGoalPolicy === 'release'));
 
 /** Bank names arrive in capitals ("ADEBAYO KEMI"); shown as "Adebayo Kemi". */
 export const displayName = (bankName: string) => bankName.toLowerCase().replace(/\s+/g, ' ').trim().replace(/(^|[\s'-])\p{L}/gu, (c) => c.toUpperCase());
@@ -241,16 +241,17 @@ export const vendorPayouts = (pact: Pact) => (pact.payouts ?? []).filter((p) => 
 export const awaitingMe = (pact: Pact, meId: string) =>
   isOrganizerOf(pact, meId) ? vendorPayouts(pact).filter((p) => p.status === 'awaiting_approval' && p.requestedBy !== meId) : [];
 
-export function PaidFromPact({ pact, meId, onPay, onOpen }: { pact: Pact; meId: string; onPay: () => void; onOpen: (p: PactPayout) => void }) {
+export function PaidFromPact({ pact, meId, onPay, onOpen, hidePayCta = false }: { pact: Pact; meId: string; onPay: () => void; onOpen: (p: PactPayout) => void; hidePayCta?: boolean }) {
   const list = vendorPayouts(pact);
   const organizer = isOrganizerOf(pact, meId);
   const paid = list.filter((p) => p.status === 'succeeded').reduce((s, p) => s + p.amount, 0);
-  if (!list.length && !(organizer && takingMoney(pact))) return null;
+  const paying = takingMoney(pact) && !pact.completedAt && !hidePayCta;
+  if (!list.length && !(organizer && paying)) return null;
   return (
     <section className="screen-section" aria-labelledby="paid-from-pact">
       <div className="paid__heading">
         <h2 id="paid-from-pact" className="section-heading__title">
-          Paid from the Pact
+          Paid from this Pact
         </h2>
         {paid > 0 && <span className="paid__total num">{formatNaira(paid)}</span>}
       </div>
@@ -266,9 +267,7 @@ export function PaidFromPact({ pact, meId, onPay, onOpen }: { pact: Pact; meId: 
                   </span>
                   <span className="paid__text">
                     <span className="paid__title">{p.purpose ?? 'Payment'}</span>
-                    <span className="paid__sub">
-                      {p.accountName} · {p.bankName} ••{p.last4}
-                    </span>
+                    <span className="paid__sub">Paid to {p.accountName}</span>
                   </span>
                   <span className="paid__side">
                     <strong className="num">{formatNaira(p.amount)}</strong>
@@ -280,20 +279,20 @@ export function PaidFromPact({ pact, meId, onPay, onOpen }: { pact: Pact; meId: 
           })}
         </ul>
       )}
-      {organizer && takingMoney(pact) &&
+      {organizer && paying &&
         (canPayVendors(pact) ? (
           <button type="button" className="pay-transfer-cta paid__cta" onClick={onPay}>
             <span className="pay-transfer__icon tint--sun" aria-hidden>
               <Store />
             </span>
             <span className="pay-transfer-cta__text">
-              <strong>Pay a vendor from the Pact</strong>
-              <span>Straight to their bank. Everyone sees it.</span>
+              <strong>Pay someone from the Pact</strong>
+              <span>Straight to their bank. Everyone sees what it was for.</span>
             </span>
             <ChevronRight aria-hidden />
           </button>
         ) : (
-          <p className="paid__note">Vendors can be paid once the goal is reached, because everyone was promised a refund if it isn’t.</p>
+          <p className="paid__note">The Pact can pay for the plan once the goal is reached, because everyone was promised a refund if it isn’t.</p>
         ))}
     </section>
   );
@@ -354,10 +353,14 @@ export function PayoutSheet({ pact, payout, meId, onClose }: { pact: Pact; payou
             <span>To</span>
             <strong>
               {live.accountName}
-              <br />
-              <span className="payout__bank">
-                {live.bankName} ••{live.last4}
-              </span>
+              {organizer && (
+                <>
+                  <br />
+                  <span className="payout__bank">
+                    {live.bankName} ••{live.last4}
+                  </span>
+                </>
+              )}
             </strong>
           </div>
           {budgetName && (
@@ -449,7 +452,14 @@ interface RecentVendor {
   bank: string;
 }
 
-export function PayVendorSheet({ pact, open, onClose, onChooseCoOrganizer }: { pact: Pact; open: boolean; onClose: () => void; onChooseCoOrganizer: () => void }) {
+/** A payment opened from a budget line: which line, what it is for, and a suggested amount (the organiser can change it). */
+export interface PayPreset {
+  lineId: string | null;
+  purpose: string;
+  amount: number;
+}
+
+export function PayVendorSheet({ pact, open, onClose, onChooseCoOrganizer, preset = null }: { pact: Pact; open: boolean; onClose: () => void; onChooseCoOrganizer: () => void; preset?: PayPreset | null }) {
   const money = usePactMoney(pact.id);
   const banks = useBanks();
   const toast = useToast();
@@ -469,13 +479,25 @@ export function PayVendorSheet({ pact, open, onClose, onChooseCoOrganizer }: { p
   useEffect(() => {
     if (!open) return;
     const d = readDraft<{ purpose: string; lineId: string | null; amount: number; bankCode: string; number: string }>(draftKey);
+    if (preset) {
+      // Opened from a budget line: the line, purpose and amount are filled in. Anything typed about the bank is kept.
+      setPurpose(preset.purpose);
+      setLineId(preset.lineId);
+      setAmount(Math.min(preset.amount, Math.max(0, (pact.poolBalance ?? 0) - FEE)));
+      if (d) {
+        setBankCode(d.bankCode);
+        setNumber(d.number);
+      }
+      return;
+    }
     if (!d) return;
     setPurpose(d.purpose);
     setLineId(d.lineId);
     setAmount(d.amount);
     setBankCode(d.bankCode);
     setNumber(d.number);
-  }, [open, draftKey]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, draftKey, preset?.lineId, preset?.amount]);
   useSaveDraft(draftKey, { purpose, lineId, amount, bankCode, number }, !purpose.trim() && !amount && !bankCode && !number, open);
 
   useEffect(() => {
@@ -526,8 +548,8 @@ export function PayVendorSheet({ pact, open, onClose, onChooseCoOrganizer }: { p
       <Modal
         open={open && !pinOpen}
         onClose={onClose}
-        title="Pay a vendor"
-        description="Straight from the Pact to their bank. Everyone in the Pact sees it."
+        title="Pay someone"
+        description="Straight from the Pact to their bank. Everyone in the Pact sees what it was for."
         footer={
           <Button fullWidth disabled={!ready} loading={resolving} onClick={() => setPinOpen(true)}>
             {amount ? `Pay ${formatNaira(amount)}` : 'Continue'}
@@ -537,7 +559,7 @@ export function PayVendorSheet({ pact, open, onClose, onChooseCoOrganizer }: { p
         <div className="bank-form">
           {lines.length > 0 && (
             <div className="field">
-              <span className="field__label">For</span>
+              <span className="field__label">Which part of the plan?</span>
               <div className="suggest" role="radiogroup" aria-label="Budget line">
                 {lines.map((l) => (
                   <button

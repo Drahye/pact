@@ -353,6 +353,7 @@ export async function requestVendorPayment(
       throw new AppError(422, 'refund_promised', 'Everyone was promised a refund if the goal is missed, so vendors can be paid once it’s fully funded.');
     }
     if (!takingMoney(pact)) throw badRequest('pact_closed', 'This Pact is closed.');
+    if (pact.completed_at) throw badRequest('pact_completed', 'This Pact is completed. Release what is left instead.');
     if (input.budgetItemId) {
       const b = await q.query('SELECT 1 FROM budget_items WHERE id = $1 AND pact_id = $2', [input.budgetItemId, pactId]);
       if (!b.rowCount) throw badRequest('budget_item_not_found', 'Choose a line from this Pact’s budget.');

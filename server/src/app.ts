@@ -446,6 +446,12 @@ export async function buildApp({ config, db, provider, sms, now = () => new Date
           await pacts.leave(ctx, req.userId, req.params.id);
           return { ok: true };
         });
+        priv.post<{ Params: { id: string } }>('/pacts/:id/complete', strict(5), async (req, reply) =>
+          idempotent(req, reply, `complete:${req.params.id}`, () => {
+            const body = parse(C.CompleteBody, req.body ?? {});
+            return pacts.completePact(ctx, req.userId, req.params.id, body, meta(req));
+          }),
+        );
         priv.post<{ Params: { id: string } }>('/pacts/:id/release', strict(5), async (req, reply) =>
           idempotent(req, reply, `release:${req.params.id}`, () => pacts.release(ctx, req.userId, req.params.id, parse(C.PinBody, req.body).pin, meta(req))),
         );

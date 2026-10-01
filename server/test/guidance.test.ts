@@ -90,8 +90,8 @@ describe('goal guidance', () => {
     assert.equal(label(member, 'a'), 'Add to the Pact');
   });
 
-  it('G: a funded, released or closed Pact has no next step and no checkpoint', () => {
-    for (const status of ['funded', 'released', 'cancelled', 'refunded'] as const) {
+  it('G: a released or closed Pact has no next step and no checkpoint (a funded one has execution guidance: see execution-ui.test.ts)', () => {
+    for (const status of ['released', 'cancelled', 'refunded'] as const) {
       const p = pact({ me: { userId: 'org', participation: 'both' }, status });
       assert.equal(nextStepFor(p, 'org'), null);
       assert.deepEqual(checkpointsFor(p), []);

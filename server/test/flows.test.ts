@@ -71,11 +71,15 @@ describe('PACT end to end', () => {
     assert.equal(fill.body.data.pact.status, 'funded');
     assert.equal(fill.body.completed, true);
 
-    // Organizer (tier 2) releases the pool into their wallet.
+    // Funded is not finished: releasing before the Pact is completed is refused.
+    const early = await t.call('POST', `/pacts/${pactId}/release`, organizer.accessToken, { pin: '1357' });
+    assert.equal(early.body.error.code, 'complete_first');
+    // Organizer (tier 2) completes the Pact and releases what is left into their wallet.
     const before = (await t.call('GET', '/wallet', organizer.accessToken)).body.balance;
-    const rel = await t.call('POST', `/pacts/${pactId}/release`, organizer.accessToken, { pin: '1357' });
+    const rel = await t.call('POST', `/pacts/${pactId}/complete`, organizer.accessToken, { releaseRemaining: true, pin: '1357' });
     assert.equal(rel.status, 200, JSON.stringify(rel.body));
     assert.equal(rel.body.data.pact.status, 'released');
+    assert.ok(rel.body.data.pact.completedAt);
     assert.equal((await t.call('GET', '/wallet', organizer.accessToken)).body.balance, before + 60_000_00);
 
     const r = await reconcile(t.db);

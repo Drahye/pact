@@ -4,11 +4,12 @@ import { usePact } from '../../api/hooks';
 import { ErrorState } from '../../components/app/States';
 import { PactDetailSkeleton } from '../../components/app/Skeleton';
 import { TopBar } from '../../components/ui/TopBar';
+import { isOutcomeComplete } from '../../lib/execution';
 import { CompletedScreen } from './CompletedScreen';
 import { PactDetailScreen } from './PactDetailScreen';
 import { Screen } from './Screen';
 
-/** A funded Pact becomes its completed state: same URL, new moment. */
+/** The Pact has two big moments: funded (the money is ready, same screen, new section) and completed (the plan happened, same URL, new screen). */
 export function PactRoute() {
   const { id = '' } = useParams();
   const q = usePact(id);
@@ -22,6 +23,6 @@ export function PactRoute() {
     );
   }
   const { pact, activities } = q.data;
-  if (pact.status === 'funded' || pact.status === 'released') return <CompletedScreen pact={pact} activity={activities} />;
+  if (isOutcomeComplete(pact)) return <CompletedScreen pact={pact} activity={activities} />;
   return <PactDetailScreen pact={pact} activity={activities} />;
 }

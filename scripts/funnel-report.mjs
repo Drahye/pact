@@ -57,13 +57,14 @@ out.join_to_first_action = { ...act, acted_pct: pct(act.acted, act.joined), acte
 const comp = await one(
   `SELECT COUNT(*)::int AS pacts_created,
           COUNT(*) FILTER (WHERE EXISTS (SELECT 1 FROM product_events f WHERE f.name = 'pact_funded' AND f.pact = c.pact))::int AS funded,
-          COUNT(*) FILTER (WHERE EXISTS (SELECT 1 FROM product_events f WHERE f.name = 'pact_completed' AND f.pact = c.pact))::int AS completed,
+          COUNT(*) FILTER (WHERE EXISTS (SELECT 1 FROM product_events f WHERE f.name = 'pact_execution_started' AND f.pact = c.pact))::int AS executed,
+          COUNT(*) FILTER (WHERE EXISTS (SELECT 1 FROM product_events f WHERE f.name = 'pact_outcome_completed' AND f.pact = c.pact))::int AS completed,
           COUNT(*) FILTER (WHERE EXISTS (SELECT 1 FROM product_events m WHERE m.name = 'memory_added' AND m.pact = c.pact))::int AS with_memory
      FROM product_events c
     WHERE c.name = 'pact_created' AND c.occurred_at >= $1 AND c.occurred_at <= now() - make_interval(days => $2)`,
   [since, minAgeDays],
 );
-out.pact_completion = { min_age_days: minAgeDays, ...comp, funded_pct: pct(comp.funded, comp.pacts_created), completed_pct: pct(comp.completed, comp.pacts_created), memory_pct: pct(comp.with_memory, comp.funded) };
+out.pact_completion = { min_age_days: minAgeDays, ...comp, funded_pct: pct(comp.funded, comp.pacts_created), executed_pct: pct(comp.executed, comp.funded), completed_pct: pct(comp.completed, comp.pacts_created), memory_pct: pct(comp.with_memory, comp.funded) };
 
 // 4. Participants who later create a Pact of their own.
 const later = await one(

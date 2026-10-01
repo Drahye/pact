@@ -341,6 +341,8 @@ export function usePactMoney(pactId: string) {
     cancelOrder: money((id: string) => api<PactDetail>('DELETE', `${base}/orders/${id}`)),
     setPledge: money((body: { amount: number; dueOn: string }) => api<PactDetail>('PUT', `${base}/pledge`, body)),
     cancelPledge: money(() => api<PactDetail>('DELETE', `${base}/pledge`)),
+    /** The organiser says the plan happened. With money left, `releaseRemaining` (and a PIN) says what to do with it. */
+    complete: money(({ key, ...body }: { key: string; releaseRemaining?: boolean; pin?: string }) => api<PactDetail>('POST', `${base}/complete`, body, { idempotencyKey: key })),
     approveRelease: money((pin: string) => api<PactDetail>('POST', `${base}/release/approve`, { pin })),
     declineRelease: money(() => api<PactDetail>('POST', `${base}/release/decline`, {})),
     addReceipt: money(({ id, file }: { id: string; file: File }) => uploadPhoto<PactDetail>(`${base}/payouts/${id}/receipt`, file)),

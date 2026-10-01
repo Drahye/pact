@@ -28,9 +28,11 @@ export function describeActivity(activity: Activity, viewerId: string | null = C
     case 'created':
       return { name, verb: 'created the Pact' };
     case 'completed':
-      return { name: 'Goal reached.', verb: 'The Pact is fully funded' };
+      return { name: 'Funded.', verb: 'The money is ready to make the plan happen' };
+    case 'pact_completed':
+      return { name, verb: isYou ? 'completed the Pact. You made it happen' : 'completed the Pact. We made it happen' };
     case 'released':
-      return { name, verb: isYou ? 'released the funds' : 'released the funds', amount: activity.amount ? formatNaira(activity.amount) : undefined };
+      return { name, verb: 'released what was left', amount: activity.amount ? formatNaira(activity.amount) : undefined };
     case 'refunded':
       return { name: 'Refunded.', verb: 'Everyone got their money back' };
     case 'cancelled':
@@ -76,6 +78,7 @@ const glyph = {
   created: <Sparkles strokeWidth={2.5} />,
   completed: <Check strokeWidth={3} />,
   released: <Wallet strokeWidth={2.5} />,
+  pact_completed: <CheckCheck strokeWidth={2.5} />,
   refunded: <RotateCcw strokeWidth={2.5} />,
   cancelled: <X strokeWidth={3} />,
   left: <LogOut strokeWidth={2.5} />,

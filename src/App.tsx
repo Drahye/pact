@@ -5,6 +5,7 @@ import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-route
 import { AuthProvider, useAuth } from './api/auth';
 import { ApiError } from './api/client';
 import { Loading } from './components/app/States';
+import { ThemeProvider } from './theme/ThemeProvider';
 import { peekReturnTo } from './pages/app/auth/flow';
 import { ActivityScreen } from './pages/app/ActivityScreen';
 import { AppShell } from './pages/app/AppShell';
@@ -71,6 +72,7 @@ export function App() {
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <BrowserRouter>
+            <ThemeProvider>
             <Suspense fallback={<Loading />}>
             <Routes>
               <Route path="/" element={<LandingPage />} />
@@ -109,6 +111,7 @@ export function App() {
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
             </Suspense>
+            </ThemeProvider>
           </BrowserRouter>
         </AuthProvider>
       </QueryClientProvider>

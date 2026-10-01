@@ -45,7 +45,7 @@
 }
 
 .welcome-visual__track {
-  stroke: #dedacf;
+  stroke: var(--color-track);
 }
 
 .welcome-visual__arc {
@@ -114,7 +114,7 @@
   overflow: hidden;
   border-radius: 50%;
   background: var(--c);
-  box-shadow: 0 0 0 4px #fff, 0 10px 24px -8px var(--c);
+  box-shadow: 0 0 0 4px var(--color-surface), 0 10px 24px -8px var(--c);
   color: var(--color-text);
   font-size: 20px;
   font-weight: var(--weight-bold);
@@ -146,7 +146,7 @@
   font-size: var(--text-sm);
   font-weight: var(--weight-bold);
   white-space: nowrap;
-  box-shadow: 0 12px 24px -12px rgb(15 23 19 / 0.5);
+  box-shadow: var(--shadow-md);
   animation: welcome-coin 2.4s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 

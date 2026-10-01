@@ -216,8 +216,8 @@
   gap: var(--space-5);
   padding: var(--space-5);
   border-radius: var(--radius-xl);
-  background: var(--ink-900);
-  color: var(--paper-50);
+  background: var(--color-surface-inverse);
+  color: var(--color-text-inverse);
 }
 
 .checkout__card-top {

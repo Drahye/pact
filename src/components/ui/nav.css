@@ -45,7 +45,7 @@
   bottom: 0;
   z-index: 5;
   padding: var(--space-3) var(--space-4) calc(var(--space-3) + max(env(safe-area-inset-bottom), 14px));
-  background: linear-gradient(180deg, rgba(246, 244, 239, 0) 0%, var(--color-bg) 40%);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--color-bg) 0%, transparent) 0%, var(--color-bg) 40%);
   pointer-events: none;
 }
 
@@ -78,14 +78,14 @@
 }
 
 .tabbar__item.is-active {
-  color: var(--color-text-inverse);
+  color: var(--color-on-selected);
 }
 
 .tabbar__active {
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: var(--color-surface-inverse);
+  background: var(--color-selected);
 }
 
 .tabbar__icon,

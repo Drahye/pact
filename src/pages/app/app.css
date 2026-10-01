@@ -28,7 +28,7 @@
   grid-template-columns: 1fr;
   min-height: 100vh;
   background:
-    radial-gradient(1200px 600px at 70% 10%, var(--paper-50), transparent 70%),
+    radial-gradient(1200px 600px at 70% 10%, var(--color-surface-raised), transparent 70%),
     var(--color-bg-sunken);
 }
 
@@ -304,7 +304,7 @@
   flex-direction: column;
   gap: var(--space-3);
   padding: var(--space-4) var(--space-5) calc(var(--space-6) + env(safe-area-inset-bottom));
-  background: linear-gradient(180deg, rgba(246, 244, 239, 0) 0%, var(--color-bg) 28%);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--color-bg) 0%, transparent) 0%, var(--color-bg) 28%);
 }
 
 .proto--framed .screen__footer {

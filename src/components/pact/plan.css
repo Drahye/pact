@@ -70,10 +70,10 @@
   min-height: 36px;
   padding: 0 var(--space-3);
   border-radius: var(--radius-full);
-  background: var(--color-text);
+  background: var(--color-selected);
   font-size: var(--text-sm);
   font-weight: var(--weight-semibold);
-  color: var(--paper-50);
+  color: var(--color-on-selected);
 }
 
 .attention__action:focus-visible {
@@ -211,7 +211,7 @@ button.budget__row:hover {
 }
 
 .task--in_progress .task__status {
-  color: #8a5a00;
+  color: var(--tone-sun-fg);
 }
 
 .task--done .task__status {
@@ -242,7 +242,7 @@ button.budget__row:hover {
 .task--done .task__title {
   color: var(--color-text-tertiary);
   text-decoration: line-through;
-  text-decoration-color: var(--ink-300);
+  text-decoration-color: var(--color-border-hover);
 }
 
 .task__meta {
@@ -264,14 +264,14 @@ button.budget__row:hover {
 }
 
 .task__who.is-open {
-  color: #8a5a00;
+  color: var(--tone-sun-fg);
 }
 
 .task__chevron {
   flex-shrink: 0;
   width: 16px;
   height: 16px;
-  color: var(--ink-300);
+  color: var(--color-placeholder);
 }
 
 /* Shared --------------------------------------------------------------------- */

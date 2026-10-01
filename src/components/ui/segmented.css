@@ -64,15 +64,15 @@
 }
 
 .segmented--chips .segmented__option:hover:not(.is-active) {
-  box-shadow: inset 0 0 0 1px var(--ink-300);
+  box-shadow: inset 0 0 0 1px var(--color-border-hover);
 }
 
 .segmented--chips .segmented__thumb {
-  background: var(--color-surface-inverse);
+  background: var(--color-selected);
 }
 
 .segmented--chips .segmented__option.is-active {
-  color: var(--color-text-inverse);
+  color: var(--color-on-selected);
 }
 
 .segmented--lg .segmented__option {

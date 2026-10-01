@@ -26,9 +26,9 @@
 }
 
 .pact-tabs__tab.is-on {
-  background: var(--color-surface-inverse);
+  background: var(--color-selected);
   box-shadow: none;
-  color: var(--color-text-inverse);
+  color: var(--color-on-selected);
 }
 
 .pact-tabs__tab:disabled {

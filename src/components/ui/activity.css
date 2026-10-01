@@ -47,8 +47,8 @@
 
 .activity__glyph--join,
 .activity__glyph--created {
-  background: var(--color-surface-inverse);
-  color: var(--color-text-inverse);
+  background: var(--color-selected);
+  color: var(--color-on-selected);
 }
 
 .activity__complete {
@@ -136,7 +136,7 @@
 .activity__glyph--released { background: var(--sun-400); color: var(--ink-900); }
 .activity__glyph--refunded,
 .activity__glyph--cancelled,
-.activity__glyph--left { background: var(--ink-200); color: var(--ink-900); }
+.activity__glyph--left { background: var(--color-border-strong); color: var(--color-text-secondary); }
 
 .activity__glyph--committed,
 .activity__glyph--task_claimed,

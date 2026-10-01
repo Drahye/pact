@@ -85,8 +85,8 @@
   transform: translateX(-100%);
   padding: 4px 10px;
   border-radius: var(--radius-full);
-  background: var(--color-surface-inverse);
-  color: var(--color-text-inverse);
+  background: var(--color-selected);
+  color: var(--color-on-selected);
   font-size: var(--text-sm);
   font-weight: var(--weight-semibold);
   white-space: nowrap;

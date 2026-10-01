@@ -53,7 +53,7 @@
 }
 
 .field__input::placeholder {
-  color: var(--ink-300);
+  color: var(--color-placeholder);
 }
 
 .field__input[type='date'] {
@@ -154,7 +154,7 @@
 }
 
 .amount__input::placeholder {
-  color: var(--ink-300);
+  color: var(--color-placeholder);
 }
 
 .amount--md .amount__currency { font-size: 28px; }

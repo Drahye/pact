@@ -3,7 +3,7 @@
   display: block;
   flex: none;
   border-radius: var(--radius-xs);
-  background: linear-gradient(90deg, rgba(15, 23, 19, 0.07), rgba(15, 23, 19, 0.13), rgba(15, 23, 19, 0.07));
+  background: linear-gradient(90deg, var(--color-skeleton), var(--color-skeleton-hi), var(--color-skeleton));
   background-size: 200% 100%;
   animation: shimmer 1.2s linear infinite;
 }

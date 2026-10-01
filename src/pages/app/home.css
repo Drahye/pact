@@ -25,7 +25,7 @@
 }
 
 .home__new:hover {
-  border-color: var(--ink-300);
+  border-color: var(--color-border-hover);
   background: var(--color-surface-raised);
 }
 
@@ -86,7 +86,7 @@
   flex-shrink: 0;
   width: 16px;
   height: 16px;
-  color: var(--ink-300);
+  color: var(--color-placeholder);
 }
 
 .needs__dot {

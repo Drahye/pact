@@ -1,10 +1,10 @@
 /* Tint pairs: soft background + a deep, AA-readable foreground */
-.tint--coral { --tint-bg: var(--coral-100); --tint-fg: #a2381f; --tint-solid: var(--coral-400); }
-.tint--sky { --tint-bg: var(--sky-50); --tint-fg: #1d5fa8; --tint-solid: var(--sky-400); }
-.tint--lilac { --tint-bg: var(--lilac-50); --tint-fg: #5b3fc4; --tint-solid: var(--lilac-400); }
-.tint--sun { --tint-bg: var(--sun-100); --tint-fg: #8a5a00; --tint-solid: var(--sun-400); }
-.tint--pink { --tint-bg: var(--pink-100); --tint-fg: #a3246a; --tint-solid: var(--pink-400); }
-.tint--mint { --tint-bg: var(--mint-100); --tint-fg: var(--green-700); --tint-solid: var(--green-500); }
+.tint--coral { --tint-bg: var(--coral-100); --tint-fg: var(--tone-coral-fg); --tint-solid: var(--coral-400); }
+.tint--sky { --tint-bg: var(--sky-50); --tint-fg: var(--tone-sky-fg); --tint-solid: var(--sky-400); }
+.tint--lilac { --tint-bg: var(--lilac-50); --tint-fg: var(--tone-lilac-fg); --tint-solid: var(--lilac-400); }
+.tint--sun { --tint-bg: var(--sun-100); --tint-fg: var(--tone-sun-fg); --tint-solid: var(--sun-400); }
+.tint--pink { --tint-bg: var(--pink-100); --tint-fg: var(--tone-pink-fg); --tint-solid: var(--pink-400); }
+.tint--mint { --tint-bg: var(--mint-100); --tint-fg: var(--tone-mint-fg); --tint-solid: var(--green-500); }
 
 .cat-icon {
   display: grid;

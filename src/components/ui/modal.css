@@ -14,7 +14,7 @@
 .modal__backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(15, 23, 19, 0.36);
+  background: var(--color-scrim);
 }
 
 .modal__panel {

@@ -53,8 +53,8 @@
   background: var(--color-bg);
   box-shadow:
     0 0 0 1px var(--color-border-strong),
-    0 0 0 9px var(--ink-900),
-    0 0 0 10px var(--ink-700),
+    0 0 0 9px var(--device-bezel),
+    0 0 0 10px var(--device-bezel-edge),
     var(--shadow-lg);
   isolation: isolate;
 }

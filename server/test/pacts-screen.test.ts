@@ -31,8 +31,7 @@ describe('Pacts screen: lifecycle', () => {
   });
 
   it('keeps the selected tab even when it empties, and only defaults when nothing was chosen', () => {
-    assert.equal(defaultTab({ all: 3, active: 0, completed: 3, closed: 0 }), 'all');
-    assert.equal(defaultTab({ all: 3, active: 1, completed: 2, closed: 0 }), 'active');
+    assert.equal(defaultTab(), 'all');
   });
 });
 

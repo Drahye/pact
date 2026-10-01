@@ -55,8 +55,8 @@ export const sortForTab = (pacts: Pact[]) => {
   });
 };
 
-/** Which tab to show when there is no usable remembered one: Active if it has anything, otherwise All. */
-export const defaultTab = (counts: PactCounts): PactTab => (counts.active > 0 ? 'active' : 'all');
+/** Which tab to show when there is no usable remembered one: everything, in one list. */
+export const defaultTab = (): PactTab => 'all';
 
 const KEY = 'pact.pactsView';
 export interface PactsView {

@@ -23,7 +23,7 @@ const stored = () => page.evaluate(() => localStorage.getItem('pact.theme'));
 // 1. Default is System: dark OS gives dark, before React has rendered.
 await page.goto(`${BASE}/app/auth/phone`, { waitUntil: 'commit' });
 await page.waitForFunction(() => !!document.documentElement.dataset.theme);
-check('no stored value: first paint follows a dark OS', (await theme()) === 'dark');
+check('no stored value: default is Light even on a dark OS', (await theme()) === 'light');
 check('nothing written until the person chooses', (await stored()) === null);
 check('marketing page stays light on a dark OS', await (async () => { await page.goto(`${BASE}/download`); await page.waitForTimeout(800); return (await theme()) === 'light'; })());
 
@@ -39,7 +39,8 @@ await page.locator('.wallet-strip').waitFor();
 // 3. Appearance control.
 await page.goto(`${BASE}/app/profile`);
 await page.getByRole('radio', { name: 'System' }).waitFor();
-check('System is selected by default', (await page.getByRole('radio', { name: 'System' }).getAttribute('aria-checked')) === 'true');
+check('Light is selected by default', (await page.getByRole('radio', { name: 'Light' }).getAttribute('aria-checked')) === 'true');
+await page.getByRole('radio', { name: 'System' }).click();
 await page.emulateMedia({ colorScheme: 'light' });
 await page.waitForTimeout(200);
 check('System follows the OS to light immediately', (await theme()) === 'light');
@@ -62,7 +63,14 @@ check('Dark persists across reload', (await theme()) === 'dark');
 await page.evaluate(() => localStorage.setItem('pact.theme', 'bogus'));
 await page.reload();
 await page.waitForFunction(() => !!document.documentElement.dataset.theme);
-check('an invalid stored value falls back to System (light OS here)', (await theme()) === 'light');
+await page.emulateMedia({ colorScheme: 'dark' });
+await page.reload();
+await page.waitForFunction(() => !!document.documentElement.dataset.theme);
+check('an invalid stored value falls back to Light', (await theme()) === 'light');
+await page.evaluate(() => localStorage.setItem('pact.theme', 'system'));
+await page.reload();
+await page.waitForFunction(() => !!document.documentElement.dataset.theme);
+check('stored System follows a dark OS on first paint', (await theme()) === 'dark');
 await page.evaluate(() => localStorage.removeItem('pact.theme'));
 
 // 4. Contrast in both themes. axe cannot resolve backgrounds under the floating tab bar and page

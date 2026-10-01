@@ -16,7 +16,7 @@
         try {
           if (/^\/app(\/|$)/.test(location.pathname)) {
             var t = localStorage.getItem('pact.theme');
-            theme = t === 'dark' || (t !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+            theme = t === 'dark' || (t === 'system' && matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
           }
         } catch (e) {}
         document.documentElement.dataset.theme = theme;

@@ -100,6 +100,9 @@
 
   color-scheme: light;
 
+  --device-bezel: var(--ink-900);        /* phone frame on the desktop demo page */
+  --device-bezel-edge: var(--ink-700);
+
   /* ---- Typography -------------------------------------------------------- */
   --font-sans: 'Geist Variable', 'Geist', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
 
@@ -258,6 +261,8 @@
   --color-danger-soft: var(--red-100);
 
   --color-focus: #efece4;
+  --device-bezel: #05080a;
+  --device-bezel-edge: #3a4740;
 
   --tone-coral-fg: #ff9d85;
   --tone-sky-fg: #7dbaff;

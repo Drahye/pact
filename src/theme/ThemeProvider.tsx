@@ -21,9 +21,9 @@ export const ThemeContext = createContext<ThemeContextValue | null>(null);
 function readStored(): Theme {
   try {
     const v = localStorage.getItem(THEME_KEY);
-    return v === 'light' || v === 'dark' || v === 'system' ? v : 'system';
+    return v === 'light' || v === 'dark' || v === 'system' ? v : 'light';
   } catch {
-    return 'system';
+    return 'light';
   }
 }
 

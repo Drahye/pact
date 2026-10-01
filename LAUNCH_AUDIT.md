@@ -240,7 +240,7 @@ Everything in `.env.example`, plus:
 2. Identity verification provider not integrated (BVN checks refuse in production by design).
 3. Company details and real contact mailboxes missing from the legal pages.
 4. Legal review of the four policies; NDPC registration.
-5. ~~Demo avatar photos with unverified licences.~~ Done: removed; initials everywhere.
+5. Demo avatar photos with unverified licences. Restored on 2026-10-01 for the marketing site and the in-app Welcome showcase only (the static cast in `src/data/users.ts`); real people in the app still show initials. Confirm the licence, or replace them with photos you own, before the public launch.
 6. Apply `roles.sql` on the production database and boot with the two role URLs. The role model is written and tested (52/52 as `pact_service`, plus 5 attack tests); per-IP rate limits are shared across instances through Postgres.
 7. Run `scripts/loadtest.mjs` against staging. (The Welcome screen no longer loads the 3D scene.)
 

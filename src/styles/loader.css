@@ -1,13 +1,14 @@
 /* ==========================================================================
-   PACT loader: the segmented ring (one colour per person) fills in and turns.
-   Also inlined in index.html so it is on screen before any JavaScript arrives;
-   keep the two in step. Waits 120ms before appearing, so fast loads never flash.
+   PACT loader. On Android the OS shows the app icon (dark disc, green loop) on the paper
+   background while the app starts, and cannot be animated. This picks up exactly there:
+   the same disc in the same place, then the four pieces light up one by one and the loop
+   turns, so the hand-off from the launch screen reads as one continuous moment.
+   Also inlined in index.html so it is on screen before any JavaScript arrives; keep the
+   two in step. Waits 120ms before appearing, so fast loads never flash.
    ========================================================================== */
 .pl {
   display: grid;
-  justify-items: center;
-  align-content: center;
-  gap: 14px;
+  place-items: center;
   animation: pl-in 0.4s ease-out 0.12s both;
 }
 
@@ -23,39 +24,39 @@
   min-height: 60dvh;
 }
 
-.pl__ring {
-  width: 88px;
-  height: 88px;
-  animation: pl-turn 7s linear infinite;
+.pl__disc {
+  width: min(48vw, 240px);
+  height: min(48vw, 240px);
+  overflow: visible;
+  filter: drop-shadow(0 18px 24px rgba(15, 23, 19, 0.18));
 }
 
-.pl__ring circle {
+@media (min-width: 768px) {
+  .pl__disc { width: 132px; height: 132px; }
+}
+
+.pl__mark {
+  transform-box: view-box;
+  transform-origin: 32px 32px;
+  animation: pl-turn 5s cubic-bezier(0.55, 0.15, 0.35, 0.9) infinite;
+}
+
+.pl__mark path {
   fill: none;
-  stroke-width: 9;
+  stroke: #3dd68c;
+  stroke-width: 6.144;
   stroke-linecap: round;
-  stroke-dasharray: 11 89;
-  animation: pl-arc 1.8s ease-in-out infinite;
+  animation: pl-piece 1.4s ease-in-out infinite;
 }
 
-.pl__ring circle:nth-child(1) { stroke: #ff7a5c; stroke-dashoffset: 0; animation-delay: 0s; }
-.pl__ring circle:nth-child(2) { stroke: #ffc53d; stroke-dashoffset: -16.67; animation-delay: 0.15s; }
-.pl__ring circle:nth-child(3) { stroke: #3dd68c; stroke-dashoffset: -33.33; animation-delay: 0.3s; }
-.pl__ring circle:nth-child(4) { stroke: #4da3ff; stroke-dashoffset: -50; animation-delay: 0.45s; }
-.pl__ring circle:nth-child(5) { stroke: #9b7bff; stroke-dashoffset: -66.67; animation-delay: 0.6s; }
-.pl__ring circle:nth-child(6) { stroke: #ff6fb5; stroke-dashoffset: -83.33; animation-delay: 0.75s; }
-
-.pl__word {
-  font: 700 14px/1 var(--font-sans, 'Geist Variable', ui-sans-serif, system-ui, sans-serif);
-  letter-spacing: 0.18em;
-  color: var(--color-text-tertiary, #626a65);
-  animation: pl-pulse 1.8s ease-in-out infinite;
-}
+.pl__mark path:nth-child(2) { animation-delay: 0.18s; }
+.pl__mark path:nth-child(3) { animation-delay: 0.36s; }
+.pl__mark path:nth-child(4) { animation-delay: 0.54s; }
 
 @keyframes pl-turn { to { transform: rotate(360deg); } }
-@keyframes pl-arc { 0%, 100% { opacity: 0.18; } 35%, 60% { opacity: 1; } }
-@keyframes pl-pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
-@keyframes pl-in { from { opacity: 0; transform: translateY(6px); } }
+@keyframes pl-piece { 0%, 100% { opacity: 0.3; } 40%, 70% { opacity: 1; } }
+@keyframes pl-in { from { opacity: 0; } }
 
 @media (prefers-reduced-motion: reduce) {
-  .pl, .pl__ring, .pl__ring circle, .pl__word { animation: none; }
+  .pl, .pl__mark, .pl__mark path { animation: none; }
 }

@@ -799,3 +799,68 @@ button.menu__row:hover {
   width: 14px;
   height: 14px;
 }
+
+/* Branded loader --------------------------------------------------------------- */
+.app-loader {
+  min-height: 60vh;
+  min-height: 60dvh;
+  gap: var(--space-3);
+  animation: loader-in 0.35s ease-out both;
+}
+
+.app-loader__mark {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 20px;
+  background: var(--color-surface);
+  box-shadow: 0 12px 28px -14px rgb(15 23 19 / 0.35);
+}
+
+.app-loader__mark .logo__mark {
+  width: 36px;
+  height: 36px;
+  animation: loader-turn 1.1s cubic-bezier(0.55, 0.15, 0.35, 0.9) infinite;
+}
+
+.app-loader__mark .logo__arc {
+  stroke: var(--color-accent);
+  stroke-dasharray: 46 80;
+  animation: loader-draw 1.6s ease-in-out infinite;
+}
+
+.app-loader__word {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  letter-spacing: -0.03em;
+  color: var(--color-text-tertiary);
+  animation: loader-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes loader-turn {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes loader-draw {
+  0%, 100% { stroke-dasharray: 22 80; }
+  50% { stroke-dasharray: 52 80; }
+}
+
+@keyframes loader-pulse {
+  0%, 100% { opacity: 0.45; }
+  50% { opacity: 1; }
+}
+
+@keyframes loader-in {
+  from { opacity: 0; transform: translateY(6px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-loader,
+  .app-loader__mark .logo__mark,
+  .app-loader__mark .logo__arc,
+  .app-loader__word {
+    animation: none;
+  }
+}

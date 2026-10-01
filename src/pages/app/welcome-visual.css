@@ -81,13 +81,37 @@
   color: var(--color-text-secondary);
 }
 
+.welcome-visual__arc {
+  transition: stroke-dasharray 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+  animation: welcome-draw 1.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes welcome-draw {
+  from { stroke-dasharray: 0 100; }
+}
+
+/* Friends drift slowly around the ring and stay upright. */
+.welcome-visual__orbit {
+  position: absolute;
+  inset: 0;
+  animation: welcome-orbit 70s linear infinite;
+}
+
+.welcome-visual__slot {
+  position: absolute;
+  width: 0;
+  height: 0;
+  animation: welcome-orbit 70s linear infinite reverse;
+}
+
 .welcome-visual__orb {
   position: absolute;
   display: grid;
   place-items: center;
-  width: 52px;
-  height: 52px;
-  margin: -26px 0 0 -26px;
+  width: 54px;
+  height: 54px;
+  margin: -27px 0 0 -27px;
+  overflow: hidden;
   border-radius: 50%;
   background: var(--c);
   box-shadow: 0 0 0 4px #fff, 0 10px 24px -8px var(--c);
@@ -97,13 +121,69 @@
   animation: welcome-float 3.2s ease-in-out infinite alternate;
 }
 
+.welcome-visual__orb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.welcome-visual__slot.is-paying .welcome-visual__orb {
+  animation: welcome-pay 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* The payment that just landed. */
+.welcome-visual__coin {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 2;
+  display: grid;
+  justify-items: center;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: var(--color-surface-inverse);
+  color: var(--color-text-inverse);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  white-space: nowrap;
+  box-shadow: 0 12px 24px -12px rgb(15 23 19 / 0.5);
+  animation: welcome-coin 2.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.welcome-visual__coin small {
+  font-size: 11px;
+  font-weight: var(--weight-medium);
+  opacity: 0.7;
+}
+
+@keyframes welcome-orbit {
+  to { transform: rotate(360deg); }
+}
+
 @keyframes welcome-float {
   from { transform: translateY(-4px); }
   to { transform: translateY(4px); }
 }
 
+@keyframes welcome-pay {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.22); }
+  100% { transform: scale(1); }
+}
+
+@keyframes welcome-coin {
+  0% { opacity: 0; transform: translate(-50%, 60%) scale(0.7); }
+  18% { opacity: 1; transform: translate(-50%, 130%) scale(1); }
+  75% { opacity: 1; transform: translate(-50%, 130%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, 70%) scale(0.96); }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .welcome-visual__arc,
+  .welcome-visual__orbit,
+  .welcome-visual__slot,
   .welcome-visual__orb {
     animation: none;
+    transition: none;
   }
 }

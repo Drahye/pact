@@ -30,4 +30,7 @@ export const planTypes = [
   'Graduation gifts',
   'Baby showers',
   'Concert tickets',
+  'Group gifts',
+  'Moving expenses',
+  'Events',
 ];

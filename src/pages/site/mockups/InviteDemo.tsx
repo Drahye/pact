@@ -1,5 +1,5 @@
 import { Check, Copy, Link2, MessageCircle, MessageSquare, MoreHorizontal } from 'lucide-react';
-import { Chip, Face, kobo, lin, seg, StatusBar, Swap, AppBar } from './demoKit';
+import { Chip, Face, kobo, seg, StatusBar, Swap, AppBar } from './demoKit';
 import { getUser } from '../../../data/users';
 
 const rows = [
@@ -69,7 +69,7 @@ export function InviteDemo({ t }: { t: number }) {
             people have joined
           </p>
           <ul>
-            {[{ id: 'sarah', chip: <Chip tone="mint">Organiser</Chip>, at: 0 }, ...rows].map((r) => {
+            {[{ id: 'sarah', chip: <Chip tone="mint">Organiser</Chip>, at: -1 }, ...rows].map((r) => {
               const p = seg(t, r.at - 0.02, r.at + 0.06);
               return (
                 <li key={r.id} className="d-person" style={{ opacity: p, transform: `translateY(${(1 - p) * 14}px)`, maxHeight: p ? 56 : 0 }}>
@@ -83,7 +83,7 @@ export function InviteDemo({ t }: { t: number }) {
         </div>
       </div>
       <div className="d-foot">
-        <span className="d-btn d-btn--block d-btn--ghost" style={{ opacity: 0.55 + lin(t, 0.7, 0.9) * 0.45 }}>
+        <span className="d-btn d-btn--block d-btn--ghost">
           Done
         </span>
       </div>

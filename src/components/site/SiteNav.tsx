@@ -7,7 +7,7 @@ import './site-nav.css';
 
 const links = [
   { href: '/#story', label: 'How it works' },
-  { href: '/#why', label: 'Why PACT' },
+  { href: '/#what', label: 'What is PACT?' },
   { href: '/#plans', label: 'Plans' },
   { href: '/#faq', label: 'FAQ' },
 ];

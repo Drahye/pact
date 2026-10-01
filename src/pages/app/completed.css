@@ -133,13 +133,30 @@
 }
 
 .completed__share {
+  /* Amount on one line, the task on the next, both centred in a chip that is the width of its content. */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
   max-width: 100%;
   text-align: center;
   line-height: 1.25;
+  filter: saturate(1.2) brightness(0.8);
+}
+
+.completed__share-amount {
+  font-size: var(--text-caption);
+  font-weight: var(--weight-bold);
+}
+
+.completed__share-task {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
   overflow-wrap: anywhere;
   font-size: 11px;
-  font-weight: var(--weight-bold);
-  filter: saturate(1.2) brightness(0.8);
+  font-weight: var(--weight-medium);
 }
 
 .completed .screen__content {
@@ -254,8 +271,8 @@
 
 /* Identity colour as a highlight, dark text on top for contrast. */
 .completed__share {
-  padding: 0 6px;
-  border-radius: 6px;
+  padding: 4px 8px;
+  border-radius: 8px;
   background: color-mix(in srgb, var(--c, var(--color-accent)) 26%, transparent);
   color: var(--color-text);
 }

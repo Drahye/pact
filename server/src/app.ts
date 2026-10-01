@@ -16,6 +16,7 @@ import type { Db } from './db/index.js';
 import { postgresRateLimitStore, rateLimitKey } from './lib/rateLimitStore.js';
 import { AppError, badRequest, conflict, notFound, unauthorized } from './lib/errors.js';
 import * as auth from './modules/auth.js';
+import * as conversation from './modules/conversation.js';
 import { reconcile } from './modules/ledger.js';
 import * as pactMoney from './modules/pactMoney.js';
 import * as pledges from './modules/pledges.js';
@@ -446,6 +447,21 @@ export async function buildApp({ config, db, provider, sms, now = () => new Date
           await pacts.leave(ctx, req.userId, req.params.id);
           return { ok: true };
         });
+        /* ---------- conversation: comments, reactions, updates and the pin, all attached to activity */
+        priv.get<{ Params: { id: string; aid: string } }>('/pacts/:id/activity/:aid', async (req) => conversation.getThread(ctx, req.userId, req.params.id, req.params.aid));
+        priv.post<{ Params: { id: string; aid: string } }>('/pacts/:id/activity/:aid/comments', strict(30), async (req, reply) =>
+          idempotent(req, reply, `comment:${req.params.id}:${req.params.aid}`, () => conversation.addComment(ctx, req.userId, req.params.id, req.params.aid, parse(C.CommentBody, req.body).body, meta(req))),
+        );
+        priv.delete<{ Params: { id: string; cid: string } }>('/pacts/:id/comments/:cid', strict(30), async (req) => conversation.deleteComment(ctx, req.userId, req.params.id, req.params.cid, meta(req)));
+        priv.put<{ Params: { id: string; aid: string } }>('/pacts/:id/activity/:aid/reactions', strict(120), async (req) => {
+          const body = parse(C.ReactBody, req.body);
+          return conversation.react(ctx, req.userId, req.params.id, req.params.aid, body.reaction, body.on);
+        });
+        priv.post<{ Params: { id: string } }>('/pacts/:id/updates', strict(20), async (req, reply) =>
+          idempotent(req, reply, `update:${req.params.id}`, () => conversation.postUpdate(ctx, req.userId, req.params.id, parse(C.UpdateBody, req.body).body, meta(req))),
+        );
+        priv.delete<{ Params: { id: string; aid: string } }>('/pacts/:id/updates/:aid', strict(20), async (req) => conversation.deleteUpdate(ctx, req.userId, req.params.id, req.params.aid, meta(req)));
+        priv.put<{ Params: { id: string } }>('/pacts/:id/pin', strict(30), async (req) => conversation.pin(ctx, req.userId, req.params.id, parse(C.PinItemBody, req.body).activityId, meta(req)));
         priv.post<{ Params: { id: string } }>('/pacts/:id/complete', strict(5), async (req, reply) =>
           idempotent(req, reply, `complete:${req.params.id}`, () => {
             const body = parse(C.CompleteBody, req.body ?? {});

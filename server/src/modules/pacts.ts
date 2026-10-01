@@ -33,6 +33,9 @@ export interface PactRow {
   created_at: Date;
   funded_at: Date | null;
   closed_at: Date | null;
+  pinned_activity_id: string | null;
+  pinned_by: string | null;
+  pinned_at: Date | null;
   completed_at: Date | null;
   completed_by: string | null;
   release_requested_by: string | null;
@@ -330,6 +333,7 @@ async function hydrate(q: Queryable, rows: PactRow[], viewerId: string): Promise
         createdAt: x.created_at.toISOString(),
         completedAt: x.completed_at?.toISOString() ?? null,
       })),
+      pinned: null,
       viewer: { role: me?.role ?? null, status: me?.status ?? null, suggestedShare: suggested },
     };
   });
@@ -395,25 +399,76 @@ export async function getPact(ctx: Ctx, userId: string, pactId: string) {
     const [dto] = await hydrate(q, [r.rows[0]], userId);
     if (!dto.viewer.status || dto.viewer.status === 'left') throw notFound('Pact');
     // Invitees see the plan but not the group's activity until they join.
-    const acts = dto.viewer.status === 'joined' ? await activitiesFor(q, [pactId], 50) : [];
-    return withPeople(q, { pact: dto, activities: acts }, [dto], acts.map((a) => a.actorId));
+    const acts = dto.viewer.status === 'joined' ? await activitiesFor(q, [pactId], 50, userId) : [];
+    const row = r.rows[0];
+    if (dto.viewer.status === 'joined' && row.pinned_activity_id && row.pinned_by && row.pinned_at) {
+      const [pinned] = await activitiesByIds(q, [row.pinned_activity_id], userId);
+      if (pinned) dto.pinned = { activity: pinned, pinnedBy: row.pinned_by, pinnedAt: row.pinned_at.toISOString() };
+    }
+    return withPeople(q, { pact: dto, activities: acts }, [dto], [...acts.map((a) => a.actorId), dto.pinned?.pinnedBy ?? null, dto.pinned?.activity.actorId ?? null]);
   });
 }
 
-async function activitiesFor(q: Queryable, pactIds: string[], limit: number): Promise<ActivityDTO[]> {
+interface ActivityRow {
+  id: string;
+  pact_id: string;
+  type: ActivityDTO['type'];
+  actor_id: string | null;
+  amount: number | null;
+  detail: string | null;
+  created_at: Date;
+  update_body: string | null;
+  comment_count: number;
+  reactions: Record<string, number> | null;
+  mine: string[] | null;
+}
+
+/**
+ * The activity stream with its conversation: how many comments, which reactions and who gave them.
+ * Counts come from the same query, so the feed never costs a request per item. Removed updates are left out.
+ */
+const ACTIVITY_SELECT = `
+  SELECT a.id, a.pact_id, a.type, a.actor_id, a.amount, a.detail, a.created_at, u.body AS update_body,
+         (SELECT COUNT(*)::int FROM activity_comments c WHERE c.activity_id = a.id AND c.deleted_at IS NULL) AS comment_count,
+         (SELECT jsonb_object_agg(reaction, n) FROM (SELECT reaction, COUNT(*)::int AS n FROM activity_reactions r WHERE r.activity_id = a.id GROUP BY reaction) x) AS reactions,
+         (SELECT array_agg(reaction) FROM activity_reactions r WHERE r.activity_id = a.id AND r.user_id = $1) AS mine
+    FROM activities a LEFT JOIN pact_updates u ON u.id = a.update_id`;
+
+const toActivityDTO = (a: ActivityRow): ActivityDTO => ({
+  id: a.id,
+  pactId: a.pact_id,
+  type: a.type,
+  actorId: a.actor_id,
+  amount: a.amount,
+  detail: a.detail,
+  at: a.created_at.toISOString(),
+  body: a.update_body,
+  reactions: (a.reactions ?? {}) as ActivityDTO['reactions'],
+  myReactions: (a.mine ?? []) as ActivityDTO['myReactions'],
+  commentCount: a.comment_count,
+});
+
+export async function activitiesFor(q: Queryable, pactIds: string[], limit: number, viewerId: string): Promise<ActivityDTO[]> {
   if (!pactIds.length) return [];
-  const r = await q.query<{ id: string; pact_id: string; type: ActivityDTO['type']; actor_id: string | null; amount: number | null; detail: string | null; created_at: Date }>(
-    `SELECT id, pact_id, type, actor_id, amount, detail, created_at FROM activities
-      WHERE pact_id = ANY($1::uuid[]) AND type <> 'nudge' ORDER BY created_at DESC, id LIMIT $2`,
-    [pactIds, limit],
+  const r = await q.query<ActivityRow>(
+    `${ACTIVITY_SELECT}
+      WHERE a.pact_id = ANY($2::uuid[]) AND a.type <> 'nudge' AND (a.update_id IS NULL OR u.deleted_at IS NULL)
+      ORDER BY a.created_at DESC, a.id LIMIT $3`,
+    [viewerId, pactIds, limit],
   );
-  return r.rows.map((a) => ({ id: a.id, pactId: a.pact_id, type: a.type, actorId: a.actor_id, amount: a.amount, detail: a.detail, at: a.created_at.toISOString() }));
+  return r.rows.map(toActivityDTO);
+}
+
+export async function activitiesByIds(q: Queryable, ids: string[], viewerId: string): Promise<ActivityDTO[]> {
+  if (!ids.length) return [];
+  const r = await q.query<ActivityRow>(`${ACTIVITY_SELECT} WHERE a.id = ANY($2::uuid[]) AND (a.update_id IS NULL OR u.deleted_at IS NULL)`, [viewerId, ids]);
+  return r.rows.map(toActivityDTO);
 }
 
 export async function feed(ctx: Ctx, userId: string) {
   return ctx.db.asUser(userId, async (q) => {
     const mine = await q.query<{ pact_id: string }>(`SELECT pact_id FROM pact_members WHERE user_id = $1 AND status = 'joined'`, [userId]);
-    const acts = await activitiesFor(q, mine.rows.map((r) => r.pact_id), 80);
+    const acts = await activitiesFor(q, mine.rows.map((r) => r.pact_id), 80, userId);
     return { data: acts, people: await peopleByIds(q, acts.map((a) => a.actorId ?? '')) };
   });
 }

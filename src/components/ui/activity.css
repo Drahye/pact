@@ -145,3 +145,89 @@
 .activity__glyph--task_done { background: var(--color-accent); color: var(--color-on-accent); }
 .activity__glyph--split_requested { background: var(--sun-400); color: var(--ink-900); }
 .activity__glyph--memory_added { background: var(--pink-400); color: var(--white); }
+
+/* Conversation on activity ------------------------------------------------------ */
+
+/* An activity row that opens its discussion. Whole row is the target; nothing else changes about how it looks. */
+.activity--social {
+  width: 100%;
+  margin: 0 calc(var(--space-3) * -1);
+  width: calc(100% + var(--space-3) * 2);
+  padding-inline: var(--space-3);
+  border-radius: var(--radius-md);
+  transition: background-color var(--duration-fast) var(--ease-out);
+}
+
+.activity--social:hover {
+  background: var(--color-bg-sunken);
+}
+
+.activity--social:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--color-focus);
+}
+
+.activity__text {
+  min-width: 0;
+}
+
+/* Reactions and comment count: small, quiet, and only there when there is something to show. */
+.activity__social {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.activity__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 24px;
+  padding: 0 8px;
+  border-radius: var(--radius-full);
+  background: var(--color-bg-sunken);
+  box-shadow: inset 0 0 0 1px var(--color-border);
+  font-size: var(--text-caption);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-secondary);
+  line-height: 1;
+}
+
+.activity__chip svg {
+  width: 13px;
+  height: 13px;
+}
+
+/* A reaction you gave reads as yours by its outline, not by colour alone: it is also announced to screen readers. */
+.activity__chip.is-mine {
+  box-shadow: inset 0 0 0 1.5px var(--color-text);
+  color: var(--color-text);
+}
+
+/* An organiser's update stands apart from automatic activity: its own words, in a soft panel. */
+.activity--update {
+  align-items: flex-start;
+}
+
+.activity__update {
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  margin-top: 4px;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--color-accent-subtle);
+  box-shadow: inset 3px 0 0 var(--color-accent);
+  font-size: var(--text-body);
+  line-height: 1.4;
+  color: var(--color-text);
+  white-space: pre-line;
+}
+
+.activity__glyph--update {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}

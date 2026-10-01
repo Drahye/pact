@@ -4,11 +4,11 @@ First-party, server-side, pseudonymous. No analytics SDK, no cookies, no third p
 
 ## What is recorded
 
-Sixteen events, in one table (`product_events`, migrations 013 and 014). Nothing else is accepted: the table has a `CHECK` on the name, and `server/src/lib/events.ts` drops any property that is not on a per-event allow-list.
+Twenty events, in one table (`product_events`, migrations 013, 014 and 015). Nothing else is accepted: the table has a `CHECK` on the name, and `server/src/lib/events.ts` drops any property that is not on a per-event allow-list.
 
 | Column | Meaning |
 | --- | --- |
-| `name` | One of the sixteen events below |
+| `name` | One of the twenty events below |
 | `occurred_at` | When it happened (the time of the underlying record) |
 | `actor` | Pseudonym of the person: an HMAC of their id under the server's `HASH_SECRET`. For previews, a per-day visitor pseudonym instead |
 | `pact` | Pseudonym of the Pact, same construction |
@@ -38,6 +38,10 @@ Pseudonyms are keyed hashes, so nobody with only the table can tell who is who, 
 | `pact_execution_started` | The money was put to work: the first payment from the Pact was asked for (once per Pact) | `days_since_funded`, `with_budget_line` |
 | `pact_payment_completed` | A payment from the Pact reached its recipient. Never who was paid or how much exactly | `amount_band` (under 5k, 25k, 100k, over), `with_budget_line`, `needed_approval` |
 | `pact_outcome_completed` | The organiser said the plan happened (once per Pact). Funded is not finished: this is the outcome | `days_since_funded`, `paid_lines` (count), `tasks_done_band` (none, some, most, all, no_tasks), `released_remaining` |
+| `pact_update_posted` | An organiser posts an update into the activity stream | `length` (short, medium, long). Never the text |
+| `activity_commented` | A comment on an activity item or update | `on` (update, system), `first_on_item`. Never the text |
+| `activity_reacted` | A reaction is given (one of four) | `reaction`, `on` (update, system) |
+| `activity_pinned` | An item is pinned (written directly: a pin leaves no row of its own) | `kind` (update, system) |
 | `memory_added` | The first memory note or photo (once per Pact) | `has_photo` |
 
 ## Funded is not finished

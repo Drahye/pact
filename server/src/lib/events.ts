@@ -27,6 +27,10 @@ export const EVENT_NAMES = [
   'pact_execution_started',
   'pact_payment_completed',
   'pact_outcome_completed',
+  'pact_update_posted',
+  'activity_commented',
+  'activity_reacted',
+  'activity_pinned',
 ] as const;
 export type EventName = (typeof EVENT_NAMES)[number];
 
@@ -54,6 +58,11 @@ export const EVENT_PROPS: Record<EventName, Record<string, Rule>> = {
   // A payment from the Pact reached its recipient. Bands, never exact amounts or who was paid.
   pact_payment_completed: { amount_band: ['under_5k', 'under_25k', 'under_100k', 'over_100k'], with_budget_line: 'bool', needed_approval: 'bool' },
   // The organiser said the plan happened. `tasks_done_pct_band` is how much of the task list was done.
+  // Conversation attached to activity. Never the text, only its shape.
+  pact_update_posted: { length: ['short', 'medium', 'long'] },
+  activity_commented: { on: ['update', 'system'], first_on_item: 'bool' },
+  activity_reacted: { reaction: ['thumbs_up', 'heart', 'celebrate', 'raised_hands'], on: ['update', 'system'] },
+  activity_pinned: { kind: ['update', 'system'] },
   pact_outcome_completed: { days_since_funded: 'count', paid_lines: 'count', tasks_done_band: ['none', 'some', 'most', 'all', 'no_tasks'], released_remaining: 'bool' },
 };
 

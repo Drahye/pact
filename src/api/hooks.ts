@@ -11,7 +11,9 @@ import type {
   PactPreviewDTO,
   Participation,
   PersonDTO,
+  ReactionKey,
   SessionDTO,
+  ThreadDTO,
   TopupDTO,
   WalletDTO,
   WalletTxnDTO,
@@ -20,7 +22,7 @@ import type {
 } from '../../shared/contracts';
 import { useAuth } from './auth';
 import { api, fetchPhoto, newIdempotencyKey, uploadPhoto } from './client';
-import { register, toActivity, toPact } from './mappers';
+import { register, toActivity, toPact, toThread } from './mappers';
 
 export const keys = {
   pacts: ['pacts'] as const,
@@ -66,6 +68,60 @@ export function usePact(id: string | undefined) {
     ...live,
     refetchInterval: 8_000,
   });
+}
+
+/* ------------------------------------------------- conversation on activity */
+
+/** One activity item with its comments. Polls while the sheet is open so a reply shows up without a refresh. */
+export function useThread(pactId: string, activityId: string | null) {
+  return useQuery({
+    queryKey: ['thread', pactId, activityId] as const,
+    enabled: !!activityId,
+    queryFn: async () => {
+      const r = await api<WithPeople<ThreadDTO>>('GET', `/pacts/${pactId}/activity/${activityId}`);
+      register(r.people);
+      return toThread(r.data);
+    },
+    refetchInterval: 8_000,
+  });
+}
+
+export function useConversation(pactId: string) {
+  const qc = useQueryClient();
+  const base = `/pacts/${pactId}`;
+  const afterThread = (activityId: string) => (r: WithPeople<ThreadDTO>) => {
+    register(r.people);
+    qc.setQueryData(['thread', pactId, activityId], toThread(r.data));
+    // The counts shown in the feed come from the Pact's own payload.
+    qc.invalidateQueries({ queryKey: keys.pact(pactId) });
+    qc.invalidateQueries({ queryKey: keys.activity });
+  };
+  const setPact = useSetPact();
+  const afterPact = (r: PactDetail) => {
+    setPact(r);
+    qc.invalidateQueries({ queryKey: keys.activity });
+    qc.invalidateQueries({ queryKey: ['thread', pactId] });
+  };
+  return {
+    comment: useMutation({
+      mutationFn: ({ activityId, body, key }: { activityId: string; body: string; key: string }) => api<WithPeople<ThreadDTO>>('POST', `${base}/activity/${activityId}/comments`, { body }, { idempotencyKey: key }),
+      onSuccess: (r, v) => afterThread(v.activityId)(r),
+    }),
+    removeComment: useMutation({
+      mutationFn: ({ commentId }: { commentId: string; activityId: string }) => api<WithPeople<ThreadDTO>>('DELETE', `${base}/comments/${commentId}`),
+      onSuccess: (r, v) => afterThread(v.activityId)(r),
+    }),
+    react: useMutation({
+      mutationFn: ({ activityId, reaction, on }: { activityId: string; reaction: ReactionKey; on: boolean }) => api<WithPeople<ThreadDTO>>('PUT', `${base}/activity/${activityId}/reactions`, { reaction, on }),
+      onSuccess: (r, v) => afterThread(v.activityId)(r),
+    }),
+    postUpdate: useMutation({
+      mutationFn: ({ body, key }: { body: string; key: string }) => api<PactDetail>('POST', `${base}/updates`, { body }, { idempotencyKey: key }),
+      onSuccess: afterPact,
+    }),
+    removeUpdate: useMutation({ mutationFn: (activityId: string) => api<PactDetail>('DELETE', `${base}/updates/${activityId}`), onSuccess: afterPact }),
+    pin: useMutation({ mutationFn: (activityId: string | null) => api<PactDetail>('PUT', `${base}/pin`, { activityId }), onSuccess: afterPact }),
+  };
 }
 
 export function useActivity() {

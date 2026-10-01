@@ -1,4 +1,4 @@
-import { Bell, BellRing, CheckCheck, Gift, ShieldAlert, Wallet } from 'lucide-react';
+import { Bell, BellRing, CheckCheck, Gift, Megaphone, MessageCircle, Pin, ShieldAlert, Wallet } from 'lucide-react';
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMarkRead, useNotifications } from '../../api/hooks';
@@ -14,6 +14,9 @@ const icon = (type: string) => {
   if (type === 'security') return { el: <ShieldAlert />, tint: 'coral' };
   if (['topup', 'withdrawal', 'refund', 'released'].includes(type)) return { el: <Wallet />, tint: 'mint' };
   if (type === 'invite' || type === 'funded') return { el: <Gift />, tint: 'lilac' };
+  if (type === 'update') return { el: <Megaphone />, tint: 'mint' };
+  if (type === 'comment') return { el: <MessageCircle />, tint: 'sky' };
+  if (type === 'pinned') return { el: <Pin />, tint: 'sun' };
   if (type === 'nudge' || type === 'reminder') return { el: <BellRing />, tint: 'sun' };
   return { el: <Bell />, tint: 'sky' };
 };

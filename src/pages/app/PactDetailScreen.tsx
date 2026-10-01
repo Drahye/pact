@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { BellRing, CalendarDays, ChevronRight, Divide, Ellipsis, LogOut, RotateCcw, Scale, Share, ShieldCheck, Store, Target, UserPlus, Users, XCircle } from 'lucide-react';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../api/auth';
 import { ApiError } from '../../api/client';
@@ -10,6 +10,7 @@ import { Notice } from '../../components/app/States';
 import { AnimatedNumber } from '../../components/pact/AnimatedNumber';
 import { CategoryChip } from '../../components/pact/category';
 import { AttentionCard, BudgetList, NextStep, OrganizerProgress, TaskList } from '../../components/pact/Plan';
+import { useFitText } from '../../lib/useFitText';
 import { SegmentedRing } from '../../components/pact/SegmentedRing';
 import { ActivityItem } from '../../components/ui/ActivityItem';
 import { Avatar } from '../../components/ui/Avatar';
@@ -33,6 +34,19 @@ import { MyPledge, pledgeLabel } from './detail/Pledges';
 import { AddTaskSheet, BudgetLineSheet, ParticipationSheet, SplitSheet, TaskSheet } from './detail/Sheets';
 import { Screen } from './Screen';
 import './detail.css';
+
+/** Lets the ring's centre size its amount to the number of characters it has to fit. */
+const chars = (text: string) => ({ ['--chars' as string]: text.length });
+
+/** One line of text in the middle of the ring: sized by CSS, then fitted to the ring if the OS text size pushes it out. */
+function RingLine({ className, deps, children }: { className: string; deps: unknown[]; children: ReactNode }) {
+  const ref = useFitText<HTMLParagraphElement>(deps);
+  return (
+    <p ref={ref} className={className}>
+      {children}
+    </p>
+  );
+}
 
 export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Activity[] }) {
   const { user } = useAuth();
@@ -197,29 +211,29 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
         >
           <AnimatePresence mode="wait" initial={false}>
             {selected === GUEST_SHARE_ID ? (
-              <motion.div key="guests" className="detail__center" initial={{ opacity: 0, scale: 0.94 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.94 }} transition={{ duration: 0.18 }}>
+              <motion.div key="guests" className="detail__center" style={chars(formatNaira(guestTotalOf(pact)))} initial={{ opacity: 0, scale: 0.94 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.94 }} transition={{ duration: 0.18 }}>
                 <p className="detail__center-name">Guests</p>
-                <p className="detail__center-amount num">{formatNaira(guestTotalOf(pact))}</p>
+                <RingLine className="detail__center-amount num" deps={[guestTotalOf(pact)]}>{formatNaira(guestTotalOf(pact))}</RingLine>
                 <p className="detail__center-meta">by bank transfer</p>
               </motion.div>
             ) : picked ? (
-              <motion.div key={picked.userId} className="detail__center" initial={{ opacity: 0, scale: 0.94 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.94 }} transition={{ duration: 0.18 }}>
+              <motion.div key={picked.userId} className="detail__center" style={chars(formatNaira(picked.contributed))} initial={{ opacity: 0, scale: 0.94 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.94 }} transition={{ duration: 0.18 }}>
                 <Avatar userId={picked.userId} size="md" accent accentColor={colorOf(pact, picked.userId)} label={false} />
                 <p className="detail__center-name">{name(picked.userId)}</p>
-                <p className="detail__center-amount num">{formatNaira(picked.contributed)}</p>
+                <RingLine className="detail__center-amount num" deps={[picked.contributed]}>{formatNaira(picked.contributed)}</RingLine>
                 <p className="detail__center-meta num">{formatPercent((picked.contributed / Math.max(1, s.raised)) * 100)} of the total</p>
               </motion.div>
             ) : (
-              <motion.div key="total" className="detail__center" initial={{ opacity: 0, scale: 0.94 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.94 }} transition={{ duration: 0.18 }}>
-                <p className="detail__center-amount detail__center-amount--total">
+              <motion.div key="total" className="detail__center" style={chars(formatNaira(s.raised))} initial={{ opacity: 0, scale: 0.94 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.94 }} transition={{ duration: 0.18 }}>
+                <RingLine className="detail__center-amount detail__center-amount--total" deps={[s.raised]}>
                   <AnimatedNumber value={s.raised} from={fromRaised ?? 0} />
-                </p>
-                <p className="detail__center-meta">
+                </RingLine>
+                <RingLine className="detail__center-meta" deps={[s.target, orders]}>
                   {orders ? (s.target ? <>paid of <span className="num">{formatNaira(s.target)}</span> ordered</> : 'No orders yet') : <>of <span className="num">{formatNaira(s.target)}</span></>}
-                </p>
-                <p className="detail__center-pct num">
+                </RingLine>
+                <RingLine className="detail__center-pct num" deps={[s.percent]}>
                   <AnimatedNumber value={s.percent} from={fromRaised !== undefined ? (fromRaised / Math.max(1, s.target)) * 100 : 0} format="percent" /> funded
-                </p>
+                </RingLine>
               </motion.div>
             )}
           </AnimatePresence>
@@ -228,21 +242,21 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
       </div>
 
       <ul className="detail__stats">
-        <li className="tint--sun">
+        <li className="tint--sun" style={chars(String(s.daysLeft))}>
           <CalendarDays aria-hidden />
           <span>
             <strong className="num">{s.daysLeft}</strong> days left
           </span>
           <small>{formatDate(pact.deadline, { month: 'short', day: 'numeric' })}</small>
         </li>
-        <li className="tint--sky">
+        <li className="tint--sky" style={chars(String(joined.length))}>
           <Users aria-hidden />
           <span>
             <strong className="num">{joined.length}</strong> people
           </span>
           <small>{invited.length + (pact.pendingPhoneInvites ?? 0) ? `${invited.length + (pact.pendingPhoneInvites ?? 0)} invited` : 'all in'}</small>
         </li>
-        <li className="tint--mint">
+        <li className="tint--mint" style={chars(formatNairaCompact(s.remaining))}>
           <Target aria-hidden />
           <span>
             <strong className="num">{formatNairaCompact(s.remaining)}</strong>

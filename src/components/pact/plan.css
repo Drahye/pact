@@ -234,9 +234,12 @@ button.budget__row:hover {
 
 .task__title {
   font-weight: var(--weight-medium);
+  /* Two lines before an ellipsis: a task name matters more than who has it. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 
 .task--done .task__title {
@@ -246,6 +249,9 @@ button.budget__row:hover {
 }
 
 .task__meta {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: var(--text-caption);
   color: var(--color-text-tertiary);
 }
@@ -254,13 +260,24 @@ button.budget__row:hover {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  flex-shrink: 0;
-  max-width: 110px;
+  flex-shrink: 1;
+  min-width: 0;
+  max-width: min(110px, 32%);
   font-size: var(--text-sm);
   font-weight: var(--weight-medium);
   color: var(--color-text-secondary);
   overflow: hidden;
   white-space: nowrap;
+}
+
+.task__who > .avatar {
+  flex-shrink: 0;
+}
+
+.task__who-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .task__who.is-open {

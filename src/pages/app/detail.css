@@ -11,23 +11,37 @@
   margin-top: var(--space-5);
 }
 
+/* The centre of the ring is a fixed-width box inside the stroke; the amount sizes itself to fit it,
+   whatever the number, so it never touches the ring. 0.6em is the widest a bold tabular figure gets. */
+.detail__ring .sring__center {
+  width: 68%;
+  container-type: inline-size;
+}
+
 .detail__center {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 2px;
+  width: 100%;
+  min-width: 0;
+}
+
+.detail__center > p {
+  max-width: 100%;
+  white-space: nowrap; /* one line each; useFitText shrinks a line that would not fit */
 }
 
 .detail__center-amount {
-  font-size: var(--num-md);
-  line-height: 36px;
+  font-size: clamp(20px, calc(100cqw / (var(--chars, 8) * 0.6)), var(--num-md));
+  line-height: 1.15;
   font-weight: var(--weight-bold);
   letter-spacing: -0.05em;
+  white-space: nowrap;
 }
 
 .detail__center-amount--total {
-  font-size: 36px;
-  line-height: 40px;
+  font-size: clamp(20px, calc(100cqw / (var(--chars, 8) * 0.6)), 36px);
 }
 
 .detail__center-name {
@@ -58,7 +72,7 @@
 
 .detail__stats {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--space-2);
   margin-top: var(--space-6);
 }
@@ -66,6 +80,8 @@
 .detail__stats li {
   display: flex;
   flex-direction: column;
+  min-width: 0;
+  container-type: inline-size;
   gap: 2px;
   padding: var(--space-3);
   border-radius: var(--radius-lg);
@@ -81,9 +97,17 @@
   margin-bottom: var(--space-2);
 }
 
+.detail__stats li > span {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 4px;
+}
+
+/* The figure sizes to its tile, so "₦22.8m" never pushes a tile wider than its share. */
 .detail__stats strong {
-  font-size: var(--text-title);
-  line-height: 26px;
+  font-size: clamp(15px, calc(100cqw / (var(--chars, 3) * 0.62)), var(--text-title));
+  line-height: 1.2;
   font-weight: var(--weight-bold);
   letter-spacing: -0.03em;
   color: var(--color-text);
@@ -94,6 +118,7 @@
 }
 
 .detail__stats small {
+  overflow-wrap: anywhere;
   font-size: var(--text-caption);
 }
 

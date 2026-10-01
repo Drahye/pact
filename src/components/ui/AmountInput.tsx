@@ -22,7 +22,7 @@ export const AmountInput = forwardRef<HTMLInputElement, Props>(function AmountIn
   const id = useId();
   const text = formatAmountInput(value);
   return (
-    <div className={`amount amount--${size} amount--${align}`}>
+    <div className={`amount amount--${size} amount--${align}`} style={{ ['--chars' as string]: (text || placeholder).length }}>
       <label htmlFor={id} className={hideLabel ? 'visually-hidden' : 'field__label'}>
         {label}
       </label>

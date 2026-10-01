@@ -51,7 +51,7 @@
 
 .tabbar__pill {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 4px;
   padding: 6px;
   border-radius: var(--radius-full);
@@ -99,6 +99,10 @@
 }
 
 .tabbar__label {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: 11px;
   line-height: 14px;
   font-weight: var(--weight-semibold);

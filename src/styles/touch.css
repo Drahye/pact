@@ -1,0 +1,37 @@
+/* ==========================================================================
+   Touch targets. Small controls keep their compact look but get a 44px hit
+   area (the invisible ::after extends the clickable box, never the layout).
+   ========================================================================== */
+
+.attention__action,
+.suggest__chip,
+.create__kind,
+.contribute__hint,
+.wallet-strip__action,
+.wallet-strip__main,
+.wallet-card__eye,
+.wallet-card__tier,
+.section-heading__action,
+.home__me,
+.btn--sm {
+  position: relative;
+}
+
+.attention__action::after,
+.suggest__chip::after,
+.create__kind::after,
+.contribute__hint::after,
+.wallet-strip__action::after,
+.wallet-strip__main::after,
+.wallet-card__eye::after,
+.wallet-card__tier::after,
+.section-heading__action::after,
+.home__me::after,
+.btn--sm::after {
+  content: '';
+  position: absolute;
+  top: min(0px, calc((100% - 44px) / 2));
+  bottom: min(0px, calc((100% - 44px) / 2));
+  left: min(0px, calc((100% - 44px) / 2));
+  right: min(0px, calc((100% - 44px) / 2));
+}

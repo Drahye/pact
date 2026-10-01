@@ -88,12 +88,14 @@
 
 .completed__people ul {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  /* As many columns as fit at a readable width: 3 on the smallest phones, 4 and more as there is room. */
+  grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
   gap: var(--space-4) var(--space-2);
   margin-top: var(--space-4);
 }
 
 .completed__people li {
+  min-width: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -123,7 +125,18 @@
   font-weight: var(--weight-semibold);
 }
 
+.completed__people li > span:not(.completed__share) {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .completed__share {
+  max-width: 100%;
+  text-align: center;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
   font-size: 11px;
   font-weight: var(--weight-bold);
   filter: saturate(1.2) brightness(0.8);

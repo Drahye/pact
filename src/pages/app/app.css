@@ -53,8 +53,8 @@
   background: var(--color-bg);
   box-shadow:
     0 0 0 1px var(--color-border-strong),
-    0 0 0 9px var(--ink-900),
-    0 0 0 10px var(--ink-700),
+    0 0 0 9px var(--device-bezel),
+    0 0 0 10px var(--device-bezel-edge),
     var(--shadow-lg);
   isolation: isolate;
 }
@@ -271,6 +271,11 @@
 
 .screen > * {
   flex-shrink: 0;
+}
+
+/* When a field is focused the browser scrolls it into view: keep it clear of the sticky footer. */
+.screen:has(.screen__footer) {
+  scroll-padding-bottom: 168px;
 }
 
 .screen::-webkit-scrollbar {

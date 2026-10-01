@@ -110,8 +110,12 @@
 
 .needs__pact {
   font-size: var(--text-caption);
+  line-height: var(--leading-caption);
   font-weight: var(--weight-semibold);
   color: var(--color-text-tertiary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .needs__text strong {

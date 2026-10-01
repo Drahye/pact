@@ -9,7 +9,6 @@ import { PactTabs, PANEL_ID, tabId } from '../../components/pact/PactTabs';
 import { BottomNav } from '../../components/ui/BottomNav';
 import { Button } from '../../components/ui/Button';
 import { IconButton } from '../../components/ui/IconButton';
-import { SectionHeading } from '../../components/ui/SectionHeading';
 import type { Pact } from '../../data/types';
 import { countByTab, defaultTab, lifecycleOf, matchesTitle, MAX_SEARCH, normalizeQuery, readView, sortForTab, tabLabel, writeView, type Lifecycle, type PactTab } from '../../lib/lifecycle';
 import { attentionFor } from '../../lib/plan';
@@ -23,7 +22,6 @@ const emptyCopy: Record<Lifecycle, string> = {
   completed: 'Nothing completed yet.',
   closed: 'No closed Pacts.',
 };
-const groupTitle: Record<Lifecycle, string> = { active: 'Active', completed: 'Completed', closed: 'Closed' };
 
 /**
  * Your Pacts by where they are in their life: Active (including funded Pacts still waiting for their
@@ -60,11 +58,11 @@ export function PactsScreen() {
     return [...seen.values()];
   }, [pacts.data]);
   const counts = useMemo(() => countByTab(mine), [mine]);
-  const tab: PactTab = tabPref ?? (loading ? 'active' : defaultTab(counts));
+  const tab: PactTab = tabPref ?? defaultTab();
   // The first tab is chosen once, when Pacts first appear. After that it only changes when the person changes it,
   // even if its last Pact moves elsewhere.
   useEffect(() => {
-    if (tabPref === null && !loading && !failed && mine.length > 0) setTabPref(defaultTab(counts));
+    if (tabPref === null && !loading && !failed && mine.length > 0) setTabPref(defaultTab());
   }, [tabPref, loading, failed, mine.length, counts]);
   const nq = normalizeQuery(query);
 
@@ -154,18 +152,6 @@ export function PactsScreen() {
         }
       />
     );
-  } else if (tab === 'all') {
-    const groups = (['active', 'completed', 'closed'] as Lifecycle[]).map((g) => ({ g, items: shown.filter((p) => lifecycleOf(p) === g) })).filter((x) => x.items.length);
-    body = groups.map(({ g, items }, i) => (
-      <section key={g} className={`screen-section ${i === 0 ? 'screen-section--first' : ''}`} aria-labelledby={`pacts-g-${g}`}>
-        {groups.length > 1 && <SectionHeading id={`pacts-g-${g}`} title={`${groupTitle[g]} · ${items.length}`} />}
-        <div className="list-stack">
-          {items.map((p) => (
-            <PactCard key={p.id} pact={p} to={`/app/pact/${p.id}`} attention={attention.get(p.id)} />
-          ))}
-        </div>
-      </section>
-    ));
   } else {
     body = (
       <div className="list-stack">

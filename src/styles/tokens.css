@@ -100,6 +100,9 @@
 
   color-scheme: light;
 
+  --device-bezel: var(--ink-900);        /* phone frame on the desktop demo page */
+  --device-bezel-edge: var(--ink-700);
+
   /* ---- Typography -------------------------------------------------------- */
   --font-sans: 'Geist Variable', 'Geist', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
 
@@ -247,8 +250,8 @@
   --color-accent-soft: var(--mint-100);
   --color-accent-subtle: var(--mint-50);
 
-  --color-track: #27312c;
-  --color-track-inverse: #33403a;
+  --color-track: #323e38;
+  --color-track-inverse: #3d4a43;
 
   --color-border: #26302b;
   --color-border-strong: #36423c;
@@ -258,6 +261,8 @@
   --color-danger-soft: var(--red-100);
 
   --color-focus: #efece4;
+  --device-bezel: #05080a;
+  --device-bezel-edge: #3a4740;
 
   --tone-coral-fg: #ff9d85;
   --tone-sky-fg: #7dbaff;

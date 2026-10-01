@@ -59,6 +59,11 @@
 
 /* chips: separate outlined pills; the active one fills with ink */
 .segmented--chips .segmented__option {
+  min-width: 0;
+  padding: 0 var(--space-2);
+}
+
+.segmented--chips .segmented__option {
   background: var(--color-surface);
   box-shadow: inset 0 0 0 1px var(--color-border-strong);
 }

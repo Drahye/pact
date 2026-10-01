@@ -37,7 +37,7 @@
   align-items: center;
   justify-content: center;
   gap: var(--space-3);
-  min-height: 200px;
+  min-height: min(200px, 26dvh);
   padding: var(--space-6) 0;
 }
 

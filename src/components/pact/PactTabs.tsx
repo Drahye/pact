@@ -1,4 +1,4 @@
-import { useRef, type KeyboardEvent } from 'react';
+import { useEffect, useRef, type KeyboardEvent } from 'react';
 import { PACT_TABS, tabLabel, type PactCounts, type PactTab } from '../../lib/lifecycle';
 import './pact-tabs.css';
 
@@ -17,6 +17,15 @@ interface Props {
 export function PactTabs({ value, onChange, counts }: Props) {
   const list = useRef<HTMLDivElement>(null);
   const disabled = !counts;
+  // Keep the chosen tab in view when the row scrolls sideways (narrow phones, big counts, large text).
+  useEffect(() => {
+    const box = list.current;
+    const tab = box?.querySelector<HTMLElement>('[aria-selected="true"]');
+    if (!box || !tab) return;
+    const pad = 20;
+    if (tab.offsetLeft - pad < box.scrollLeft) box.scrollTo({ left: tab.offsetLeft - pad, behavior: 'smooth' });
+    else if (tab.offsetLeft + tab.offsetWidth + pad > box.scrollLeft + box.clientWidth) box.scrollTo({ left: tab.offsetLeft + tab.offsetWidth + pad - box.clientWidth, behavior: 'smooth' });
+  }, [value]);
   const move = (e: KeyboardEvent, i: number) => {
     const keys: Record<string, number> = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: PACT_TABS.length - 1 };
     if (!(e.key in keys)) return;

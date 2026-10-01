@@ -21,9 +21,9 @@ export const ThemeContext = createContext<ThemeContextValue | null>(null);
 function readStored(): Theme {
   try {
     const v = localStorage.getItem(THEME_KEY);
-    return v === 'light' || v === 'dark' || v === 'system' ? v : 'system';
+    return v === 'light' || v === 'dark' || v === 'system' ? v : 'light';
   } catch {
-    return 'system';
+    return 'light';
   }
 }
 
@@ -61,6 +61,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     document.documentElement.dataset.theme = painted;
     document.querySelector('meta[name="theme-color"]')?.setAttribute('content', META_COLOR[painted]);
+    document.querySelector('meta[name="color-scheme"]')?.setAttribute('content', painted);
   }, [painted]);
 
   const setTheme = useCallback((next: Theme) => {

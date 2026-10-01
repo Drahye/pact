@@ -98,6 +98,8 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
+  width: 100%;
+  container-type: inline-size;
 }
 
 .amount--center {
@@ -157,9 +159,14 @@
   color: var(--color-placeholder);
 }
 
-.amount--md .amount__currency { font-size: 28px; }
+.amount--md .amount__currency { font-size: calc(var(--amount-fs) * 0.875); }
 .amount--md .amount__input,
-.amount--md .amount__field::after { font-size: var(--num-md); line-height: 44px; }
-.amount--xl .amount__currency { font-size: 40px; }
+.amount--md .amount__field::after { font-size: var(--amount-fs); line-height: 1.4; }
+.amount--xl .amount__currency { font-size: calc(var(--amount-fs) * 0.62); }
 .amount--xl .amount__input,
-.amount--xl .amount__field::after { font-size: var(--num-xl); line-height: 76px; }
+.amount--xl .amount__field::after { font-size: var(--amount-fs); line-height: 1.2; }
+
+/* The figure shrinks to fit the width it has, so a long amount never runs off the screen.
+   (cqw resolves against .amount; ~0.6em per figure plus the currency sign.) */
+.amount--md .amount__control { --amount-fs: clamp(22px, calc(100cqw / (var(--chars, 1) * 0.6 + 1)), var(--num-md)); }
+.amount--xl .amount__control { --amount-fs: clamp(30px, calc(100cqw / (var(--chars, 1) * 0.6 + 1)), var(--num-xl)); }

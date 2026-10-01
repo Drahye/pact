@@ -11,10 +11,15 @@
 }
 
 .dl__title {
-  font-size: clamp(44px, 6.4vw, 96px);
+  font-size: clamp(38px, 5.4vw, 80px);
   line-height: 0.98;
   letter-spacing: -0.055em;
-  max-width: 11ch;
+}
+
+/* two lines, always: each phrase stays whole */
+.dl__title span {
+  display: block;
+  white-space: nowrap;
 }
 
 .dl__lede {
@@ -103,8 +108,8 @@
 
 .dl__stack {
   position: relative;
-  width: min(62vw, 300px);
-  aspect-ratio: 390 / 890;
+  width: min(64vw, 320px);
+  aspect-ratio: 380 / 760;
   transform-style: preserve-3d;
 }
 
@@ -113,13 +118,8 @@
   inset: 0;
 }
 
-.dl__phone img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: top;
-  border-radius: 33px;
+.dl__phone .phone3 {
+  --phone-w: 100%;
 }
 
 .dl__phone--back {

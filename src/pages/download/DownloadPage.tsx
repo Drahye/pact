@@ -10,12 +10,15 @@ import { Modal } from '../../components/ui/Modal';
 import { Segmented } from '../../components/ui/Segmented';
 import { gsap, MQ, useGSAP } from '../../lib/gsap';
 import '../site/landing.css';
+import { CompleteDemo } from '../site/mockups/CompleteDemo';
+import { ExecuteDemo } from '../site/mockups/ExecuteDemo';
+import { PhoneFrame } from '../site/mockups/PhoneFrame';
 import './download.css';
 import { setFixedClock } from '../../lib/clock';
 
 const detectPlatform = (): Platform => (/android/i.test(navigator.userAgent) ? 'android' : 'ios');
 
-const perks = ['Create a Pact in three details', 'Invite anyone with one link', 'Everyone sees every naira land'];
+const perks = ['Start a plan in three details', 'Everyone brings money, a task, or both', 'Pay for the plan straight from the Pact'];
 
 export function DownloadPage() {
   // Showcase numbers stay pinned to the launch date.
@@ -28,7 +31,7 @@ export function DownloadPage() {
   const stack = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    document.title = 'Get PACT for iOS and Android';
+    document.title = 'PACT · Get the app';
     window.scrollTo(0, 0);
     QRCode.toDataURL(`${window.location.origin}/app`, { margin: 0, width: 240, color: { dark: '#0f1713', light: '#ffffff' } })
       .then(setQr)
@@ -76,8 +79,10 @@ export function DownloadPage() {
         <section className="dl__hero">
           <div className="container dl__grid">
             <div className="dl__copy">
-              <h1 className="dl__title dl__reveal">Get PACT on your phone.</h1>
-              <p className="dl__lede dl__reveal">Create a Pact, invite your people and watch the goal fill up, on iPhone or Android.</p>
+              <h1 className="dl__title dl__reveal">
+                <span>Make it happen</span> <span>from your phone.</span>
+              </h1>
+              <p className="dl__lede dl__reveal">PACT keeps the people, money, tasks and next steps for a shared plan in one place. The iPhone and Android apps are on the way. The full app already works in your browser.</p>
 
               <div className="dl__platform dl__reveal">
                 <Segmented<Platform>
@@ -120,11 +125,15 @@ export function DownloadPage() {
               <span className="dl__shape dl__shape--sky" />
               <span className="dl__shape dl__shape--pink" />
               <div className="dl__stack" ref={stack}>
-                <div className="dl__phone dl__phone--back phone">
-                  <img src="/snapshots/detail.webp" alt="" />
+                <div className="dl__phone dl__phone--back">
+                  <PhoneFrame label="PACT using the Pact's money: the venue is paid and the cake payment is pending.">
+                    <ExecuteDemo t={0.62} />
+                  </PhoneFrame>
                 </div>
-                <div className="dl__phone dl__phone--front phone">
-                  <img src="/snapshots/home.webp" alt="" />
+                <div className="dl__phone dl__phone--front">
+                  <PhoneFrame label="PACT showing a completed Pact: We made it happen.">
+                    <CompleteDemo t={1} />
+                  </PhoneFrame>
                 </div>
               </div>
             </div>

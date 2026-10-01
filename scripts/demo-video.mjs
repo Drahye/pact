@@ -202,8 +202,9 @@ try {
   await tap(page.getByRole('button', { name: 'In a month' }), 900);
   await cap('Quick date chips, or pick any day.', 1600);
 
-  await tap(page.getByRole('radio', { name: 'Budget' }), 900);
-  await cap('Break the target into what it covers. Each line is a real cost.', 2400);
+  await cap('Four things are all it takes: a name, a date and roughly how much.', 2400);
+  await tap(page.getByRole('button', { name: /Break it into what the money covers/ }), 900);
+  await cap('Or break the target into what it covers. Each line is a real cost.', 2400);
   const amount = async (label, value) => {
     const f = page.getByLabel(label);
     await tap(f, 150);
@@ -215,13 +216,13 @@ try {
   await wait(800);
   await cap('Flights, stay and transport add up to a ₦240,000 target.', 2200);
 
-  await page.getByText('Anything that needs doing?').scrollIntoViewIfNeeded();
+  await tap(page.getByRole('button', { name: /Add things that need doing/ }), 800);
   await tap(page.getByRole('button', { name: /Book the flights/ }), 500);
   await tap(page.getByRole('button', { name: /Choose the accommodation/ }), 700);
   await cap('Tasks count as showing up too, so not everyone has to pay to help.', 2400);
 
-  await page.getByText('Who are you doing this with?').scrollIntoViewIfNeeded();
-  await tap(page.getByRole('button', { name: /Invite people/ }).last(), 900);
+  await page.getByText('Bring your people').scrollIntoViewIfNeeded();
+  await tap(page.getByRole('button', { name: /Invite people now/ }), 900);
   await typeSlow(page.getByLabel('Add by phone number'), '08035550142');
   await tap(page.getByRole('button', { name: 'Add', exact: true }), 700);
   await cap('Numbers not on PACT yet get a text with the link.', 2200);
@@ -263,7 +264,7 @@ try {
   await page.goto(`${BASE}/app/join/${invite}`, { waitUntil: 'load' });
   await page.getByText('invited you to').waitFor();
   await cap('Anyone can see what it’s for, and how far along it is, before signing up.', 3000);
-  await page.getByText('How do you want to show up?').scrollIntoViewIfNeeded();
+  await page.getByText('Everyone brings something').scrollIntoViewIfNeeded();
   await tap(page.getByRole('radio', { name: /Contributing and taking a task/ }), 900);
   await tap(btn('Sign up to join'), 900);
   await typeSlow(page.getByLabel('Mobile number'), NGOZI);
@@ -289,17 +290,17 @@ try {
 
   await page.evaluate(() => scrollTo(0, 0));
   await wait(600);
-  await tap(page.getByRole('button', { name: /Pledge a date/ }), 1000);
+  await tap(page.getByRole('button', { name: /Can’t pay yet/ }), 1000);
   const how = page.getByRole('textbox', { name: 'How much' });
   await tap(how, 150);
   await how.fill('');
   await how.pressSequentially('100000', { delay: 70 * SPEED });
   await tap(page.getByRole('radio', { name: 'In 3 days' }), 800);
-  await cap('Can’t pay yet? Pledge an amount and a date. PACT reminds you, so nobody chases.', 3200);
-  await tap(btn(/^Pledge ₦/), 1800);
-  await cap('The group sees the pledge next to her name.', 2200);
+  await cap('Can’t pay yet? Pick an amount and a date. PACT reminds you, so nobody chases.', 3200);
+  await tap(btn(/^Remind me · ₦/), 1800);
+  await cap('The group sees her pay date next to her name.', 2200);
   await tap(btn('Pay now'), 1400);
-  await page.getByText('From your wallet').waitFor();
+  await page.getByText('Pay with').waitFor();
   await cap('She pays now instead: straight into the Pact, no wallet balance needed.', 2800);
   await tap(page.getByRole('link', { name: /by transfer or card/ }), 1400);
   await cap('Transfer is free. Cards show their fee first.', 2200);
@@ -318,8 +319,8 @@ try {
   await page.locator('.detail__ring').waitFor();
   await cap('The ring shows who has covered what. Tunde is a guest, Ngozi is in.', 3000);
   await tap(page.getByRole('link', { name: /Cover the rest|Add your share|Contribute/ }).first(), 1200);
-  await page.getByText('From your wallet').waitFor();
-  await cap('Abraham pays the rest from his wallet. Press and hold, so it’s never by accident.', 3000);
+  await page.getByText('Pay with').waitFor();
+  await cap('Abraham pays the rest from his PACT balance. Press and hold, so it’s never by accident.', 3000);
   const holdBtn = page.getByRole('button', { name: /Hold to contribute|Hold/ }).first();
   await hold(holdBtn);
   await pin('1357');
@@ -409,7 +410,8 @@ try {
   await typeSlow(page.getByLabel('Name', { exact: true }), 'Tolu and Femi’s aso-ebi');
   await tap(page.getByRole('radio', { name: 'Wedding' }), 500);
   await tap(page.getByRole('button', { name: 'In a month' }), 700);
-  await tap(page.getByRole('radio', { name: 'Take orders' }), 900);
+  await tap(page.getByRole('button', { name: /More ways to use PACT/ }), 700);
+  await tap(page.getByRole('button', { name: /^Group order/ }), 900);
   await cap('Instead of one target, list what’s on offer. The total is whatever people order.', 3000);
   await typeSlow(page.getByLabel('Item 1 name'), 'Aso-oke and gele');
   const price = page.getByLabel('Item 1 price');

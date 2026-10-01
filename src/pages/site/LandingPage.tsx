@@ -1,31 +1,26 @@
 import { useEffect } from 'react';
 import { Footer } from '../../components/site/Footer';
 import { SiteNav } from '../../components/site/SiteNav';
-import { Anatomy } from './sections/Anatomy';
-import { AppSnapshots } from './sections/AppSnapshots';
-import { AlmostThere } from './sections/AlmostThere';
-import { CompletedShowcase } from './sections/CompletedShowcase';
-import { ContributeDemo } from './sections/ContributeDemo';
-import { EveryoneBrings } from './sections/EveryoneBrings';
+import { Difference } from './sections/Difference';
 import { Faq } from './sections/Faq';
 import { FinalCta } from './sections/FinalCta';
 import { Hero } from './sections/Hero';
-import { Manifesto } from './sections/Manifesto';
-import { PlanMarquee } from './sections/PlanMarquee';
-import { Scenarios } from './sections/Scenarios';
+import { HowItWorks } from './sections/HowItWorks';
+import { UseCases } from './sections/UseCases';
+import { WhyPact } from './sections/WhyPact';
 import './landing.css';
 import { setFixedClock } from '../../lib/clock';
 
 /**
- * One Pact, told as a story: make it happen together (hero), the app, one plan everyone
- * can see, what you're planning, how each person shows up, the plan moving, the last
- * stretch, and the finish: a ring made of everyone's part.
+ * One idea, told in six beats: PACT helps groups turn shared plans into completed outcomes.
+ * Hero (what it is), why it exists, how it works, what makes it different (funded is not
+ * finished), the plans people use it for, and the close. The FAQ answers the money questions.
  */
 export function LandingPage() {
   // Showcase numbers stay pinned to the launch date.
   setFixedClock(true);
   useEffect(() => {
-    document.title = 'PACT · Plan it together. Fund it together.';
+    document.title = 'PACT · Make group plans happen together';
   }, []);
   return (
     <>
@@ -35,15 +30,10 @@ export function LandingPage() {
       <SiteNav />
       <main id="main" className="landing">
         <Hero />
-        <PlanMarquee />
-        <Manifesto />
-        <AppSnapshots />
-        <Anatomy />
-        <Scenarios />
-        <EveryoneBrings />
-        <ContributeDemo />
-        <AlmostThere />
-        <CompletedShowcase />
+        <WhyPact />
+        <HowItWorks />
+        <Difference />
+        <UseCases />
         <Faq />
         <FinalCta />
       </main>

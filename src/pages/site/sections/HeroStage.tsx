@@ -39,7 +39,8 @@ function hasWebGL() {
  */
 export function HeroStage() {
   const reduce = !!useReducedMotion();
-  const compact = useMediaQuery('(max-width: 767px)');
+  // Always the narrow orbit: the stage shares its row with the copy on desktop and is portrait-ish elsewhere.
+  const compact = useMediaQuery('(min-width: 0px)');
   const wrap = useRef<HTMLDivElement>(null);
   const inView = useInView(wrap, { margin: '-15% 0px' });
   const [raised, setRaised] = useState(START);

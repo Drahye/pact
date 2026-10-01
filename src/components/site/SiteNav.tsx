@@ -7,12 +7,12 @@ import './site-nav.css';
 
 const links = [
   { href: '/#how', label: 'How it works' },
-  { href: '/#app', label: 'The app' },
+  { href: '/#difference', label: 'What\u2019s different' },
   { href: '/#plans', label: 'Plans' },
   { href: '/#faq', label: 'FAQ' },
 ];
 
-/** Floating pill navigation. One conversion: get the app. */
+/** Floating pill navigation. One conversion: start a Pact. */
 export function SiteNav() {
   const [scrolled, setScrolled] = useState(false);
   const { pathname } = useLocation();
@@ -35,8 +35,8 @@ export function SiteNav() {
             </a>
           ))}
         </nav>
-        <Button to="/download" size="sm" className="site-nav__cta" iconRight={<ArrowRight />}>
-          Get the app
+        <Button to="/app" size="sm" className="site-nav__cta" iconRight={<ArrowRight />}>
+          Start a Pact
         </Button>
       </div>
     </header>

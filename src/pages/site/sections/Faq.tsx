@@ -1,6 +1,6 @@
 import { Plus } from 'lucide-react';
 import { SectionHeading } from '../../../components/ui/SectionHeading';
-import { CARD_FEE_CAP, NGN, TIER_LIMITS, WITHDRAWAL_FEE } from '../../../../shared/policy';
+import { CARD_FEE_CAP, NGN, TIER_LIMITS, VENDOR_APPROVAL_THRESHOLD, WITHDRAWAL_FEE } from '../../../../shared/policy';
 
 const naira = (kobo: number) => `₦${(kobo / NGN).toLocaleString('en-NG')}`;
 
@@ -8,6 +8,10 @@ const faqs = [
   {
     q: 'Where does the money sit while we save?',
     a: 'In the Pact, not in anyone’s personal account. Every movement is recorded on a double-entry ledger. At launch, balances will be held with a licensed banking or payment partner, separate from PACT’s own money. Until then PACT runs in sandbox mode and no real money moves.',
+  },
+  {
+    q: 'Can we pay for the plan from the Pact?',
+    a: `Yes. The organiser pays vendors straight from the Pact, to their bank account, and everyone sees each payment in the activity. Payments that add up to more than ${naira(VENDOR_APPROVAL_THRESHOLD)} in a day need a co-organiser’s approval. When the plan is done, the organiser marks the Pact completed.`,
   },
   {
     q: 'What happens if we don’t reach the goal?',
@@ -35,7 +39,7 @@ export function Faq() {
   return (
     <section id="faq" className="section faq" aria-labelledby="faq-title">
       <div className="container faq__inner">
-        <SectionHeading id="faq-title" variant="site" eyebrow="Questions" title="Money you can trust with your friends." description="The rules are simple, visible to everyone, and enforced by the product, not by whoever is holding the money." />
+        <SectionHeading id="faq-title" variant="site" eyebrow="Questions" title="Group money, with rules everyone can see." description="The rules are simple, visible to everyone, and enforced by the product, not by whoever is holding the money." />
         <div className="faq__list">
           {faqs.map((f) => (
             <details key={f.q} className="faq__item">

@@ -134,6 +134,8 @@ docker compose up --build   # Postgres + app + worker, production-like
 
 The Docker image runs as a non-root user with a health check on `/api/health`. CI (GitHub Actions) typechecks, runs the API tests, builds, and audits production dependencies on every push and pull request.
 
+A closed beta with real people and no real money runs on **staging**: [STAGING.md](STAGING.md) has the deployment, [docs/ANALYTICS.md](docs/ANALYTICS.md) the funnel events and report (`npm run report:funnel`).
+
 Going live needs: a managed Postgres, a Paystack live secret key with the webhook URL set to `https://<your-domain>/api/webhooks/paystack`, an SMS sender (Termii adapter included), an identity provider for BVN checks (the sandbox accepts any BVN; the production call is a single function in `modules/users.ts`), and push notification credentials for the native apps (the `push.send` job is the hook). [LAUNCH.md](LAUNCH.md) covers the business side.
 
 ---

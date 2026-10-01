@@ -1,6 +1,7 @@
 import { CheckCircle2, AlertTriangle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { BankAccountDTO } from '../../../../shared/contracts';
+import { useAuth } from '../../../api/auth';
 import { api, ApiError } from '../../../api/client';
 import { useAddBankAccount, useBanks } from '../../../api/hooks';
 import { PinSheet } from '../../../components/app/PinSheet';
@@ -19,6 +20,7 @@ interface Props {
 
 /** Bank + 10-digit number, resolved to the account holder's name before anything is saved. */
 export function AddBankSheet({ open, onClose, onAdded }: Props) {
+  const { config } = useAuth();
   const banks = useBanks();
   const add = useAddBankAccount();
   const [bankCode, setBankCode] = useState('');
@@ -107,6 +109,7 @@ export function AddBankSheet({ open, onClose, onAdded }: Props) {
               {resolved.matchesProfile ? '' : '. This name doesn’t match yours, so it can’t receive withdrawals.'}
             </Notice>
           )}
+          {config?.deployEnv === 'staging' && <Notice tone="sun">Beta test: use any 10 digits, like 0123456789. Don’t enter a real account number.</Notice>}
           {error && <Notice tone="danger">{error}</Notice>}
         </div>
       </Modal>

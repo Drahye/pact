@@ -5,6 +5,7 @@ import { processPactPayout } from '../modules/pactMoney.js';
 import { sweepPledges } from '../modules/pledges.js';
 import { processPayout, reconcileTopupByRef } from '../modules/wallet.js';
 import { handleWebhook } from '../modules/webhooks.js';
+import { syncProductEvents } from '../modules/events.js';
 import { enqueue } from '../modules/platform.js';
 
 interface Job {
@@ -27,9 +28,11 @@ const handlers: Record<string, Handler> = {
     await ctx.db.query(`DELETE FROM refresh_tokens WHERE superseded_at < now() - interval '2 days'`);
     await ctx.db.query(`DELETE FROM otp_challenges WHERE created_at < now() - interval '2 days'`);
     await ctx.db.query(`DELETE FROM http_rate_limits WHERE expires_at < now()`);
+    await ctx.db.query(`DELETE FROM product_events WHERE occurred_at < now() - interval '18 months'`);
     await sweepPledges(ctx);
     return sweepDeadlines(ctx);
   },
+  'events.sync': (ctx) => syncProductEvents(ctx),
   'ledger.reconcile': async (ctx) => {
     const r = await reconcile(ctx.db);
     if (!r.ok) ctx.log.fatal({ drift: r.drift, total: r.total }, 'LEDGER DRIFT DETECTED');
@@ -90,6 +93,8 @@ async function scheduleRecurring(ctx: Ctx) {
   const hour = ctx.now().toISOString().slice(0, 13);
   await enqueue(ctx.db, 'pacts.sweep', {}, { dedupeKey: `sweep:${hour}` });
   await enqueue(ctx.db, 'ledger.reconcile', {}, { dedupeKey: `reconcile:${hour}` });
+  // Product events catch up every ten minutes.
+  await enqueue(ctx.db, 'events.sync', {}, { dedupeKey: `events:${ctx.now().toISOString().slice(0, 15)}` });
 }
 
 export function startWorker(ctx: Ctx, intervalMs = 1000) {

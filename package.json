@@ -24,7 +24,8 @@
     "test": "node --import tsx --test --test-concurrency=1 server/test/*.test.ts",
     "test:roles": "TEST_DB_ROLE=service node --import tsx --test --test-concurrency=1 server/test/*.test.ts",
     "db:reset": "rm -rf .data",
-    "e2e": "node scripts/e2e.mjs"
+    "e2e": "node scripts/e2e.mjs",
+    "report:funnel": "node --import tsx scripts/funnel-report.mjs"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.8",
@@ -54,6 +55,7 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
+    "@electric-sql/pglite-socket": "^0.2.11",
     "@types/node": "^26.6.2",
     "@types/pg": "^8.23.1",
     "@types/qrcode": "^1.5.6",

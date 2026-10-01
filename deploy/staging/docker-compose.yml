@@ -1,0 +1,48 @@
+# Staging topology: Postgres, two API instances behind a TLS proxy, and one separate worker.
+#   cp .env.staging.example .env.staging   (fill it in; STAGING.md has the database role bootstrap)
+#   docker compose -f deploy/staging/docker-compose.yml --env-file .env.staging up --build -d
+# The bundled Postgres is for a single-host staging. With a managed Postgres, delete `db` and point
+# DATABASE_URL and MIGRATION_DATABASE_URL (in .env.staging) at it.
+name: pact-staging
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: pact_admin
+      POSTGRES_PASSWORD: ${DB_ADMIN_PASSWORD:?set DB_ADMIN_PASSWORD}
+      POSTGRES_DB: pact_staging
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U pact_admin -d pact_staging']
+      interval: 5s
+      retries: 10
+
+  app1: &app
+    build: { context: ../.., dockerfile: Dockerfile }
+    env_file: ../../.env.staging
+    environment:
+      RUN_WORKER: 'false'
+    depends_on:
+      db: { condition: service_healthy }
+    restart: unless-stopped
+
+  app2:
+    <<: *app
+
+  worker:
+    <<: *app
+    command: ['node', 'build/worker.mjs']
+    healthcheck: { disable: true }
+
+  proxy:
+    image: caddy:2-alpine
+    ports: ['80:80', '443:443']
+    environment:
+      STAGING_HOST: ${STAGING_HOST:?set STAGING_HOST, e.g. staging.example.com}
+    volumes: [./Caddyfile:/etc/caddy/Caddyfile:ro, caddy_data:/data]
+    depends_on: [app1, app2]
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  caddy_data:

@@ -1,6 +1,7 @@
-import { Link2 } from 'lucide-react';
+import { FlaskConical, Link2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../api/auth';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Logo } from '../../components/ui/Logo';
@@ -17,6 +18,7 @@ export const parseInviteCode = (raw: string) => {
 };
 
 export function WelcomeScreen() {
+  const { config } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [joinOpen, setJoinOpen] = useState(false);
@@ -63,6 +65,11 @@ export function WelcomeScreen() {
           Money works <span className="welcome__pill">better</span> together.
         </h1>
         <p className="welcome__lede">Create a shared goal, invite your people, and watch everyone move closer to the finish line.</p>
+        {config?.deployEnv === 'staging' && (
+          <span className="sandbox-tag">
+            <FlaskConical aria-hidden /> Sandbox beta: no real money moves
+          </span>
+        )}
       </div>
 
       <Modal

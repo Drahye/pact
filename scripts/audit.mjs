@@ -6,12 +6,15 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 
 const out = process.argv[2] ?? 'audit-results.json';
-const BASE = 'http://localhost:5173';
+const BASE = (process.env.AUDIT_BASE ?? 'http://localhost:5173').replace(/\/$/, '');
+// Staging has no demo data: the audit signs up its own person and Pact through the API (needs STAGING_SHOW_CODES or a dev stack).
+const FRESH = process.env.AUDIT_FRESH === '1';
 const WIDTHS = [390, 430, 768, 1024, 1280, 1440];
 const axeSource = readFileSync('node_modules/axe-core/axe.min.js', 'utf8');
 const shell = `${homedir()}/Library/Caches/ms-playwright/chromium_headless_shell-1148/chrome-mac/headless_shell`;
 const browser = await chromium.launch(existsSync(shell) ? { executablePath: shell } : {});
-const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+// bypassCSP: the audit injects axe-core into the page, which a hardened (staging or production) CSP rightly refuses.
+const context = await browser.newContext({ viewport: { width: 390, height: 844 }, bypassCSP: true });
 const page = await context.newPage();
 const results = { overflow: [], axe: [], console: [], links: [], routes: [] };
 page.on('console', (m) => m.type() === 'error' && !/401|Failed to load resource/.test(m.text()) && results.console.push({ url: page.url(), text: m.text().slice(0, 200) }));
@@ -57,7 +60,7 @@ async function runAxe(url) {
 for (const path of sitePages) {
   const res = await page.goto(`${BASE}${path}`, { waitUntil: 'load' });
   // Let entrance animations finish: axe measures colours at their current opacity.
-  await page.waitForTimeout(4000);
+  await page.waitForTimeout(8000);
   results.routes.push({ path, status: res?.status() });
   await runAxe(path);
   await checkOverflow(path);
@@ -73,11 +76,27 @@ for (const path of sitePages) {
 }
 
 // Signed-in app screens
-await signIn('08010000006');
-await page.goto(`${BASE}/app/pacts`);
-await page.getByText("Sarah's Birthday").first().click();
-await page.locator('.detail__ring').waitFor();
-const pactPath = new URL(page.url()).pathname;
+let pactPath;
+if (FRESH) {
+  const api = async (method, path, token, body) => {
+    const r = await fetch(`${BASE}/api${path}`, { method, headers: { 'content-type': 'application/json', ...(token ? { authorization: `Bearer ${token}` } : {}), ...(method !== 'GET' ? { 'idempotency-key': `audit-${Date.now()}-${Math.random()}` } : {}) }, body: body ? JSON.stringify(body) : undefined });
+    return r.json();
+  };
+  const phone = `080${String(Date.now()).slice(-8)}`;
+  const otp = await api('POST', '/auth/otp/request', null, { phone });
+  const v = await api('POST', '/auth/otp/verify', null, { phone, code: otp.devCode });
+  const t = await api('POST', '/auth/signup', null, { signupToken: v.signupToken, firstName: 'Audit', lastName: 'Person', pin: '2468' });
+  const day = new Date(Date.now() + 20 * 86400000).toISOString().slice(0, 10);
+  const made = await api('POST', '/pacts', t.accessToken, { title: 'Audit Trip', category: 'trip', target: 100000_00, deadline: day, tasks: [{ title: 'Book the flights' }] });
+  pactPath = `/app/pact/${made.data.pact.id}`;
+  await signIn(phone);
+} else {
+  await signIn('08010000006');
+  await page.goto(`${BASE}/app/pacts`);
+  await page.getByText("Sarah's Birthday").first().click();
+  await page.locator('.detail__ring').waitFor();
+  pactPath = new URL(page.url()).pathname;
+}
 const appPages = ['/app/home', '/app/pacts', pactPath, `${pactPath}/invite`, `${pactPath}/contribute`, '/app/create', '/app/wallet', '/app/wallet/topup', '/app/wallet/withdraw', '/app/activity', '/app/notifications', '/app/profile', '/app/profile/verify', '/app/profile/security', '/app/profile/banks'];
 for (const path of appPages) {
   const res = await page.goto(`${BASE}${path}`, { waitUntil: 'load' });

@@ -11,6 +11,7 @@ type Status = 'loading' | 'signedOut' | 'signedIn';
 export interface ServerConfig {
   provider: 'sandbox' | 'paystack';
   sandbox: boolean;
+  deployEnv?: 'development' | 'staging' | 'production';
   exposeDevCodes: boolean;
 }
 

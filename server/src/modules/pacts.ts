@@ -6,6 +6,7 @@ import { randomCode } from '../lib/crypto.js';
 import { AppError, badRequest, conflict, forbidden, notFound } from '../lib/errors.js';
 import { formatNgn } from '../lib/money.js';
 import { normalizeNgPhone } from '../lib/phone.js';
+import { track } from '../lib/events.js';
 import { addDays, lagosToday } from '../lib/time.js';
 import { getUser, verifyPin } from './auth.js';
 import { createAccount, post, walletAccountId } from './ledger.js';
@@ -584,7 +585,9 @@ export async function joinByCode(ctx: Ctx, userId: string, code: string, partici
   const pactId = await ctx.db.tx(async (q) => {
     const p = await q.query<PactRow>('SELECT * FROM pacts WHERE invite_code = $1 FOR UPDATE', [code.toUpperCase()]);
     if (!p.rows[0]) throw notFound('Invite');
-    await joinTx(q, p.rows[0], userId, participation);
+    const joined = await joinTx(q, p.rows[0], userId, participation);
+    // The choice made on the invite page is only known here; later changes are read from the activity feed.
+    if (joined && participation) await track(q, ctx.config, 'participation_selected', { userId, pactId: p.rows[0].id, props: { participation, at: 'join' } }, true);
     return p.rows[0].id;
   });
   return getPact(ctx, userId, pactId);
@@ -593,7 +596,8 @@ export async function joinByCode(ctx: Ctx, userId: string, code: string, partici
 export async function acceptInvite(ctx: Ctx, userId: string, pactId: string, participation: Participation | null = null) {
   await ctx.db.tx(async (q) => {
     const { pact } = await loadVisible(q, pactId, userId, true);
-    await joinTx(q, pact, userId, participation);
+    const joined = await joinTx(q, pact, userId, participation);
+    if (joined && participation) await track(q, ctx.config, 'participation_selected', { userId, pactId, props: { participation, at: 'join' } }, true);
   });
   return getPact(ctx, userId, pactId);
 }

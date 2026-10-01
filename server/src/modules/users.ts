@@ -29,6 +29,9 @@ export async function updateProfile(ctx: Ctx, userId: string, input: { firstName
  * The sandbox accepts any BVN except all-zeros. Only a keyed hash and the last
  * four digits are kept; the encrypted value supports regulatory lookups.
  */
+/** The one BVN a staging beta accepts. It identifies nobody. */
+export const STAGING_TEST_BVN = '22222222222';
+
 export async function verifyBvn(ctx: Ctx, userId: string, bvn: string, dateOfBirth: string, meta: ReqMeta) {
   const u = await getUser(ctx.db, userId);
   if (u.kyc_tier >= 2) return me(ctx, userId);
@@ -36,9 +39,19 @@ export async function verifyBvn(ctx: Ctx, userId: string, bvn: string, dateOfBir
   const age = (ctx.now().getTime() - dob.getTime()) / (365.25 * 86_400_000);
   if (!(age >= 18 && age < 120)) throw badRequest('underage', 'You need to be 18 or older to verify.');
   if (/^0+$/.test(bvn)) throw new AppError(422, 'bvn_not_found', 'We couldn’t verify that BVN. Check the number and date of birth.');
-  // The sandbox check accepts any BVN, so it never runs in production, even on a demo deploy.
-  if (ctx.provider.name !== 'sandbox' || ctx.config.isProd) {
+  // The sandbox check accepts any BVN, so it never runs in production.
+  if (ctx.provider.name !== 'sandbox' || ctx.config.deployEnv === 'production') {
     throw new AppError(503, 'kyc_unavailable', 'Identity verification is being set up. Try again soon.');
+  }
+  // A staging beta has real people and no real identity provider: only the published test BVN works, and nothing of it is kept.
+  if (ctx.config.deployEnv === 'staging') {
+    if (bvn !== STAGING_TEST_BVN) throw new AppError(422, 'test_bvn_only', `This is a test environment. Enter the test BVN ${STAGING_TEST_BVN}, never your real one.`);
+    await ctx.db.tx(async (q) => {
+      await q.query(`UPDATE users SET kyc_tier = 2, bvn_last4 = $2, updated_at = now() WHERE id = $1`, [userId, bvn.slice(-4)]);
+      await audit(q, { actorId: userId, action: 'kyc.test_bvn_verified', targetType: 'user', targetId: userId, ip: meta.ip });
+      await notify(q, [userId], { type: 'security', title: 'You’re verified', body: 'Higher limits are on, and you can now release Pact funds.' });
+    });
+    return me(ctx, userId);
   }
   const hash = keyedHash(ctx.config.HASH_SECRET, `bvn:${bvn}`);
   const taken = await ctx.db.query('SELECT 1 FROM users WHERE bvn_hash = $1 AND id <> $2', [hash, userId]);

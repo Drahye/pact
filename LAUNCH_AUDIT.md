@@ -245,3 +245,9 @@ Everything in `.env.example`, plus:
 7. Run `scripts/loadtest.mjs` against staging. (The Welcome screen no longer loads the 3D scene.)
 
 Everything else in this document passed or is intentionally out of scope for the MVP.
+
+## 11. Sandbox beta readiness (added with the staging work)
+
+Staging is a hardened, sandbox-only deployment for a closed beta; see [STAGING.md](STAGING.md). Deployment guards are in `server/src/config.ts` (tested in `server/test/config.test.ts`): live Paystack keys are refused outside production, production refuses sandbox payments and screen-shown codes, and staging only accepts the test BVN. First-party funnel events are described in [docs/ANALYTICS.md](docs/ANALYTICS.md).
+
+Rehearsed on this machine, not on real infrastructure: the production build in staging mode against a Postgres-compatible stand-in (PGlite over the wire protocol). Still to do on the real staging host: apply `roles.sql` and boot with the two role URLs, run the browser journey and the audit against the public URL, run the load test against a load-test copy with two API instances and a worker, and watch the first week of alerts.

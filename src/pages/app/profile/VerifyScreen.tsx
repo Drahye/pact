@@ -91,7 +91,7 @@ export function VerifyScreen() {
         <form id="bvn-form" className="verify__form" onSubmit={submit} noValidate>
           <Input label="BVN" name="bvn" autoComplete="off" inputMode="numeric" maxLength={11} value={bvn} onChange={(e) => setBvn(e.target.value.replace(/\D/g, '').slice(0, 11))} hint="Dial *565*0# from your bank-registered line to get it." className="num" />
           <Input label="Date of birth" name="bday" autoComplete="bday" type="date" value={dob} onChange={(e) => setDob(e.target.value)} max={new Date(Date.now() - 18 * 365.25 * 86400000).toISOString().slice(0, 10)} />
-          <Notice icon={<Lock />}>We store only the last four digits and an encrypted copy for regulatory checks.{config?.sandbox && ' Sandbox: any 11 digits work.'}</Notice>
+          <Notice icon={<Lock />}>We store only the last four digits and an encrypted copy for regulatory checks.{config?.deployEnv === 'staging' ? ' Beta test: enter the test BVN 22222222222. Never your real one.' : config?.sandbox && ' Sandbox: any 11 digits work.'}</Notice>
           {error && <Notice tone="danger">{error}</Notice>}
         </form>
       )}

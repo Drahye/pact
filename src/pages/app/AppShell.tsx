@@ -68,6 +68,17 @@ function DemoPanel() {
           </span>
         )}
       </div>
+      {config?.deployEnv === 'staging' ? (
+        <div className="proto-panel__nav">
+          <p className="proto-panel__label">Closed sandbox beta</p>
+          <ol className="demo-steps">
+            <li>Sign up with your own number. The SMS code arrives as usual.</li>
+            <li>Payments are pretend: no real money moves, ever.</li>
+            <li>To verify, use the test BVN <span className="num">22222222222</span>. Never enter your real BVN or bank details.</li>
+            <li>Tell us what confused you. That is the point of this beta.</li>
+          </ol>
+        </div>
+      ) : (
       <div className="proto-panel__nav">
         <p className="proto-panel__label">Demo accounts</p>
         <ul className="demo-list">
@@ -90,6 +101,7 @@ function DemoPanel() {
           <li>Withdraw to a bank account in your name</li>
         </ol>
       </div>
+      )}
       {status === 'signedIn' && user && (
         <p className="demo-hint demo-hint--end">
           Signed in as <strong>{user.firstName}</strong>

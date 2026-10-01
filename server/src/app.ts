@@ -24,6 +24,7 @@ import * as pacts from './modules/pacts.js';
 import * as plan from './modules/plan.js';
 import * as users from './modules/users.js';
 import * as wallet from './modules/wallet.js';
+import { pactId as pactPseudo, track, visitorId } from './lib/events.js';
 import { handleWebhook } from './modules/webhooks.js';
 import { createPaystackProvider } from './payments/paystack.js';
 import type { PaymentProvider } from './payments/provider.js';
@@ -236,6 +237,7 @@ export async function buildApp({ config, db, provider, sms, now = () => new Date
       api.get('/config', async () => ({
         provider: ctx.provider.name,
         sandbox: ctx.provider.name === 'sandbox',
+        deployEnv: config.deployEnv,
         exposeDevCodes: config.exposeDevCodes,
       }));
 
@@ -287,7 +289,15 @@ export async function buildApp({ config, db, provider, sms, now = () => new Date
       /* ---------- invite previews (public, so a shared link can show what it's for) */
       api.get<{ Params: { code: string } }>('/invites/:code', strict(60), async (req) => {
         if (!/^[A-Za-z0-9]{6,12}$/.test(req.params.code)) throw notFound('Invite');
-        const { id: _id, ...preview } = await pacts.preview(ctx, req.params.code);
+        const { id, ...preview } = await pacts.preview(ctx, req.params.code);
+        // One event per visitor per Pact per day. The visitor is a daily pseudonym; the address and browser are never stored.
+        const m = meta(req);
+        await track(ctx.db, config, 'invite_previewed', {
+          pactId: id,
+          actor: visitorId(config, m.ip, m.userAgent, ctx.now().toISOString().slice(0, 10)),
+          key: `v:${visitorId(config, m.ip, m.userAgent, ctx.now().toISOString().slice(0, 10))}:${pactPseudo(config, id)}`,
+          props: { status: preview.status === 'open' ? 'open' : preview.status === 'funded' ? 'funded' : 'closed', has_pay_account: !!preview.bankAccount },
+        });
         return preview;
       });
 

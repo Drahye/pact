@@ -91,12 +91,13 @@ const content: Record<Doc, { title: string; intro: string; sections: { h: string
           'Identity verification: a provider still being selected will receive your BVN, name and date of birth to confirm who you are.',
           'Hosting and database: a provider still being selected will store the data described here, in encrypted form where noted.',
           'The website and app load no analytics, advertising or tracking services. Fonts and images are served from PACT’s own servers.',
+          'PACT does keep simple product statistics on its own servers, for example how many invite links led to someone joining. They use scrambled identifiers instead of your name or number, never contain PINs, bank details or messages, and are not shared with anyone.',
         ],
       },
       {
         h: 'How long we keep it',
         p: [
-          'Sign-in codes are deleted after two days, and old sign-in tokens after two days once replaced. Security logs are kept to protect accounts and investigate abuse.',
+          'Sign-in codes are deleted after two days, and old sign-in tokens after two days once replaced. Security logs are kept to protect accounts and investigate abuse. Product statistics are deleted after 18 months.',
           'While your account is open, we keep your data so the product works. If you close your account, your name, photo, PIN and bank details are erased. Transaction records, identity-check records and security logs are kept for as long as financial and anti-money-laundering rules require (we expect this to be at least five years, subject to legal review), then deleted.',
           'Memory photos stay until the organiser removes them.',
         ],

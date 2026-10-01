@@ -1,0 +1,9 @@
+# TLS, and a round-robin across the two API instances. The app sets its own security headers.
+{$STAGING_HOST} {
+	encode zstd gzip
+	reverse_proxy app1:8080 app2:8080 {
+		lb_policy round_robin
+		health_uri /api/health
+		health_interval 10s
+	}
+}

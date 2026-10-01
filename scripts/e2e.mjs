@@ -14,7 +14,9 @@ const errors = [];
 page.on('pageerror', (e) => errors.push(e.message));
 page.on('console', (m) => m.type() === 'error' && !/401|Failed to load resource/.test(m.text()) && errors.push(m.text().slice(0, 200)));
 
-const BASE = 'http://localhost:5173';
+const BASE = (process.env.E2E_BASE ?? 'http://localhost:5173').replace(/\/$/, '');
+// Staging only accepts the published test BVN.
+const BVN = process.env.E2E_BVN ?? `222${String(Date.now()).slice(-8)}`;
 // REFRESH_LOG: record auth refresh outcomes to diagnose session loss.
 const refreshLog = [];
 page.on('response', async (r) => {
@@ -152,7 +154,7 @@ try {
 
   // Verify BVN
   await page.goto(`${BASE}/app/profile/verify`);
-  await page.getByLabel('BVN').fill(`222${String(Date.now()).slice(-8)}`);
+  await page.getByLabel('BVN').fill(BVN);
   await page.getByLabel('Date of birth').fill('1994-05-17');
   await shot('verify');
   await page.locator('.screen__footer').getByRole('button', { name: 'Verify BVN' }).click();

@@ -9,7 +9,7 @@ import { PinSheet } from '../../components/app/PinSheet';
 import { Notice } from '../../components/app/States';
 import { AnimatedNumber } from '../../components/pact/AnimatedNumber';
 import { CategoryChip } from '../../components/pact/category';
-import { AttentionCard, BudgetList, TaskList } from '../../components/pact/Plan';
+import { AttentionCard, BudgetList, NextStep, OrganizerProgress, TaskList } from '../../components/pact/Plan';
 import { SegmentedRing } from '../../components/pact/SegmentedRing';
 import { ActivityItem } from '../../components/ui/ActivityItem';
 import { Avatar } from '../../components/ui/Avatar';
@@ -24,7 +24,7 @@ import { getUser } from '../../data/users';
 import { addDaysIso } from '../../lib/dates';
 import { formatDate, formatNaira, formatNairaCompact, formatPercent } from '../../lib/format';
 import { colorOf, GUEST_SHARE_ID, guestTotalOf, invitedMembers, joinedMembers, sharesOf, summarize } from '../../lib/pact';
-import { attentionFor, bringsOf, participationLabel, stageOf, type AttentionItem } from '../../lib/plan';
+import { attentionFor, bringsOf, checkpointsFor, nextStepFor, participationLabel, stageOf, type AttentionItem } from '../../lib/plan';
 import { spring } from '../../tokens/tokens';
 import { MISSED_GOAL_GRACE_DAYS, NGN, VENDOR_APPROVAL_THRESHOLD } from '../../../shared/policy';
 import { ApprovalCards, AssignGuestSheet, canPayVendors, CoOrganizerSheet, GuestAvatar, guestsOf, isOrganizerOf, PaidFromPact, PayByTransfer, PayoutSheet, PayVendorSheet, type GuestGroup } from './detail/Money';
@@ -78,6 +78,9 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
   const tasks = pact.tasks ?? [];
   const budget = pact.budget ?? [];
   const attention = attentionFor(pact, me);
+  // The first useful prompt leads the page as the Next step; the rest stay under "Needs attention".
+  const next = stage === 'invited' || stage === 'closed' ? null : nextStepFor(pact, me);
+  const checkpoints = isOrganizer ? checkpointsFor(pact) : [];
 
   const run = async (fn: () => Promise<unknown>, ok: string) => {
     setMenuOpen(false);
@@ -248,13 +251,32 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
         </li>
       </ul>
 
-      {actions && (
-        <div className="detail__actions">
-          {actions.primary}
-          {actions.secondary}
-        </div>
+      {next ? (
+        <>
+          <NextStep item={next} onAction={onAttention} />
+          <div className="nextstep-more">
+            {next.action?.kind !== 'contribute' && (
+              <Button to={`${base}/contribute`} variant="ghost" size="md">
+                Add to Pact
+              </Button>
+            )}
+            {next.action?.kind !== 'invite' && (
+              <Button to={`${base}/invite`} variant="ghost" size="md">
+                Invite people
+              </Button>
+            )}
+          </div>
+        </>
+      ) : (
+        actions && (
+          <div className="detail__actions">
+            {actions.primary}
+            {actions.secondary}
+          </div>
+        )
       )}
-      {stage === 'almost' && !orders && <p className="detail__almost">We’re almost there. {formatNaira(s.remaining)} left.</p>}
+      {!next && stage === 'almost' && !orders && <p className="detail__almost">We’re almost there. {formatNaira(s.remaining)} left.</p>}
+      {checkpoints.length > 0 && <OrganizerProgress rows={checkpoints} onInvite={() => navigate(`${base}/invite`)} />}
       <ApprovalCards pact={pact} meId={me} onOpen={setPayout} />
       {stage === 'past-deadline' && (
         <Notice tone="sun" icon={<Scale />}>
@@ -275,9 +297,9 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
 
       {mine && stage !== 'invited' && stage !== 'closed' && <MyPledge pact={pact} meId={me} onPay={(amount) => navigate(`${base}/contribute?amount=${Math.ceil(amount)}`)} />}
 
-      {attention.length > 0 && (
+      {attention.filter((i) => i.key !== next?.key).length > 0 && (
         <div className="screen-section">
-          <AttentionCard items={attention} onAction={onAttention} />
+          <AttentionCard items={attention.filter((i) => i.key !== next?.key)} onAction={onAttention} title={next ? 'Also on the list' : 'Needs attention'} />
         </div>
       )}
 

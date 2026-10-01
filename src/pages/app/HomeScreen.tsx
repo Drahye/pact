@@ -11,6 +11,7 @@ import { FeaturedPactCard } from '../../components/pact/FeaturedPactCard';
 import { PactCard } from '../../components/pact/PactCard';
 import { ActivityItem } from '../../components/ui/ActivityItem';
 import { Avatar } from '../../components/ui/Avatar';
+import { Button } from '../../components/ui/Button';
 import { BottomNav } from '../../components/ui/BottomNav';
 import '../../components/ui/button.css';
 import { SectionHeading } from '../../components/ui/SectionHeading';
@@ -105,7 +106,8 @@ export function HomeScreen() {
                 <Sparkles />
               </span>
               <h2>Nothing planned yet.</h2>
-              <p>Keep the group chat. Put the plan in PACT: the people, the money, the tasks and the date.</p>
+              <p>Start with something real you’re already planning: a trip, gift, birthday, dinner or shared expense.</p>
+              <Button to="/app/create">Create your first Pact</Button>
             </section>
           )}
           {featured && (
@@ -113,6 +115,7 @@ export function HomeScreen() {
               <FeaturedPactCard pact={featured} to={`/app/pact/${featured.id}`} />
             </section>
           )}
+          {mine.length > 0 && (
           <section className="screen-section" aria-labelledby="your-pacts">
             <SectionHeading id="your-pacts" title="Your Pacts" action={mine.length > 1 ? { label: 'See all', to: '/app/pacts' } : undefined} />
             <div className="list-stack">
@@ -130,6 +133,7 @@ export function HomeScreen() {
               </Link>
             </div>
           </section>
+          )}
         </>
       )}
 

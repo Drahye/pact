@@ -103,7 +103,7 @@ try {
   await shot('invite');
 
   // Contribute: hold (keyboard confirms), then PIN
-  await link('Done');
+  await link('Go to my Pact');
   await page.getByText('If the goal isn’t reached').waitFor();
   await shot('pact-detail');
   await page.getByRole('link', { name: /Add to Pact|Add your share|Contribute/ }).first().click();

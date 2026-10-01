@@ -316,3 +316,101 @@ button.budget__row:hover {
   font-weight: var(--weight-medium);
   color: var(--color-text-secondary);
 }
+
+/* Next step: one action, led by hierarchy rather than colour -------------------- */
+.nextstep {
+  margin-top: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-5);
+  border-radius: var(--radius-xl);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+}
+
+.nextstep__label {
+  font-size: var(--text-caption);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+}
+
+.nextstep__title {
+  font-size: var(--text-lg);
+  line-height: var(--leading-lg);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-snug);
+}
+
+.nextstep__body {
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+  color: var(--color-text-secondary);
+}
+
+.nextstep .btn {
+  margin-top: var(--space-3);
+}
+
+.nextstep-more {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+/* Getting there: the organiser's checkpoint ---------------------------------------- */
+.progress {
+  margin-top: var(--space-4);
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-xl);
+  background: var(--color-bg-sunken);
+}
+
+.progress__title {
+  margin-bottom: var(--space-3);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+}
+
+.progress ul {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.progress li {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  font-size: var(--text-sm);
+  line-height: var(--leading-sm);
+  color: var(--color-text-secondary);
+}
+
+.progress li.is-done {
+  color: var(--color-text);
+}
+
+.progress li svg {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+}
+
+.progress li.is-done svg {
+  color: var(--color-accent-text);
+}
+
+.progress__link {
+  min-height: 24px;
+  font: inherit;
+  font-weight: var(--weight-semibold);
+  color: var(--color-text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-align: left;
+}

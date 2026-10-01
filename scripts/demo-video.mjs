@@ -318,7 +318,7 @@ try {
   await page.goto(pactUrl, { waitUntil: 'load' });
   await page.locator('.detail__ring').waitFor();
   await cap('The ring shows who has covered what. Tunde is a guest, Ngozi is in.', 3000);
-  await tap(page.getByRole('link', { name: /Cover the rest|Add your share|Contribute/ }).first(), 1200);
+  await tap(page.locator('.nextstep').getByRole('button').first(), 1200);
   await page.getByText('Pay with').waitFor();
   await cap('Abraham pays the rest from his PACT balance. Press and hold, so it’s never by accident.', 3000);
   const holdBtn = page.getByRole('button', { name: /Hold to contribute|Hold/ }).first();

@@ -216,7 +216,7 @@ export function CreatePactScreen() {
       clearDraft(DRAFT_KEY);
       phones.forEach((phone) => pushRecent('invite-phones', { phone }, (x) => x.phone, 6));
       toast('Pact created');
-      navigate(`/app/pact/${r.data.pact.id}/invite`, { replace: true });
+      navigate(`/app/pact/${r.data.pact.id}/invite`, { replace: true, state: { created: true } });
     } catch (err) {
       setError((err as ApiError).message);
     }

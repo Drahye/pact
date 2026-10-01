@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { Check, Copy, Ellipsis, MessageCircle, MessageSquareText, Phone } from 'lucide-react';
+import { Check, Copy, Ellipsis, MessageCircle, MessageSquareText, Phone, Share2 } from 'lucide-react';
 import { useState } from 'react';
-import { Navigate, useParams } from 'react-router-dom';
+import { Navigate, useLocation, useParams } from 'react-router-dom';
 import { useAuth } from '../../api/auth';
 import { ApiError } from '../../api/client';
 import { usePact, usePactCommand } from '../../api/hooks';
@@ -26,6 +26,8 @@ export function InviteScreen() {
   const q = usePact(id);
   const cmd = usePactCommand(id);
   const toast = useToast();
+  // Arriving straight from creating the Pact: this is the next step of setup, not an optional extra.
+  const justCreated = !!(useLocation().state as { created?: boolean } | null)?.created;
   const [copied, setCopied] = useState(false);
   const [phone, setPhone] = useState('');
   const [phoneError, setPhoneError] = useState<string>();
@@ -80,13 +82,20 @@ export function InviteScreen() {
       topBar={<TopBar backTo={`/app/pact/${pact.id}`} title={pact.title} />}
       footer={
         <Button variant="secondary" fullWidth to={`/app/pact/${pact.id}`}>
-          Done
+          {justCreated ? 'Go to my Pact' : 'Done'}
         </Button>
       }
       className="invite"
     >
-      <h1 className="large-title invite__title">Bring your people in.</h1>
-      <p className="screen-lede">Anyone with this link can see what the Pact is for and join it.</p>
+      {justCreated && (
+        <p className="invite__ready">
+          <Check aria-hidden /> Your Pact is ready.
+        </p>
+      )}
+      <h1 className="large-title invite__title">{justCreated ? 'Now bring your people in.' : 'Bring your people in.'}</h1>
+      <p className="screen-lede">
+        {justCreated ? 'Share the link in your group chat. Anyone with it can see what the Pact is for and join.' : 'Anyone with this link can see what the Pact is for and join it.'}
+      </p>
 
       <div className="invite__card">
         <CategoryIcon category={pact.category} size="lg" />
@@ -97,6 +106,10 @@ export function InviteScreen() {
           </p>
         </div>
       </div>
+
+      <Button fullWidth size="lg" iconLeft={<Share2 />} onClick={more} className="invite__primary">
+        Share Pact
+      </Button>
 
       <div className="invite__link">
         <span className="invite__url num">{shortUrl}</span>

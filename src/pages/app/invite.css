@@ -193,3 +193,22 @@
 .invite__phone > .btn {
   margin-top: 28px;
 }
+
+.invite__ready {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--color-accent-text);
+}
+
+.invite__ready svg {
+  width: 18px;
+  height: 18px;
+}
+
+.invite__primary {
+  margin: var(--space-4) 0;
+}

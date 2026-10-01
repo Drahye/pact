@@ -1,20 +1,21 @@
-import { Check, ChevronRight, Circle, CircleDashed, CircleDot, Plus } from 'lucide-react';
+import { Check, CheckCircle2, ChevronRight, Circle, CircleDashed, CircleDot, Plus } from 'lucide-react';
 import type { BudgetLine, Pact, Task } from '../../data/types';
 import { getUser } from '../../data/users';
 import { formatNairaCompact } from '../../lib/format';
 import { colorOf } from '../../lib/pact';
-import { taskStatusLabel, type AttentionItem } from '../../lib/plan';
+import { taskStatusLabel, type AttentionItem, type Checkpoint } from '../../lib/plan';
 import { Avatar } from '../ui/Avatar';
+import { Button } from '../ui/Button';
 import './plan.css';
 
 /* What needs attention --------------------------------------------------- */
 
-export function AttentionCard({ items, onAction }: { items: AttentionItem[]; onAction: (item: AttentionItem) => void }) {
+export function AttentionCard({ items, onAction, title = 'Needs attention' }: { items: AttentionItem[]; onAction: (item: AttentionItem) => void; title?: string }) {
   if (!items.length) return null;
   return (
     <section className="attention" aria-labelledby="attention-title">
       <h2 id="attention-title" className="attention__title">
-        Needs attention
+        {title}
       </h2>
       <ul>
         {items.map((it) => (
@@ -28,6 +29,49 @@ export function AttentionCard({ items, onAction }: { items: AttentionItem[]; onA
               <button type="button" className="attention__action" onClick={() => onAction(it)}>
                 {it.action.label}
               </button>
+            )}
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+/** The single most useful thing to do right now. One action, no competing buttons. */
+export function NextStep({ item, onAction }: { item: AttentionItem; onAction: (item: AttentionItem) => void }) {
+  return (
+    <section className="nextstep" aria-labelledby="next-step">
+      <h2 id="next-step" className="nextstep__label">
+        Next step
+      </h2>
+      <p className="nextstep__title">{item.title}</p>
+      {item.body && <p className="nextstep__body">{item.body}</p>}
+      <Button fullWidth onClick={() => onAction(item)}>
+        {item.action!.label}
+      </Button>
+    </section>
+  );
+}
+
+/** Organiser only: is the Pact moving? A short list of what's done and what's left, never a dashboard. */
+export function OrganizerProgress({ rows, onInvite }: { rows: Checkpoint[]; onInvite: () => void }) {
+  if (rows.length < 2) return null;
+  return (
+    <section className="progress" aria-labelledby="getting-there">
+      <h2 id="getting-there" className="progress__title">
+        Getting there
+      </h2>
+      <ul>
+        {rows.map((r) => (
+          <li key={r.key} className={r.done ? 'is-done' : ''}>
+            {r.done ? <CheckCircle2 aria-hidden /> : <Circle aria-hidden />}
+            <span className="visually-hidden">{r.done ? 'Done: ' : 'To do: '}</span>
+            {r.to ? (
+              <button type="button" className="progress__link" onClick={onInvite}>
+                {r.text}
+              </button>
+            ) : (
+              <span>{r.text}</span>
             )}
           </li>
         ))}

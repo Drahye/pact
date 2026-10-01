@@ -61,6 +61,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     document.documentElement.dataset.theme = painted;
     document.querySelector('meta[name="theme-color"]')?.setAttribute('content', META_COLOR[painted]);
+    document.querySelector('meta[name="color-scheme"]')?.setAttribute('content', painted);
   }, [painted]);
 
   const setTheme = useCallback((next: Theme) => {

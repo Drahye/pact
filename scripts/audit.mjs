@@ -14,8 +14,10 @@ const axeSource = readFileSync('node_modules/axe-core/axe.min.js', 'utf8');
 const shell = `${homedir()}/Library/Caches/ms-playwright/chromium_headless_shell-1148/chrome-mac/headless_shell`;
 const browser = await chromium.launch(existsSync(shell) ? { executablePath: shell } : {});
 // bypassCSP: the audit injects axe-core into the page, which a hardened (staging or production) CSP rightly refuses.
-const context = await browser.newContext({ viewport: { width: 390, height: 844 }, bypassCSP: true });
+const context = await browser.newContext({ viewport: { width: 390, height: 844 }, bypassCSP: true, colorScheme: process.env.SCHEME === 'dark' ? 'dark' : 'light' });
 const page = await context.newPage();
+// THEME=light|dark|system forces the app theme; SCHEME=dark sets the OS preference.
+if (process.env.THEME) await page.addInitScript((t) => localStorage.setItem('pact.theme', t), process.env.THEME);
 const results = { overflow: [], axe: [], console: [], links: [], routes: [] };
 page.on('console', (m) => m.type() === 'error' && !/401|Failed to load resource/.test(m.text()) && results.console.push({ url: page.url(), text: m.text().slice(0, 200) }));
 page.on('pageerror', (e) => results.console.push({ url: page.url(), text: `pageerror: ${e.message}` }));

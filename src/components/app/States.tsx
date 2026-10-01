@@ -1,17 +1,24 @@
 import { AlertCircle, RefreshCw } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Button } from '../ui/Button';
-import { PactLogo } from '../brand/PactLogo';
+import '../../styles/loader.css';
 import './app-ui.css';
 
-/** PACT's own loader: the mark's ring draws itself and turns. Used whenever the whole screen is waiting. */
-export function Loading({ label = 'Loading' }: { label?: string }) {
+/**
+ * PACT's own loader: the segmented ring, one colour per person, fills in and turns. `full` covers the screen
+ * (app start, route chunks, signing in); the default sits inside a screen that is waiting for its data.
+ */
+export function Loading({ label = 'Loading', full = false }: { label?: string; full?: boolean }) {
   return (
-    <div className="state state--loading app-loader" role="status" aria-label={label}>
-      <span className="app-loader__mark" aria-hidden>
-        <PactLogo markOnly decorative size="lg" />
-      </span>
-      <span className="app-loader__word" aria-hidden>
+    <div className={`pl ${full ? 'pl--full' : 'pl--inline'}`} role="status" aria-label={label}>
+      <svg className="pl__ring" viewBox="0 0 96 96" aria-hidden>
+        <g transform="rotate(-90 48 48)">
+          {[0, 1, 2, 3, 4, 5].map((i) => (
+            <circle key={i} cx="48" cy="48" r="38" pathLength="100" />
+          ))}
+        </g>
+      </svg>
+      <span className="pl__word" aria-hidden>
         PACT
       </span>
     </div>

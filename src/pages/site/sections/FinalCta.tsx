@@ -3,7 +3,6 @@ import { useRef } from 'react';
 import { StoreButtons } from '../../../components/site/StoreButtons';
 import { Button } from '../../../components/ui/Button';
 import { gsap, MQ, useGSAP } from '../../../lib/gsap';
-import { CompletedCard } from '../mockups/Mockups';
 
 export function FinalCta() {
   const root = useRef<HTMLElement>(null);
@@ -13,7 +12,6 @@ export function FinalCta() {
         gsap.from('.final__panel', { scale: 0.94, borderRadius: 80, scrollTrigger: { trigger: root.current, start: 'top 90%', end: 'top 35%', scrub: true } });
         // the round shapes keep orbiting, slowly: the motif from the hero, closing the loop
         gsap.to('.final__shape', { rotate: 360, duration: 30, repeat: -1, ease: 'none', stagger: { each: 4 } });
-        gsap.from('.final__card', { y: 50, opacity: 0, duration: 1.1, ease: 'expo.out', scrollTrigger: { trigger: root.current, start: 'top 60%' } });
       });
     },
     { scope: root },
@@ -37,9 +35,6 @@ export function FinalCta() {
             </div>
             <p className="final__note">Creating a Pact is free. iOS and Android are coming soon.</p>
             <StoreButtons tone="light" compact />
-          </div>
-          <div className="final__card">
-            <CompletedCard />
           </div>
         </div>
       </div>

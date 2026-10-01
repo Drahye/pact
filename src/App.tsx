@@ -50,7 +50,7 @@ const queryClient = new QueryClient({
 function RequireAuth({ children }: { children: ReactNode }) {
   const { status, signOutReason } = useAuth();
   const location = useLocation();
-  if (status === 'loading') return <Loading />;
+  if (status === 'loading') return <Loading full />;
   // After choosing to sign out, the next person to sign in starts fresh on Home.
   if (status === 'signedOut') return <Navigate to="/app" replace state={signOutReason === 'explicit' ? undefined : { from: location.pathname + location.search }} />;
   return <>{children}</>;
@@ -59,7 +59,7 @@ function RequireAuth({ children }: { children: ReactNode }) {
 /** Signed-in people skip Welcome and the sign-in steps. */
 function GuestOnly({ children }: { children: ReactNode }) {
   const { status } = useAuth();
-  if (status === 'loading') return <Loading />;
+  if (status === 'loading') return <Loading full />;
   if (status === 'signedIn') return <Navigate to={peekReturnTo()} replace />;
   return <>{children}</>;
 }
@@ -73,7 +73,7 @@ export function App() {
         <AuthProvider>
           <BrowserRouter>
             <ThemeProvider>
-            <Suspense fallback={<Loading />}>
+            <Suspense fallback={<Loading full />}>
             <Routes>
               <Route path="/" element={<LandingPage />} />
               <Route path="/download" element={<DownloadPage />} />

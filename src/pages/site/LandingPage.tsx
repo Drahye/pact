@@ -4,16 +4,16 @@ import { SiteNav } from '../../components/site/SiteNav';
 import { Faq } from './sections/Faq';
 import { FinalCta } from './sections/FinalCta';
 import { Hero } from './sections/Hero';
-import { ProductStory } from './sections/ProductStory';
+import { Execution, HowItWorks } from './sections/ProductStory';
 import { UseCases } from './sections/UseCases';
-import { WhyPact } from './sections/WhyPact';
+import { WhatIsPact } from './sections/WhatIsPact';
 import './landing.css';
 import { setFixedClock } from '../../lib/clock';
 
 /**
- * A live product demo that unfolds as you scroll: one phone, one Pact, from the first idea to a
- * finished plan. Then why it beats the group chat, the plans people use it for, the money
- * questions, and the close.
+ * Six sections that alternate on purpose: hero (asymmetric, energetic), what PACT is (centred, calm),
+ * how it works (phone right), funded is not finished (phone left), the plans people use it for
+ * (centred), and a centred close. The FAQ stays compact for the money questions.
  */
 export function LandingPage() {
   // Showcase numbers stay pinned to the launch date.
@@ -29,8 +29,9 @@ export function LandingPage() {
       <SiteNav />
       <main id="main" className="landing">
         <Hero />
-        <ProductStory />
-        <WhyPact />
+        <WhatIsPact />
+        <HowItWorks />
+        <Execution />
         <UseCases />
         <Faq />
         <FinalCta />

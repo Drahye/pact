@@ -11,7 +11,7 @@ export function Footer() {
           <p>Money works better together.</p>
         </div>
         <nav aria-label="Footer" className="footer__links">
-          <a href="/#how">How it works</a>
+          <a href="/#story">How it works</a>
           <a href="/#plans">Plans</a>
           <a href="/#faq">FAQ</a>
           <Link to="/download">Download</Link>

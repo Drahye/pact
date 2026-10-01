@@ -67,7 +67,7 @@ export function WalletStrip({ balance }: { balance: number | undefined }) {
   return (
     <div className="wallet-strip">
       <Link to="/app/wallet" className="wallet-strip__main">
-        <span className="wallet-strip__label">Wallet</span>
+        <span className="wallet-strip__label">PACT balance</span>
         <span className="wallet-strip__balance num">{balance === undefined ? '…' : formatNairaKobo(balance)}</span>
       </Link>
       <Link to="/app/wallet/topup" className="wallet-strip__action">

@@ -1,5 +1,5 @@
-import { CalendarDays, Check, ChevronRight, History, ListChecks, Phone, Plus, RotateCcw, Scale, Wallet, X } from 'lucide-react';
-import { useMemo, useState, type FormEvent } from 'react';
+import { CalendarDays, Check, ChevronDown, ChevronRight, History, ListChecks, Phone, Plus, RotateCcw, Scale, ShoppingBag, Wallet, X } from 'lucide-react';
+import { useId, useMemo, useState, type FormEvent, type ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ApiError, newIdempotencyKey } from '../../api/client';
 import { useCreatePact, useRecentPeople } from '../../api/hooks';
@@ -59,6 +59,28 @@ interface CreateDraft {
 }
 const DRAFT_KEY = 'create-pact';
 
+/** An optional part of the form: closed by default so the first-time path stays four fields long. */
+function Disclosure({ icon, title, summary, open, onToggle, children }: { icon: ReactNode; title: string; summary?: string; open: boolean; onToggle: () => void; children: ReactNode }) {
+  const id = useId();
+  return (
+    <div className={`disclosure ${open ? 'is-open' : ''}`}>
+      <button type="button" className="disclosure__head" aria-expanded={open} aria-controls={id} onClick={onToggle}>
+        <span className="disclosure__icon">{icon}</span>
+        <span className="disclosure__text">
+          <strong>{title}</strong>
+          {summary && <small>{summary}</small>}
+        </span>
+        <ChevronDown aria-hidden className="disclosure__chev" />
+      </button>
+      {open && (
+        <div id={id} className="disclosure__body">
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
 const normalizePhone = (raw: string) => {
   const d = raw.replace(/\D/g, '').replace(/^234/, '').replace(/^0/, '');
   return /^[789][01]\d{8}$/.test(d) ? `0${d}` : null;
@@ -82,6 +104,10 @@ export function CreatePactScreen() {
   });
   const [recentPhones] = useState(() => readRecents<{ phone: string }>('invite-phones'));
   const [restored, setRestored] = useState(!!saved);
+  // Optional parts stay closed unless a restored draft already has something in them.
+  const [tasksOpen, setTasksOpen] = useState(!!saved?.tasks?.length);
+  const [rulesOpen, setRulesOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
   const [title, setTitle] = useState(saved?.title ?? '');
   const [target, setTarget] = useState(saved?.target ?? 0);
   const [deadline, setDeadline] = useState(saved?.deadline ?? '');
@@ -216,7 +242,7 @@ export function CreatePactScreen() {
       className="create"
     >
       <h1 className="large-title">What are you planning?</h1>
-      <p className="screen-lede">Name it, pick a date and a target. Everything else is optional.</p>
+      <p className="screen-lede">Name it, pick a date, say roughly how much. Everything else can wait.</p>
 
       {restored && (
         <Notice tone="accent" icon={<History />}>
@@ -283,21 +309,7 @@ export function CreatePactScreen() {
 
 
         <div className="field">
-          <span className="field__label">How much do you need?</span>
-          <Segmented<'target' | 'budget' | 'orders'>
-            label="Target, budget or orders"
-            value={mode}
-            onChange={(m) => {
-              setMode(m);
-              if (m === 'budget' && !lines.length) setLines(template.budget.slice(0, 3).map((name) => ({ key: lineKey++, name, amount: 0 })));
-              if (m === 'orders' && !items.length) addItem();
-            }}
-            options={[
-              { value: 'target', label: 'One target' },
-              { value: 'budget', label: 'Budget' },
-              { value: 'orders', label: 'Take orders' },
-            ]}
-          />
+          <span className="field__label">{mode === 'orders' ? 'What are people ordering?' : 'Roughly how much do you need?'}</span>
           {mode === 'orders' && <p className="field__hint">For aso-ebi, souvenirs or tickets: people order what they want, and the total is what they order.</p>}
         </div>
 
@@ -384,30 +396,24 @@ export function CreatePactScreen() {
           </div>
         )}
 
-        <div className="field">
-          <span className="field__label" id="invite-label">
-            Who are you doing this with?
-          </span>
-          <button type="button" className="create__invite" onClick={() => setPickerOpen(true)} aria-describedby="invite-label">
-            {count ? (
-              <>
-                {invitees.length > 0 && <AvatarGroup userIds={invitees} max={4} size="sm" />}
-                <span className="create__invite-text">
-                  {joinNames([...invitees.map((id) => getUser(id).name), ...phones], 2)}
-                </span>
-              </>
-            ) : (
-              <span className="create__invite-text">Invite people</span>
-            )}
-            <ChevronRight aria-hidden />
+        {mode === 'target' && (
+          <button type="button" className="create__link" onClick={() => { setMode('budget'); if (!lines.length) setLines(template.budget.slice(0, 3).map((name) => ({ key: lineKey++, name, amount: 0 }))); }}>
+            <Plus aria-hidden /> Break it into what the money covers
           </button>
-          <p className="field__hint">You’ll also get a link to share with anyone.</p>
-        </div>
+        )}
+        {mode === 'budget' && (
+          <button type="button" className="create__link" onClick={() => setMode('target')}>
+            Use one target instead
+          </button>
+        )}
+        {mode === 'orders' && (
+          <button type="button" className="create__link" onClick={() => setMode('target')}>
+            Back to a normal Pact
+          </button>
+        )}
 
+        <Disclosure icon={<ListChecks aria-hidden />} title="Add things that need doing" summary={tasks.length ? `${tasks.length} added` : 'Optional'} open={tasksOpen} onToggle={() => setTasksOpen((o) => !o)}>
         <div className="field">
-          <span className="field__label">
-            <ListChecks aria-hidden className="create__label-icon" /> Anything that needs doing? <span className="field__optional">Optional</span>
-          </span>
           <div className="suggest">
             {[...template.tasks, ...tasks.filter((t) => !template.tasks.includes(t))].map((t) => {
               const on = tasks.includes(t);
@@ -437,17 +443,58 @@ export function CreatePactScreen() {
           </div>
           <p className="field__hint">People can pick these up once they join. {tasks.length ? `${tasks.length} selected.` : ''}</p>
         </div>
+        </Disclosure>
 
-        {mode !== 'orders' && (
         <div className="field">
-          <span className="field__label">How should people chip in?</span>
+          <span className="field__label" id="invite-label">
+            Invite people now <span className="field__optional">Optional</span>
+          </span>
+          <button type="button" className="create__invite" onClick={() => setPickerOpen(true)} aria-describedby="invite-label">
+            {count ? (
+              <>
+                {invitees.length > 0 && <AvatarGroup userIds={invitees} max={4} size="sm" />}
+                <span className="create__invite-text">
+                  {joinNames([...invitees.map((id) => getUser(id).name), ...phones], 2)}
+                </span>
+              </>
+            ) : (
+              <span className="create__invite-text">Choose people or add a number</span>
+            )}
+            <ChevronRight aria-hidden />
+          </button>
+          <p className="field__hint">You’ll also get a link to share with anyone.</p>
+        </div>
+
+
+        {mode === 'orders' ? (
+          <Notice icon={<Scale />}>
+            The date above is the pay-by date. People pay for their own orders by then, and PACT reminds them on the day. Unpaid orders are released after it.
+          </Notice>
+        ) : (
+          <div className="create__rules">
+            <p className="create__rules-line">
+              <Scale aria-hidden />
+              <span>
+                <strong>If the goal isn’t reached:</strong>{' '}
+                {policy === 'refund' ? 'everyone gets their money back.' : 'the organiser keeps what was raised.'}{' '}
+                <strong>Contributions:</strong>{' '}
+                {split === 'equal' && goal >= 1000 ? `equal shares of ${formatNaira(goal)}.` : split === 'equal' ? 'equal shares.' : 'everyone chooses what they can add.'}
+              </span>
+              <button type="button" className="link" aria-expanded={rulesOpen} onClick={() => setRulesOpen((o) => !o)}>
+                {rulesOpen ? 'Done' : 'Change'}
+              </button>
+            </p>
+            {rulesOpen && (
+              <div className="create__rules-edit">
+        <div className="field">
+          <span className="field__label">Contributions</span>
           <Segmented<'flexible' | 'equal'>
             label="Split"
             value={split}
             onChange={setSplit}
             options={[
-              { value: 'flexible', label: 'Any amount' },
-              { value: 'equal', label: 'Equal shares' },
+              { value: 'flexible', label: 'Everyone chooses' },
+              { value: 'equal', label: 'Split equally instead' },
             ]}
           />
           <p className="field__hint">
@@ -456,13 +503,6 @@ export function CreatePactScreen() {
               : 'Everyone gives what they can.'}
           </p>
         </div>
-        )}
-
-        {mode === 'orders' ? (
-          <Notice icon={<Scale />}>
-            The date above is the pay-by date. People pay for their own orders by then, and PACT reminds them on the day. Unpaid orders are released after it.
-          </Notice>
-        ) : (
         <div className="field">
           <span className="field__label" id="rule-label">
             <Scale aria-hidden className="create__label-icon" /> If the goal isn’t reached by the deadline
@@ -487,6 +527,22 @@ export function CreatePactScreen() {
           </div>
           <p className="field__hint">Everyone sees this rule before they contribute. It can’t be changed later.</p>
         </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {mode !== 'orders' && (
+          <Disclosure icon={<ShoppingBag aria-hidden />} title="More ways to use PACT" summary="Group orders" open={moreOpen} onToggle={() => setMoreOpen((o) => !o)}>
+            <button type="button" className="choice" onClick={() => { setMode('orders'); if (!items.length) addItem(); }}>
+              <span className="choice__icon tint--pink"><ShoppingBag /></span>
+              <span className="choice__text">
+                <span className="choice__title">Group order</span>
+                <span className="choice__sub">Aso-ebi, shirts, tickets: people order what they want and pay for their own.</span>
+              </span>
+              <ChevronRight aria-hidden />
+            </button>
+          </Disclosure>
         )}
 
         {error && <Notice tone="danger">{error}</Notice>}

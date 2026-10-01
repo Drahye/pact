@@ -105,7 +105,7 @@ export function HomeScreen() {
                 <Sparkles />
               </span>
               <h2>Nothing planned yet.</h2>
-              <p>Create your first Pact and bring your people in.</p>
+              <p>Keep the group chat. Put the plan in PACT: the people, the money, the tasks and the date.</p>
             </section>
           )}
           {featured && (
@@ -125,17 +125,13 @@ export function HomeScreen() {
                 </span>
                 <span>
                   <strong>{mine.length ? 'Start a new Pact' : 'Start your first Pact'}</strong>
-                  <span>Trip, gift, event or shared bill</span>
+                  <span>A trip, a gift, a celebration, a shared bill</span>
                 </span>
               </Link>
             </div>
           </section>
         </>
       )}
-
-      <div className="screen-section">
-        <WalletStrip balance={wallet.data?.balance} />
-      </div>
 
       {!!activity.data?.length && (
         <section className="screen-section" aria-labelledby="recent">
@@ -149,6 +145,10 @@ export function HomeScreen() {
           </ul>
         </section>
       )}
+
+      <div className="screen-section">
+        <WalletStrip balance={wallet.data?.balance} />
+      </div>
     </Screen>
   );
 }

@@ -86,12 +86,14 @@ try {
   await page.getByLabel('Target', { exact: true }).fill('60000');
   const d = new Date(Date.now() + 21 * 86400000).toISOString().slice(0, 10);
   await page.getByLabel('When is it happening?').fill(d);
-  await tap('Invite people');
+  await page.getByRole('button', { name: /Invite people now/ }).click();
   await page.getByLabel('Add by phone number').fill('08031112222');
   await page.getByRole('button', { name: 'Add', exact: true }).click();
   await shot('create-invite-sheet');
   await page.getByRole('button', { name: /Add 1 person/ }).click();
-  await page.getByRole('radio', { name: /Equal shares/ }).click();
+  await page.getByRole('button', { name: 'Change', exact: true }).click();
+  await page.getByRole('radio', { name: /Split equally instead/ }).click();
+  await page.getByRole('button', { name: /Add things that need doing/ }).click();
   await page.getByRole('button', { name: 'Book the flights' }).click();
   await shot('create');
   await tap('Create Pact');
@@ -103,7 +105,7 @@ try {
   await page.getByText('If the goal isn’t reached').waitFor();
   await shot('pact-detail');
   await page.getByRole('link', { name: /Add to Pact|Add your share|Contribute/ }).first().click();
-  await page.getByText('From your wallet').waitFor();
+  await page.getByText('Pay with').waitFor();
   await shot('contribute-short');
   await page.getByRole('radio', { name: '₦5k' }).click();
   await page.locator('.hold').waitFor();
@@ -119,7 +121,8 @@ try {
   // Direct pay: finish the Pact straight from checkout, without touching the wallet
   const pactUrl = page.url();
   await page.goto(`${pactUrl.replace(/\/contribute.*$/, '')}/contribute?amount=55000`);
-  await page.getByRole('link', { name: /Pay ₦55,000 by transfer or card/ }).click();
+  await page.getByRole('radio', { name: /Bank transfer or card/ }).click();
+  await page.getByRole('link', { name: /Add ₦55,000 by transfer or card/ }).click();
   await page.getByText('Pay into Lagos Beach Weekend').waitFor();
   await shot('direct-pay');
   await tap('Pay ₦55,000');

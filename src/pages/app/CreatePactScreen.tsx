@@ -447,7 +447,7 @@ export function CreatePactScreen() {
 
         <div className="field">
           <span className="field__label" id="invite-label">
-            Invite people now <span className="field__optional">Optional</span>
+            Bring your people <span className="field__optional">Optional</span>
           </span>
           <button type="button" className="create__invite" onClick={() => setPickerOpen(true)} aria-describedby="invite-label">
             {count ? (
@@ -458,7 +458,7 @@ export function CreatePactScreen() {
                 </span>
               </>
             ) : (
-              <span className="create__invite-text">Choose people or add a number</span>
+              <span className="create__invite-text">Invite people now</span>
             )}
             <ChevronRight aria-hidden />
           </button>

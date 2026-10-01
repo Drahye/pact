@@ -1,4 +1,5 @@
 import { ChevronRight } from 'lucide-react';
+import { memo } from 'react';
 import { Link } from 'react-router-dom';
 import type { Pact } from '../../data/types';
 import { formatDaysLeft, formatNaira, formatPercent } from '../../lib/format';
@@ -10,7 +11,7 @@ import { SegmentedBar } from './SegmentedBar';
 import './pact-card.css';
 
 /** Compact list card: category, amount of target, a bar made of everyone's money, people, time. */
-export function PactCard({ pact, to }: { pact: Pact; to: string }) {
+function PactCardBase({ pact, to, attention }: { pact: Pact; to: string; attention?: string }) {
   const s = summarize(pact);
   return (
     <Link to={to} className="pact-card">
@@ -33,6 +34,9 @@ export function PactCard({ pact, to }: { pact: Pact; to: string }) {
         <AvatarGroup userIds={joinedMembers(pact).map((m) => m.userId)} max={4} size="xs" />
         <span className="pact-card__stats">{joinedMembers(pact).length} {joinedMembers(pact).length === 1 ? "person" : "people"}</span>
       </div>
+      {attention && <p className="pact-card__attention">{attention}</p>}
     </Link>
   );
 }
+
+export const PactCard = memo(PactCardBase);

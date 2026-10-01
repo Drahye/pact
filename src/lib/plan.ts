@@ -12,17 +12,23 @@ export const participationLabel: Record<Participation, { short: string; long: st
 
 /** What someone brings to the Pact, in a few words: money, a task, or both. "₦50k · Cake". */
 export function bringsOf(pact: Pact, userId: string): string {
+  const { amount, task, note } = bringsParts(pact, userId);
+  const parts = [amount, task].filter(Boolean);
+  return parts.length ? parts.join(' · ') : note ?? '';
+}
+
+/** The same, kept apart so a screen can stack the amount over the task. `note` is set only when there is neither. */
+export function bringsParts(pact: Pact, userId: string): { amount?: string; task?: string; note?: string } {
   const m = pact.members.find((x) => x.userId === userId);
-  if (!m) return '';
+  if (!m) return {};
   const tasks = (pact.tasks ?? []).filter((t) => t.assigneeId === userId);
-  const parts: string[] = [];
-  if (m.contributed > 0) parts.push(formatNairaCompact(m.contributed));
-  if (tasks.length) parts.push(tasks.length === 1 ? tasks[0].title : `${tasks[0].title} +${tasks.length - 1}`);
-  if (parts.length) return parts.join(' · ');
-  if (m.participation === 'money') return 'Adding money';
-  if (m.participation === 'task') return 'Taking a task';
-  if (m.participation === 'both') return 'Money + a task';
-  return 'Confirming later';
+  const amount = m.contributed > 0 ? formatNairaCompact(m.contributed) : undefined;
+  const task = tasks.length ? (tasks.length === 1 ? tasks[0].title : `${tasks[0].title} +${tasks.length - 1}`) : undefined;
+  if (amount || task) return { amount, task };
+  if (m.participation === 'money') return { note: 'Adding money' };
+  if (m.participation === 'task') return { note: 'Taking a task' };
+  if (m.participation === 'both') return { note: 'Money + a task' };
+  return { note: 'Confirming later' };
 }
 
 export type Stage = 'invited' | 'just-you' | 'open' | 'almost' | 'past-deadline' | 'done' | 'closed';

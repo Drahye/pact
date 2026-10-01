@@ -15,7 +15,7 @@ import { Modal } from '../../components/ui/Modal';
 import { SegmentedRing } from '../../components/pact/SegmentedRing';
 import { TopBar } from '../../components/ui/TopBar';
 import type { Activity, Pact, PactPayout } from '../../data/types';
-import { bringsOf } from '../../lib/plan';
+import { bringsParts } from '../../lib/plan';
 import { ApprovalCards, CoOrganizerSheet, coOrganizerOf, PaidFromPact, PayoutSheet, PayVendorSheet } from './detail/Money';
 import { isOrderPact, MyOrders, OrderMenu, OrderSheetSection } from './detail/Orders';
 import './detail/money.css';
@@ -138,8 +138,17 @@ export function CompletedScreen({ pact, activity = [] }: { pact: Pact; activity?
             >
               <Avatar userId={m.userId} size="md" label={false} accent />
               <span>{name(m.userId)}</span>
-              <span className="completed__share num" style={{ ['--c' as string]: colorOf(pact, m.userId) }}>
-                {bringsOf(pact, m.userId)}
+              <span className="completed__share" style={{ ['--c' as string]: colorOf(pact, m.userId) }}>
+                {(() => {
+                  const b = bringsParts(pact, m.userId);
+                  return (
+                    <>
+                      {b.amount && <span className="completed__share-amount num">{b.amount}</span>}
+                      {b.task && <span className="completed__share-task">{b.task}</span>}
+                      {b.note && <span className="completed__share-task">{b.note}</span>}
+                    </>
+                  );
+                })()}
               </span>
             </motion.li>
           ))}

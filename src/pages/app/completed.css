@@ -294,3 +294,12 @@
 .completed__summary .section-heading__title {
   margin-bottom: var(--space-3);
 }
+
+/* A short look back at the activity, still open for a lightweight comment. */
+.completed__talk {
+  margin-top: var(--space-6);
+}
+
+.completed__talk .section-heading__title {
+  margin-bottom: var(--space-3);
+}

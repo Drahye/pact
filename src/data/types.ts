@@ -159,13 +159,14 @@ export interface Pact {
   bankAccount?: { accountNumber: string; bankName: string; accountName: string; status: 'active' | 'closed' } | null;
   transfers?: PactTransfer[];
   payouts?: PactPayout[];
+  pinned?: PinnedItem | null;
   viewer?: { role: 'organizer' | 'co_organizer' | 'member' | null; status: 'invited' | 'joined' | 'left' | null; suggestedShare: number };
 }
 
 export type ActivityType =
   | 'contribution' | 'join' | 'created' | 'completed' | 'released' | 'refunded' | 'cancelled' | 'left'
   | 'committed' | 'task_added' | 'task_claimed' | 'task_done' | 'milestone' | 'split_requested' | 'memory_added'
-  | 'guest_contribution' | 'vendor_paid' | 'co_organizer' | 'release_requested' | 'pledged' | 'pledge_kept' | 'ordered' | 'orders_closed' | 'pact_completed';
+  | 'guest_contribution' | 'vendor_paid' | 'co_organizer' | 'release_requested' | 'pledged' | 'pledge_kept' | 'ordered' | 'orders_closed' | 'pact_completed' | 'update';
 
 export interface Activity {
   id: string;
@@ -176,4 +177,34 @@ export interface Activity {
   /** Short context from the API, e.g. a task title or "80%". */
   detail?: string | null;
   at: string; // ISO datetime
+  /** An organiser's update (type 'update'): its text. */
+  body?: string | null;
+  /** Reaction counts (only kinds with at least one), and the viewer's own. */
+  reactions?: Partial<Record<ReactionKey, number>>;
+  myReactions?: ReactionKey[];
+  commentCount?: number;
+}
+
+export type ReactionKey = 'thumbs_up' | 'heart' | 'celebrate' | 'raised_hands';
+
+export interface Comment {
+  id: string;
+  activityId: string;
+  userId: UserId;
+  body: string;
+  deleted: boolean;
+  createdAt: string;
+}
+
+export interface Thread {
+  activity: Activity;
+  comments: Comment[];
+  /** False once a Pact is closed: the discussion stays readable. */
+  canReply: boolean;
+}
+
+export interface PinnedItem {
+  activity: Activity;
+  pinnedBy: UserId;
+  pinnedAt: string;
 }

@@ -147,6 +147,24 @@ const sources: Source[] = [
     }),
   },
   {
+    name: 'pact_update_posted',
+    sql: `SELECT u.id, u.pact_id, u.author_id AS user_id, u.created_at AS ts, char_length(u.body) AS len FROM pact_updates u WHERE u.created_at > $1 ORDER BY u.created_at LIMIT 4000`,
+    map: (r, ctx) => ({ userId: r.user_id, pactId: r.pact_id, key: `up:${rowKey(ctx.config, 'u', r.id)}`, props: { length: r.len < 60 ? 'short' : r.len < 200 ? 'medium' : 'long' } }),
+  },
+  {
+    name: 'activity_commented',
+    sql: `SELECT c.id, c.pact_id, c.user_id, c.created_at AS ts, (a.type = 'update') AS on_update,
+                 NOT EXISTS (SELECT 1 FROM activity_comments p WHERE p.activity_id = c.activity_id AND p.created_at < c.created_at) AS first_on_item
+            FROM activity_comments c JOIN activities a ON a.id = c.activity_id WHERE c.created_at > $1 ORDER BY c.created_at LIMIT 4000`,
+    map: (r, ctx) => ({ userId: r.user_id, pactId: r.pact_id, key: `ac:${rowKey(ctx.config, 'c', r.id)}`, props: { on: r.on_update ? 'update' : 'system', first_on_item: r.first_on_item } }),
+  },
+  {
+    name: 'activity_reacted',
+    sql: `SELECT r.activity_id, r.user_id, r.pact_id, r.reaction, r.created_at AS ts, (a.type = 'update') AS on_update
+            FROM activity_reactions r JOIN activities a ON a.id = r.activity_id WHERE r.created_at > $1 ORDER BY r.created_at LIMIT 4000`,
+    map: (r, ctx) => ({ userId: r.user_id, pactId: r.pact_id, key: `ar:${rowKey(ctx.config, 'r', `${r.activity_id}:${r.user_id}:${r.reaction}`)}`, props: { reaction: r.reaction, on: r.on_update ? 'update' : 'system' } }),
+  },
+  {
     name: 'memory_added',
     sql: `SELECT pact_id, MIN(ts) AS ts, BOOL_OR(photo) AS has_photo FROM (
             SELECT pact_id, updated_at AS ts, false AS photo FROM pact_memories

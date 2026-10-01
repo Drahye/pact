@@ -1,9 +1,10 @@
-import { CalendarCheck, ShoppingBag, Camera, Check, CheckCheck, Divide, Flag, Hand, Landmark, ListPlus, LogOut, Plus, Receipt, RotateCcw, ShieldCheck, Sparkles, UserPlus, Wallet, X } from 'lucide-react';
+import { CalendarCheck, Megaphone, MessageCircle, ShoppingBag, Camera, Check, CheckCheck, Divide, Flag, Hand, Landmark, ListPlus, LogOut, Plus, Receipt, RotateCcw, ShieldCheck, Sparkles, UserPlus, Wallet, X } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import type { Activity } from '../../data/types';
 import { CURRENT_USER_ID, getUser } from '../../data/users';
 import { formatNaira, formatRelative } from '../../lib/format';
+import { REACTIONS } from '../../lib/reactions';
 import { Avatar, type AvatarSize } from './Avatar';
 import './activity.css';
 
@@ -15,6 +16,8 @@ interface Props {
   meta?: ReactNode; // overrides the relative time line
   size?: AvatarSize;
   tone?: 'light' | 'inverse';
+  /** Show reaction and comment counts, and make the row open its discussion. Pact detail only. */
+  onOpen?: (a: Activity) => void;
 }
 
 export function describeActivity(activity: Activity, viewerId: string | null = CURRENT_USER_ID) {
@@ -29,6 +32,8 @@ export function describeActivity(activity: Activity, viewerId: string | null = C
       return { name, verb: 'created the Pact' };
     case 'completed':
       return { name: 'Funded.', verb: 'The money is ready to make the plan happen' };
+    case 'update':
+      return { name, verb: 'posted an update' };
     case 'pact_completed':
       return { name, verb: isYou ? 'completed the Pact. You made it happen' : 'completed the Pact. We made it happen' };
     case 'released':
@@ -79,6 +84,7 @@ const glyph = {
   completed: <Check strokeWidth={3} />,
   released: <Wallet strokeWidth={2.5} />,
   pact_completed: <CheckCheck strokeWidth={2.5} />,
+  update: <Megaphone strokeWidth={2.5} />,
   refunded: <RotateCcw strokeWidth={2.5} />,
   cancelled: <X strokeWidth={3} />,
   left: <LogOut strokeWidth={2.5} />,
@@ -102,7 +108,7 @@ const glyph = {
 /** Events with no single person behind them get a badge instead of an avatar. */
 const systemEvent = (a: Activity) => a.type === 'completed' || a.type === 'milestone' || !a.userId;
 
-export function ActivityItem({ activity, viewerId = CURRENT_USER_ID, to, meta, size = 'md', tone = 'light' }: Props) {
+export function ActivityItem({ activity, viewerId = CURRENT_USER_ID, to, meta, size = 'md', tone = 'light', onOpen }: Props) {
   const d = describeActivity(activity, viewerId);
   const body = (
     <>
@@ -134,16 +140,54 @@ export function ActivityItem({ activity, viewerId = CURRENT_USER_ID, to, meta, s
             </>
           )}
         </span>
+        {activity.type === 'update' && activity.body && <span className="activity__update">{activity.body}</span>}
         <span className="activity__meta">{meta ?? formatRelative(activity.at)}</span>
+        {onOpen && <Social activity={activity} />}
       </span>
     </>
   );
-  const cls = `activity activity--${tone} ${activity.type === 'completed' ? 'activity--completed' : ''}`;
+  const cls = `activity activity--${tone} ${activity.type === 'completed' ? 'activity--completed' : ''} ${activity.type === 'update' ? 'activity--update' : ''}`;
+  if (onOpen) {
+    const n = activity.commentCount ?? 0;
+    return (
+      <button type="button" className={`${cls} activity--social`} onClick={() => onOpen(activity)} aria-label={`${d.name} ${d.verb}. ${n ? `${n} ${n === 1 ? 'comment' : 'comments'}. ` : ''}Open the discussion`}>
+        {body}
+      </button>
+    );
+  }
   return to ? (
     <Link to={to} className={`${cls} activity--link`}>
       {body}
     </Link>
   ) : (
     <div className={cls}>{body}</div>
+  );
+}
+
+/** Reaction and comment counts, only when there is something to show: a quiet row stays one line. */
+function Social({ activity }: { activity: Activity }) {
+  const shown = REACTIONS.filter((r) => (activity.reactions?.[r.key] ?? 0) > 0);
+  const comments = activity.commentCount ?? 0;
+  if (!shown.length && !comments) return null;
+  return (
+    <span className="activity__social">
+      {shown.map((r) => (
+        <span key={r.key} className={`activity__chip ${activity.myReactions?.includes(r.key) ? 'is-mine' : ''}`}>
+          <span aria-hidden>{r.emoji}</span>
+          <span className="num">{activity.reactions?.[r.key]}</span>
+          <span className="visually-hidden">
+            {r.label}
+            {activity.myReactions?.includes(r.key) ? ', including you' : ''}
+          </span>
+        </span>
+      ))}
+      {comments > 0 && (
+        <span className="activity__chip">
+          <MessageCircle aria-hidden />
+          <span className="num">{comments}</span>
+          <span className="visually-hidden">{comments === 1 ? 'comment' : 'comments'}</span>
+        </span>
+      )}
+    </span>
   );
 }

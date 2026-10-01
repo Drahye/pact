@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { BellRing, CalendarDays, CheckCheck, ChevronRight, Divide, Ellipsis, LogOut, RotateCcw, Scale, Share, ShieldCheck, Store, Target, UserPlus, Users, XCircle } from 'lucide-react';
+import { BellRing, CalendarDays, CheckCheck, Megaphone, ChevronRight, Divide, Ellipsis, LogOut, RotateCcw, Scale, Share, ShieldCheck, Store, Target, UserPlus, Users, XCircle } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../api/auth';
@@ -29,6 +29,7 @@ import { attentionFor, bringsOf, checkpointsFor, nextStepFor, participationLabel
 import { spring } from '../../tokens/tokens';
 import { isExecuting } from '../../lib/execution';
 import { MISSED_GOAL_GRACE_DAYS, NGN, VENDOR_APPROVAL_THRESHOLD } from '../../../shared/policy';
+import { PinnedCard, ThreadSheet, UpdateSheet } from './detail/Conversation';
 import { CompleteSheet, ExecutionSection, PlanPayments, presetFor } from './detail/Execution';
 import { ApprovalCards, AssignGuestSheet, canPayVendors, CoOrganizerSheet, GuestAvatar, guestsOf, isOrganizerOf, PaidFromPact, PayByTransfer, PayoutSheet, PayVendorSheet, type GuestGroup } from './detail/Money';
 import { isOrderPact, MyOrders, OrderMenu, OrderSheetSection, owedOnOrders } from './detail/Orders';
@@ -70,6 +71,8 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
   const [payOpen, setPayOpen] = useState(false);
   const [payLine, setPayLine] = useState<BudgetLine | null>(null);
   const [completeOpen, setCompleteOpen] = useState(false);
+  const [threadId, setThreadId] = useState<string | null>(null);
+  const [updateOpen, setUpdateOpen] = useState(false);
   const [coOpen, setCoOpen] = useState(false);
   const [guest, setGuest] = useState<GuestGroup | null>(null);
   const cmd = usePactCommand(pact.id);
@@ -291,6 +294,7 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
       {next ? (
         <>
           <NextStep item={next} onAction={onAttention} />
+          <PinnedCard pact={pact} meId={me} onOpen={(a) => setThreadId(a.id)} />
           <div className="nextstep-more">
             {!executing && next.action?.kind !== 'contribute' && (
               <Button to={`${base}/contribute`} variant="ghost" size="md">
@@ -305,12 +309,15 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
           </div>
         </>
       ) : (
-        actions && (
-          <div className="detail__actions">
-            {actions.primary}
-            {actions.secondary}
-          </div>
-        )
+        <>
+          {actions && (
+            <div className="detail__actions">
+              {actions.primary}
+              {actions.secondary}
+            </div>
+          )}
+          <PinnedCard pact={pact} meId={me} onOpen={(a) => setThreadId(a.id)} />
+        </>
       )}
       {!next && stage === 'almost' && !orders && <p className="detail__almost">We’re almost there. {formatNaira(s.remaining)} left.</p>}
       {checkpoints.length > 0 && <OrganizerProgress rows={checkpoints} onInvite={() => navigate(`${base}/invite`)} />}
@@ -442,13 +449,20 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
       )}
 
       <section className="screen-section" aria-labelledby="pact-activity">
-        <SectionHeading id="pact-activity" title="Activity" />
+        <div className="activity-head">
+          <SectionHeading id="pact-activity" title="Activity" />
+          {runsMoney && active && (
+            <Button size="sm" variant="secondary" iconLeft={<Megaphone />} onClick={() => setUpdateOpen(true)}>
+              Post update
+            </Button>
+          )}
+        </div>
         {activity.length ? (
           <ul className="activity-list">
             <AnimatePresence initial={false}>
               {activity.map((a) => (
                 <motion.li key={a.id} layout initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={spring.gentle}>
-                  <ActivityItem activity={a} viewerId={me} />
+                  <ActivityItem activity={a} viewerId={me} onOpen={a.type === 'left' ? undefined : (x) => setThreadId(x.id)} />
                 </motion.li>
               ))}
             </AnimatePresence>
@@ -538,6 +552,8 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
       <CompleteSheet pact={pact} open={completeOpen} onClose={() => setCompleteOpen(false)} onChooseCoOrganizer={() => { setCompleteOpen(false); setCoOpen(true); }} />
       <CoOrganizerSheet pact={pact} open={coOpen} onClose={() => setCoOpen(false)} />
       <AssignGuestSheet pact={pact} guest={guest} onClose={() => setGuest(null)} />
+      <ThreadSheet pact={pact} activityId={threadId} meId={me} onClose={() => setThreadId(null)} />
+      <UpdateSheet pact={pact} open={updateOpen} onClose={() => setUpdateOpen(false)} />
 
       <PinSheet
         open={cancelOpen}

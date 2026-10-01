@@ -17,7 +17,9 @@ import { TopBar } from '../../components/ui/TopBar';
 import type { Activity, Pact, PactPayout } from '../../data/types';
 import { moneyOf, progressOf } from '../../lib/execution';
 import { bringsParts } from '../../lib/plan';
+import { PinnedCard, ThreadSheet } from './detail/Conversation';
 import { ApprovalCards, coOrganizerOf, PaidFromPact, PayoutSheet } from './detail/Money';
+import { ActivityItem } from '../../components/ui/ActivityItem';
 import { isOrderPact, MyOrders, OrderMenu, OrderSheetSection } from './detail/Orders';
 import './detail/money.css';
 import './detail/execution.css';
@@ -35,6 +37,7 @@ export function CompletedScreen({ pact, activity = [] }: { pact: Pact; activity?
   const CURRENT_USER_ID = user?.id ?? '';
   const [open, setOpen] = useState(false);
   const [releaseOpen, setReleaseOpen] = useState(false);
+  const [threadId, setThreadId] = useState<string | null>(null);
   const release = usePactAction(pact.id, 'release');
   const money = usePactMoney(pact.id);
   const [payout, setPayout] = useState<PactPayout | null>(null);
@@ -239,6 +242,25 @@ export function CompletedScreen({ pact, activity = [] }: { pact: Pact; activity?
         <PaidFromPact pact={pact} meId={CURRENT_USER_ID} onPay={() => undefined} onOpen={setPayout} hidePayCta />
       </div>
 
+      {(pact.pinned || activity.length > 0) && (
+        <section className="completed__talk" aria-labelledby="what-was-said">
+          <h2 id="what-was-said" className="section-heading__title">
+            Along the way
+          </h2>
+          <PinnedCard pact={pact} meId={CURRENT_USER_ID} onOpen={(a) => setThreadId(a.id)} />
+          <ul className="activity-list">
+            {activity
+              .filter((a) => a.type !== 'left')
+              .slice(0, 6)
+              .map((a) => (
+                <li key={a.id}>
+                  <ActivityItem activity={a} viewerId={CURRENT_USER_ID} onOpen={(x) => setThreadId(x.id)} />
+                </li>
+              ))}
+          </ul>
+        </section>
+      )}
+
       <div className="completed__memory">
         <MemorySection pact={pact} meId={CURRENT_USER_ID} />
       </div>
@@ -267,6 +289,7 @@ export function CompletedScreen({ pact, activity = [] }: { pact: Pact; activity?
         }}
       />
       <PayoutSheet pact={pact} payout={payout} meId={CURRENT_USER_ID} onClose={() => setPayout(null)} />
+      <ThreadSheet pact={pact} activityId={threadId} meId={CURRENT_USER_ID} onClose={() => setThreadId(null)} />
 
       <Modal open={open} onClose={() => setOpen(false)} title="Contributions" description={`${formatNaira(s.raised)} from ${members.length} people`}>
         <ul className="contributions">

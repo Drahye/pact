@@ -80,6 +80,10 @@ export const InviteBody = z.object({
 });
 export const ContributeBody = z.object({ amount: kobo(MIN_CONTRIBUTION), pin });
 export const PinBody = z.object({ pin });
+export const CommentBody = z.object({ body: text(1, 500) });
+export const UpdateBody = z.object({ body: text(1, 500) });
+export const ReactBody = z.object({ reaction: z.enum(['thumbs_up', 'heart', 'celebrate', 'raised_hands']), on: z.boolean() });
+export const PinItemBody = z.object({ activityId: z.string().uuid().nullable() });
 /** Completing a Pact: with money left in the pool the organiser must say what happens to it, with their PIN. */
 export const CompleteBody = z.object({ releaseRemaining: z.boolean().optional(), pin: pin.optional() });
 export const ParticipationBody = z.object({ participation: z.enum(participations) });
@@ -342,6 +346,8 @@ export interface PactDTO {
   bankAccount: PactBankAccountDTO | null;
   transfers: PactTransferDTO[];
   payouts: PactPayoutDTO[];
+  /** The one pinned item, if any. Filled in on the detail endpoint. */
+  pinned: PinnedDTO | null;
   viewer: { role: PactRole | null; status: 'invited' | 'joined' | 'left' | null; suggestedShare: number };
 }
 
@@ -359,6 +365,11 @@ export interface PactPreviewDTO {
   bankAccount: { accountNumber: string; bankName: string; accountName: string } | null;
 }
 
+/** The small, fixed set of reactions. No picker, no custom emoji. */
+export const REACTIONS = ['thumbs_up', 'heart', 'celebrate', 'raised_hands'] as const;
+export type ReactionKey = (typeof REACTIONS)[number];
+export const COMMENT_MAX = 500;
+
 export interface ActivityDTO {
   id: string;
   pactId: string;
@@ -371,6 +382,36 @@ export interface ActivityDTO {
   /** Short context, e.g. a task title or a milestone percentage. */
   detail: string | null;
   at: string;
+  /** The text of an organiser's update (type 'update'); null for automatic activity. */
+  body: string | null;
+  /** How many of each reaction. Only reactions with at least one appear. */
+  reactions: Partial<Record<ReactionKey, number>>;
+  /** What the viewer has reacted with. */
+  myReactions: ReactionKey[];
+  commentCount: number;
+}
+
+export interface PinnedDTO {
+  activity: ActivityDTO;
+  pinnedBy: string;
+  pinnedAt: string;
+}
+
+export interface CommentDTO {
+  id: string;
+  activityId: string;
+  userId: string;
+  /** Empty once removed: the thread shows "Comment removed". */
+  body: string;
+  deleted: boolean;
+  createdAt: string;
+}
+
+export interface ThreadDTO {
+  activity: ActivityDTO;
+  comments: CommentDTO[];
+  /** Whether the viewer may add comments and reactions right now (false once a Pact is closed). */
+  canReply: boolean;
 }
 
 export interface NotificationDTO {

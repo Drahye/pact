@@ -1,5 +1,5 @@
-import type { ActivityDTO, PactDTO, PersonDTO } from '../../shared/contracts';
-import type { Activity, Pact } from '../data/types';
+import type { ActivityDTO, PactDTO, PersonDTO, ThreadDTO } from '../../shared/contracts';
+import type { Activity, Pact, Thread } from '../data/types';
 import { registerPeople } from '../data/users';
 import { fromKobo } from '../lib/format';
 
@@ -61,13 +61,31 @@ export function toPact(p: PactDTO): Pact {
       failureReason: x.failureReason,
       createdAt: x.createdAt,
     })),
+    pinned: p.pinned ? { activity: toActivity(p.pinned.activity)!, pinnedBy: p.pinned.pinnedBy, pinnedAt: p.pinned.pinnedAt } : null,
     viewer: { ...p.viewer, suggestedShare: fromKobo(p.viewer.suggestedShare) },
   };
 }
 
 export function toActivity(a: ActivityDTO): Activity | null {
   if (a.type === 'nudge') return null;
-  return { id: a.id, pactId: a.pactId, type: a.type, userId: a.actorId ?? '', amount: a.amount !== null ? fromKobo(a.amount) : undefined, detail: a.detail, at: a.at };
+  return {
+    id: a.id,
+    pactId: a.pactId,
+    type: a.type,
+    userId: a.actorId ?? '',
+    amount: a.amount !== null ? fromKobo(a.amount) : undefined,
+    detail: a.detail,
+    at: a.at,
+    body: a.body,
+    reactions: a.reactions,
+    myReactions: a.myReactions,
+    commentCount: a.commentCount,
+  };
+}
+
+export function toThread(t: ThreadDTO): Thread | null {
+  const activity = toActivity(t.activity);
+  return activity ? { activity, comments: t.comments.map((c) => ({ ...c })), canReply: t.canReply } : null;
 }
 
 export const register = (people: PersonDTO[]) => registerPeople(people);

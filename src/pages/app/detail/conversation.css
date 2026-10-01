@@ -1,0 +1,345 @@
+/* Conversation on activity: pinned card, thread sheet, composer ------------------------------ */
+
+.pinned {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  width: 100%;
+  margin-top: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--sun-100);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--sun-400) 55%, transparent);
+  text-align: left;
+}
+
+.pinned:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+
+.pinned__icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--sun-400);
+  color: var(--ink-900);
+}
+
+.pinned__icon svg {
+  width: 14px;
+  height: 14px;
+}
+
+.pinned__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+/* The word "Pinned" is there as well as the icon and tint, so the state never depends on colour. */
+.pinned__label {
+  font-size: var(--text-caption);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--tone-sun-fg);
+}
+
+.pinned__body {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  font-weight: var(--weight-medium);
+  line-height: 1.35;
+  color: var(--color-text);
+}
+
+.pinned__meta {
+  font-size: var(--text-caption);
+  color: var(--color-text-secondary);
+}
+
+/* Thread ------------------------------------------------------------------------------------ */
+
+.thread {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.thread__status {
+  padding: var(--space-6) 0;
+  text-align: center;
+  color: var(--color-text-tertiary);
+}
+
+.thread__item {
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: inset 0 0 0 1px var(--color-border);
+}
+
+.thread__item .activity__update {
+  -webkit-line-clamp: unset;
+  display: block;
+}
+
+.thread__reactions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.react {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 52px;
+  min-height: 44px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  box-shadow: inset 0 0 0 1px var(--color-border-strong);
+  font-size: 20px;
+  line-height: 1;
+}
+
+.react .num {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-secondary);
+}
+
+/* A reaction you gave is filled and outlined, and announced as pressed. */
+.react.is-on {
+  background: var(--color-accent-soft);
+  box-shadow: inset 0 0 0 2px var(--color-text);
+}
+
+.react.is-on .num {
+  color: var(--color-text);
+}
+
+.react:disabled {
+  opacity: 0.55;
+}
+
+.react:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+
+.thread__tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.thread__tool {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-full);
+  box-shadow: inset 0 0 0 1px var(--color-border-strong);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text);
+}
+
+.thread__tool svg {
+  width: 16px;
+  height: 16px;
+}
+
+.thread__tool--danger {
+  color: var(--tone-danger-fg);
+}
+
+.thread__tool:disabled {
+  opacity: 0.55;
+}
+
+.thread__heading {
+  margin-top: var(--space-2);
+  font-size: var(--text-sm);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+}
+
+.thread__empty {
+  font-size: var(--text-sm);
+  color: var(--color-text-tertiary);
+}
+
+.thread__comments {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding-bottom: var(--space-2);
+}
+
+.comment {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.comment__main {
+  flex: 1;
+  min-width: 0;
+}
+
+.comment__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+}
+
+.comment__head strong {
+  font-weight: var(--weight-semibold);
+}
+
+.comment__time {
+  font-size: var(--text-caption);
+  color: var(--color-text-tertiary);
+}
+
+.comment__body {
+  margin-top: 2px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.4;
+}
+
+.comment__removed {
+  margin-top: 2px;
+  font-size: var(--text-sm);
+  font-style: italic;
+  color: var(--color-text-tertiary);
+}
+
+.comment__remove {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  margin: -8px -8px 0 0;
+  border-radius: 50%;
+  color: var(--color-text-tertiary);
+}
+
+.comment__remove svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Composer ---------------------------------------------------------------------------------- */
+
+.composer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.composer__row {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-2);
+}
+
+.composer__input {
+  flex: 1;
+  min-width: 0;
+  min-height: 48px;
+  max-height: 120px;
+  padding: 12px var(--space-4);
+  border: 0;
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: inset 0 0 0 1px var(--color-border);
+  font-size: var(--text-body);
+  line-height: 24px;
+  resize: none;
+  color: var(--color-text);
+}
+
+.composer__input::placeholder {
+  color: var(--color-placeholder);
+}
+
+.composer__input:focus,
+.composer__input:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 1.5px var(--color-text);
+}
+
+.composer__row .btn {
+  flex-shrink: 0;
+}
+
+.composer__count {
+  font-size: var(--text-caption);
+  text-align: right;
+  color: var(--color-text-tertiary);
+}
+
+.update-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.update-form__hint {
+  display: flex;
+  gap: var(--space-2);
+  font-size: var(--text-caption);
+  color: var(--color-text-tertiary);
+}
+
+.update-form__hint svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* The Post update button beside the Activity heading */
+.activity-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.activity-head .section-heading {
+  flex: 1;
+  min-width: 0;
+}
+
+.composer__row--stacked {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.composer__row--stacked .composer__input {
+  min-height: 96px;
+}
+
+.composer__row--stacked .btn {
+  width: 100%;
+}

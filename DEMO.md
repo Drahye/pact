@@ -49,6 +49,11 @@ The recorded video follows this order, in eight chapters. The talk track below m
 - Each budget line reads **Not paid**, **Partly paid** or **Paid**; a payment waiting for approval says so.
 - **Complete this Pact** when the plan happened. If money is left you choose: **Release** it to the wallet (only a BVN-verified organiser can) or keep paying. Completion itself moves no money.
 
+### 5b. Talk about it where it happened
+- Tap **Sarah contributed ₦25,000** in the Activity: react 🎉, comment *"I can add the rest on Friday."* Comments live on the item, not in a chat room.
+- As the organiser, **Post update** (*"Venue moved to the Civic Centre"*), then **Pin to top**: it sits under the Next step for everyone.
+- Automatic activity can't be edited or deleted; only your own comments and updates can.
+
 ### 6. Wallet and security
 - **Wallet**: history loads as a skeleton. **Withdraw** → **Add a bank account**: the bank confirms the name matches yours. Withdraw ₦50,000 with the PIN; the fee is shown first.
 - **Profile → PIN and devices**: every signed-in device, sign others out, change the PIN.

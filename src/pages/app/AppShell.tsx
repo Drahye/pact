@@ -5,7 +5,7 @@ import { Link, useLocation, useOutlet } from 'react-router-dom';
 import { useAuth } from '../../api/auth';
 import { setFixedClock } from '../../lib/clock';
 import { clearReturnTo } from './auth/flow';
-import { Logo } from '../../components/ui/Logo';
+import { PactLogo } from '../../components/brand/PactLogo';
 import { OverlayRootContext } from '../../components/ui/overlay';
 import { ToastProvider } from '../../components/ui/Toast';
 import { useMediaQuery } from '../../lib/useMediaQuery';
@@ -60,7 +60,7 @@ function DemoPanel() {
         <ArrowLeft aria-hidden /> Website
       </Link>
       <div className="proto-panel__intro">
-        <Logo size="md" />
+        <PactLogo size="lg" />
         <p>The full PACT app, running against the live API. Sign up with any Nigerian number, or use a demo account below.</p>
         {config?.sandbox && (
           <span className="sandbox-tag">

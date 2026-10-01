@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Logo } from '../ui/Logo';
+import { PactLogo } from '../brand/PactLogo';
 import './footer.css';
 
 export function Footer() {
@@ -7,7 +7,7 @@ export function Footer() {
     <footer className="footer">
       <div className="container footer__inner">
         <div className="footer__brand">
-          <Logo size="md" />
+          <PactLogo size="md" />
           <p>Money works better together.</p>
         </div>
         <nav aria-label="Footer" className="footer__links">

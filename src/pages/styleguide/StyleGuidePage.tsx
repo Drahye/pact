@@ -18,7 +18,7 @@ import { Button } from '../../components/ui/Button';
 import { HoldButton } from '../../components/ui/HoldButton';
 import { IconButton } from '../../components/ui/IconButton';
 import { Input } from '../../components/ui/Input';
-import { Logo } from '../../components/ui/Logo';
+import { PactLogo } from '../../components/brand/PactLogo';
 import { ProgressBar } from '../../components/ui/ProgressBar';
 import { ProgressRing } from '../../components/ui/ProgressRing';
 import { Segmented } from '../../components/ui/Segmented';
@@ -93,7 +93,7 @@ const act = (type: Activity['type'], userId: string, amount?: number): Activity 
 
 /** Style guide pages, for exporting one group at a time (?page=…). */
 export const guidePages = {
-  foundations: { title: 'Foundations: variables', sections: ['colour', 'type', 'space', 'shape', 'motion'] },
+  foundations: { title: 'Foundations: variables', sections: ['logo', 'colour', 'type', 'space', 'shape', 'motion'] },
   actions: { title: 'Components: buttons and inputs', sections: ['buttons', 'inputs'] },
   progress: { title: 'Components: progress and people', sections: ['progress', 'people'] },
   surfaces: { title: 'Components: cards, feed and navigation', sections: ['cards', 'navigation'] },
@@ -101,6 +101,7 @@ export const guidePages = {
 } as const;
 
 const nav = [
+  ['logo', 'Logo'],
   ['colour', 'Colour'],
   ['type', 'Typography'],
   ['space', 'Spacing & grid'],
@@ -132,7 +133,7 @@ export function StyleGuidePage() {
   return (
     <div className="sg">
       <aside className="sg-nav" aria-label="Style guide sections">
-        <Logo size="md" />
+        <PactLogo size="md" />
         <p className="sg-nav__label">Style guide</p>
         <nav>
           {nav
@@ -152,6 +153,36 @@ export function StyleGuidePage() {
           <h1>{current ? current.title.split(': ')[1].replace(/^./, (c) => c.toUpperCase()) + '.' : 'Calm surfaces. Every colour is someone.'}</h1>
           <p>Warm off-white and deep ink carry the interface. Fresh green means progress and action. Each person owns one vivid colour, and their money is drawn in it wherever it appears.</p>
         </header>
+
+        <Section id="logo" title="Logo" lede="Four rounded pieces of different lengths close a loop: people giving different amounts of the same thing, finishing it together. One component, PactLogo, draws it everywhere, from one geometry file.">
+          <h3 className="sg-h3">Sizes</h3>
+          <div className="sg-row sg-row--end">
+            {(['sm', 'md', 'lg', 'xl'] as const).map((size) => (
+              <PactLogo key={size} size={size} />
+            ))}
+          </div>
+          <h3 className="sg-h3">Mark only, from favicon size up</h3>
+          <div className="sg-row sg-row--end">
+            {[16, 20, 24, 32, 48, 64].map((px) => (
+              <PactLogo key={px} markOnly decorative markSize={px} />
+            ))}
+          </div>
+          <h3 className="sg-h3">Surfaces</h3>
+          <div className="sg-logo-surfaces">
+            <div style={{ background: 'var(--color-bg)' }}>
+              <PactLogo size="lg" />
+            </div>
+            <div style={{ background: 'var(--color-surface-inverse)' }}>
+              <PactLogo size="lg" tone="light" />
+            </div>
+            <div style={{ background: 'var(--mint-100)' }}>
+              <PactLogo size="lg" tone="dark" />
+            </div>
+            <div style={{ background: 'var(--color-surface)' }}>
+              <PactLogo size="lg" color="multi" />
+            </div>
+          </div>
+        </Section>
 
         <Section id="colour" title="Colour" lede="Semantic tokens map to primitives. Green is reserved for progress, positive states, the primary action and completion.">
           <h3 className="sg-h3">Core</h3>

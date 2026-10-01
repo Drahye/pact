@@ -1,0 +1,53 @@
+/* The PACT logo. Sizes, tones and the optional multi-colour version live here and nowhere else. */
+.pact-logo {
+  --logo-ink: var(--color-text);
+  --logo-1: currentColor;
+  --logo-2: currentColor;
+  --logo-3: currentColor;
+  --logo-4: currentColor;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 0.42em;
+  color: var(--color-text);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* The mark scales with the size; the wordmark is set relative to it so they always sit together. */
+.pact-logo--sm { --mark: 20px; font-size: 15px; }
+.pact-logo--md { --mark: 24px; font-size: 18px; }
+.pact-logo--lg { --mark: 36px; font-size: 27px; }
+.pact-logo--xl { --mark: 56px; font-size: 42px; }
+
+.pact-logo__mark {
+  flex: none;
+  width: var(--mark);
+  height: var(--mark);
+  overflow: visible;
+}
+
+.pact-logo__piece {
+  stroke: currentColor;
+}
+
+.pact-logo__word {
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.06em;
+  /* Optical: caps sit slightly high next to a round mark. */
+  transform: translateY(0.02em);
+}
+
+/* Tones: which surface it is for. */
+.pact-logo--dark { color: var(--ink-900, #0f1713); }
+.pact-logo--light { color: #fff; }
+
+/* One colour by default. The expressive version gives each piece its own accent. */
+.pact-logo--multi .pact-logo__piece--1 { stroke: var(--color-text); }
+.pact-logo--multi.pact-logo--light .pact-logo__piece--1 { stroke: #fff; }
+.pact-logo--multi .pact-logo__piece--2 { stroke: var(--green-500, #3dd68c); }
+.pact-logo--multi .pact-logo__piece--3 { stroke: var(--sun-400, #ffc53d); }
+.pact-logo--multi .pact-logo__piece--4 { stroke: var(--coral-400, #ff7a5c); }
+
+/* The mark on its own keeps clear space of a quarter of its size, so nothing crowds it. */
+.pact-logo--mark { padding: calc(var(--mark) / 8); }

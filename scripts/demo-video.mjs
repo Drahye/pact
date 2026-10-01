@@ -168,7 +168,7 @@ let pactUrl = '';
 
 try {
   await page.goto(`${BASE}/app`, { waitUntil: 'load' });
-  await card(`<h1>pact</h1><p>Make it happen <span>together</span>.</p><small>Product walkthrough · sandbox payments, no real money</small>`, 3200, INTRO);
+  await card(`<h1 style="letter-spacing:.06em">PACT</h1><p>Make it happen <span>together</span>.</p><small>Product walkthrough · sandbox payments, no real money</small>`, 3200, INTRO);
   await card(
     `<small style="margin:0;font-weight:700;letter-spacing:.14em;color:#22b872">IN THIS WALKTHROUGH</small>
      <p style="text-align:left;font-size:24px;line-height:1.7;color:#0f1713">1 &nbsp;Plan it together<br>2 &nbsp;Bring people in, and let them pay<br>3 &nbsp;A friend joins<br>4 &nbsp;Finish the goal<br>5 &nbsp;Pay vendors from the Pact<br>6 &nbsp;Wallet and security<br>7 &nbsp;Take orders for aso-ebi<br>8 &nbsp;Keep the memory</p>`,
@@ -453,7 +453,7 @@ try {
   await wait(2600);
 
   await page.evaluate(() => window.__cap(''));
-  await card(`<h1>pact</h1><p>Plan it. Fund it. Split the work. Keep the memory.<br>Make it happen <span>together</span>.</p><small>Web app live now · iOS and Android coming soon</small>`, 4200, OUTRO);
+  await card(`<h1 style="letter-spacing:.06em">PACT</h1><p>Plan it. Fund it. Split the work. Keep the memory.<br>Make it happen <span>together</span>.</p><small>Web app live now · iOS and Android coming soon</small>`, 4200, OUTRO);
 } catch (err) {
   await page.screenshot({ path: `${out}/demo-FAILED.png` });
   console.error('FAILED after caption', step, `“${lastCap}”`, err.message.split('\n').slice(0, 3).join(' | '));

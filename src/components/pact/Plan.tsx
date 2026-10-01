@@ -158,7 +158,7 @@ export function TaskList({ pact, tasks, meId, onOpen, onAdd }: { pact: Pact; tas
                   </span>
                   <span className={`task__who ${t.assigneeId ? '' : 'is-open'}`}>
                     {t.assigneeId ? <Avatar userId={t.assigneeId} size="xs" accent accentColor={colorOf(pact, t.assigneeId)} label={false} /> : null}
-                    {who}
+                    <span className="task__who-name">{who}</span>
                   </span>
                   <ChevronRight className="task__chevron" aria-hidden />
                 </button>

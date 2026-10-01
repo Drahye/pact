@@ -1,6 +1,7 @@
 @import '@fontsource-variable/geist';
 @import './tokens.css';
 @import './dark.css';
+@import './touch.css';
 
 *,
 *::before,

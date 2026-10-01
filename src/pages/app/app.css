@@ -273,6 +273,11 @@
   flex-shrink: 0;
 }
 
+/* When a field is focused the browser scrolls it into view: keep it clear of the sticky footer. */
+.screen:has(.screen__footer) {
+  scroll-padding-bottom: 168px;
+}
+
 .screen::-webkit-scrollbar {
   display: none;
 }

@@ -67,6 +67,7 @@ const content: Record<Doc, { title: string; intro: string; sections: { h: string
           'The Pacts you create and join: names, goals, budget lines, tasks, how you’re taking part, your contributions, and any memory note or photos the organiser adds.',
           'Wallet activity: top-ups, contributions, refunds and withdrawals. Bank accounts you add for withdrawals: bank name, the account holder’s name and the account number, which is encrypted.',
           'Security data: the device type and IP address of each signed-in session, and a log of security events such as sign-ins, PIN changes and failed attempts.',
+          'If you turn on browser notifications: the private address (and two keys) your browser gives PACT for sending messages to it. It’s removed when you turn notifications off, sign out, or close your account.',
           'We don’t ask for your contacts, your location, your email address or demographic details. Photos are stripped of location and other metadata when they’re uploaded.',
         ],
       },
@@ -90,6 +91,7 @@ const content: Record<Doc, { title: string; intro: string; sections: { h: string
           'Text messages (Termii, once live): your phone number and the content of sign-in and invite messages.',
           'Identity verification: a provider still being selected will receive your BVN, name and date of birth to confirm who you are.',
           'Hosting and database: a provider still being selected will store the data described here, in encrypted form where noted.',
+          'Browser notifications, only if you turn them on, pass through your browser maker’s push service (for example Google, Mozilla or Apple). They carry a short message with no amounts or account details.',
           'The website and app load no analytics, advertising or tracking services. Fonts and images are served from PACT’s own servers.',
           'PACT does keep simple product statistics on its own servers, for example how many invite links led to someone joining. They use scrambled identifiers instead of your name or number, never contain PINs, bank details or messages, and are not shared with anyone.',
         ],
@@ -158,23 +160,36 @@ const content: Record<Doc, { title: string; intro: string; sections: { h: string
   },
   cookies: {
     title: 'Cookie Policy',
-    intro: 'PACT uses one cookie, and it’s necessary to keep you signed in. There are no analytics, advertising or tracking cookies, so there’s nothing to accept or reject.',
+    intro: 'PACT uses one cookie, and it’s necessary to keep you signed in. There are no analytics, advertising or tracking cookies today. You can still record a preference for optional cookies, so that if we ever add any, your choice is already respected.',
     sections: [
       {
-        h: 'The cookie',
+        h: 'Essential: always on',
         p: [
-          'pact_rt: keeps you signed in on this device for up to 30 days (ending sooner if you don’t use PACT for 14 days). It can’t be read by the page’s scripts, it’s only sent to PACT’s own sign-in endpoint, and it’s deleted when you sign out.',
+          'pact_rt: keeps you signed in on this device for up to 30 days (ending sooner if you don’t use PACT for 14 days). It can’t be read by the page’s scripts, it’s only sent to PACT’s own sign-in endpoint, and it’s deleted when you sign out. PACT can’t keep you signed in or secure without it, so it isn’t part of the choice on the cookie banner.',
+        ],
+      },
+      {
+        h: 'Optional analytics: your choice, currently unused',
+        p: [
+          'PACT’s product analytics run on our own servers, are pseudonymous and set no cookie or other browser storage (see the Privacy Policy). So today there is nothing optional for the banner to switch on. We still keep your answer, “optional analytics: yes or no”, in your browser (as pact.consent, with a version number) so that any optional cookie added later runs only if you said yes, and so that a change to this policy can ask you again.',
+          'Choose Essential only on the banner, or open Cookie settings in the footer at any time to change your answer.',
         ],
       },
       {
         h: 'Other storage in your browser',
         p: [
-          'The app remembers a few choices on your device: whether you’ve hidden your balance, that you’re signed in (so it knows to restore your session), sign-in progress while you wait for a code, and how you chose to join a Pact while you sign up. None of these leave your device, and clearing your browser data removes them.',
+          'The app remembers a few choices on your device so it works the way you left it: your light or dark setting, whether you’ve hidden your balance, that you’re signed in (so it knows to restore your session), drafts you haven’t finished, sign-in progress while you wait for a code, how you chose to join a Pact while you sign up, and whether you’ve dismissed the notifications prompt. These are strictly functional, none of them leave your device, and clearing your browser data removes them.',
+        ],
+      },
+      {
+        h: 'Notifications from your browser',
+        p: [
+          'If you turn on notifications, your browser gives PACT a private address for sending messages to that browser, and PACT stores it with your account until you turn notifications off or sign out. It’s used only to send important updates about your Pacts, with no amounts or account details, and it’s never shown to anyone else. Turning notifications on is always your choice: PACT asks only after you tap “Turn on notifications”.',
         ],
       },
       {
         h: 'If this changes',
-        p: ['If PACT ever adds analytics or other non-essential cookies, we’ll ask for your consent first, with rejecting as easy as accepting, and update this page.'],
+        p: ['If PACT adds analytics or other non-essential cookies, we’ll ask for your consent first, with rejecting as easy as accepting, and update this page.'],
       },
     ],
   },

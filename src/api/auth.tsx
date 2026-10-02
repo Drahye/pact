@@ -1,3 +1,4 @@
+import { detachPush } from '../lib/push';
 import { useQueryClient } from '@tanstack/react-query';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { AuthTokensDTO, MeDTO, OtpVerifyDTO } from '../../shared/contracts';
@@ -13,6 +14,8 @@ export interface ServerConfig {
   sandbox: boolean;
   deployEnv?: 'development' | 'staging' | 'production';
   exposeDevCodes: boolean;
+  /** Browser push: whether the server can send it, and the public key a browser subscribes with. */
+  push?: { enabled: boolean; publicKey: string | null };
 }
 
 interface AuthValue {
@@ -135,6 +138,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
       signup: async (input) => accept(await api<AuthTokensDTO>('POST', '/auth/signup', input)),
       signOut: async () => {
+        await detachPush();
         await api('POST', '/auth/logout', {}).catch(() => undefined);
         endSession('explicit');
       },

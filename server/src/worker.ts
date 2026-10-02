@@ -6,6 +6,7 @@ import { startWorker } from './jobs/worker.js';
 import { createPaystackProvider } from './payments/paystack.js';
 import { createSandboxProvider } from './payments/sandbox.js';
 import { createSms } from './payments/sms.js';
+import { createPushSender } from './modules/push.js';
 
 /** Standalone worker: run as many of these as the queue needs, alongside RUN_WORKER=false API instances. */
 async function main() {
@@ -15,7 +16,7 @@ async function main() {
   // The API applies migrations; the worker only needs the runtime credential.
   if (!config.MIGRATION_DATABASE_URL) await migrate(db);
   const provider = config.PAYMENTS_PROVIDER === 'paystack' ? createPaystackProvider(config) : createSandboxProvider(config);
-  const stop = startWorker({ config, db, provider, sms: createSms(config, log), log, now: () => new Date() }, 500);
+  const stop = startWorker({ config, db, provider, sms: createSms(config, log), push: createPushSender(config), log, now: () => new Date() }, 500);
   log.info('PACT worker running');
   const shutdown = async () => {
     stop();

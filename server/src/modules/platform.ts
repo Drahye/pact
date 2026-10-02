@@ -1,4 +1,5 @@
 import type { Queryable } from '../db/index.js';
+import { notificationLink } from '../../../shared/notificationLink.js';
 
 export async function audit(
   q: Queryable,
@@ -14,20 +15,68 @@ export async function audit(
   ]);
 }
 
-export async function notify(
-  q: Queryable,
-  userIds: string[],
-  n: { type: string; title: string; body: string; pactId?: string | null },
-) {
+export interface NotifyInput {
+  type: string;
+  title: string;
+  body: string;
+  pactId?: string | null;
+  /** What the notification is about inside the Pact (an activity item, for threads). Never shown to people. */
+  refId?: string | null;
+  /**
+   * Also send a browser push, with this text. Push is deliberately rarer than in-app notifications and its text is
+   * written separately: lock screens are public, so it never carries amounts, names of banks, or account details.
+   */
+  push?: string;
+}
+
+export async function notify(q: Queryable, userIds: string[], n: NotifyInput) {
   const unique = [...new Set(userIds)];
   if (!unique.length) return;
   await q.query(
-    `INSERT INTO notifications (user_id, type, title, body, pact_id)
-     SELECT u, $2, $3, $4, $5 FROM unnest($1::uuid[]) AS u`,
-    [unique, n.type, n.title, n.body, n.pactId ?? null],
+    `INSERT INTO notifications (user_id, type, title, body, pact_id, ref_id)
+     SELECT u, $2, $3, $4, $5, $6 FROM unnest($1::uuid[]) AS u`,
+    [unique, n.type, n.title, n.body, n.pactId ?? null, n.refId ?? null],
   );
-  // Push delivery (APNs / FCM) runs from the outbox so a slow push service never blocks a payment.
-  await enqueue(q, 'push.send', { userIds: unique, title: n.title, body: n.body, pactId: n.pactId ?? null });
+  if (n.push) await enqueuePush(q, unique, n);
+}
+
+/** Push delivery runs from the outbox, so a slow or failing push service never blocks (or rolls back) the real action. */
+async function enqueuePush(q: Queryable, userIds: string[], n: Pick<NotifyInput, 'type' | 'pactId' | 'refId' | 'push'>) {
+  await enqueue(q, 'push.send', { userIds, body: n.push, url: notificationLink(n) });
+}
+
+/**
+ * Something that can happen many times in a row (comments on a thread, contributions to a Pact) becomes one
+ * notification per person while it is unread: it moves to the top and its count grows, and the push (if any) goes
+ * out only for the first. `many` words the grouped version, e.g. "3 new contributions".
+ */
+export async function notifyGrouped(
+  q: Queryable,
+  userIds: string[],
+  n: {
+    type: string;
+    pactId: string;
+    refId: string;
+    first: { title: string; body: string };
+    many: (count: number) => { title: string; body: string };
+    push?: string;
+  },
+) {
+  for (const userId of [...new Set(userIds)]) {
+    const existing = await q.query<{ id: string; merged_count: number }>(
+      `SELECT id, merged_count FROM notifications WHERE user_id = $1 AND type = $2 AND ref_id = $3 AND read_at IS NULL ORDER BY created_at DESC LIMIT 1`,
+      [userId, n.type, n.refId],
+    );
+    const row = existing.rows[0];
+    if (row) {
+      const count = row.merged_count + 1;
+      const w = n.many(count);
+      await q.query('UPDATE notifications SET title = $2, body = $3, merged_count = $4, created_at = now() WHERE id = $1', [row.id, w.title, w.body, count]);
+      continue;
+    }
+    await q.query('INSERT INTO notifications (user_id, type, title, body, pact_id, ref_id) VALUES ($1, $2, $3, $4, $5, $6)', [userId, n.type, n.first.title, n.first.body, n.pactId, n.refId]);
+    if (n.push) await enqueuePush(q, [userId], { type: n.type, pactId: n.pactId, refId: n.refId, push: n.push });
+  }
 }
 
 export async function recordActivity(q: Queryable, a: { pactId: string; actorId: string | null; type: string; amount?: number | null; detail?: string | null }) {

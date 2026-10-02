@@ -31,6 +31,7 @@ import { createPaystackProvider } from './payments/paystack.js';
 import type { PaymentProvider } from './payments/provider.js';
 import { createSandboxProvider } from './payments/sandbox.js';
 import { createSms, type SmsSender } from './payments/sms.js';
+import { createPushSender, pushPublicConfig, removeSubscription, saveSubscription, type PushSender } from './modules/push.js';
 
 /**
  * HTML revalidates on every visit, so a deploy reaches people immediately; Vite's content-hashed
@@ -60,10 +61,11 @@ export interface BuildOptions {
   db: Db;
   provider?: PaymentProvider;
   sms?: SmsSender;
+  push?: PushSender | null;
   now?: () => Date;
 }
 
-export async function buildApp({ config, db, provider, sms, now = () => new Date() }: BuildOptions) {
+export async function buildApp({ config, db, provider, sms, push, now = () => new Date() }: BuildOptions) {
   const app = Fastify({
     logger: config.isTest
       ? false
@@ -86,6 +88,7 @@ export async function buildApp({ config, db, provider, sms, now = () => new Date
     db,
     provider: provider ?? (config.PAYMENTS_PROVIDER === 'paystack' ? createPaystackProvider(config) : createSandboxProvider(config)),
     sms: sms ?? createSms(config, app.log),
+    push: push === undefined ? createPushSender(config) : push,
     log: app.log,
     now,
   };
@@ -254,6 +257,7 @@ export async function buildApp({ config, db, provider, sms, now = () => new Date
         sandbox: ctx.provider.name === 'sandbox',
         deployEnv: config.deployEnv,
         exposeDevCodes: config.exposeDevCodes,
+        push: pushPublicConfig(config),
       }));
 
       /* ---------- auth */
@@ -551,6 +555,20 @@ export async function buildApp({ config, db, provider, sms, now = () => new Date
         priv.post('/notifications/read', async (req) => {
           const body = parse(z.object({ ids: z.array(z.string().uuid()).max(100).optional() }), req.body);
           await users.markNotificationsRead(ctx, req.userId, body.ids);
+          return { ok: true };
+        });
+
+        /* ---------- browser push (optional; best-effort) */
+        const SubscribeBody = z.object({
+          endpoint: z.string().url().max(1000),
+          keys: z.object({ p256dh: z.string().min(20).max(200), auth: z.string().min(8).max(100) }),
+        });
+        priv.post('/push/subscribe', strict(20), async (req) => {
+          await saveSubscription(ctx, req.userId, parse(SubscribeBody, req.body));
+          return { ok: true };
+        });
+        priv.post('/push/unsubscribe', strict(30), async (req) => {
+          await removeSubscription(ctx, req.userId, parse(z.object({ endpoint: z.string().max(1000) }), req.body).endpoint);
           return { ok: true };
         });
 

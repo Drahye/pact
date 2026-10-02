@@ -93,6 +93,25 @@
   position: relative;
 }
 
+.tabbar__badge {
+  position: absolute;
+  top: -5px;
+  left: 100%;
+  min-width: 16px;
+  height: 16px;
+  margin-left: -9px;
+  padding: 0 4px;
+  border-radius: var(--radius-full);
+  background: var(--coral-400);
+  box-shadow: 0 0 0 2px var(--color-surface);
+  font-size: 10px;
+  line-height: 16px;
+  font-weight: var(--weight-bold);
+  text-align: center;
+  color: var(--ink-900);
+  pointer-events: none;
+}
+
 .tabbar__icon svg {
   width: 22px;
   height: 22px;

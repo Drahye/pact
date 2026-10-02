@@ -24,7 +24,8 @@
   gap: var(--space-2) var(--space-6);
 }
 
-.footer__links a {
+.footer__links a,
+.footer__links button {
   display: inline-flex;
   align-items: center;
   min-height: var(--tap-min);
@@ -33,7 +34,8 @@
   color: var(--color-text-secondary);
 }
 
-.footer__links a:hover {
+.footer__links a:hover,
+.footer__links button:hover {
   color: var(--color-text);
 }
 

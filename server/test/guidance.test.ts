@@ -7,10 +7,11 @@ import { describe, it } from 'node:test';
 import type { Pact } from '../../src/data/types.js';
 import { setFixedClock } from '../../src/lib/clock.js';
 import { attentionFor, checkpointsFor, nextStepFor } from '../../src/lib/plan.js';
+import { lagosDay } from './helpers.js';
 
 // The website pins "today"; the app (and these tests) use the real clock.
 setFixedClock(false);
-const day = (n: number) => new Date(Date.now() + n * 86_400_000).toISOString().slice(0, 10);
+const day = (n: number) => lagosDay(n);
 type M = { userId: string; participation?: 'money' | 'task' | 'both' | 'later' | null; contributed?: number; status?: 'joined' | 'invited'; requestedAmount?: number };
 
 function pact(opts: { me: M; others?: M[]; target?: number; raised?: number; deadline?: number; tasks?: Pact['tasks']; organizer?: string; status?: Pact['status']; phone?: number }): Pact {

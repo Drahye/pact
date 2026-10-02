@@ -13,7 +13,7 @@ import { createAccount, post, walletAccountId } from './ledger.js';
 import { closePactAccountTx, refundGuestsTx, settleWaitingPayouts } from './pactMoney.js';
 import { checkPledgeKept, closePledgesTx } from './pledges.js';
 import { insertItems, lapseUnpaidOrders, orderOutstanding, paidOrders } from './orders.js';
-import { audit, enqueue, notify, recordActivity } from './platform.js';
+import { audit, enqueue, notify, notifyGrouped, recordActivity } from './platform.js';
 
 export interface PactRow {
   id: string;
@@ -655,7 +655,13 @@ export async function joinTx(q: Queryable, pact: PactRow, userId: string, partic
   if (!r.rowCount) return false;
   const user = await getUser(q, userId);
   await recordActivity(q, { pactId: pact.id, actorId: userId, type: 'join' });
-  await notify(q, [pact.organizer_id], { type: 'join', title: `${user.first_name} joined`, body: `${user.first_name} joined ${pact.title}.`, pactId: pact.id });
+  await notifyGrouped(q, [pact.organizer_id], {
+    type: 'join',
+    pactId: pact.id,
+    refId: pact.id,
+    first: { title: `${user.first_name} joined`, body: `${user.first_name} joined ${pact.title}.` },
+    many: (n) => ({ title: `${n} people joined`, body: `New people in ${pact.title}.` }),
+  });
   return true;
 }
 
@@ -766,10 +772,17 @@ export async function applyToPact(q: Queryable, pact: PactRow, from: { userId: s
   if (completed) {
     await q.query(`UPDATE pacts SET status = 'funded', funded_at = now() WHERE id = $1`, [pact.id]);
     await recordActivity(q, { pactId: pact.id, actorId: userId, type: 'completed' });
-    await notify(q, members.rows.map((m) => m.user_id), { type: 'funded', title: 'Goal reached', body: `${pact.title} is funded. ${formatNgn(pact.target_amount)} is ready to make it happen.`, pactId: pact.id });
+    await notify(q, members.rows.map((m) => m.user_id), { type: 'funded', title: 'Goal reached', body: `${pact.title} is funded. ${formatNgn(pact.target_amount)} is ready to make it happen.`, pactId: pact.id, push: `${pact.title} reached its goal.` });
   } else if (userId !== pact.organizer_id) {
     const who = guestName ?? (await getUser(q, userId!)).first_name;
-    await notify(q, [pact.organizer_id], { type: 'contribution', title: 'New contribution', body: `${who} added ${formatNgn(amount)} to ${pact.title}.`, pactId: pact.id });
+    // A busy Pact gets many contributions: the organiser sees one growing line, not one per payment, and no push.
+    await notifyGrouped(q, [pact.organizer_id], {
+      type: 'contribution',
+      pactId: pact.id,
+      refId: pact.id,
+      first: { title: 'New contribution', body: `${who} added ${formatNgn(amount)} to ${pact.title}.` },
+      many: (n) => ({ title: `${n} new contributions`, body: `People are adding to ${pact.title}.` }),
+    });
   }
   return completed;
 }
@@ -860,7 +873,7 @@ async function startRelease(ctx: Ctx, q: Queryable, pact: PactRow, userId: strin
     await q.query('UPDATE pacts SET release_requested_by = $2, release_requested_at = now() WHERE id = $1', [pact.id, userId]);
     const pool = (await q.query<{ balance: number }>('SELECT balance FROM accounts WHERE id = $1', [pact.account_id])).rows[0].balance;
     await recordActivity(q, { pactId: pact.id, actorId: userId, type: 'release_requested', amount: pool });
-    await notify(q, [co.rows[0].user_id], { type: 'approval', title: 'Approve the release', body: `${firstName} wants to release ${formatNgn(pool)} from ${pact.title} to their wallet.`, pactId: pact.id });
+    await notify(q, [co.rows[0].user_id], { type: 'approval', title: 'Approve the release', body: `${firstName} wants to release ${formatNgn(pool)} from ${pact.title} to their wallet.`, pactId: pact.id, push: `Your approval is needed for ${pact.title}.` });
     await audit(q, { actorId: userId, action: 'pact.release_requested', targetType: 'pact', targetId: pact.id, ip: meta.ip, metadata: { amount: pool } });
     return;
   }
@@ -909,7 +922,7 @@ export async function completePact(ctx: Ctx, userId: string, pactId: string, inp
     await q.query('UPDATE pacts SET completed_at = now(), completed_by = $2 WHERE id = $1', [pactId, userId]);
     await recordActivity(q, { pactId, actorId: userId, type: 'pact_completed' });
     const others = await q.query<{ user_id: string }>(`SELECT user_id FROM pact_members WHERE pact_id = $1 AND status = 'joined' AND user_id <> $2`, [pactId, userId]);
-    await notify(q, others.rows.map((x) => x.user_id), { type: 'completed', title: 'We made it happen', body: `${pact.title} is complete.`, pactId });
+    await notify(q, others.rows.map((x) => x.user_id), { type: 'completed', title: 'We made it happen', body: `${pact.title} is complete.`, pactId, push: `${pact.title} is complete.` });
     await audit(q, { actorId: userId, action: 'pact.completed', targetType: 'pact', targetId: pactId, ip: meta.ip, metadata: { remaining: pool, release: !!input.releaseRemaining && pool > 0 } });
     if (pool > 0 && input.releaseRemaining) await startRelease(ctx, q, { ...pact, completed_at: new Date() }, userId, firstName, meta);
   });
@@ -1127,6 +1140,28 @@ export async function sweepDeadlines(ctx: Ctx) {
       if (!done.rowCount) return;
       const who = await q.query<{ user_id: string }>(`SELECT user_id FROM pact_members WHERE pact_id = $1 AND status = 'joined' AND contributed = 0`, [p.id]);
       await notify(q, who.rows.map((w) => w.user_id), { type: 'reminder', title: '3 days left', body: `${p.title} closes in 3 days. Add your share before then.`, pactId: p.id });
+    });
+  }
+
+  // Two days out: whoever still holds an unfinished task is told it is theirs and time is short. Deduped per Pact.
+  const closing = await ctx.db.query<{ id: string; title: string }>(`SELECT id, title FROM pacts WHERE status IN ('open', 'funded') AND completed_at IS NULL AND deadline = $1`, [addDays(today, 2)]);
+  for (const p of closing.rows) {
+    await ctx.db.tx(async (q) => {
+      const done = await q.query(`INSERT INTO jobs (type, payload, dedupe_key, done_at) VALUES ('marker', '{}', $1, now()) ON CONFLICT DO NOTHING RETURNING id`, [`taskdue2:${p.id}`]);
+      if (!done.rowCount) return;
+      const holders = await q.query<{ assignee_id: string; n: number; first: string }>(
+        `SELECT assignee_id, count(*)::int AS n, min(title) AS first FROM tasks WHERE pact_id = $1 AND assignee_id IS NOT NULL AND status <> 'done' GROUP BY assignee_id`,
+        [p.id],
+      );
+      for (const h of holders.rows) {
+        await notify(q, [h.assignee_id], {
+          type: 'task_due',
+          title: 'Your task is due soon',
+          body: h.n === 1 ? `“${h.first}” is still open, and ${p.title} closes in 2 days.` : `${h.n} tasks are still open, and ${p.title} closes in 2 days.`,
+          pactId: p.id,
+          push: `You have a task due soon for ${p.title}.`,
+        });
+      }
     });
   }
 

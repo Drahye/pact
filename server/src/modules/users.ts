@@ -82,15 +82,16 @@ export async function listSessions(ctx: Ctx, userId: string, currentSessionId: s
 
 export async function listNotifications(ctx: Ctx, userId: string, cursor?: string): Promise<Page<NotificationDTO> & { unread: number }> {
   const before = cursor ? new Date(cursor) : null;
-  const r = await ctx.db.query<{ id: string; type: string; title: string; body: string; pact_id: string | null; read_at: Date | null; created_at: Date }>(
-    `SELECT id, type, title, body, pact_id, read_at, created_at FROM notifications
-      WHERE user_id = $1 AND ($2::timestamptz IS NULL OR created_at < $2) ORDER BY created_at DESC LIMIT 41`,
+  const r = await ctx.db.query<{ id: string; type: string; title: string; body: string; pact_id: string | null; pact_title: string | null; ref_id: string | null; merged_count: number; read_at: Date | null; created_at: Date }>(
+    `SELECT n.id, n.type, n.title, n.body, n.pact_id, p.title AS pact_title, n.ref_id, n.merged_count, n.read_at, n.created_at
+       FROM notifications n LEFT JOIN pacts p ON p.id = n.pact_id
+      WHERE n.user_id = $1 AND ($2::timestamptz IS NULL OR n.created_at < $2) ORDER BY n.created_at DESC LIMIT 41`,
     [userId, before],
   );
   const unread = await ctx.db.query<{ n: number }>('SELECT COUNT(*)::int AS n FROM notifications WHERE user_id = $1 AND read_at IS NULL', [userId]);
   const rows = r.rows.slice(0, 40);
   return {
-    items: rows.map((n) => ({ id: n.id, type: n.type, title: n.title, body: n.body, pactId: n.pact_id, readAt: n.read_at?.toISOString() ?? null, createdAt: n.created_at.toISOString() })),
+    items: rows.map((n) => ({ id: n.id, type: n.type, title: n.title, body: n.body, pactId: n.pact_id, pactTitle: n.pact_title, refId: n.ref_id, count: n.merged_count, readAt: n.read_at?.toISOString() ?? null, createdAt: n.created_at.toISOString() })),
     nextCursor: r.rows.length > 40 ? rows[rows.length - 1].created_at.toISOString() : null,
     unread: unread.rows[0].n,
   };

@@ -420,6 +420,12 @@ export interface NotificationDTO {
   title: string;
   body: string;
   pactId: string | null;
+  /** The Pact's name, for context under the message. */
+  pactTitle: string | null;
+  /** What it is about inside the Pact (an activity item for threads); used to open the right place. */
+  refId: string | null;
+  /** How many events this one line stands for ("3 new contributions"). */
+  count: number;
   readAt: string | null;
   createdAt: string;
 }

@@ -8,12 +8,12 @@ import sharp from 'sharp';
 import { buildApp } from '../src/app.js';
 import { loadConfig } from '../src/config.js';
 import type { PaymentProvider } from '../src/payments/provider.js';
-import { setup } from './helpers.js';
+import { setup, lagosDay } from './helpers.js';
 
 type T = Awaited<ReturnType<typeof setup>>;
 type Session = { accessToken: string; refreshToken: string; user: { id: string } };
 
-const future = (days: number) => new Date(Date.now() + days * 86_400_000).toISOString().slice(0, 10);
+const future = (days: number) => lagosDay(days);
 
 describe('security: authorization, RLS, payments, uploads, abuse', () => {
   let t: T;

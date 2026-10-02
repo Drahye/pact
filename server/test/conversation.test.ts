@@ -6,13 +6,13 @@
 import assert from 'node:assert/strict';
 import { after, before, describe, it } from 'node:test';
 import { syncProductEvents } from '../src/modules/events.js';
-import { setup } from './helpers.js';
+import { setup, lagosDay } from './helpers.js';
 
 type T = Awaited<ReturnType<typeof setup>>;
 type Session = { accessToken: string; user: { id: string } };
 type Item = { id: string; type: string; body: string | null; commentCount: number; reactions: Record<string, number>; myReactions: string[] };
 
-const future = (days: number) => new Date(Date.now() + days * 86_400_000).toISOString().slice(0, 10);
+const future = (days: number) => lagosDay(days);
 const PIN = '1357';
 
 describe('Conversation around activity', () => {
@@ -213,7 +213,8 @@ describe('Conversation around activity', () => {
     await comment(p.id, item.id, david, 'Third');
     const mine = ((await t.call('GET', '/notifications', sarah.accessToken)).body.items as { type: string; title: string; body: string; pactId: string }[]).filter((n) => n.type === 'comment' && n.pactId === p.id);
     assert.equal(mine.length, 1, 'three comments, one notification');
-    assert.match(mine[0].body, /talking about/);
+    assert.equal(mine[0].title, '3 new comments');
+    assert.match(mine[0].body, /^On /);
     const own = ((await t.call('GET', '/notifications', david.accessToken)).body.items as { type: string; pactId: string }[]).filter((n) => n.type === 'comment' && n.pactId === p.id);
     assert.equal(own.length, 1, 'david hears about Abraham’s reply, not his own comments');
   });

@@ -6,13 +6,13 @@ import assert from 'node:assert/strict';
 import { after, before, describe, it } from 'node:test';
 import { sweepDeadlines } from '../src/modules/pacts.js';
 import { reconcile } from '../src/modules/ledger.js';
-import { setup } from './helpers.js';
+import { setup, lagosDay } from './helpers.js';
 
 type T = Awaited<ReturnType<typeof setup>>;
 type Session = { accessToken: string; user: { id: string } };
 type Order = { id: string; userId: string; itemId: string; option: string | null; quantity: number; amount: number; paid: boolean; status: string };
 
-const day = (days: number) => new Date(Date.now() + days * 86_400_000).toISOString().slice(0, 10);
+const day = (days: number) => lagosDay(days);
 const PIN = '1357';
 
 describe('order Pacts', () => {

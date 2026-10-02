@@ -93,7 +93,7 @@ async function syncTarget(q: Queryable, pactId: string, me: Me) {
 async function announceFunded(ctx: Ctx, pactId: string, title: string | null) {
   if (!title) return;
   const members = await ctx.db.query<{ user_id: string }>(`SELECT user_id FROM pact_members WHERE pact_id = $1 AND status = 'joined'`, [pactId]);
-  await notify(ctx.db, members.rows.map((m) => m.user_id), { type: 'funded', title: 'Goal reached', body: `${title} is fully funded.`, pactId });
+  await notify(ctx.db, members.rows.map((m) => m.user_id), { type: 'funded', title: 'Goal reached', body: `${title} is fully funded.`, pactId, push: `${title} reached its goal.` });
 }
 
 export async function addBudgetItem(ctx: Ctx, userId: string, pactId: string, input: { name: string; amount: number }) {

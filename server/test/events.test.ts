@@ -5,10 +5,10 @@ import assert from 'node:assert/strict';
 import { after, before, describe, it } from 'node:test';
 import { EVENT_NAMES, EVENT_PROPS, personId, track } from '../src/lib/events.js';
 import { syncProductEvents } from '../src/modules/events.js';
-import { setup } from './helpers.js';
+import { setup, lagosDay } from './helpers.js';
 
 type T = Awaited<ReturnType<typeof setup>>;
-const day = (days: number) => new Date(Date.now() + days * 86_400_000).toISOString().slice(0, 10);
+const day = (days: number) => lagosDay(days);
 
 describe('product events', () => {
   let t: T;

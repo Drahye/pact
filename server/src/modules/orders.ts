@@ -68,7 +68,7 @@ export async function recomputeOrders(q: Queryable, pactId: string) {
     await q.query(`UPDATE pacts SET status = 'funded', funded_at = now() WHERE id = $1`, [pactId]);
     await recordActivity(q, { pactId, actorId: null, type: 'completed' });
     const members = await q.query<{ user_id: string }>(`SELECT user_id FROM pact_members WHERE pact_id = $1 AND status = 'joined'`, [pactId]);
-    await notify(q, members.rows.map((m) => m.user_id), { type: 'funded', title: 'Every order is paid for', body: `${p.title}: ${formatNgn(p.target_amount)} in orders, all paid.`, pactId });
+    await notify(q, members.rows.map((m) => m.user_id), { type: 'funded', title: 'Every order is paid for', body: `${p.title}: ${formatNgn(p.target_amount)} in orders, all paid.`, pactId, push: `${p.title} reached its goal.` });
   } else if (p.status === 'funded' && p.raised_amount < p.target_amount) {
     // A new order after everything was paid: open again until it's paid for too.
     await q.query(`UPDATE pacts SET status = 'open', funded_at = NULL WHERE id = $1`, [pactId]);

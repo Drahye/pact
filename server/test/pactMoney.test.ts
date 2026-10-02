@@ -8,12 +8,12 @@ import { after, before, describe, it } from 'node:test';
 import sharp from 'sharp';
 import { reconcile } from '../src/modules/ledger.js';
 import { prorate } from '../src/modules/pacts.js';
-import { setup } from './helpers.js';
+import { setup, lagosDay } from './helpers.js';
 
 type T = Awaited<ReturnType<typeof setup>>;
 type Session = { accessToken: string; user: { id: string } };
 
-const future = (days: number) => new Date(Date.now() + days * 86_400_000).toISOString().slice(0, 10);
+const future = (days: number) => lagosDay(days);
 const PIN = '1357';
 
 describe('Pact accounts, bank transfers and vendor payments', () => {

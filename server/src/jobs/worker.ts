@@ -7,6 +7,7 @@ import { processPayout, reconcileTopupByRef } from '../modules/wallet.js';
 import { handleWebhook } from '../modules/webhooks.js';
 import { syncProductEvents } from '../modules/events.js';
 import { enqueue } from '../modules/platform.js';
+import { sendPush } from '../modules/push.js';
 
 interface Job {
   id: number;
@@ -28,6 +29,7 @@ const handlers: Record<string, Handler> = {
     await ctx.db.query(`DELETE FROM refresh_tokens WHERE superseded_at < now() - interval '2 days'`);
     await ctx.db.query(`DELETE FROM otp_challenges WHERE created_at < now() - interval '2 days'`);
     await ctx.db.query(`DELETE FROM http_rate_limits WHERE expires_at < now()`);
+    await ctx.db.query(`DELETE FROM push_subscriptions WHERE disabled_at < now() - interval '30 days'`);
     await ctx.db.query(`DELETE FROM product_events WHERE occurred_at < now() - interval '18 months'`);
     await sweepPledges(ctx);
     return sweepDeadlines(ctx);
@@ -38,10 +40,8 @@ const handlers: Record<string, Handler> = {
     if (!r.ok) ctx.log.fatal({ drift: r.drift, total: r.total }, 'LEDGER DRIFT DETECTED');
     return r;
   },
-  'push.send': async (ctx, p) => {
-    // Hook for APNs / FCM. Device tokens are registered from the native apps.
-    ctx.log.debug({ users: (p.userIds as string[]).length }, 'push queued');
-  },
+  // Browser Web Push, best-effort: sendPush never throws, so a failing push service can't make this job retry forever.
+  'push.send': (ctx, p) => sendPush(ctx, p.userIds as string[], { body: String(p.body ?? ''), url: typeof p.url === 'string' ? p.url : null }),
   'sms.invite': async (ctx, p) => {
     await ctx.sms.send(String(p.phone), `${p.inviter} invited you to a Pact on PACT. Get the app to join: ${ctx.config.APP_ORIGIN}/download`);
   },

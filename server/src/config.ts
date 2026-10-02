@@ -73,10 +73,26 @@ const Env = z.object({
   RATE_LIMIT_ENABLED: bool(true),
   /** Where per-IP counters live: postgres is shared by every instance; memory is per process. */
   RATE_LIMIT_STORE: z.enum(['postgres', 'memory']).default('postgres'),
+  /**
+   * Optional browser Web Push (VAPID). Leave all three empty and push is simply unavailable: the app and
+   * in-app notifications work without it. Generate a pair with `npx web-push generate-vapid-keys`.
+   */
+  WEB_PUSH_VAPID_PUBLIC_KEY: z.string().default(''),
+  WEB_PUSH_VAPID_PRIVATE_KEY: z.string().default(''),
+  /** Who push services can contact about this sender: `mailto:you@example.com` or an https URL. */
+  WEB_PUSH_SUBJECT: z.string().default(''),
+
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
 });
 
-export type Config = z.infer<typeof Env> & { isProd: boolean; isTest: boolean; exposeDevCodes: boolean; deployEnv: 'development' | 'staging' | 'production' };
+export type Config = z.infer<typeof Env> & {
+  isProd: boolean;
+  isTest: boolean;
+  exposeDevCodes: boolean;
+  deployEnv: 'development' | 'staging' | 'production';
+  /** Present only when all three VAPID settings are valid. */
+  push: { publicKey: string; privateKey: string; subject: string } | null;
+};
 
 export function loadConfig(overrides: Partial<Record<keyof z.infer<typeof Env>, string>> = {}): Config {
   const parsed = Env.safeParse({ ...process.env, ...overrides });
@@ -97,6 +113,10 @@ export function loadConfig(overrides: Partial<Record<keyof z.infer<typeof Env>, 
   if (env.PAYMENTS_PROVIDER === 'sandbox' && key.startsWith('sk_live_')) problems.push('PAYMENTS_PROVIDER=sandbox with a live Paystack key: pick one');
   if (deployEnv === 'production' && !isProd) problems.push('DEPLOY_ENV=production needs NODE_ENV=production');
   if (isProd && deployEnv === 'development') problems.push('NODE_ENV=production needs DEPLOY_ENV=staging or production');
+  // Web Push is all or nothing: a half-configured sender would fail every delivery.
+  const pushSet = [env.WEB_PUSH_VAPID_PUBLIC_KEY, env.WEB_PUSH_VAPID_PRIVATE_KEY, env.WEB_PUSH_SUBJECT].filter(Boolean).length;
+  if (pushSet > 0 && pushSet < 3) problems.push('WEB_PUSH_VAPID_PUBLIC_KEY, WEB_PUSH_VAPID_PRIVATE_KEY and WEB_PUSH_SUBJECT must all be set, or none');
+  if (env.WEB_PUSH_SUBJECT && !/^(mailto:[^\s@]+@[^\s@]+|https:\/\/\S+)$/.test(env.WEB_PUSH_SUBJECT)) problems.push('WEB_PUSH_SUBJECT must be mailto:you@example.com or an https URL');
   if (env.STAGING_SHOW_CODES && deployEnv !== 'staging') problems.push('STAGING_SHOW_CODES is only for DEPLOY_ENV=staging');
 
   if (isProd) {
@@ -129,6 +149,7 @@ export function loadConfig(overrides: Partial<Record<keyof z.infer<typeof Env>, 
     isProd,
     isTest: env.NODE_ENV === 'test',
     deployEnv,
+    push: pushSet === 3 ? { publicKey: env.WEB_PUSH_VAPID_PUBLIC_KEY, privateKey: env.WEB_PUSH_VAPID_PRIVATE_KEY, subject: env.WEB_PUSH_SUBJECT } : null,
     // OTP codes are returned in API responses only when SMS is not really sent: local development, or a staging beta that asked for it.
     exposeDevCodes: (!isProd && env.SMS_PROVIDER === 'log') || (deployEnv === 'staging' && env.STAGING_SHOW_CODES),
   };

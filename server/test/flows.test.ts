@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { after, before, describe, it } from 'node:test';
 import { reconcile } from '../src/modules/ledger.js';
-import { setup } from './helpers.js';
+import { setup, lagosDay } from './helpers.js';
 
 type T = Awaited<ReturnType<typeof setup>>;
 
@@ -39,7 +39,7 @@ describe('PACT end to end', () => {
 
     // Organizer creates a Pact and invites Ngozi by phone.
     const created = await t.call('POST', '/pacts', organizer.accessToken, {
-      title: 'Team dinner', category: 'event', target: 60_000_00, deadline: new Date(Date.now() + 5 * 86400000).toISOString().slice(0, 10),
+      title: 'Team dinner', category: 'event', target: 60_000_00, deadline: lagosDay(5),
       invitePhones: ['0803 123 4567'],
     });
     assert.equal(created.status, 200, JSON.stringify(created.body));
@@ -107,7 +107,7 @@ describe('PACT end to end', () => {
     await t.topUp(u.accessToken, 10_000);
     const org = await t.signIn('08010000001');
     const created = await t.call('POST', '/pacts', org.accessToken, {
-      title: 'Race', category: 'other', target: 100_000_00, deadline: new Date(Date.now() + 9 * 86400000).toISOString().slice(0, 10),
+      title: 'Race', category: 'other', target: 100_000_00, deadline: lagosDay(9),
     });
     const code = created.body.data.pact.inviteCode;
     await t.call('POST', `/invites/${code}/join`, u.accessToken, {});
@@ -176,7 +176,7 @@ describe('PACT end to end', () => {
     const m = await t.signIn('08037770000', { firstName: 'Refund', lastName: 'Tester', pin: '2468' });
     await t.topUp(m.accessToken, 20_000);
     const created = await t.call('POST', '/pacts', org.accessToken, {
-      title: 'Cancelled trip', category: 'trip', target: 200_000_00, deadline: new Date(Date.now() + 20 * 86400000).toISOString().slice(0, 10),
+      title: 'Cancelled trip', category: 'trip', target: 200_000_00, deadline: lagosDay(20),
     });
     const id = created.body.data.pact.id;
     await t.call('POST', `/invites/${created.body.data.pact.inviteCode}/join`, m.accessToken, {});
@@ -194,7 +194,7 @@ describe('PACT end to end', () => {
     const m = await t.signIn('08038880000', { firstName: 'Late', lastName: 'Tester', pin: '2468' });
     await t.topUp(m.accessToken, 10_000);
     const created = await t.call('POST', '/pacts', org.accessToken, {
-      title: 'Missed', category: 'other', target: 100_000_00, deadline: new Date(Date.now() + 2 * 86400000).toISOString().slice(0, 10), missedGoalPolicy: 'refund',
+      title: 'Missed', category: 'other', target: 100_000_00, deadline: lagosDay(2), missedGoalPolicy: 'refund',
     });
     const id = created.body.data.pact.id;
     await t.call('POST', `/invites/${created.body.data.pact.inviteCode}/join`, m.accessToken, {});
@@ -212,7 +212,7 @@ describe('PACT end to end', () => {
     const u = await t.signIn('08039990000', { firstName: 'Lock', lastName: 'Tester', pin: '2468' });
     await t.topUp(u.accessToken, 1_000);
     const org = await t.signIn('08010000001');
-    const created = await t.call('POST', '/pacts', org.accessToken, { title: 'Lock', category: 'other', target: 10_000_00, deadline: new Date(Date.now() + 9 * 86400000).toISOString().slice(0, 10) });
+    const created = await t.call('POST', '/pacts', org.accessToken, { title: 'Lock', category: 'other', target: 10_000_00, deadline: lagosDay(9) });
     await t.call('POST', `/invites/${created.body.data.pact.inviteCode}/join`, u.accessToken, {});
     let last;
     for (let i = 0; i < 5; i++) last = await t.call('POST', `/pacts/${created.body.data.pact.id}/contributions`, u.accessToken, { amount: 500_00, pin: '1111' });
@@ -266,7 +266,7 @@ describe('PACT end to end', () => {
     const org = await t.signIn('08010000001');
     const payer = await t.signIn('08034448888', { firstName: 'Direct', lastName: 'Payer', pin: '2468' });
     const outsider = await t.signIn('08034449999', { firstName: 'Not', lastName: 'Invited', pin: '2468' });
-    const created = await t.call('POST', '/pacts', org.accessToken, { title: 'Direct pay', category: 'gift', target: 30_000_00, deadline: new Date(Date.now() + 9 * 86400000).toISOString().slice(0, 10) });
+    const created = await t.call('POST', '/pacts', org.accessToken, { title: 'Direct pay', category: 'gift', target: 30_000_00, deadline: lagosDay(9) });
     const id = created.body.data.pact.id;
     await t.call('POST', `/invites/${created.body.data.pact.inviteCode}/join`, payer.accessToken, {});
     // Outsiders and overshooting are refused before any checkout starts.
@@ -293,7 +293,7 @@ describe('PACT end to end', () => {
     const later = await t.signIn('08034441212', { firstName: 'Maybe', lastName: 'Later', pin: '2468' });
     const tasker = await t.signIn('08034441313', { firstName: 'Task', lastName: 'Person', pin: '2468' });
     const created = await t.call('POST', '/pacts', org.accessToken, {
-      title: 'Reminder test', category: 'birthday', target: 50_000_00, deadline: new Date(Date.now() + 6 * 86400000).toISOString().slice(0, 10), tasks: [{ title: 'Order the cake' }],
+      title: 'Reminder test', category: 'birthday', target: 50_000_00, deadline: lagosDay(6), tasks: [{ title: 'Order the cake' }],
     });
     const { id, inviteCode } = created.body.data.pact;
     await t.call('POST', `/invites/${inviteCode}/join`, later.accessToken, { participation: 'later' });

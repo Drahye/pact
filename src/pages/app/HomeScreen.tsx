@@ -2,6 +2,7 @@ import { Bell, ChevronRight, Plus, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../api/auth';
 import { useActivity, useNotifications, usePacts, useWallet } from '../../api/hooks';
+import { PushPrompt } from '../../components/app/PushPrompt';
 import { ErrorState } from '../../components/app/States';
 import { PactListSkeleton } from '../../components/app/Skeleton';
 import { WalletStrip } from '../../components/app/WalletCard';
@@ -51,15 +52,17 @@ export function HomeScreen() {
           </h1>
         </div>
         <div className="home__header-actions">
-          <Link to="/app/notifications" className="icon-btn icon-btn--surface bell" aria-label={unread ? `Notifications, ${unread} unread` : 'Notifications'}>
+          <Link to="/app/notifications" className="icon-btn icon-btn--surface bell" aria-label={unread ? `Notifications, ${unread > 99 ? 'more than 99' : unread} unread` : 'Notifications'}>
             <Bell />
-            {unread > 0 && <span className="bell__dot num">{unread > 9 ? '9+' : unread}</span>}
+            {unread > 0 && <span className="bell__dot num">{unread > 99 ? '99+' : unread}</span>}
           </Link>
           <Link to="/app/profile" aria-label="Your profile" className="home__me">
             {user && <Avatar userId={user.id} size="md" label={false} />}
           </Link>
         </div>
       </header>
+
+      <PushPrompt hasPact={mine.length > 0} />
 
       {invites.length > 0 && (
         <section className="screen-section" aria-labelledby="invites">

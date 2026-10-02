@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom';
+import { openCookieSettings } from '../../lib/consent';
 import { PactLogo } from '../brand/PactLogo';
+import { CookieNotice } from './CookieNotice';
 import './footer.css';
 
 export function Footer() {
@@ -20,6 +22,9 @@ export function Footer() {
           <Link to="/privacy">Privacy</Link>
           <Link to="/refunds">Refunds</Link>
           <Link to="/cookies">Cookies</Link>
+          <button type="button" onClick={openCookieSettings}>
+            Cookie settings
+          </button>
         </nav>
         <p className="footer__note">
           PACT is not a bank. Before real money moves, balances will be held with a licensed banking or payment partner.
@@ -27,6 +32,7 @@ export function Footer() {
         </p>
         <p className="footer__copy">© 2026 PACT</p>
       </div>
+      <CookieNotice />
     </footer>
   );
 }

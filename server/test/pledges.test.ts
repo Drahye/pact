@@ -5,12 +5,12 @@
 import assert from 'node:assert/strict';
 import { after, before, describe, it } from 'node:test';
 import { sweepPledges } from '../src/modules/pledges.js';
-import { setup } from './helpers.js';
+import { setup, lagosDay } from './helpers.js';
 
 type T = Awaited<ReturnType<typeof setup>>;
 type Session = { accessToken: string; user: { id: string } };
 
-const day = (days: number, from = Date.now()) => new Date(from + days * 86_400_000).toISOString().slice(0, 10);
+const day = (days: number, from = Date.now()) => lagosDay(days, from);
 const PIN = '1357';
 
 describe('pledges', () => {

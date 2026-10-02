@@ -10,9 +10,10 @@ import { cardStatus, isOutcomeComplete, lineLeftToPay, lineState, looksHandled, 
 import { lifecycleOf } from '../../src/lib/lifecycle.js';
 import { summarize } from '../../src/lib/pact.js';
 import { attentionFor, nextStepFor, stageOf } from '../../src/lib/plan.js';
+import { lagosDay } from './helpers.js';
 
 setFixedClock(false);
-const day = (n: number) => new Date(Date.now() + n * 86_400_000).toISOString().slice(0, 10);
+const day = (n: number) => lagosDay(n);
 const line = (id: string, name: string, amount: number, paid = 0, pending = 0, waiting = 0): BudgetLine => ({ id, name, amount, funded: amount, paid, pending, waiting });
 const task = (id: string, title: string, assigneeId: string | null, status: 'open' | 'in_progress' | 'done' = 'open') =>
   ({ id, title, assigneeId, status, budgetItemId: null, createdBy: 'org', completedAt: null }) as unknown as NonNullable<Pact['tasks']>[number];

@@ -20,6 +20,7 @@ Guards (all in `server/src/config.ts`, covered by `server/test/config.test.ts`):
 - A host that runs Docker (or any Node 24 host) with a public DNS name, for example `staging.<your-domain>`, and ports 80 and 443 open.
 - Postgres 16 or newer. The compose file bundles Postgres 17 for a single host; a managed Postgres is better. The admin user must be able to create roles.
 - Fresh secrets (never reused from production): `openssl rand -base64 48` for `JWT_SECRET`, `HASH_SECRET` and `SANDBOX_WEBHOOK_SECRET`; `openssl rand -base64 32` for `DATA_ENCRYPTION_KEY`. Back up `DATA_ENCRYPTION_KEY` and `HASH_SECRET` (the second one is what keeps analytics pseudonyms stable).
+- Optional: a VAPID key pair for browser push notifications (`npx web-push generate-vapid-keys`) set as `WEB_PUSH_VAPID_PUBLIC_KEY`, `WEB_PUSH_VAPID_PRIVATE_KEY` and `WEB_PUSH_SUBJECT` (all three, or none). Without them the app works and push is simply unavailable. Run the worker too (the API runs it by default): push goes out from the job queue.
 - A Termii account and sender ID, for the real SMS codes. Without one, set `STAGING_SHOW_CODES=true` for a closed test among people you know, with test data only.
 
 ## Deploy

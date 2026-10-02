@@ -8,13 +8,13 @@ import assert from 'node:assert/strict';
 import { after, before, describe, it } from 'node:test';
 import { syncProductEvents } from '../src/modules/events.js';
 import { reconcile } from '../src/modules/ledger.js';
-import { setup } from './helpers.js';
+import { setup, lagosDay } from './helpers.js';
 
 type T = Awaited<ReturnType<typeof setup>>;
 type Session = { accessToken: string; user: { id: string } };
 type Line = { id: string; name: string; amount: number; funded: number; paid: number; pending: number; waiting: number };
 
-const future = (days: number) => new Date(Date.now() + days * 86_400_000).toISOString().slice(0, 10);
+const future = (days: number) => lagosDay(days);
 const PIN = '1357';
 const FEE = 50_00;
 

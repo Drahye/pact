@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { BellRing, CalendarDays, CheckCheck, Megaphone, ChevronRight, Divide, Ellipsis, LogOut, RotateCcw, Scale, Share, ShieldCheck, Store, Target, UserPlus, Users, XCircle } from 'lucide-react';
-import { useState, type ReactNode } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useEffect, useState, type ReactNode } from 'react';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../api/auth';
 import { ApiError } from '../../api/client';
 import { usePactAction, usePactCommand, usePlan } from '../../api/hooks';
@@ -71,7 +71,17 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
   const [payOpen, setPayOpen] = useState(false);
   const [payLine, setPayLine] = useState<BudgetLine | null>(null);
   const [completeOpen, setCompleteOpen] = useState(false);
-  const [threadId, setThreadId] = useState<string | null>(null);
+  // A notification or push for a comment, update or pin opens straight onto its thread (?thread=<activity id>).
+  const [search, setSearch] = useSearchParams();
+  const [threadId, setThreadId] = useState<string | null>(search.get('thread'));
+  useEffect(() => {
+    if (!search.has('thread')) return;
+    const next = new URLSearchParams(search);
+    next.delete('thread');
+    setSearch(next, { replace: true });
+    // Run once for the address we arrived on; closing the sheet must not reopen it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [updateOpen, setUpdateOpen] = useState(false);
   const [coOpen, setCoOpen] = useState(false);
   const [guest, setGuest] = useState<GuestGroup | null>(null);

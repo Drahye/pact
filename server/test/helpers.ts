@@ -7,14 +7,16 @@ import type { Db } from '../src/db/index.js';
 import { seedDemo } from '../src/db/seed.js';
 import { resetLedgerCache } from '../src/modules/ledger.js';
 import { runDueJobs } from '../src/jobs/worker.js';
+import { addDays, lagosToday } from '../src/lib/time.js';
+import type { PushSender } from '../src/modules/push.js';
 
-export async function setup(opts: { seed?: boolean; now?: () => Date } = {}) {
+export async function setup(opts: { seed?: boolean; now?: () => Date; env?: Record<string, string>; push?: PushSender | null } = {}) {
   resetLedgerCache();
-  const config = loadConfig({ NODE_ENV: 'test', SEED_DEMO: 'false', RATE_LIMIT_ENABLED: 'false' });
+  const config = loadConfig({ NODE_ENV: 'test', SEED_DEMO: 'false', RATE_LIMIT_ENABLED: 'false', ...opts.env });
   const db = await createDb(config);
   await migrate(db);
   let clock = opts.now ?? (() => new Date());
-  const { app, ctx } = await buildApp({ config, db, now: () => clock() });
+  const { app, ctx } = await buildApp({ config, db, now: () => clock(), ...(opts.push !== undefined ? { push: opts.push } : {}) });
   // Demo data backdates ledger rows, which the runtime role can't do; it never runs in production.
   if (opts.seed) await seedDemo(ctx);
   if (process.env.TEST_DB_ROLE === 'service') await useServiceRole(db);
@@ -83,3 +85,9 @@ export async function useServiceRole(db: Db) {
   await migrate(db);
   await db.exec('SET ROLE pact_service');
 }
+
+/**
+ * A calendar date `days` from today, as the server counts days: in Lagos (UTC+1), not UTC. Using the UTC date breaks tests
+ * between 23:00 and 24:00 UTC, when Lagos is already on the next day.
+ */
+export const lagosDay = (days: number, from = Date.now()) => addDays(lagosToday(new Date(from)), days);

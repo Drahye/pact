@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { api, ApiError } from '../../api/client';
 import { useProfileActions } from '../../api/hooks';
 import { PinSheet } from '../../components/app/PinSheet';
+import { PushSetting } from '../../components/app/PushSetting';
 import { Link, useNavigate } from 'react-router-dom';
 import { TIER_LIMITS } from '../../../shared/policy';
 import { useAuth } from '../../api/auth';
@@ -96,6 +97,8 @@ export function ProfileScreen() {
         />
         <p className="appearance__hint">{theme === 'system' ? 'Matches your phone’s setting.' : theme === 'light' ? 'Always light.' : 'Always dark.'}</p>
       </div>
+
+      <PushSetting />
 
       <p className="menu-label">Payments</p>
       <div className="menu">

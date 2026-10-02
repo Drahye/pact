@@ -1,6 +1,6 @@
 # Beta product analytics
 
-First-party, server-side, pseudonymous. No analytics SDK, no cookies, no third party sees anything. The point is to answer a handful of product questions during the closed beta, not to watch people.
+First-party, server-side, pseudonymous. No analytics SDK, no cookies, no third party sees anything. Because nothing here uses browser storage, it is not gated by the cookie banner; the banner's "optional analytics" choice (`pact.consent`, `src/lib/consent.ts`) exists so that any future optional cookie or storage checks `analyticsAllowed()` first. The point is to answer a handful of product questions during the closed beta, not to watch people.
 
 ## What is recorded
 

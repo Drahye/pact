@@ -97,7 +97,7 @@ export async function sweepPledges(ctx: Ctx) {
     if (!claimed.rowCount) continue;
     const what = p.source === 'orders' ? 'your order' : 'your pledge';
     if (onTheDay) {
-      await notify(ctx.db, [p.user_id], { type: 'pledge', title: 'Today’s the day', body: `${formatNgn(p.short)} for ${p.title}, as you planned. Tap to add it.`, pactId: p.pact_id });
+      await notify(ctx.db, [p.user_id], { type: 'pledge', title: 'Today’s the day', body: `${formatNgn(p.short)} for ${p.title}, as you planned. Tap to add it.`, pactId: p.pact_id, push: `Your contribution to ${p.title} is due today.` });
     } else {
       await notify(ctx.db, [p.user_id], { type: 'pledge', title: p.title, body: `${formatNgn(p.short)} still to go on ${what}. The group is counting on it.`, pactId: p.pact_id });
       if (p.organizer_id !== p.user_id) {

@@ -18,6 +18,8 @@ import { Avatar } from '../../components/ui/Avatar';
 import { BottomNav } from '../../components/ui/BottomNav';
 import '../../components/ui/button.css';
 import { SectionHeading } from '../../components/ui/SectionHeading';
+import { LargeTitle } from '../../components/ui/LargeTitle';
+import { TopBar } from '../../components/ui/TopBar';
 import { formatDate, greeting } from '../../lib/format';
 import { summarize } from '../../lib/pact';
 import { Screen } from './Screen';
@@ -54,24 +56,31 @@ export function HomeScreen() {
   if (firstTime && user && !introSeen(user.id)) return <Navigate to="/app/onboarding" replace />;
 
   return (
-    <Screen tabBar={<BottomNav />} className="home">
-      <header className="home__header">
-        <div>
-          <p className="eyebrow">{formatDate(isoDay(new Date()), { weekday: 'long', month: 'long', day: 'numeric' })}</p>
-          <h1 className="large-title">
-            {greeting()}, {user?.firstName}
-          </h1>
-        </div>
-        <div className="home__header-actions">
-          <Link to="/app/notifications" className="icon-btn icon-btn--surface bell" aria-label={unread ? `Notifications, ${unread > 99 ? 'more than 99' : unread} unread` : 'Notifications'}>
-            <Bell />
-            {unread > 0 && <span className="bell__dot num">{unread > 99 ? '99+' : unread}</span>}
-          </Link>
-          <Link to="/app/profile" aria-label="Your profile" className="home__me">
-            {user && <Avatar userId={user.id} size="md" label={false} />}
-          </Link>
-        </div>
-      </header>
+    <Screen
+      tabBar={<BottomNav />}
+      className="home"
+      topBar={
+        <TopBar
+          leading="none"
+          title="Home"
+          collapse
+          trailing={
+            <span className="home__header-actions">
+              <Link to="/app/notifications" className="icon-btn icon-btn--surface bell" aria-label={unread ? `Notifications, ${unread > 99 ? 'more than 99' : unread} unread` : 'Notifications'}>
+                <Bell />
+                {unread > 0 && <span className="bell__dot num">{unread > 99 ? '99+' : unread}</span>}
+              </Link>
+              <Link to="/app/profile" aria-label="Your profile" className="home__me">
+                {user && <Avatar userId={user.id} size="md" label={false} />}
+              </Link>
+            </span>
+          }
+        />
+      }
+    >
+      <LargeTitle className="home__header" eyebrow={formatDate(isoDay(new Date()), { weekday: 'long', month: 'long', day: 'numeric' })}>
+        {greeting()}, {user?.firstName}
+      </LargeTitle>
 
       <PushPrompt hasPact={mine.length > 0} />
 

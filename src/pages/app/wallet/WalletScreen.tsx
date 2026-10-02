@@ -1,3 +1,5 @@
+import { LargeTitle } from '../../../components/ui/LargeTitle';
+import { TopBar } from '../../../components/ui/TopBar';
 import { ChevronRight, Landmark, ReceiptText, ShieldCheck } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -33,8 +35,8 @@ export function WalletScreen() {
   }, [txns.data, filter]);
 
   return (
-    <Screen tabBar={<BottomNav />} className="wallet">
-      <h1 className="large-title screen-title">Wallet</h1>
+    <Screen tabBar={<BottomNav />} className="wallet" topBar={<TopBar leading="none" title="Wallet" collapse />}>
+      <LargeTitle className="screen-title">Wallet</LargeTitle>
       <WalletCard balance={wallet.data?.balance} tier={tier} />
 
       {wallet.data && (

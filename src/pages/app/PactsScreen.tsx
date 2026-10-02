@@ -8,6 +8,8 @@ import { PactCard } from '../../components/pact/PactCard';
 import { PactTabs, PANEL_ID, tabId } from '../../components/pact/PactTabs';
 import { BottomNav } from '../../components/ui/BottomNav';
 import { Button } from '../../components/ui/Button';
+import { LargeTitle } from '../../components/ui/LargeTitle';
+import { TopBar } from '../../components/ui/TopBar';
 import { IconButton } from '../../components/ui/IconButton';
 import type { Pact } from '../../data/types';
 import { countByTab, defaultTab, lifecycleOf, matchesTitle, MAX_SEARCH, normalizeQuery, readView, sortForTab, tabLabel, writeView, type Lifecycle, type PactTab } from '../../lib/lifecycle';
@@ -166,11 +168,8 @@ export function PactsScreen() {
   const announce = loading || failed || !mine.length ? '' : nq ? `${shown.length} of ${tabItems.length} ${tabLabel[tab]} Pacts match` : `${tabItems.length} ${tabLabel[tab]} Pacts`;
 
   return (
-    <Screen tabBar={<BottomNav />}>
-      <div className="screen-title-row">
-        <h1 className="large-title">Pacts</h1>
-        <IconButton label="Create a Pact" icon={<Plus />} to="/app/create" />
-      </div>
+    <Screen tabBar={<BottomNav />} topBar={<TopBar leading="none" title="Pacts" collapse trailing={<IconButton label="Create a Pact" icon={<Plus />} to="/app/create" />} />}>
+      <LargeTitle className="pacts-head">Your Pacts</LargeTitle>
       <div ref={root} aria-busy={loading || pacts.isFetching ? true : undefined}>
         {showControls && (
           <>

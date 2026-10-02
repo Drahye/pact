@@ -259,6 +259,7 @@
 }
 
 .screen {
+  position: relative;
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -324,7 +325,7 @@
 }
 
 .screen-title {
-  padding: var(--space-4) 0 var(--space-6);
+  padding: var(--space-2) 0 var(--space-6);
 }
 
 .screen-title-row {
@@ -408,5 +409,19 @@
   list-style: decimal;
   font-size: var(--text-sm);
   line-height: var(--leading-sm);
+  color: var(--color-text-secondary);
+}
+
+.screen__sentinel {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
+}
+
+.large-title-block__sub {
+  margin-top: var(--space-1);
   color: var(--color-text-secondary);
 }

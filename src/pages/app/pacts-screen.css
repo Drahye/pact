@@ -1,1 +1,5 @@
 /* Pacts screen: see pact-tabs.css for the tabs, search and panel. */
+
+.pacts-head {
+  padding: var(--space-2) 0 var(--space-5);
+}

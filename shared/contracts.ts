@@ -414,6 +414,19 @@ export interface ThreadDTO {
   canReply: boolean;
 }
 
+/** Safe details about what a notification is about. Amounts are kobo. Nothing here is ever a bank or identity detail. */
+export interface NotificationMeta {
+  actor?: string;
+  amount?: number;
+  purpose?: string;
+  payee?: string;
+  taskName?: string;
+  reason?: string;
+  about?: string;
+  preview?: string;
+  pinned?: boolean;
+}
+
 export interface NotificationDTO {
   id: string;
   type: string;
@@ -426,6 +439,7 @@ export interface NotificationDTO {
   refId: string | null;
   /** How many events this one line stands for ("3 new contributions"). */
   count: number;
+  meta: NotificationMeta;
   readAt: string | null;
   createdAt: string;
 }

@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { NotificationDTO } from '../../../shared/contracts';
 import { notificationLink } from '../../../shared/notificationLink';
+import { kindFor } from '../../components/communication/fromNotification';
 import { useMarkRead, useNotifications } from '../../api/hooks';
 import { Empty, ErrorState } from '../../components/app/States';
 import { RowListSkeleton } from '../../components/app/Skeleton';
@@ -96,8 +97,12 @@ export function NotificationsScreen() {
   // or the app, leaves everything as it was, so nothing important is lost by looking.
   const open = (n: NotificationDTO) => {
     if (!n.readAt) markRead.mutate([n.id]);
-    const to = notificationLink(n);
-    if (to) navigate(to);
+    // A designed message when this kind has one; otherwise straight to where it leads.
+    if (kindFor(n)) navigate(`/app/notifications/${n.id}`);
+    else {
+      const to = notificationLink(n);
+      if (to) navigate(to);
+    }
   };
 
   return (

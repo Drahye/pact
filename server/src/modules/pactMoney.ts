@@ -401,7 +401,7 @@ export async function requestVendorPayment(
       ],
     );
     if (needsApproval) {
-      await notify(q, [approver!], { type: 'approval', title: 'Approve a payment', body: `${user.first_name} wants to pay ${formatNgn(input.amount)} to ${accountName} for ${input.purpose}.`, pactId, push: `Your approval is needed for ${pact.title}.` });
+      await notify(q, [approver!], { type: 'approval', title: 'Approve a payment', body: `${user.first_name} wants to pay ${formatNgn(input.amount)} to ${accountName} for ${input.purpose}.`, pactId, meta: { actor: user.first_name, amount: input.amount, purpose: input.purpose, payee: accountName }, push: `Your approval is needed for ${pact.title}.` });
     } else {
       await enqueue(q, 'pact_payout.process', { reference }, { dedupeKey: `pact_payout:${reference}` });
     }
@@ -529,7 +529,7 @@ export async function completePactPayout(ctx: Ctx, reference: string) {
       const pact = (await q.query<PactRow>('SELECT * FROM pacts WHERE id = $1', [p.pact_id])).rows[0];
       await recordActivity(q, { pactId: p.pact_id, actorId: p.requested_by, type: 'vendor_paid', amount: p.amount, detail: `${p.purpose ?? 'Payment'} · ${p.account_name}` });
       const members = await q.query<{ user_id: string }>(`SELECT user_id FROM pact_members WHERE pact_id = $1 AND status = 'joined'`, [p.pact_id]);
-      await notify(q, members.rows.map((m) => m.user_id), { type: 'vendor_paid', title: `Paid from ${pact.title}`, body: `${formatNgn(p.amount)} to ${p.account_name} for ${p.purpose ?? 'the plan'}.`, pactId: p.pact_id });
+      await notify(q, members.rows.map((m) => m.user_id), { type: 'vendor_paid', title: `Paid from ${pact.title}`, body: `${formatNgn(p.amount)} to ${p.account_name} for ${p.purpose ?? 'the plan'}.`, pactId: p.pact_id, meta: { amount: p.amount, purpose: p.purpose ?? undefined, payee: p.account_name } });
     } else if (p.transfer_id) {
       await q.query(`UPDATE pact_transfers SET status = $2 WHERE id = $1`, [p.transfer_id, p.kind === 'guest_refund' ? 'refunded' : 'returned']);
     }
@@ -551,6 +551,7 @@ export async function failPactPayout(ctx: Ctx, reference: string, reason: string
         title: 'Payment didn’t go through',
         body: `${formatNgn(p.amount)} to ${p.account_name} came back. ${takingMoney(pact) ? `It’s in ${pact.title} again.` : 'It’s in the organiser’s wallet.'}`,
         pactId: p.pact_id,
+        meta: { amount: p.amount, purpose: p.purpose ?? undefined, payee: p.account_name, reason: reason },
         push: `A payment from ${pact.title} didn’t go through.`,
       });
     } else {

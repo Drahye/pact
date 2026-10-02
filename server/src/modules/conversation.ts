@@ -101,7 +101,7 @@ export async function addComment(ctx: Ctx, userId: string, pactId: string, activ
     const who = new Set<string>([...earlier.rows.map((r) => r.user_id), ...(author ? [author] : [])]);
     who.delete(userId);
     const name = (await q.query<{ first_name: string }>('SELECT first_name FROM users WHERE id = $1', [userId])).rows[0]?.first_name ?? 'Someone';
-    await notifyThread(q, [...who], { pactId, activityId, pactTitle: pact.title, title: `${name} commented`, body: `${name}: ${snippet(body, 80)}`, about: about(item) });
+    await notifyThread(q, [...who], { pactId, activityId, pactTitle: pact.title, title: `${name} commented`, body: `${name}: ${snippet(body, 80)}`, about: about(item), actor: name, preview: snippet(body, 140) });
     await audit(q, { actorId: userId, action: 'pact.comment_added', targetType: 'activity', targetId: activityId, ip: meta.ip, metadata: { comment: inserted.rows[0].id, length: body.length } });
   });
   return getThread(ctx, userId, pactId, activityId);
@@ -150,7 +150,7 @@ export async function postUpdate(ctx: Ctx, userId: string, pactId: string, body:
     const act = await q.query<{ id: string }>(`INSERT INTO activities (pact_id, actor_id, type, update_id) VALUES ($1, $2, 'update', $3) RETURNING id`, [pactId, userId, u.rows[0].id]);
     const members = await q.query<{ user_id: string }>(`SELECT user_id FROM pact_members WHERE pact_id = $1 AND status = 'joined' AND user_id <> $2`, [pactId, userId]);
     const name = (await q.query<{ first_name: string }>('SELECT first_name FROM users WHERE id = $1', [userId])).rows[0]?.first_name ?? 'The organiser';
-    await notify(q, members.rows.map((m) => m.user_id), { type: 'update', title: `${name} posted an update in ${pact.title}`, body: snippet(body, 120), pactId, refId: act.rows[0].id, push: `${name} posted an update in ${pact.title}.` });
+    await notify(q, members.rows.map((m) => m.user_id), { type: 'update', title: `${name} posted an update in ${pact.title}`, body: snippet(body, 120), pactId, refId: act.rows[0].id, meta: { actor: name }, push: `${name} posted an update in ${pact.title}.` });
     await audit(q, { actorId: userId, action: 'pact.update_posted', targetType: 'pact', targetId: pactId, ip: meta.ip, metadata: { length: body.length } });
   });
   return getPact(ctx, userId, pactId);
@@ -192,7 +192,7 @@ export async function pin(ctx: Ctx, userId: string, pactId: string, activityId: 
     await q.query('UPDATE pacts SET pinned_activity_id = $2, pinned_by = $3, pinned_at = now() WHERE id = $1', [pactId, activityId, userId]);
     const name = (await q.query<{ first_name: string }>('SELECT first_name FROM users WHERE id = $1', [userId])).rows[0]?.first_name ?? 'Someone';
     const members = await q.query<{ user_id: string }>(`SELECT user_id FROM pact_members WHERE pact_id = $1 AND status = 'joined' AND user_id <> $2`, [pactId, userId]);
-    await notify(q, members.rows.map((m) => m.user_id), { type: 'pinned', title: `${name} pinned something in ${pact.title}`, body: item.type === 'update' ? snippet(item.update_body ?? '', 100) : `Pinned: ${about(item)}`, pactId, refId: activityId, push: `Something was pinned in ${pact.title}.` });
+    await notify(q, members.rows.map((m) => m.user_id), { type: 'pinned', title: `${name} pinned something in ${pact.title}`, body: item.type === 'update' ? snippet(item.update_body ?? '', 100) : `Pinned: ${about(item)}`, pactId, refId: activityId, meta: { actor: name, pinned: true }, push: `Something was pinned in ${pact.title}.` });
     await audit(q, { actorId: userId, action: 'pact.pinned', targetType: 'activity', targetId: activityId, ip: meta.ip });
     return item.type === 'update' ? ('update' as const) : ('system' as const);
   });
@@ -209,12 +209,13 @@ export async function pin(ctx: Ctx, userId: string, pactId: string, activityId: 
  * One notification per thread per person while it is unread: more comments grow its count instead of piling up,
  * and the push goes out only for the first. Reactions never notify.
  */
-async function notifyThread(q: Queryable, userIds: string[], n: { pactId: string; activityId: string; pactTitle: string; title: string; body: string; about: string }) {
+async function notifyThread(q: Queryable, userIds: string[], n: { pactId: string; activityId: string; pactTitle: string; title: string; body: string; about: string; actor: string; preview: string }) {
   await notifyGrouped(q, userIds, {
     type: 'comment',
     pactId: n.pactId,
     refId: n.activityId,
     first: { title: n.title, body: n.body },
+    meta: { actor: n.actor, about: n.about, preview: n.preview },
     many: (count) => ({ title: `${count} new comments`, body: `On ${n.about}` }),
     push: `There’s a new comment in ${n.pactTitle}.`,
   });

@@ -150,3 +150,7 @@
 .home__empty p {
   color: var(--color-text-secondary);
 }
+
+.home__welcome {
+  margin-bottom: var(--space-6);
+}

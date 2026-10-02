@@ -607,7 +607,7 @@ async function invite(ctx: Ctx, q: Queryable, pactId: string, inviterId: string,
     );
     if (r.rowCount) invited.push(uid);
   }
-  await notify(q, invited, { type: 'invite', title: 'You’re invited', body: `${inviter.first_name} invited you to ${title}.`, pactId });
+  await notify(q, invited, { type: 'invite', title: 'You’re invited', body: `${inviter.first_name} invited you to ${title}.`, pactId, meta: { actor: inviter.first_name } });
 
   const knownPhones = new Set(known.rows.map((u) => u.phone));
   const smsTargets = phones.filter((p) => !knownPhones.has(p) && p !== inviter.phone);
@@ -660,6 +660,7 @@ export async function joinTx(q: Queryable, pact: PactRow, userId: string, partic
     pactId: pact.id,
     refId: pact.id,
     first: { title: `${user.first_name} joined`, body: `${user.first_name} joined ${pact.title}.` },
+    meta: { actor: user.first_name },
     many: (n) => ({ title: `${n} people joined`, body: `New people in ${pact.title}.` }),
   });
   return true;
@@ -781,6 +782,7 @@ export async function applyToPact(q: Queryable, pact: PactRow, from: { userId: s
       pactId: pact.id,
       refId: pact.id,
       first: { title: 'New contribution', body: `${who} added ${formatNgn(amount)} to ${pact.title}.` },
+      meta: { actor: who, amount },
       many: (n) => ({ title: `${n} new contributions`, body: `People are adding to ${pact.title}.` }),
     });
   }
@@ -991,8 +993,8 @@ async function releaseTx(ctx: Ctx, q: Queryable, pact: PactRow, actorId: string 
   await closePledgesTx(q, pact.id);
   await recordActivity(q, { pactId: pact.id, actorId: pact.organizer_id, type: 'released', amount });
   const members = await q.query<{ user_id: string }>(`SELECT user_id FROM pact_members WHERE pact_id = $1 AND status = 'joined' AND user_id <> $2`, [pact.id, pact.organizer_id]);
-  await notify(q, members.rows.map((m) => m.user_id), { type: 'released', title: 'Funds released', body: `${formatNgn(amount)} from ${pact.title} was released to the organiser.`, pactId: pact.id });
-  await notify(q, [pact.organizer_id], { type: 'released', title: 'Funds in your wallet', body: `${formatNgn(amount)} from ${pact.title} is in your wallet.`, pactId: pact.id });
+  await notify(q, members.rows.map((m) => m.user_id), { type: 'released', title: 'Funds released', body: `${formatNgn(amount)} from ${pact.title} was released to the organiser.`, pactId: pact.id, meta: { amount } });
+  await notify(q, [pact.organizer_id], { type: 'released', title: 'Funds in your wallet', body: `${formatNgn(amount)} from ${pact.title} is in your wallet.`, pactId: pact.id, meta: { amount } });
 }
 
 /**

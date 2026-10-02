@@ -23,13 +23,17 @@ write('public/brand/pact-mark-color.svg', markSvg({ colors: [INK, MINT, '#FFC53D
 const tile = markSvg({ colors: MINT, tile: { fill: INK, radius: 9 } });
 write('public/favicon.svg', tile);
 
-// PNG icons. Rounded for the web, square (full bleed) for Apple and maskable icons, which the OS shapes itself.
+// PNG icons. The small favicons keep the ink tile. Every icon the installed app can pick for its
+// launch screen (apple-touch, "any" 192/512, maskable) is the mark on the paper colour instead, so the
+// OS-drawn launch screen (icon on background_color) matches the first frame of the web loader: a small
+// ink mark on paper, no tile, no disc. The OS can zoom or mask these, hence the generous inset.
 const png = (svg, size, path) => sharp(Buffer.from(svg), { density: 384 }).resize(size, size).png().toFile(path).then(() => console.log('wrote', path));
-for (const size of [16, 32, 48, 192, 512]) await png(tile, size, `public/icons/icon-${size}.png`);
-const square = markSvg({ colors: MINT, tile: { fill: INK, radius: 0 } });
-await png(square, 180, 'public/icons/apple-touch-icon.png');
-// Maskable: the mark inside the central 60% so any mask shape keeps it whole.
-await png(markSvg({ colors: MINT, tile: { fill: INK, radius: 0 }, inset: 0.2 }), 512, 'public/icons/maskable-512.png');
+for (const size of [16, 32, 48]) await png(tile, size, `public/icons/icon-${size}.png`);
+const onPaper = (inset, radius = 0) => markSvg({ colors: INK, tile: { fill: PAPER, radius }, inset });
+for (const size of [192, 512]) await png(onPaper(0.2, 6), size, `public/icons/icon-${size}.png`);
+await png(onPaper(0.24), 180, 'public/icons/apple-touch-icon.png');
+// Maskable: the mark inside the central 40% (safe zone is 80%), so any mask shape keeps it whole and it stays small.
+await png(onPaper(0.3), 512, 'public/icons/maskable-512.png');
 
 write(
   'public/manifest.webmanifest',

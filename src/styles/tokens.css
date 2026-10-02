@@ -201,7 +201,8 @@
    as foregrounds on vivid fills and must not flip.
    ========================================================================== */
 
-:root[data-theme='dark'] {
+:root[data-theme='dark'],
+[data-preview-theme='dark'] /* a frame in the template gallery, so dark can be reviewed beside light */ {
   color-scheme: dark;
 
   /* Neutral ramp reused for tracks, borders and hairlines */

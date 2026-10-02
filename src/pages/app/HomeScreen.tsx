@@ -1,7 +1,8 @@
-import { Bell, ChevronRight, Plus, Sparkles } from 'lucide-react';
+import { Bell, ChevronRight, Plus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../api/auth';
 import { useActivity, useNotifications, usePacts, useWallet } from '../../api/hooks';
+import { renderTemplate } from '../../components/communication/registry';
 import { PushPrompt } from '../../components/app/PushPrompt';
 import { ErrorState } from '../../components/app/States';
 import { PactListSkeleton } from '../../components/app/Skeleton';
@@ -12,7 +13,6 @@ import { FeaturedPactCard } from '../../components/pact/FeaturedPactCard';
 import { PactCard } from '../../components/pact/PactCard';
 import { ActivityItem } from '../../components/ui/ActivityItem';
 import { Avatar } from '../../components/ui/Avatar';
-import { Button } from '../../components/ui/Button';
 import { BottomNav } from '../../components/ui/BottomNav';
 import '../../components/ui/button.css';
 import { SectionHeading } from '../../components/ui/SectionHeading';
@@ -104,13 +104,8 @@ export function HomeScreen() {
       ) : (
         <>
           {!mine.length && !invites.length && (
-            <section className="home__empty">
-              <span className="home__empty-icon" aria-hidden>
-                <Sparkles />
-              </span>
-              <h2>Nothing planned yet.</h2>
-              <p>Start with something real you’re already planning: a trip, gift, birthday, dinner or shared expense.</p>
-              <Button to="/app/create">Create your first Pact</Button>
+            <section className="home__welcome" aria-label="Welcome">
+              {renderTemplate('welcome', { pactName: '', recipientName: user?.firstName }, 'h2')}
             </section>
           )}
           {featured && (

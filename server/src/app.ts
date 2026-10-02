@@ -552,6 +552,7 @@ export async function buildApp({ config, db, provider, sms, push, now = () => ne
         priv.get('/people/recent', async (req) => pacts.recentPeople(ctx, req.userId));
 
         priv.get<{ Querystring: { cursor?: string } }>('/notifications', async (req) => users.listNotifications(ctx, req.userId, req.query.cursor));
+        priv.get<{ Params: { id: string } }>('/notifications/:id', async (req) => users.getNotification(ctx, req.userId, req.params.id));
         priv.post('/notifications/read', async (req) => {
           const body = parse(z.object({ ids: z.array(z.string().uuid()).max(100).optional() }), req.body);
           await users.markNotificationsRead(ctx, req.userId, body.ids);

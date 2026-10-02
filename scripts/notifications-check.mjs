@@ -112,8 +112,11 @@ for (const [w, h] of VPS) {
   const target = page.locator('.notes__row.is-unread').filter({ hasText: /new comments|commented/ }).first();
   const hadUnread = (await target.count()) > 0;
   await (hadUnread ? target : page.getByRole('button', { name: /new comments/ }).first()).click();
+  await page.waitForTimeout(1500);
+  ok('tapping a comment line opens its message', /\/app\/notifications\//.test(page.url()));
+  await page.getByRole('link', { name: 'Open thread' }).click();
   await page.waitForTimeout(1800);
-  ok('tapping a comment line opens its thread', (await page.getByRole('dialog').count()) > 0 || page.url().includes('/app/pact/'));
+  ok('and its button opens the thread', (await page.getByRole('dialog').count()) > 0 || page.url().includes('/app/pact/'));
   ok('the thread parameter is cleaned from the address', !page.url().includes('thread='));
   await shot('3-thread-from-notification');
   const unreadAfter = (await api('GET', '/notifications', abraham)).unread;

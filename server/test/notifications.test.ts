@@ -87,6 +87,20 @@ describe('Notifications and web push', () => {
       assert.equal(joins[0].pactTitle, 'Sarah’s Birthday', 'each line carries the Pact it is about');
     });
 
+    it('A2: a notification carries safe details, can be opened on its own, and is private to its owner', async () => {
+      const line = (await ofType(abraham, 'contribution', pact.id))[0] as Note & { meta: Record<string, unknown> };
+      assert.equal(line.meta.actor, 'Sarah');
+      assert.equal(line.meta.amount, 5_000_00, 'amounts are kobo');
+      assert.ok(!JSON.stringify(line.meta).match(/account|bvn|pin/i), 'no private identifiers in the details');
+      const one = await t.call('GET', `/notifications/${line.id}`, abraham.accessToken);
+      assert.equal(one.status, 200);
+      assert.equal(one.body.id, line.id);
+      assert.equal(one.body.pactTitle, 'Sarah’s Birthday');
+      assert.equal((await t.call('GET', `/notifications/${line.id}`, sarah.accessToken)).status, 404, 'someone else’s notification does not exist for you');
+      assert.equal((await t.call('GET', '/notifications/not-an-id', abraham.accessToken)).status, 404);
+      assert.equal((await t.call('GET', `/notifications/${line.id}`, undefined)).status, 401);
+    });
+
     it('B: unread is a count, reading one line leaves the rest unread, and later events start a fresh line', async () => {
       const before = await notes(abraham);
       assert.ok(before.unread >= 2);

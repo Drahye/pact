@@ -1,4 +1,5 @@
 import type { Queryable } from '../db/index.js';
+import type { NotificationMeta } from '../../../shared/contracts.js';
 import { notificationLink } from '../../../shared/notificationLink.js';
 
 export async function audit(
@@ -22,6 +23,8 @@ export interface NotifyInput {
   pactId?: string | null;
   /** What the notification is about inside the Pact (an activity item, for threads). Never shown to people. */
   refId?: string | null;
+  /** Safe facts for the detail view (who, how much, for what). Only the keys of NotificationMeta are kept. */
+  meta?: NotificationMeta;
   /**
    * Also send a browser push, with this text. Push is deliberately rarer than in-app notifications and its text is
    * written separately: lock screens are public, so it never carries amounts, names of banks, or account details.
@@ -33,11 +36,25 @@ export async function notify(q: Queryable, userIds: string[], n: NotifyInput) {
   const unique = [...new Set(userIds)];
   if (!unique.length) return;
   await q.query(
-    `INSERT INTO notifications (user_id, type, title, body, pact_id, ref_id)
-     SELECT u, $2, $3, $4, $5, $6 FROM unnest($1::uuid[]) AS u`,
-    [unique, n.type, n.title, n.body, n.pactId ?? null, n.refId ?? null],
+    `INSERT INTO notifications (user_id, type, title, body, pact_id, ref_id, meta)
+     SELECT u, $2, $3, $4, $5, $6, $7::jsonb FROM unnest($1::uuid[]) AS u`,
+    [unique, n.type, n.title, n.body, n.pactId ?? null, n.refId ?? null, JSON.stringify(cleanMeta(n.meta))],
   );
   if (n.push) await enqueuePush(q, unique, n);
+}
+
+const META_KEYS = ['actor', 'amount', 'purpose', 'payee', 'taskName', 'reason', 'about', 'preview', 'pinned'] as const;
+
+/** Keeps only the known, short, plain values: nothing else can ride along into the database. */
+export function cleanMeta(meta?: NotificationMeta): NotificationMeta {
+  const out: Record<string, string | number | boolean> = {};
+  for (const k of META_KEYS) {
+    const v = meta?.[k];
+    if (typeof v === 'string' && v) out[k] = v.slice(0, 200);
+    else if (typeof v === 'number' && Number.isFinite(v)) out[k] = Math.round(v);
+    else if (typeof v === 'boolean') out[k] = v;
+  }
+  return out;
 }
 
 /** Push delivery runs from the outbox, so a slow or failing push service never blocks (or rolls back) the real action. */
@@ -58,6 +75,7 @@ export async function notifyGrouped(
     pactId: string;
     refId: string;
     first: { title: string; body: string };
+    meta?: NotificationMeta;
     many: (count: number) => { title: string; body: string };
     push?: string;
   },
@@ -74,7 +92,7 @@ export async function notifyGrouped(
       await q.query('UPDATE notifications SET title = $2, body = $3, merged_count = $4, created_at = now() WHERE id = $1', [row.id, w.title, w.body, count]);
       continue;
     }
-    await q.query('INSERT INTO notifications (user_id, type, title, body, pact_id, ref_id) VALUES ($1, $2, $3, $4, $5, $6)', [userId, n.type, n.first.title, n.first.body, n.pactId, n.refId]);
+    await q.query('INSERT INTO notifications (user_id, type, title, body, pact_id, ref_id, meta) VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb)', [userId, n.type, n.first.title, n.first.body, n.pactId, n.refId, JSON.stringify(cleanMeta(n.meta))]);
     if (n.push) await enqueuePush(q, [userId], { type: n.type, pactId: n.pactId, refId: n.refId, push: n.push });
   }
 }

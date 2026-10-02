@@ -153,6 +153,10 @@ export function useNotifications() {
   return useQuery({ queryKey: keys.notifications, queryFn: () => api<Page<NotificationDTO> & { unread: number }>('GET', '/notifications'), ...live, refetchInterval: 20_000 });
 }
 
+export function useNotification(id: string | undefined) {
+  return useQuery({ queryKey: ['notification', id] as const, queryFn: () => api<NotificationDTO>('GET', `/notifications/${id}`), enabled: !!id, staleTime: 30_000 });
+}
+
 export const useBanks = () => useQuery({ queryKey: keys.banks, queryFn: () => api<BankDTO[]>('GET', '/banks'), staleTime: 3_600_000 });
 export const useBankAccounts = () => useQuery({ queryKey: keys.bankAccounts, queryFn: () => api<BankAccountDTO[]>('GET', '/bank-accounts') });
 export const useSessions = () => useQuery({ queryKey: keys.sessions, queryFn: () => api<SessionDTO[]>('GET', '/me/sessions') });

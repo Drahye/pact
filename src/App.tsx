@@ -15,6 +15,7 @@ import { CreatePactScreen } from './pages/app/CreatePactScreen';
 import { HomeScreen } from './pages/app/HomeScreen';
 import { InviteScreen } from './pages/app/InviteScreen';
 import { JoinScreen } from './pages/app/JoinScreen';
+import { NotificationDetailScreen } from './pages/app/NotificationDetailScreen';
 import { NotificationsScreen } from './pages/app/NotificationsScreen';
 import { PactRoute } from './pages/app/PactRoute';
 import { PactsScreen } from './pages/app/PactsScreen';
@@ -33,6 +34,7 @@ import { WelcomeScreen } from './pages/app/WelcomeScreen';
 const LandingPage = lazy(() => import('./pages/site/LandingPage').then((m) => ({ default: m.LandingPage })));
 const DownloadPage = lazy(() => import('./pages/download/DownloadPage').then((m) => ({ default: m.DownloadPage })));
 const StyleGuidePage = lazy(() => import('./pages/styleguide/StyleGuidePage').then((m) => ({ default: m.StyleGuidePage })));
+const TemplatesPreview = lazy(() => import('./pages/dev/TemplatesPreview').then((m) => ({ default: m.TemplatesPreview })));
 const LegalPage = lazy(() => import('./pages/legal/LegalPage').then((m) => ({ default: m.LegalPage })));
 
 const queryClient = new QueryClient({
@@ -78,6 +80,7 @@ export function App() {
               <Route path="/" element={<LandingPage />} />
               <Route path="/download" element={<DownloadPage />} />
               <Route path="/styleguide" element={<StyleGuidePage />} />
+              <Route path="/dev/templates" element={<TemplatesPreview />} />
               <Route path="/terms" element={<LegalPage doc="terms" />} />
               <Route path="/privacy" element={<LegalPage doc="privacy" />} />
               <Route path="/refunds" element={<LegalPage doc="refunds" />} />
@@ -96,6 +99,7 @@ export function App() {
                 <Route path="profile" element={authed(<ProfileScreen />)} />
                 <Route path="activity" element={authed(<ActivityScreen />)} />
                 <Route path="notifications" element={authed(<NotificationsScreen />)} />
+                <Route path="notifications/:id" element={authed(<NotificationDetailScreen />)} />
                 <Route path="create" element={authed(<CreatePactScreen />)} />
                 <Route path="pact/:id" element={authed(<PactRoute />)} />
                 <Route path="pact/:id/invite" element={authed(<InviteScreen />)} />

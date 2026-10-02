@@ -236,7 +236,7 @@ export async function updateTask(
   });
   if (notifyAssignee) {
     const by = await getUser(ctx.db, userId);
-    await notify(ctx.db, [notifyAssignee.to], { type: 'task', title: 'You’ve got a task', body: `${by.first_name} asked you to handle “${notifyAssignee.title}” for ${notifyAssignee.pact}.`, pactId });
+    await notify(ctx.db, [notifyAssignee.to], { type: 'task', title: 'You’ve got a task', body: `${by.first_name} asked you to handle “${notifyAssignee.title}” for ${notifyAssignee.pact}.`, pactId, meta: { actor: by.first_name, taskName: notifyAssignee.title } });
   }
   return getPact(ctx, userId, pactId);
 }

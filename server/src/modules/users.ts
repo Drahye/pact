@@ -1,7 +1,7 @@
-import type { MeDTO, NotificationDTO, Page, SessionDTO } from '../../../shared/contracts.js';
+import type { MeDTO, NotificationDTO, NotificationMeta, Page, SessionDTO } from '../../../shared/contracts.js';
 import type { Ctx, ReqMeta } from '../context.js';
 import { encrypt, keyedHash } from '../lib/crypto.js';
-import { AppError, badRequest } from '../lib/errors.js';
+import { AppError, badRequest, notFound } from '../lib/errors.js';
 import { getUser, toMe } from './auth.js';
 import { audit, notify } from './platform.js';
 
@@ -82,8 +82,8 @@ export async function listSessions(ctx: Ctx, userId: string, currentSessionId: s
 
 export async function listNotifications(ctx: Ctx, userId: string, cursor?: string): Promise<Page<NotificationDTO> & { unread: number }> {
   const before = cursor ? new Date(cursor) : null;
-  const r = await ctx.db.query<{ id: string; type: string; title: string; body: string; pact_id: string | null; pact_title: string | null; ref_id: string | null; merged_count: number; read_at: Date | null; created_at: Date }>(
-    `SELECT n.id, n.type, n.title, n.body, n.pact_id, p.title AS pact_title, n.ref_id, n.merged_count, n.read_at, n.created_at
+  const r = await ctx.db.query<{ id: string; type: string; title: string; body: string; pact_id: string | null; pact_title: string | null; ref_id: string | null; merged_count: number; meta: NotificationMeta; read_at: Date | null; created_at: Date }>(
+    `SELECT n.id, n.type, n.title, n.body, n.pact_id, p.title AS pact_title, n.ref_id, n.merged_count, n.meta, n.read_at, n.created_at
        FROM notifications n LEFT JOIN pacts p ON p.id = n.pact_id
       WHERE n.user_id = $1 AND ($2::timestamptz IS NULL OR n.created_at < $2) ORDER BY n.created_at DESC LIMIT 41`,
     [userId, before],
@@ -91,10 +91,23 @@ export async function listNotifications(ctx: Ctx, userId: string, cursor?: strin
   const unread = await ctx.db.query<{ n: number }>('SELECT COUNT(*)::int AS n FROM notifications WHERE user_id = $1 AND read_at IS NULL', [userId]);
   const rows = r.rows.slice(0, 40);
   return {
-    items: rows.map((n) => ({ id: n.id, type: n.type, title: n.title, body: n.body, pactId: n.pact_id, pactTitle: n.pact_title, refId: n.ref_id, count: n.merged_count, readAt: n.read_at?.toISOString() ?? null, createdAt: n.created_at.toISOString() })),
+    items: rows.map((n) => ({ id: n.id, type: n.type, title: n.title, body: n.body, pactId: n.pact_id, pactTitle: n.pact_title, refId: n.ref_id, count: n.merged_count, meta: n.meta ?? {}, readAt: n.read_at?.toISOString() ?? null, createdAt: n.created_at.toISOString() })),
     nextCursor: r.rows.length > 40 ? rows[rows.length - 1].created_at.toISOString() : null,
     unread: unread.rows[0].n,
   };
+}
+
+/** One notification, only if it is yours. */
+export async function getNotification(ctx: Ctx, userId: string, id: string): Promise<NotificationDTO> {
+  if (!/^[0-9a-f-]{36}$/i.test(id)) throw notFound('That notification');
+  const r = await ctx.db.query<{ id: string; type: string; title: string; body: string; pact_id: string | null; pact_title: string | null; ref_id: string | null; merged_count: number; meta: NotificationMeta; read_at: Date | null; created_at: Date }>(
+    `SELECT n.id, n.type, n.title, n.body, n.pact_id, p.title AS pact_title, n.ref_id, n.merged_count, n.meta, n.read_at, n.created_at
+       FROM notifications n LEFT JOIN pacts p ON p.id = n.pact_id WHERE n.user_id = $1 AND n.id = $2`,
+    [userId, id],
+  );
+  const n = r.rows[0];
+  if (!n) throw notFound('That notification');
+  return { id: n.id, type: n.type, title: n.title, body: n.body, pactId: n.pact_id, pactTitle: n.pact_title, refId: n.ref_id, count: n.merged_count, meta: n.meta ?? {}, readAt: n.read_at?.toISOString() ?? null, createdAt: n.created_at.toISOString() };
 }
 
 export async function markNotificationsRead(ctx: Ctx, userId: string, ids?: string[]) {

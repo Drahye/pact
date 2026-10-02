@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { BellRing, CalendarDays, CheckCheck, Megaphone, ChevronRight, Divide, Ellipsis, LogOut, RotateCcw, Scale, Share, ShieldCheck, Store, Target, UserPlus, Users, XCircle } from 'lucide-react';
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../api/auth';
 import { ApiError } from '../../api/client';
@@ -158,7 +158,7 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
     }
     switch (stage) {
       case 'just-you':
-        return { primary: <Button to={`${base}/invite`} fullWidth>Invite people</Button>, secondary: <Button to={`${base}/contribute`} variant="secondary" fullWidth>Add to Pact</Button> };
+        return { primary: <Button to={`${base}/contribute`} fullWidth>Add money</Button>, secondary: <Button to={`${base}/invite`} variant="secondary" fullWidth>Invite people</Button> };
       case 'almost':
         return {
           primary: <Button to={`${base}/contribute?amount=${Math.ceil(s.remaining)}`} fullWidth>Cover the rest · {formatNairaCompact(s.remaining)}</Button>,
@@ -170,13 +170,31 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
         };
       case 'open':
         return {
-          primary: <Button to={`${base}/contribute${ask ? `?amount=${Math.ceil(ask)}` : ''}`} fullWidth>{ask ? `Add your share · ${formatNairaCompact(ask)}` : 'Contribute'}</Button>,
+          primary: <Button to={`${base}/contribute${ask ? `?amount=${Math.ceil(ask)}` : ''}`} fullWidth>{ask ? `Add your share · ${formatNairaCompact(ask)}` : 'Add money'}</Button>,
           secondary: <Button to={`${base}/invite`} variant="secondary" fullWidth>Invite people</Button>,
         };
+      case 'making':
+      case 'ready':
+        // Funded but not finished: the server still takes money until the organiser completes it.
+        return pact.status === 'funded'
+          ? { primary: <Button to={`${base}/contribute`} fullWidth>Add more money</Button>, secondary: <Button to={`${base}/invite`} variant="secondary" fullWidth>Invite people</Button> }
+          : null;
       default:
         return null;
     }
   })();
+
+  // The Next step only recommends. Money stays one tap away while the Pact can still take it.
+  const actionsRef = useRef<HTMLDivElement>(null);
+  const [actionsOffscreen, setActionsOffscreen] = useState(false);
+  const fundable = !!actions && (pact.status === 'open' || pact.status === 'funded');
+  useEffect(() => {
+    const el = actionsRef.current;
+    if (!el || !fundable || typeof IntersectionObserver === 'undefined') return;
+    const io = new IntersectionObserver(([e]) => setActionsOffscreen(!e.isIntersecting), { threshold: 0 });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [fundable]);
 
   return (
     <Screen
@@ -273,6 +291,13 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
         {s.raised > 0 && <p className="detail__ring-hint">{picked ? 'Tap the centre to see the total' : 'Tap a colour or a name to see who gave it'}</p>}
       </div>
 
+      {actions && (
+        <div className="detail__actions" ref={actionsRef}>
+          {actions.primary}
+          {actions.secondary}
+        </div>
+      )}
+
       {!executing && (
       <ul className="detail__stats">
         <li className="tint--sun" style={chars(String(s.daysLeft))}>
@@ -301,34 +326,8 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
 
       {executing && <ExecutionSection pact={pact} meId={me} onPay={openPay} onComplete={() => setCompleteOpen(true)} nextKind={next?.action?.kind === 'pay' || next?.action?.kind === 'complete' ? next.action.kind : null} />}
 
-      {next ? (
-        <>
-          <NextStep item={next} onAction={onAttention} />
-          <PinnedCard pact={pact} meId={me} onOpen={(a) => setThreadId(a.id)} />
-          <div className="nextstep-more">
-            {!executing && next.action?.kind !== 'contribute' && (
-              <Button to={`${base}/contribute`} variant="ghost" size="md">
-                Add to Pact
-              </Button>
-            )}
-            {!executing && next.action?.kind !== 'invite' && (
-              <Button to={`${base}/invite`} variant="ghost" size="md">
-                Invite people
-              </Button>
-            )}
-          </div>
-        </>
-      ) : (
-        <>
-          {actions && (
-            <div className="detail__actions">
-              {actions.primary}
-              {actions.secondary}
-            </div>
-          )}
-          <PinnedCard pact={pact} meId={me} onOpen={(a) => setThreadId(a.id)} />
-        </>
-      )}
+      {next && <NextStep item={next} onAction={onAttention} />}
+      <PinnedCard pact={pact} meId={me} onOpen={(a) => setThreadId(a.id)} />
       {!next && stage === 'almost' && !orders && <p className="detail__almost">We’re almost there. {formatNaira(s.remaining)} left.</p>}
       {checkpoints.length > 0 && <OrganizerProgress rows={checkpoints} onInvite={() => navigate(`${base}/invite`)} />}
       <ApprovalCards pact={pact} meId={me} onOpen={setPayout} />
@@ -576,6 +575,11 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
           toast('Pact closed. Everyone was refunded.');
         }}
       />
+      {fundable && actionsOffscreen && !orders && (
+        <div className="detail__sticky">
+          <Button to={`${base}/contribute`} fullWidth>{pact.status === 'funded' ? 'Add more money' : 'Add money'}</Button>
+        </div>
+      )}
     </Screen>
   );
 }

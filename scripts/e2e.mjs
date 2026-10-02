@@ -108,7 +108,7 @@ try {
   await link('Go to my Pact');
   await page.getByText('If the goal isn’t reached').waitFor();
   await shot('pact-detail');
-  await page.getByRole('link', { name: /Add to Pact|Add your share|Contribute/ }).first().click();
+  await page.getByRole('link', { name: /Add money|Add to Pact|Add your share|Contribute/ }).first().click();
   await page.getByText('Pay with').waitFor();
   await shot('contribute-short');
   await page.getByRole('radio', { name: '₦5k' }).click();

@@ -1,12 +1,14 @@
-import { ArrowRight, Check, Smartphone } from 'lucide-react';
+import { ArrowRight, Check, Download, Share, Smartphone } from 'lucide-react';
 import QRCode from 'qrcode';
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Footer } from '../../components/site/Footer';
 import { SiteNav } from '../../components/site/SiteNav';
-import { StoreButtons, type Platform } from '../../components/site/StoreButtons';
+import type { Platform } from '../../components/site/StoreButtons';
+import { IosInstallSheet } from '../../components/pwa/InstallPactPrompt';
 import { Button } from '../../components/ui/Button';
-import { Modal } from '../../components/ui/Modal';
+import { usePwaInstall } from '../../hooks/usePwaInstall';
+import { isIos } from '../../lib/pwaInstallRules';
 import { Segmented } from '../../components/ui/Segmented';
 import { gsap, MQ, useGSAP } from '../../lib/gsap';
 import '../site/landing.css';
@@ -16,7 +18,7 @@ import { PhoneFrame } from '../site/mockups/PhoneFrame';
 import './download.css';
 import { setFixedClock } from '../../lib/clock';
 
-const detectPlatform = (): Platform => (/android/i.test(navigator.userAgent) ? 'android' : 'ios');
+const detectPlatform = (): Platform => (isIos(navigator.userAgent, navigator.platform, navigator.maxTouchPoints) ? 'ios' : 'android');
 
 const perks = ['Start a plan in three details', 'Everyone brings money, a task, or both', 'Pay for the plan straight from the Pact'];
 
@@ -25,13 +27,15 @@ export function DownloadPage() {
   setFixedClock(true);
   const [params] = useSearchParams();
   const [platform, setPlatform] = useState<Platform>(() => (params.get('platform') as Platform) || detectPlatform());
-  const [open, setOpen] = useState<Platform | null>(null);
+  const [iosOpen, setIosOpen] = useState(false);
+  const [asked, setAsked] = useState<'dismissed' | null>(null);
+  const pwa = usePwaInstall();
   const [qr, setQr] = useState('');
   const root = useRef<HTMLElement>(null);
   const stack = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    document.title = 'PACT · Get the app';
+    document.title = 'PACT · Install the app';
     window.scrollTo(0, 0);
     QRCode.toDataURL(`${window.location.origin}/app`, { margin: 0, width: 240, color: { dark: '#0f1713', light: '#ffffff' } })
       .then(setQr)
@@ -80,9 +84,9 @@ export function DownloadPage() {
           <div className="container dl__grid">
             <div className="dl__copy">
               <h1 className="dl__title dl__reveal">
-                <span>Make it happen</span> <span>from your phone.</span>
+                <span>Install PACT</span> <span>on your phone.</span>
               </h1>
-              <p className="dl__lede dl__reveal">PACT keeps the people, money, tasks and next steps for a shared plan in one place. The iPhone and Android apps are on the way. The full app already works in your browser.</p>
+              <p className="dl__lede dl__reveal">Add PACT to your Home Screen for a full-screen app experience. No app store required.</p>
 
               <div className="dl__platform dl__reveal">
                 <Segmented<Platform>
@@ -96,8 +100,27 @@ export function DownloadPage() {
                 />
               </div>
 
-              <div className="dl__reveal">
-                <StoreButtons onSelect={setOpen} highlight={platform} />
+              <div className="dl__install dl__reveal">
+                {pwa.installed ? (
+                  <p className="dl__install-note">PACT is installed on this device. Open it from your Home Screen.</p>
+                ) : platform === 'ios' ? (
+                  <>
+                    <Button iconLeft={<Share />} onClick={() => setIosOpen(true)}>
+                      Add to Home Screen
+                    </Button>
+                    {!pwa.needsIosSteps && <p className="dl__install-note">Open this page on your iPhone to add it. Scan the code below.</p>}
+                  </>
+                ) : pwa.canInstall ? (
+                  <Button
+                    iconLeft={<Download />}
+                    onClick={async () => setAsked((await pwa.install()) === 'dismissed' ? 'dismissed' : null)}
+                  >
+                    Install PACT
+                  </Button>
+                ) : (
+                  <p className="dl__install-note">Open PACT in Chrome, then choose <strong>Install app</strong> or <strong>Add to Home Screen</strong> from the browser menu.</p>
+                )}
+                {asked === 'dismissed' && <p className="dl__install-note">No problem. You can install any time from here, or from Profile in the app.</p>}
               </div>
 
               <ul className="dl__perks dl__reveal">
@@ -153,25 +176,7 @@ export function DownloadPage() {
       </main>
       <Footer />
 
-      <Modal
-        open={open !== null}
-        onClose={() => setOpen(null)}
-        title={`PACT for ${open === 'android' ? 'Android' : 'iPhone'} is on the way`}
-        description="The native apps for the App Store and Google Play are coming soon. Everything already works in the web app: sign up with your number and start a Pact today."
-        footer={
-          <Button to="/app" fullWidth iconRight={<ArrowRight />}>
-            Open the web app
-          </Button>
-        }
-      >
-        <ul className="dl__modal-list">
-          {perks.map((p) => (
-            <li key={p}>
-              <Check aria-hidden strokeWidth={3} /> {p}
-            </li>
-          ))}
-        </ul>
-      </Modal>
+      <IosInstallSheet open={iosOpen} onClose={() => setIosOpen(false)} />
     </>
   );
 }

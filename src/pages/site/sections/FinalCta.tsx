@@ -1,6 +1,6 @@
 import { ArrowRight } from 'lucide-react';
 import { useRef } from 'react';
-import { StoreButtons } from '../../../components/site/StoreButtons';
+import { Link } from 'react-router-dom';
 import { Button } from '../../../components/ui/Button';
 import { gsap, MQ, useGSAP } from '../../../lib/gsap';
 
@@ -33,8 +33,9 @@ export function FinalCta() {
                 Start a Pact
               </Button>
             </div>
-            <p className="final__note">Creating a Pact is free. iOS and Android are coming soon.</p>
-            <StoreButtons tone="light" compact />
+            <p className="final__note">
+              Creating a Pact is free. <Link to="/download" className="final__link">Get the app</Link> on your Home Screen, no app store needed.
+            </p>
           </div>
         </div>
       </div>

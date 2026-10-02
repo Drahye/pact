@@ -224,6 +224,8 @@ export async function syncProductEvents(ctx: Ctx): Promise<number> {
 export async function recordClientEvent(ctx: Ctx, userId: string, input: { name: ClientEventName; props?: Record<string, unknown> }) {
   const who = personId(ctx.config, userId);
   const p = input.props ?? {};
-  const suffix = input.name === 'onboarding_intent_selected' ? `:${String(p.intent)}` : input.name === 'demo_pact_opened' || input.name === 'demo_pact_completed_view' ? `:${String(p.demo)}` : '';
+  // An install can happen again after the app is deleted, so these count once per person per day rather than once ever.
+  const day = new Date().toISOString().slice(0, 10);
+  const suffix = input.name === 'pwa_install_started' || input.name === 'pwa_install_completed' ? `:${day}` : input.name === 'onboarding_intent_selected' ? `:${String(p.intent)}` : input.name === 'demo_pact_opened' || input.name === 'demo_pact_completed_view' ? `:${String(p.demo)}` : '';
   await track(ctx.db, ctx.config, input.name, { userId, key: `cl:${input.name}:${who}${suffix}`, props: p });
 }

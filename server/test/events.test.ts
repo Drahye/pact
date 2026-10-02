@@ -121,6 +121,18 @@ describe('product events', () => {
     assert.ok(!JSON.stringify(rows.rows).includes('secret'));
   });
 
+  it('install events: signed-in only, no props, once per person per day', async () => {
+    const u = await t.signIn('08031110007', { firstName: 'Ife', lastName: 'Install', pin: '2468' });
+    const send = (name: string, props?: Record<string, unknown>, token: string | undefined = u.accessToken) => t.call('POST', '/me/onboarding-event', token, { name, props });
+    assert.equal((await send('pwa_install_started')).status, 200);
+    assert.equal((await send('pwa_install_started')).status, 200);
+    assert.equal((await send('pwa_install_completed', { phone: '08031110007' })).status, 200);
+    assert.equal((await t.call('POST', '/me/onboarding-event', undefined, { name: 'pwa_install_completed' })).status, 401, 'visitors with no account are not recorded');
+    const rows = await t.db.query<{ name: string; props: Record<string, unknown> }>(`SELECT name, props FROM product_events WHERE actor = $1 AND name LIKE 'pwa_%'`, [personId(t.ctx.config, u.user.id)]);
+    assert.deepEqual(rows.rows.map((r) => r.name).sort(), ['pwa_install_completed', 'pwa_install_started']);
+    assert.ok(rows.rows.every((r) => Object.keys(r.props).length === 0), 'nothing but the name is kept');
+  });
+
   it('drops anything not on the allow-list, and refuses unknown events', async () => {
     await track(t.db, t.ctx.config, 'pact_created', { props: { category: 'trip', pin: '1234', bvn: '22222222222', note: 'hello', category_x: 'y', tasks: 3.4 } });
     const r = await t.db.query<{ props: Record<string, unknown> }>(`SELECT props FROM product_events WHERE name = 'pact_created' ORDER BY id DESC LIMIT 1`);
@@ -128,7 +140,7 @@ describe('product events', () => {
     // Unknown names never reach the table (and never throw).
     await track(t.db, t.ctx.config, 'pin_entered' as never, {});
     assert.equal((await t.db.query(`SELECT 1 FROM product_events WHERE name = 'pin_entered'`)).rowCount, 0);
-    assert.equal(EVENT_NAMES.length, 29);
+    assert.equal(EVENT_NAMES.length, 31);
   });
 
   it('is invisible to the restricted app role', async () => {

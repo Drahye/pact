@@ -1,6 +1,7 @@
 import { ChevronLeft, X } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useScreenScroll } from '../../pages/app/Screen';
 import { IconButton } from './IconButton';
 import './nav.css';
 
@@ -14,14 +15,17 @@ interface Props {
   onBack?: () => void;
   trailing?: ReactNode;
   tone?: 'bg' | 'transparent';
+  /** The title shows only once the screen's LargeTitle has scrolled away (the large title is the h1). */
+  collapse?: boolean;
 }
 
 /** In-app top navigation. */
-export function TopBar({ title, leading = 'back', backTo, onBack, trailing, tone = 'bg' }: Props) {
+export function TopBar({ title, leading = 'back', backTo, onBack, trailing, tone = 'bg', collapse }: Props) {
+  const { scrolled, collapsed } = useScreenScroll();
   const navigate = useNavigate();
   const goBack = () => (onBack ? onBack() : backTo ? navigate(backTo) : navigate(-1));
   return (
-    <header className={`topbar topbar--${tone}`}>
+    <header className={`topbar topbar--${tone}${scrolled ? ' is-scrolled' : ''}${collapse ? ' topbar--collapse' : ''}${collapse && collapsed ? ' is-collapsed' : ''}`}>
       <div className="topbar__side">
         {leading !== 'none' && (
           <IconButton
@@ -32,7 +36,12 @@ export function TopBar({ title, leading = 'back', backTo, onBack, trailing, tone
           />
         )}
       </div>
-      {title && <p className="topbar__title">{title}</p>}
+      {title && (
+        // In collapse mode the large h1 names the screen for assistive tech; this copy is visual only.
+        <p className="topbar__title" aria-hidden={collapse ? true : undefined}>
+          {title}
+        </p>
+      )}
       <div className="topbar__side topbar__side--end">{trailing}</div>
     </header>
   );

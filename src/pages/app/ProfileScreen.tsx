@@ -1,3 +1,4 @@
+import { TopBar } from '../../components/ui/TopBar';
 import { BadgeCheck, ChevronRight, Download, FileText, Gift, Landmark, LifeBuoy, LockKeyhole, LogOut, ShieldCheck, UserX } from 'lucide-react';
 import { useState } from 'react';
 import { api, ApiError } from '../../api/client';
@@ -66,7 +67,7 @@ export function ProfileScreen() {
   };
 
   return (
-    <Screen tabBar={<BottomNav />} className="profile">
+    <Screen tabBar={<BottomNav />} className="profile" topBar={<TopBar leading="none" title="Profile" />}>
       <div className="profile__head">
         <Avatar userId={user.id} size="xl" />
         <h1 className="large-title">

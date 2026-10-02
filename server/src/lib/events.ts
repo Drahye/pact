@@ -40,10 +40,12 @@ export const EVENT_NAMES = [
   'first_pact_created',
   'first_invite_created',
   'first_pact_joined',
+  'pwa_install_started',
+  'pwa_install_completed',
 ] as const;
 
 /** The events the app itself sends (what someone looked at or chose). The rest are worked out from server records. */
-export const CLIENT_EVENTS = ['onboarding_started', 'onboarding_completed', 'onboarding_intent_selected', 'demo_pact_opened', 'demo_pact_completed_view', 'first_pact_started'] as const;
+export const CLIENT_EVENTS = ['onboarding_started', 'onboarding_completed', 'onboarding_intent_selected', 'demo_pact_opened', 'demo_pact_completed_view', 'first_pact_started', 'pwa_install_started', 'pwa_install_completed'] as const;
 export type ClientEventName = (typeof CLIENT_EVENTS)[number];
 export type EventName = (typeof EVENT_NAMES)[number];
 
@@ -87,6 +89,9 @@ export const EVENT_PROPS: Record<EventName, Record<string, Rule>> = {
   first_pact_created: { category: CATEGORY },
   first_invite_created: { via: ['member', 'phone'] },
   first_pact_joined: { via: ['link', 'invite'] },
+  // Someone asked the browser to install PACT, and it finished. Signed-in people only; no props.
+  pwa_install_started: {},
+  pwa_install_completed: {},
   pact_outcome_completed: { days_since_funded: 'count', paid_lines: 'count', tasks_done_band: ['none', 'some', 'most', 'all', 'no_tasks'], released_remaining: 'bool' },
 };
 

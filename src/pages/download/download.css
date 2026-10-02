@@ -225,3 +225,15 @@
   height: 18px;
   color: var(--color-accent-text);
 }
+
+.dl__install {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.dl__install-note {
+  max-width: 44ch;
+  color: var(--color-text-secondary);
+}

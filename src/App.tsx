@@ -1,3 +1,4 @@
+import { InstallPactPrompt, PwaInstallTracker } from './components/pwa/InstallPactPrompt';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MotionConfig } from 'framer-motion';
 import { lazy, Suspense, type ReactNode } from 'react';
@@ -80,6 +81,8 @@ export function App() {
           <BrowserRouter>
             <ThemeProvider>
             <Suspense fallback={<Loading full />}>
+            <PwaInstallTracker />
+            <InstallPactPrompt />
             <Routes>
               <Route path="/" element={<LandingPage />} />
               <Route path="/download" element={<DownloadPage />} />

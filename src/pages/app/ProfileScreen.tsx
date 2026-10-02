@@ -1,6 +1,8 @@
 import { TopBar } from '../../components/ui/TopBar';
-import { BadgeCheck, ChevronRight, Download, FileText, Gift, Landmark, LifeBuoy, LockKeyhole, LogOut, ShieldCheck, UserX } from 'lucide-react';
+import { BadgeCheck, ChevronRight, Download, FileText, Gift, Landmark, LifeBuoy, LockKeyhole, LogOut, ShieldCheck, Smartphone, UserX } from 'lucide-react';
 import { useState } from 'react';
+import { IosInstallSheet } from '../../components/pwa/InstallPactPrompt';
+import { usePwaInstall } from '../../hooks/usePwaInstall';
 import { api, ApiError } from '../../api/client';
 import { useProfileActions } from '../../api/hooks';
 import { PinSheet } from '../../components/app/PinSheet';
@@ -28,6 +30,8 @@ export function ProfileScreen() {
   const { closeAccount } = useProfileActions();
   const [closeOpen, setCloseOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const pwa = usePwaInstall();
+  const [iosOpen, setIosOpen] = useState(false);
   const { theme, setTheme } = useTheme();
   if (!user) return null;
 
@@ -150,6 +154,8 @@ export function ProfileScreen() {
         }}
       />
 
+      <IosInstallSheet open={iosOpen} onClose={() => setIosOpen(false)} />
+
       <p className="menu-label">More</p>
       <div className="menu">
         <button type="button" className="menu__row" onClick={shareInvite}>
@@ -157,6 +163,17 @@ export function ProfileScreen() {
           <span className="menu__text"><span className="menu__title">Tell a friend about PACT</span><span className="menu__sub">Your code {user.referralCode}</span></span>
           <span className="menu__end"><ChevronRight /></span>
         </button>
+        {pwa.available && (
+          <button
+            type="button"
+            className="menu__row"
+            onClick={() => (pwa.canInstall ? void pwa.install() : setIosOpen(true))}
+          >
+            <span className="menu__icon tint--mint"><Smartphone /></span>
+            <span className="menu__text"><span className="menu__title">Install PACT</span><span className="menu__sub">Add PACT to your Home Screen</span></span>
+            <span className="menu__end"><ChevronRight /></span>
+          </button>
+        )}
         <a href="mailto:support@pact.africa?subject=PACT%20help" className="menu__row">
           <span className="menu__icon tint--sky"><LifeBuoy /></span>
           <span className="menu__text"><span className="menu__title">Help and support</span><span className="menu__sub">We reply within a day</span></span>

@@ -72,6 +72,10 @@ describe('product events', () => {
         task_completed: 1,
         pact_funded: 1,
         memory_added: 1,
+        // Each person's first time at something, once: the organiser and the friend both created a first Pact.
+        first_pact_created: 2,
+        first_invite_created: 1,
+        first_pact_joined: 1,
       },
     );
 
@@ -94,6 +98,29 @@ describe('product events', () => {
     }
   });
 
+  it('onboarding events come from the app, only from a fixed list, once each, and carry no text', async () => {
+    const u = await t.signIn('08031110003', { firstName: 'Nkem', lastName: 'Newcomer', pin: '2468' });
+    const send = (name: string, props?: Record<string, unknown>, token = u.accessToken) => t.call('POST', '/me/onboarding-event', token, { name, props });
+    assert.equal((await send('onboarding_started')).status, 200);
+    assert.equal((await send('onboarding_started')).status, 200, 'sending it twice is fine');
+    assert.equal((await send('onboarding_intent_selected', { intent: 'explore' })).status, 200);
+    assert.equal((await send('onboarding_intent_selected', { intent: 'join' })).status, 200);
+    assert.equal((await send('demo_pact_opened', { demo: 'sarahs_birthday', from: 'home', note: 'My secret plan' })).status, 200);
+    assert.equal((await send('onboarding_completed', { how: 'skipped' })).status, 200);
+    // Not an event the app may send, a wrong type, and no session.
+    assert.equal((await send('pact_created')).status, 400, 'server-derived events cannot be sent by the app');
+    assert.equal((await send('nonsense')).status, 400);
+    assert.equal((await t.call('POST', '/me/onboarding-event', undefined, { name: 'onboarding_started' })).status, 401);
+    const me = personId(t.ctx.config, u.user.id);
+    const rows = await t.db.query<{ name: string; props: Record<string, unknown> }>(`SELECT name, props FROM product_events WHERE actor = $1 ORDER BY id`, [me]);
+    const names = rows.rows.map((r) => r.name);
+    assert.equal(names.filter((n) => n === 'onboarding_started').length, 1, 'recorded once per person');
+    assert.equal(names.filter((n) => n === 'onboarding_intent_selected').length, 2, 'once per intent');
+    assert.deepEqual(rows.rows.find((r) => r.name === 'onboarding_completed')!.props, { how: 'skipped' });
+    assert.deepEqual(rows.rows.find((r) => r.name === 'demo_pact_opened')!.props, { demo: 'sarahs_birthday', from: 'home' }, 'anything off the allow-list is dropped');
+    assert.ok(!JSON.stringify(rows.rows).includes('secret'));
+  });
+
   it('drops anything not on the allow-list, and refuses unknown events', async () => {
     await track(t.db, t.ctx.config, 'pact_created', { props: { category: 'trip', pin: '1234', bvn: '22222222222', note: 'hello', category_x: 'y', tasks: 3.4 } });
     const r = await t.db.query<{ props: Record<string, unknown> }>(`SELECT props FROM product_events WHERE name = 'pact_created' ORDER BY id DESC LIMIT 1`);
@@ -101,7 +128,7 @@ describe('product events', () => {
     // Unknown names never reach the table (and never throw).
     await track(t.db, t.ctx.config, 'pin_entered' as never, {});
     assert.equal((await t.db.query(`SELECT 1 FROM product_events WHERE name = 'pin_entered'`)).rowCount, 0);
-    assert.equal(EVENT_NAMES.length, 20);
+    assert.equal(EVENT_NAMES.length, 29);
   });
 
   it('is invisible to the restricted app role', async () => {

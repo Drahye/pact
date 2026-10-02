@@ -4,7 +4,7 @@ First-party, server-side, pseudonymous. No analytics SDK, no cookies, no third p
 
 ## What is recorded
 
-Twenty events, in one table (`product_events`, migrations 013, 014 and 015). Nothing else is accepted: the table has a `CHECK` on the name, and `server/src/lib/events.ts` drops any property that is not on a per-event allow-list.
+Twenty-nine events, in one table (`product_events`, migrations 013, 014 and 015). Nothing else is accepted: the table has a `CHECK` on the name, and `server/src/lib/events.ts` drops any property that is not on a per-event allow-list.
 
 | Column | Meaning |
 | --- | --- |
@@ -43,6 +43,19 @@ Pseudonyms are keyed hashes, so nobody with only the table can tell who is who, 
 | `activity_reacted` | A reaction is given (one of four) | `reaction`, `on` (update, system) |
 | `activity_pinned` | An item is pinned (written directly: a pin leaves no row of its own) | `kind` (update, system) |
 | `memory_added` | The first memory note or photo (once per Pact) | `has_photo` |
+| `onboarding_started` | The first-time intro opens (once per person). Sent by the app | none |
+| `onboarding_completed` | The intro is finished or skipped (once per person). Sent by the app | `how` (finished, skipped) |
+| `onboarding_intent_selected` | What brought them: start, join or explore (once per choice). Sent by the app | `intent` |
+| `demo_pact_opened` | A sample Pact is opened (once per demo per person). Sent by the app | `demo` (sarahs_birthday, december_trip, graduation_gift), `from` (onboarding, home) |
+| `demo_pact_completed_view` | The completion part of a sample Pact is reached (once per demo per person). Sent by the app | `demo` |
+| `first_pact_started` | The guided "start a Pact" flow is entered for the first time (once per person). Sent by the app | `from` (onboarding, home) |
+| `first_pact_created` | A person's first Pact | `category` |
+| `first_invite_created` | A person's first invite, by member or phone | `via` |
+| `first_pact_joined` | The first Pact a person joins | `via` (link, invite) |
+
+## Activation: understand, then act
+
+`signup_completed` → `onboarding_started` → `onboarding_completed` (finished or skipped) → `onboarding_intent_selected` or a Home action → `first_pact_started` / `demo_pact_opened` / `first_pact_joined` → `first_pact_created` → `first_invite_created`. The app-sent events accept only a name and a few fixed choices; anything else is dropped, and nothing typed (a Pact's name, an invite code) is ever sent.
 
 ## Funded is not finished
 

@@ -1,5 +1,5 @@
 import type { Ctx } from '../context.js';
-import { pactId as pactPseudo, personId, rowKey, track, type EventName, amountBand } from '../lib/events.js';
+import { pactId as pactPseudo, personId, rowKey, track, type ClientEventName, type EventName, amountBand } from '../lib/events.js';
 
 /**
  * Turns what the server has already recorded (users, Pacts, members, activities) into product events.
@@ -48,6 +48,31 @@ const sources: Source[] = [
                  ROW_NUMBER() OVER (PARTITION BY p.organizer_id ORDER BY p.created_at) AS n FROM pacts p) x
            WHERE n = 2 AND ts > $1 ORDER BY ts LIMIT 2000`,
     map: (r, ctx) => ({ userId: r.user_id, pactId: r.pact_id, key: `sp:${personId(ctx.config, r.user_id)}`, props: {} }),
+  },
+  {
+    name: 'first_pact_created',
+    sql: `SELECT * FROM (SELECT p.id AS pact_id, p.organizer_id AS user_id, p.created_at AS ts, p.category,
+                 ROW_NUMBER() OVER (PARTITION BY p.organizer_id ORDER BY p.created_at) AS n FROM pacts p) x
+           WHERE n = 1 AND ts > $1 ORDER BY ts LIMIT 2000`,
+    map: (r, ctx) => ({ userId: r.user_id, pactId: r.pact_id, key: `fp:${personId(ctx.config, r.user_id)}`, props: { category: r.category } }),
+  },
+  {
+    name: 'first_invite_created',
+    sql: `SELECT * FROM (
+            SELECT x.*, ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY ts) AS n FROM (
+              SELECT m.pact_id, m.invited_by AS user_id, m.created_at AS ts, 'member' AS via FROM pact_members m WHERE m.invited_by IS NOT NULL
+              UNION ALL
+              SELECT i.pact_id, i.invited_by, i.created_at, 'phone' FROM pact_phone_invites i) x) y
+           WHERE n = 1 AND ts > $1 ORDER BY ts LIMIT 2000`,
+    map: (r, ctx) => ({ userId: r.user_id, pactId: r.pact_id, key: `fi:${personId(ctx.config, r.user_id)}`, props: { via: r.via } }),
+  },
+  {
+    name: 'first_pact_joined',
+    sql: `SELECT * FROM (SELECT m.pact_id, m.user_id, m.joined_at AS ts, (m.invited_by IS NOT NULL) AS invited,
+                 ROW_NUMBER() OVER (PARTITION BY m.user_id ORDER BY m.joined_at) AS n
+                 FROM pact_members m WHERE m.role = 'member' AND m.joined_at IS NOT NULL) x
+           WHERE n = 1 AND ts > $1 ORDER BY ts LIMIT 2000`,
+    map: (r, ctx) => ({ userId: r.user_id, pactId: r.pact_id, key: `fj:${personId(ctx.config, r.user_id)}`, props: { via: r.invited ? 'invite' : 'link' } }),
   },
   {
     name: 'invite_created',
@@ -190,4 +215,15 @@ export async function syncProductEvents(ctx: Ctx): Promise<number> {
     }
   }
   return added;
+}
+
+/**
+ * Events the app sends about the first-time experience. Only a name and a few fixed choices are accepted, and each is
+ * recorded once per person (per demo or intent where that is the point), so a refresh or a replay counts nothing twice.
+ */
+export async function recordClientEvent(ctx: Ctx, userId: string, input: { name: ClientEventName; props?: Record<string, unknown> }) {
+  const who = personId(ctx.config, userId);
+  const p = input.props ?? {};
+  const suffix = input.name === 'onboarding_intent_selected' ? `:${String(p.intent)}` : input.name === 'demo_pact_opened' || input.name === 'demo_pact_completed_view' ? `:${String(p.demo)}` : '';
+  await track(ctx.db, ctx.config, input.name, { userId, key: `cl:${input.name}:${who}${suffix}`, props: p });
 }

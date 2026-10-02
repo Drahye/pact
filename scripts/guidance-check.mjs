@@ -27,6 +27,10 @@ const signIn = async (page, phone) => {
   await page.getByLabel('Mobile number').fill(phone.replace(/^0/, ''));
   await page.getByRole('button', { name: 'Send code' }).click();
   await page.getByRole('button', { name: 'Fill it in' }).click();
+  // A brand-new person sees the three-screen intro first; people in these checks skip it.
+  await page.waitForURL(/\/app\/(home|onboarding)/);
+  await page.waitForTimeout(1800); // Home briefly loads before sending a brand-new person to the intro
+  if (/onboarding/.test(page.url())) await page.getByRole('button', { name: 'Skip' }).click();
   await page.locator('.wallet-strip').waitFor();
 };
 const overflow = async (page, label) => {
@@ -51,11 +55,12 @@ try {
 
   // A. Brand new organiser: empty Home, create, post-create invite, detail.
   await signIn(page, org.phone);
-  await page.getByRole('link', { name: 'Create your first Pact' }).waitFor();
-  ok(await page.getByRole('link', { name: 'Create your first Pact' }).isVisible(), 'empty Home offers "Create your first Pact"');
+  await page.getByRole('link', { name: 'Start a Pact' }).first().waitFor();
+  ok(await page.getByRole('link', { name: 'Start a Pact' }).first().isVisible(), 'empty Home offers "Start a Pact"');
   ok(await page.getByText(/trip, gift, birthday, dinner or shared expense/).isVisible(), 'empty Home names real things to start with');
   await page.screenshot({ path: `${out}/home-empty.png` });
-  await page.getByRole('link', { name: 'Create your first Pact' }).click();
+  // The full form (budget, tasks, rules) is a step beyond the guided start; this check exercises the full form.
+  await page.goto(`${BASE}/app/create`);
   await page.getByLabel('Name', { exact: true }).fill('Sarah’s Birthday');
   await page.getByRole('radio', { name: 'Birthday' }).click();
   await page.getByRole('button', { name: 'In a month' }).click();
@@ -113,7 +118,7 @@ try {
   ok(true, 'scenario E (above 80 percent) and G (completed) are covered by the unit tests and the end-to-end journey');
   ok(errors.length === 0, `no page errors (${errors.join(' | ').slice(0, 200)})`);
 } catch (err) {
-  console.error('FAILED:', err.message.split('\n')[0]);
+  console.error('FAILED:', err.message.split('\n').slice(0, 6).join(' | '));
   failed++;
 } finally {
   await browser.close();

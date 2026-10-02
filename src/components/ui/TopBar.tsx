@@ -10,14 +10,16 @@ interface Props {
   leading?: 'back' | 'close' | 'none';
   /** Explicit destination; falls back to history. */
   backTo?: string;
+  /** Takes over the back button, e.g. to step back inside a flow before leaving it. */
+  onBack?: () => void;
   trailing?: ReactNode;
   tone?: 'bg' | 'transparent';
 }
 
 /** In-app top navigation. */
-export function TopBar({ title, leading = 'back', backTo, trailing, tone = 'bg' }: Props) {
+export function TopBar({ title, leading = 'back', backTo, onBack, trailing, tone = 'bg' }: Props) {
   const navigate = useNavigate();
-  const goBack = () => (backTo ? navigate(backTo) : navigate(-1));
+  const goBack = () => (onBack ? onBack() : backTo ? navigate(backTo) : navigate(-1));
   return (
     <header className={`topbar topbar--${tone}`}>
       <div className="topbar__side">

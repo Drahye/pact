@@ -15,6 +15,10 @@ import { CreatePactScreen } from './pages/app/CreatePactScreen';
 import { HomeScreen } from './pages/app/HomeScreen';
 import { InviteScreen } from './pages/app/InviteScreen';
 import { JoinScreen } from './pages/app/JoinScreen';
+import { DemoPactScreen } from './features/demo/DemoPactScreen';
+import { GuidedStartScreen } from './features/onboarding/GuidedStartScreen';
+import { JoinWithInviteScreen } from './features/onboarding/JoinWithInviteScreen';
+import { OnboardingScreen } from './features/onboarding/OnboardingScreen';
 import { NotificationDetailScreen } from './pages/app/NotificationDetailScreen';
 import { NotificationsScreen } from './pages/app/NotificationsScreen';
 import { PactRoute } from './pages/app/PactRoute';
@@ -98,6 +102,10 @@ export function App() {
                 <Route path="wallet" element={authed(<WalletScreen />)} />
                 <Route path="profile" element={authed(<ProfileScreen />)} />
                 <Route path="activity" element={authed(<ActivityScreen />)} />
+                <Route path="onboarding" element={authed(<OnboardingScreen />)} />
+                <Route path="start" element={authed(<GuidedStartScreen />)} />
+                <Route path="join-invite" element={authed(<JoinWithInviteScreen />)} />
+                <Route path="demo/:id" element={authed(<DemoPactScreen />)} />
                 <Route path="notifications" element={authed(<NotificationsScreen />)} />
                 <Route path="notifications/:id" element={authed(<NotificationDetailScreen />)} />
                 <Route path="create" element={authed(<CreatePactScreen />)} />

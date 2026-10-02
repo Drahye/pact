@@ -31,11 +31,25 @@ export const EVENT_NAMES = [
   'activity_commented',
   'activity_reacted',
   'activity_pinned',
+  'onboarding_started',
+  'onboarding_completed',
+  'onboarding_intent_selected',
+  'demo_pact_opened',
+  'demo_pact_completed_view',
+  'first_pact_started',
+  'first_pact_created',
+  'first_invite_created',
+  'first_pact_joined',
 ] as const;
+
+/** The events the app itself sends (what someone looked at or chose). The rest are worked out from server records. */
+export const CLIENT_EVENTS = ['onboarding_started', 'onboarding_completed', 'onboarding_intent_selected', 'demo_pact_opened', 'demo_pact_completed_view', 'first_pact_started'] as const;
+export type ClientEventName = (typeof CLIENT_EVENTS)[number];
 export type EventName = (typeof EVENT_NAMES)[number];
 
 type Rule = 'bool' | 'count' | readonly string[];
 const CATEGORY = ['birthday', 'dinner', 'gift', 'trip', 'event', 'household', 'wedding', 'fund', 'other'] as const;
+const DEMOS = ['sarahs_birthday', 'december_trip', 'graduation_gift'] as const;
 const PARTICIPATION = ['money', 'task', 'both', 'later'] as const;
 
 /** What each event may carry. */
@@ -63,6 +77,16 @@ export const EVENT_PROPS: Record<EventName, Record<string, Rule>> = {
   activity_commented: { on: ['update', 'system'], first_on_item: 'bool' },
   activity_reacted: { reaction: ['thumbs_up', 'heart', 'celebrate', 'raised_hands'], on: ['update', 'system'] },
   activity_pinned: { kind: ['update', 'system'] },
+  // Onboarding and the first-Pact funnel. Choices from a fixed list; never a name, a title or anything typed.
+  onboarding_started: {},
+  onboarding_completed: { how: ['finished', 'skipped'] },
+  onboarding_intent_selected: { intent: ['start', 'join', 'explore'] },
+  demo_pact_opened: { demo: DEMOS, from: ['onboarding', 'home'] },
+  demo_pact_completed_view: { demo: DEMOS },
+  first_pact_started: { from: ['onboarding', 'home'] },
+  first_pact_created: { category: CATEGORY },
+  first_invite_created: { via: ['member', 'phone'] },
+  first_pact_joined: { via: ['link', 'invite'] },
   pact_outcome_completed: { days_since_funded: 'count', paid_lines: 'count', tasks_done_band: ['none', 'some', 'most', 'all', 'no_tasks'], released_remaining: 'bool' },
 };
 

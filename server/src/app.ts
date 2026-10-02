@@ -25,7 +25,8 @@ import * as pacts from './modules/pacts.js';
 import * as plan from './modules/plan.js';
 import * as users from './modules/users.js';
 import * as wallet from './modules/wallet.js';
-import { pactId as pactPseudo, track, visitorId } from './lib/events.js';
+import { CLIENT_EVENTS, pactId as pactPseudo, track, visitorId } from './lib/events.js';
+import { recordClientEvent } from './modules/events.js';
 import { handleWebhook } from './modules/webhooks.js';
 import { createPaystackProvider } from './payments/paystack.js';
 import type { PaymentProvider } from './payments/provider.js';
@@ -556,6 +557,13 @@ export async function buildApp({ config, db, provider, sms, push, now = () => ne
         priv.post('/notifications/read', async (req) => {
           const body = parse(z.object({ ids: z.array(z.string().uuid()).max(100).optional() }), req.body);
           await users.markNotificationsRead(ctx, req.userId, body.ids);
+          return { ok: true };
+        });
+
+        /* ---------- first-time onboarding events (what someone looked at or chose; never text) */
+        const OnboardingEvent = z.object({ name: z.enum(CLIENT_EVENTS), props: z.record(z.string(), z.union([z.string().max(40), z.boolean(), z.number()])).optional() });
+        priv.post('/me/onboarding-event', strict(60), async (req) => {
+          await recordClientEvent(ctx, req.userId, parse(OnboardingEvent, req.body));
           return { ok: true };
         });
 

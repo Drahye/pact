@@ -103,11 +103,12 @@ for (const [w, h] of VPS) {
     };
     await signIn(newPhone.replace(/^0/, ''));
     await page.waitForTimeout(1500);
-    const welcome = page.getByRole('region', { name: 'Welcome' });
-    ok(`welcome ${theme}@${w}: a new person sees the Welcome template`, await welcome.isVisible() && (await welcome.getByRole('heading', { name: 'Welcome, Ngozi.' }).count()) === 1);
-    ok(`welcome ${theme}@${w}: first action is Create your first Pact`, (await welcome.getByRole('link', { name: 'Create your first Pact' }).getAttribute('href')) === '/app/create');
+    // A brand-new person sees the intro, then a Home that is never blank. (The Welcome template is in the gallery and ready for email.)
+    ok(`first run ${theme}@${w}: a new person starts with the intro`, /onboarding/.test(page.url()), page.url());
+    await page.getByRole('button', { name: 'Skip' }).click(); await page.waitForTimeout(1500);
+    ok(`first run ${theme}@${w}: then Home offers Start a Pact`, (await page.getByRole('link', { name: 'Start a Pact' }).count()) > 0);
     await page.screenshot({ path: `${OUT}/${theme}-${w}-welcome.png` });
-    await axe(page, `welcome ${theme}@${w}`);
+    await axe(page, `first-run Home ${theme}@${w}`);
     // someone with history: open the notifications
     await page.evaluate(() => { localStorage.clear(); });
     await ctx.clearCookies();

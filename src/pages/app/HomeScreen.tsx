@@ -1,8 +1,10 @@
 import { Bell, ChevronRight, Plus } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../../api/auth';
 import { useActivity, useNotifications, usePacts, useWallet } from '../../api/hooks';
-import { renderTemplate } from '../../components/communication/registry';
+import { HomeFirstTime, HomeRepeat } from '../../features/onboarding/HomeStates';
+import { introSeen } from '../../features/onboarding/store';
+import { phaseOf } from '../../lib/execution';
 import { PushPrompt } from '../../components/app/PushPrompt';
 import { ErrorState } from '../../components/app/States';
 import { PactListSkeleton } from '../../components/app/Skeleton';
@@ -36,11 +38,20 @@ export function HomeScreen() {
   const featured = [...open].sort((a, b) => summarize(a).daysLeft - summarize(b).daysLeft)[0];
   const rest = mine.filter((p) => p.id !== featured?.id && (p.status === 'open' || p.status === 'funded')).slice(0, 4);
   const unread = notes.data?.unread ?? 0;
+  // Three different homes. Nothing started yet teaches; finished-only welcomes you back; anything running stays primary, with no sample Pacts.
+  const loaded = pacts.isSuccess;
+  const running = mine.filter((p) => !['completed', 'closed'].includes(phaseOf(p)));
+  const finished = mine.filter((p) => phaseOf(p) === 'completed').sort((a, b) => String(b.completedAt ?? '').localeCompare(String(a.completedAt ?? '')));
+  const firstTime = loaded && !mine.length && !invites.length;
+  const noneRunning = loaded && mine.length > 0 && !running.length;
   // The most personal thing each open Pact needs from you, across all your Pacts.
   const needs = open
     .map((p) => ({ pact: p, item: attentionFor(p, user?.id ?? '')[0] }))
     .filter((x) => x.item)
     .slice(0, 4);
+
+  // Brand new and has not seen the intro: show it first, then land back here.
+  if (firstTime && user && !introSeen(user.id)) return <Navigate to="/app/onboarding" replace />;
 
   return (
     <Screen tabBar={<BottomNav />} className="home">
@@ -103,17 +114,14 @@ export function HomeScreen() {
         </div>
       ) : (
         <>
-          {!mine.length && !invites.length && (
-            <section className="home__welcome" aria-label="Welcome">
-              {renderTemplate('welcome', { pactName: '', recipientName: user?.firstName }, 'h2')}
-            </section>
-          )}
+          {firstTime && <HomeFirstTime />}
+          {noneRunning && <HomeRepeat finished={finished} />}
           {featured && (
             <section className="screen-section" aria-label="Closing soonest">
               <FeaturedPactCard pact={featured} to={`/app/pact/${featured.id}`} />
             </section>
           )}
-          {mine.length > 0 && (
+          {mine.length > 0 && !noneRunning && (
           <section className="screen-section" aria-labelledby="your-pacts">
             <SectionHeading id="your-pacts" title="Your Pacts" action={mine.length > 1 ? { label: 'See all', to: '/app/pacts' } : undefined} />
             <div className="list-stack">

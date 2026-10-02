@@ -17,7 +17,7 @@ interface BaseProps {
 }
 
 type ButtonProps = BaseProps & ButtonHTMLAttributes<HTMLButtonElement> & { to?: undefined; href?: undefined };
-type LinkProps = BaseProps & { to: string; href?: undefined; onClick?: () => void; 'aria-label'?: string };
+type LinkProps = BaseProps & { to: string; href?: undefined; onClick?: () => void; 'aria-label'?: string; /** Router state, e.g. where the person came from. */ state?: unknown };
 type AnchorProps = BaseProps & { href: string; to?: undefined; onClick?: () => void; 'aria-label'?: string };
 
 const classes = ({ variant = "primary", size = "lg", fullWidth, loading, className }: Partial<BaseProps>) =>

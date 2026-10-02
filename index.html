@@ -35,11 +35,13 @@
     <!-- Crawlers want an absolute URL: set this to https://<your-domain>/brand/og.png when the domain is known. -->
     <meta property="og:image" content="/brand/og.png" />
     <meta name="twitter:card" content="summary_large_image" />
-    <style>/* First paint: the PACT loader, until the app takes over. Mirrors src/styles/loader.css. */ .pl { display: grid; place-items: center; animation: pl-in 0.4s ease-out 0.12s both; } .pl--full { position: fixed; inset: 0; z-index: 100; background: #f6f4ef; } .pl--inline { min-height: 60vh; min-height: 60dvh; } .pl__disc { width: min(48vw, 240px); height: min(48vw, 240px); overflow: visible; filter: drop-shadow(0 18px 24px rgba(15, 23, 19, 0.18)); } @media (min-width: 768px) { .pl__disc { width: 132px; height: 132px; } } .pl__mark { transform-box: view-box; transform-origin: 32px 32px; animation: pl-turn 5s cubic-bezier(0.55, 0.15, 0.35, 0.9) infinite; } .pl__mark path { fill: none; stroke: #3dd68c; stroke-width: 6.144; stroke-linecap: round; animation: pl-piece 1.4s ease-in-out infinite; } .pl__mark path:nth-child(2) { animation-delay: 0.18s; } .pl__mark path:nth-child(3) { animation-delay: 0.36s; } .pl__mark path:nth-child(4) { animation-delay: 0.54s; } @keyframes pl-turn { to { transform: rotate(360deg); } } @keyframes pl-piece { 0%, 100% { opacity: 0.3; } 40%, 70% { opacity: 1; } } @keyframes pl-in { from { opacity: 0; } } @media (prefers-reduced-motion: reduce) { .pl, .pl__mark, .pl__mark path { animation: none; } } html{background:#f6f4ef}html[data-theme=dark]{background:#0f1512}html[data-theme=dark] .pl--full{background:#0f1512}html[data-theme=dark] .pl__disc{filter:none;outline:1px solid #26322c;border-radius:50%}</style>
+    <!-- First paint: the PACT loader's stylesheet, inlined from src/styles/loader.css by vite.loader.ts. -->
+    <!--pact-loader-style-->
     <title>PACT · Money works better together</title>
   </head>
   <body>
-    <div id="root"><div class="pl pl--full" role="status" aria-label="Loading PACT"><svg class="pl__disc" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="32" fill="#0f1713"/><g class="pl__mark"><path d="M28.786 16.955A15.36 15.36 0 0 1 47.107 29.312"/><path d="M45.786 38.713A15.36 15.36 0 0 1 31.98 47.34"/><path d="M22.952 44.406A15.36 15.36 0 0 1 17.076 35.696"/><path d="M17.739 26.226A15.36 15.36 0 0 1 20.565 21.702"/></g></svg></div></div>
+    <!-- Replaced by React when the app mounts. Same loader, same source: see src/components/brand/loaderMarkup.ts. -->
+    <div id="root"><!--pact-loader--></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

@@ -1,22 +1,20 @@
 import { AlertCircle, RefreshCw } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Button } from '../ui/Button';
+import { loaderClass, loaderSvg } from '../brand/loaderMarkup';
 import '../../styles/loader.css';
 import './app-ui.css';
 
 /**
- * PACT's own loader: the app icon (dark disc, green loop) with its four pieces lighting up and the loop turning.
- * It is the same picture Android shows as its launch screen, so the two read as one moment. `full` covers the
- * screen (app start, route chunks, signing in); the default sits inside a screen waiting for its data.
+ * PACT's startup loader: the logo's four pieces light up and the loop turns, small and centred. `full` covers the screen
+ * (app start, lazy routes, signing in). The default sits inside a screen that is waiting; screens with a known shape
+ * should use their skeletons instead, and a small action its button's spinner.
+ *
+ * The markup comes from loaderSvg(), the same function that builds the loader in index.html, so the first paint before
+ * JavaScript and this component are one picture. The look is src/styles/loader.css.
  */
 export function Loading({ label = 'Loading', full = false }: { label?: string; full?: boolean }) {
-  return (
-    <div className={`pl ${full ? 'pl--full' : 'pl--inline'}`} role="status" aria-label={label}>
-      <svg className="pl__disc" viewBox="0 0 64 64" aria-hidden>
-        <circle cx="32" cy="32" r="32" fill="#0f1713" /><g className="pl__mark"><path d="M28.786 16.955A15.36 15.36 0 0 1 47.107 29.312" /><path d="M45.786 38.713A15.36 15.36 0 0 1 31.98 47.34" /><path d="M22.952 44.406A15.36 15.36 0 0 1 17.076 35.696" /><path d="M17.739 26.226A15.36 15.36 0 0 1 20.565 21.702" /></g>
-      </svg>
-    </div>
-  );
+  return <div className={loaderClass(full)} role="status" aria-label={label} dangerouslySetInnerHTML={{ __html: loaderSvg() }} />;
 }
 
 export function ErrorState({ message, onRetry }: { message?: string; onRetry?: () => void }) {

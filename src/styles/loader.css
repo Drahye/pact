@@ -1,62 +1,73 @@
 /* ==========================================================================
-   PACT loader. On Android the OS shows the app icon (dark disc, green loop) on the paper
-   background while the app starts, and cannot be animated. This picks up exactly there:
-   the same disc in the same place, then the four pieces light up one by one and the loop
-   turns, so the hand-off from the launch screen reads as one continuous moment.
-   Also inlined in index.html so it is on screen before any JavaScript arrives; keep the
-   two in step. Waits 120ms before appearing, so fast loads never flash.
+   PACT loader: the logo's four pieces light up one after another while the loop turns gently.
+   Restrained on purpose (56 to 88px), centred on the page background, with no tile or disc.
+
+   One design in two places. index.html shows it before any JavaScript arrives (the Vite plugin in
+   vite.loader.ts inlines this file and the markup from components/brand/loaderMarkup.ts), and React
+   shows the same markup with this same file once it mounts. The app start is the full-screen
+   version; a screen waiting for data uses skeletons, and a small action uses its button's spinner.
+
+   Colours are literal on purpose: this must paint before the design tokens have loaded. They match
+   the tokens (paper #f6f4ef, ink #0f1713, green #3dd68c, dark background #0f1512).
    ========================================================================== */
+
+/* The page colour from the very first paint, so there is no white flash before the app's CSS arrives.
+   The theme is set on <html> by the script in index.html before this paints. */
+html { background: #f6f4ef; }
+html[data-theme='dark'] { background: #0f1512; }
+
 .pl {
   display: grid;
   place-items: center;
-  animation: pl-in 0.4s ease-out 0.12s both;
+  color: #0f1713;
 }
 
+html[data-theme='dark'] .pl { color: #f6f4ef; }
+
+/* App start: appears at once, on the page colour. */
 .pl--full {
   position: fixed;
   inset: 0;
   z-index: 100;
-  background: var(--color-bg, #f6f4ef);
+  background: #f6f4ef;
+  animation: pl-in 0.35s ease-out both;
 }
 
+html[data-theme='dark'] .pl--full { background: #0f1512; }
+
+/* Inside a screen that is waiting: waits a beat so a quick load never flashes it. */
 .pl--inline {
-  min-height: 60vh;
-  min-height: 60dvh;
-}
-
-.pl__disc {
-  width: min(48vw, 240px);
-  height: min(48vw, 240px);
-  overflow: visible;
-  filter: drop-shadow(0 18px 24px rgba(15, 23, 19, 0.18));
-}
-
-@media (min-width: 768px) {
-  .pl__disc { width: 132px; height: 132px; }
+  min-height: 40vh;
+  min-height: 40dvh;
+  animation: pl-in 0.35s ease-out 0.15s both;
 }
 
 .pl__mark {
-  transform-box: view-box;
-  transform-origin: 32px 32px;
-  animation: pl-turn 5s cubic-bezier(0.55, 0.15, 0.35, 0.9) infinite;
+  width: clamp(56px, 18vw, 88px);
+  height: clamp(56px, 18vw, 88px);
+  overflow: visible;
+  transform-origin: 50% 50%;
+  animation: pl-turn 2.6s cubic-bezier(0.55, 0.15, 0.35, 0.9) infinite;
 }
 
 .pl__mark path {
   fill: none;
   stroke: #3dd68c;
-  stroke-width: 6.144;
+  stroke-width: 4.8;
   stroke-linecap: round;
-  animation: pl-piece 1.4s ease-in-out infinite;
+  animation: pl-piece 1.3s ease-in-out infinite;
 }
 
-.pl__mark path:nth-child(2) { animation-delay: 0.18s; }
-.pl__mark path:nth-child(3) { animation-delay: 0.36s; }
-.pl__mark path:nth-child(4) { animation-delay: 0.54s; }
+/* the longest piece takes the text colour, as in the logo; the others are the accent */
+.pl__mark path:nth-child(1) { stroke: currentColor; }
+.pl__mark path:nth-child(2) { animation-delay: 0.16s; }
+.pl__mark path:nth-child(3) { animation-delay: 0.32s; }
+.pl__mark path:nth-child(4) { animation-delay: 0.48s; }
 
 @keyframes pl-turn { to { transform: rotate(360deg); } }
 @keyframes pl-piece { 0%, 100% { opacity: 0.3; } 40%, 70% { opacity: 1; } }
 @keyframes pl-in { from { opacity: 0; } }
 
 @media (prefers-reduced-motion: reduce) {
-  .pl, .pl__mark, .pl__mark path { animation: none; }
+  .pl--full, .pl--inline, .pl__mark, .pl__mark path { animation: none; }
 }

@@ -23,6 +23,7 @@
   "include": [
     "src",
     "shared",
-    "vite.config.ts"
+    "vite.config.ts",
+    "vite.loader.ts"
   ]
 }

@@ -35,6 +35,13 @@ export const OtpVerifyBody = z.object({ phone, code: z.string().regex(/^\d{6}$/)
 export const PinResetBody = z.object({ code: z.string().regex(/^\d{6}$/), newPin: pin, via: z.enum(['phone', 'email']).optional() });
 export const PinResetRequestBody = z.object({ via: z.enum(['phone', 'email']).optional() });
 export const SetPinBody = z.object({ pin });
+export const EmailLinkVerifyBody = z.object({ email: z.string().trim().min(3).max(254), code: z.string().regex(/^\d{6}$/), pin: pin.optional() });
+export const PhoneLinkRequestBody = z.object({ phone });
+export const PhoneLinkVerifyBody = z.object({ phone, code: z.string().regex(/^\d{6}$/) });
+export const UnlinkBody = z.object({ pin: pin.optional() });
+export const GoogleLinkBody = z.object({ returnTo: z.string().max(300).optional() });
+/** Closing an account asks for the PIN; someone who never needed one confirms in words instead. */
+export const CloseAccountBody = z.object({ pin: pin.optional(), confirm: z.string().max(40).optional() });
 export const EmailRequestBody = z.object({ email: z.string().trim().min(3).max(254) });
 export const EmailVerifyBody = z.object({ email: z.string().trim().min(3).max(254), code: z.string().regex(/^\d{6}$/), device: text(0, 80).optional() });
 export const SignupBody = z.object({
@@ -565,6 +572,16 @@ export interface MeDTO extends PersonDTO {
   hasPin: boolean;
   referralCode: string;
   createdAt: string;
+}
+
+/** How an account is reached, for Profile. Never provider subjects or ids. */
+export interface AccountDTO {
+  email: { address: string } | null;
+  google: { connected: boolean; email: string | null };
+  phone: { number: string } | null;
+  hasPin: boolean;
+  /** How many ways in the account has. The last one cannot be removed. */
+  signInMethods: number;
 }
 
 export interface AuthTokensDTO {

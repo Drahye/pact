@@ -1,5 +1,7 @@
 import { FlaskConical } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { useAccount } from '../../../api/account';
 import { useAuth } from '../../../api/auth';
 import { ApiError } from '../../../api/client';
 import { useProfileActions } from '../../../api/hooks';
@@ -9,13 +11,17 @@ import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { Modal } from '../../../components/ui/Modal';
 import { useToast } from '../../../components/ui/Toast';
-import { formatPhone } from '../../../lib/format';
 
 type Step = 'intro' | 'code' | 'new' | 'confirm';
 
-/** Forgotten PIN: proven with a fresh SMS code to your own number, then a 24-hour withdrawal hold. */
+/** Forgotten PIN: proven with a fresh code sent to your verified phone or email, then a 24-hour withdrawal hold. */
 export function ResetPinSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { user, config } = useAuth();
+  const { config } = useAuth();
+  const account = useAccount();
+  const [via, setVia] = useState<'phone' | 'email'>();
+  const [sentTo, setSentTo] = useState('');
+  const hasPhone = !!account.data?.phone;
+  const hasEmail = !!(account.data?.email || account.data?.google.email);
   const { requestPinReset, resetPin } = useProfileActions();
   const toast = useToast();
   const [step, setStep] = useState<Step>('intro');
@@ -33,10 +39,12 @@ export function ResetPinSheet({ open, onClose }: { open: boolean; onClose: () =>
     }
   }, [open]);
 
-  const send = async () => {
+  const send = async (channel: 'phone' | 'email') => {
     setError(null);
     try {
-      const r = await requestPinReset.mutateAsync();
+      const r = await requestPinReset.mutateAsync(channel);
+      setVia(r.via);
+      setSentTo(r.sentTo);
       setDevCode(r.devCode);
       setStep('code');
     } catch (err) {
@@ -55,7 +63,7 @@ export function ResetPinSheet({ open, onClose }: { open: boolean; onClose: () =>
       return 'Those didn’t match. Choose your new PIN again.';
     }
     try {
-      await resetPin.mutateAsync({ code, newPin: value });
+      await resetPin.mutateAsync({ code, newPin: value, via });
       toast('PIN reset');
       onClose();
     } catch (err) {
@@ -73,12 +81,21 @@ export function ResetPinSheet({ open, onClose }: { open: boolean; onClose: () =>
       open={open}
       onClose={onClose}
       title={titles[step]}
-      description={step === 'intro' ? 'We’ll text a code to your number to make sure it’s you.' : step === 'code' ? `Sent to ${user ? formatPhone(user.phone) : 'your phone'}.` : undefined}
+      description={step === 'intro' ? 'We’ll send a code to your verified phone or email to make sure it’s you.' : step === 'code' ? `Sent to ${sentTo}.` : undefined}
       footer={
         step === 'intro' ? (
-          <Button fullWidth onClick={send} loading={requestPinReset.isPending}>
-            Text me a code
-          </Button>
+          <>
+            {hasPhone && (
+              <Button fullWidth onClick={() => send('phone')} loading={requestPinReset.isPending}>
+                Text me a code
+              </Button>
+            )}
+            {hasEmail && (
+              <Button fullWidth variant={hasPhone ? 'secondary' : 'primary'} onClick={() => send('email')} loading={requestPinReset.isPending}>
+                Email me a code
+              </Button>
+            )}
+          </>
         ) : step === 'code' ? (
           <Button fullWidth disabled={code.length !== 6} onClick={() => setStep('new')}>
             Continue
@@ -89,6 +106,11 @@ export function ResetPinSheet({ open, onClose }: { open: boolean; onClose: () =>
       {step === 'intro' && (
         <div className="sheet-form">
           <Notice>For your safety, withdrawals and bank changes pause for 24 hours after a reset, and your other devices are signed out.</Notice>
+          {!hasPhone && !hasEmail && !account.isLoading && (
+            <Notice tone="sun">
+              You need a verified phone or email to reset your PIN. <Link to="/app/profile/account" className="link" onClick={onClose}>Add one in Account and sign-in</Link>.
+            </Notice>
+          )}
           {error && <p className="field__error">{error}</p>}
         </div>
       )}
@@ -97,7 +119,7 @@ export function ResetPinSheet({ open, onClose }: { open: boolean; onClose: () =>
           <Input label="6-digit code" inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))} className="num" />
           {devCode && config?.exposeDevCodes && (
             <Notice tone="sun" icon={<FlaskConical />}>
-              Sandbox: your code is <strong className="num">{devCode}</strong>.{' '}
+              Sandbox: no message is sent. Your code is <strong className="num">{devCode}</strong>.{' '}
               <button type="button" className="link" onClick={() => setCode(devCode)}>
                 Fill it in
               </button>

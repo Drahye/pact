@@ -179,6 +179,15 @@ describe('Google sign-in flow', () => {
     assert.ok(!r.location.includes('bad code'));
   });
 
+  it('keeps the intended destination for an Ask, Plan, Split and Circle link, with no Home detour', async () => {
+    const token = 'k'.repeat(43);
+    for (const [i, path] of [`/a/${token}`, `/p/${token}`, `/s/${token}`, `/app/c/${token}`].entries()) {
+      const r = await run(claims(`dest-${i}`), { returnTo: path });
+      assert.ok(r.location.includes(`to=${encodeURIComponent(path)}`), `${path} survives the round trip`);
+      assert.ok(!r.location.includes('/app/home'));
+    }
+  });
+
   it('refuses a return path outside the app', async () => {
     const r = await run(claims('evil-return'), { returnTo: 'https://evil.example/steal' });
     assert.ok(!r.location.includes('evil'));

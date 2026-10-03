@@ -7,6 +7,7 @@ import { ApiError } from '../../../api/client';
 import { useProfileActions } from '../../../api/hooks';
 import { Notice } from '../../../components/app/States';
 import { Badge } from '../../../components/ui/Badge';
+import { PhoneRequired } from '../../../components/app/PhoneRequired';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { TopBar } from '../../../components/ui/TopBar';
@@ -50,6 +51,7 @@ export function VerifyScreen() {
         )
       }
     >
+      <PhoneRequired what="verify your identity" />
       <h1 className="large-title">{verified ? 'You’re verified' : 'Verify your identity'}</h1>
       <p className="screen-lede">
         {verified

@@ -18,6 +18,7 @@ import { askPreviewText, injectOg, planPreviewText, splitPreviewText, unavailabl
 import { postgresRateLimitStore, rateLimitKey } from './lib/rateLimitStore.js';
 import { AppError, badRequest, conflict, notFound, unauthorized } from './lib/errors.js';
 import * as auth from './modules/auth.js';
+import * as account from './modules/account.js';
 import * as asks from './modules/asks.js';
 import * as googleAuth from './modules/googleAuth.js';
 import * as circles from './modules/circles.js';
@@ -480,6 +481,26 @@ export async function buildApp({ config, db, provider, sms, email, google, push,
           await auth.setupPin(ctx, req.userId, parse(C.SetPinBody, req.body).pin, meta(req));
           return { ok: true };
         });
+        /* ---------- how this account is reached: connect and disconnect Google, email and phone (each acts only on the signed-in person) */
+        priv.get('/me/account', async (req) => account.getAccount(ctx, req.userId));
+        priv.post('/me/identities/email/request', strict(5, 15), async (req) => account.requestEmailLink(ctx, req.userId, parse(C.EmailRequestBody, req.body).email, meta(req)));
+        priv.post('/me/identities/email/verify', strict(10, 15), async (req) => {
+          const body = parse(C.EmailLinkVerifyBody, req.body);
+          return account.verifyEmailLink(ctx, req.userId, body.email, body.code, body.pin, meta(req));
+        });
+        priv.post('/me/identities/phone/request', strict(5, 15), async (req) => account.requestPhoneLink(ctx, req.userId, parse(C.PhoneLinkRequestBody, req.body).phone, meta(req)));
+        priv.post('/me/identities/phone/verify', strict(10, 15), async (req) => {
+          const body = parse(C.PhoneLinkVerifyBody, req.body);
+          return account.verifyPhoneLink(ctx, req.userId, body.phone, body.code, meta(req));
+        });
+        priv.post('/me/identities/google/start', strict(10, 15), async (req, reply) => {
+          const { state, url } = await googleAuth.startGoogle(ctx, { mode: 'link', userId: req.userId, returnTo: parse(C.GoogleLinkBody, req.body).returnTo });
+          reply.setCookie(googleAuth.GOOGLE_STATE_COOKIE, state, { httpOnly: true, secure: config.isProd, sameSite: 'lax', path: '/api/auth/google', maxAge: 600 });
+          return { url };
+        });
+        priv.delete<{ Params: { provider: string } }>('/me/identities/:provider', strict(10, 15), async (req) =>
+          account.unlink(ctx, req.userId, z.enum(['google', 'email', 'phone']).parse(req.params.provider), parse(C.UnlinkBody, req.body).pin, meta(req)),
+        );
         priv.post('/me/pin/reset/request', strict(3, 15), async (req) => auth.requestPinReset(ctx, req.userId, meta(req), parse(C.PinResetRequestBody, req.body ?? {}).via));
         priv.post('/me/pin/reset', strict(5, 15), async (req) => {
           const body = parse(C.PinResetBody, req.body);
@@ -492,7 +513,10 @@ export async function buildApp({ config, db, provider, sms, email, google, push,
           return users.exportData(ctx, req.userId);
         });
         priv.post('/me/close', strict(3, 60), async (req, reply) => {
-          await auth.verifyPin(ctx, req.userId, parse(C.PinBody, req.body).pin, meta(req));
+          const body = parse(C.CloseAccountBody, req.body);
+          // The PIN when there is one; someone who never needed a PIN confirms in words instead.
+          if ((await auth.getUser(ctx.db, req.userId)).pin_hash) await auth.verifyPin(ctx, req.userId, body.pin ?? '', meta(req));
+          else if (body.confirm?.trim().toLowerCase() !== 'close my account') throw badRequest('confirmation_required', 'Type “close my account” to confirm.');
           await users.closeAccount(ctx, req.userId, meta(req));
           reply.clearCookie(REFRESH_COOKIE, { path: '/api/auth' });
           return { ok: true };

@@ -4,6 +4,7 @@ import { useBankAccounts, useRemoveBankAccount } from '../../../api/hooks';
 import { Empty } from '../../../components/app/States';
 import { RowListSkeleton } from '../../../components/app/Skeleton';
 import { Badge } from '../../../components/ui/Badge';
+import { PhoneRequired } from '../../../components/app/PhoneRequired';
 import { Button } from '../../../components/ui/Button';
 import { IconButton } from '../../../components/ui/IconButton';
 import { TopBar } from '../../../components/ui/TopBar';
@@ -26,6 +27,7 @@ export function BankAccountsScreen() {
         </Button>
       }
     >
+      <PhoneRequired what="add a bank account" />
       {accounts.isLoading ? (
         <RowListSkeleton count={3} trailing={false} label="Loading bank accounts" />
       ) : !accounts.data?.length ? (

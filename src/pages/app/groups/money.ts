@@ -5,5 +5,6 @@ export { TopupStatusScreen } from '../wallet/TopupStatusScreen';
 export { WalletScreen } from '../wallet/WalletScreen';
 export { WithdrawScreen } from '../wallet/WithdrawScreen';
 export { BankAccountsScreen } from '../profile/BankAccountsScreen';
+export { AccountScreen } from '../profile/AccountScreen';
 export { SecurityScreen } from '../profile/SecurityScreen';
 export { VerifyScreen } from '../profile/VerifyScreen';

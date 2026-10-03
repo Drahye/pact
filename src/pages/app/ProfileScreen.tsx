@@ -1,5 +1,5 @@
 import { TopBar } from '../../components/ui/TopBar';
-import { BadgeCheck, ChevronRight, Download, FileText, Gift, Handshake, Landmark, LifeBuoy, LockKeyhole, LogOut, ShieldCheck, Smartphone, UserX, Wallet as WalletIcon } from 'lucide-react';
+import { BadgeCheck, ChevronRight, Download, FileText, Gift, Handshake, Landmark, LifeBuoy, LockKeyhole, LogOut, ShieldCheck, Smartphone, UserRound, UserX, Wallet as WalletIcon } from 'lucide-react';
 import { useState } from 'react';
 import { IosInstallSheet } from '../../components/pwa/InstallPactPrompt';
 import { usePwaInstall } from '../../hooks/usePwaInstall';
@@ -77,7 +77,7 @@ export function ProfileScreen() {
         <h1 className="large-title">
           {user.firstName} {user.lastName}
         </h1>
-        <p className="profile__phone num">{formatPhone(user.phone)}</p>
+        {user.phone && <p className="profile__phone num">{formatPhone(user.phone)}</p>}
         <div className="profile__stats">
           <span>
             <strong className="num">{mine.length}</strong> Pacts
@@ -118,6 +118,15 @@ export function ProfileScreen() {
       </div>
 
       <PushSetting />
+
+      <p className="menu-label">Account</p>
+      <div className="menu">
+        <Link to="/app/profile/account" className="menu__row">
+          <span className="menu__icon tint--sky"><UserRound /></span>
+          <span className="menu__text"><span className="menu__title">Account and sign-in</span><span className="menu__sub">Email, Google and phone</span></span>
+          <span className="menu__end"><ChevronRight /></span>
+        </Link>
+      </div>
 
       <p className="menu-label">Payments</p>
       <div className="menu">

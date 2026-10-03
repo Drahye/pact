@@ -10,6 +10,10 @@ export interface AuthFlow {
   firstName?: string;
   lastName?: string;
   referralCode?: string;
+  /** Which sign-in the name screen follows, and the masked address shown while a code is awaited. Never the code or a credential. */
+  via?: 'phone' | 'email' | 'google';
+  email?: string;
+  maskedEmail?: string;
 }
 
 const KEY = 'pact.authFlow';
@@ -82,3 +86,12 @@ export const takeReturnTo = () => {
  */
 export const safeAppPath = (raw: string | null | undefined): string | null =>
   raw && (/^\/app\/[A-Za-z0-9/_\-?=&%.]*$/.test(raw) || /^\/[apsr]\/[A-Za-z0-9_-]{16,64}$/.test(raw)) && !raw.includes('//') && !raw.includes('\\') ? raw : null;
+
+/** The in-app destination chosen before leaving for sign-in, if any (no default): it travels to Google and back in server-held state. */
+export const pendingReturnTo = () => {
+  try {
+    return safeAppPath(sessionStorage.getItem(RETURN_KEY));
+  } catch {
+    return null;
+  }
+};

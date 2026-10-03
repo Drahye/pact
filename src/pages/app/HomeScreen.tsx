@@ -6,6 +6,7 @@ import { trackHome, useHome } from '../../api/home';
 import { usePacts, useNotifications } from '../../api/hooks';
 import { HomeFirstTime } from '../../features/onboarding/HomeStates';
 import { introSeen } from '../../features/onboarding/store';
+import { SignInUpgradePrompt } from '../../components/app/SignInUpgradePrompt';
 import { PushPrompt } from '../../components/app/PushPrompt';
 import { ErrorState, Notice } from '../../components/app/States';
 import { PactListSkeleton } from '../../components/app/Skeleton';
@@ -81,6 +82,7 @@ export function HomeScreen() {
       </LargeTitle>
 
       <PushPrompt hasPact={mine.length > 0} />
+      <SignInUpgradePrompt />
 
       {stale && (
         <Notice tone="neutral">

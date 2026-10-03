@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { MIN_WITHDRAWAL, TIER_LIMITS, WITHDRAWAL_FEE } from '../../../../shared/policy';
 import { newIdempotencyKey } from '../../../api/client';
 import { useBankAccounts, useWallet, useWithdraw, useWithdrawal } from '../../../api/hooks';
+import { PhoneRequired } from '../../../components/app/PhoneRequired';
 import { PinSheet } from '../../../components/app/PinSheet';
 import { Notice } from '../../../components/app/States';
 import { RowListSkeleton } from '../../../components/app/Skeleton';
@@ -99,6 +100,7 @@ export function WithdrawScreen() {
       className="topup"
     >
       <h1 className="large-title">Withdraw to bank</h1>
+      <PhoneRequired what="withdraw" />
       <p className="screen-lede">
         Available <span className="num">{formatNairaKobo(balance)}</span>
       </p>

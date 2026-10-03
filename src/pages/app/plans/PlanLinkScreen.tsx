@@ -90,7 +90,7 @@ export function PlanLinkScreen() {
   const continueToSignIn = () => {
     setReturnTo(`/p/${token}`);
     setSheet(false);
-    navigate('/app/auth/phone');
+    navigate('/app/auth/welcome');
   };
   const doJoin = async () => {
     try {
@@ -134,7 +134,7 @@ export function PlanLinkScreen() {
     if (!signedIn) {
       write(key(token, 'join'), '1');
       setReturnTo(`/p/${token}`);
-      navigate('/app/auth/phone');
+      navigate('/app/auth/welcome');
       return;
     }
     void doJoin();

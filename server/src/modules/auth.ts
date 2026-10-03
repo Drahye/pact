@@ -186,10 +186,10 @@ export async function revokeAllSessions(ctx: Ctx, userId: string, exceptSessionI
 
 const otpHash = (ctx: Ctx, phone: string, code: string) => keyedHash(ctx.config.HASH_SECRET, `otp:${phone}:${code}`);
 
-type OtpPurpose = 'login' | 'pin_reset';
+type OtpPurpose = 'login' | 'pin_reset' | 'link';
 
 /** Sends a code bound to one purpose, so a sign-in code can never reset a PIN and vice versa. */
-async function issueOtp(ctx: Ctx, phone: string, purpose: OtpPurpose, meta: ReqMeta) {
+export async function issueOtp(ctx: Ctx, phone: string, purpose: OtpPurpose, meta: ReqMeta) {
   const recent = await ctx.db.query<{ by_phone: number; by_phone_ip: number; by_ip: number }>(
     `SELECT
        COUNT(*) FILTER (WHERE phone = $1 AND created_at > now() - make_interval(mins => $3))::int AS by_phone,
@@ -216,7 +216,7 @@ async function issueOtp(ctx: Ctx, phone: string, purpose: OtpPurpose, meta: ReqM
 }
 
 /** Checks a code. Failures are counted and audited; returns normally only on success. */
-async function consumeOtp(ctx: Ctx, phone: string, code: string, purpose: OtpPurpose, meta: ReqMeta) {
+export async function consumeOtp(ctx: Ctx, phone: string, code: string, purpose: OtpPurpose, meta: ReqMeta) {
   const verified = await ctx.db.tx(async (q) => {
     const r = await q.query<{ id: string; code_hash: string; attempts: number }>(
       `SELECT id, code_hash, attempts FROM otp_challenges

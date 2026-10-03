@@ -7,6 +7,7 @@ import { AppError, badRequest, notFound } from '../lib/errors.js';
 import { formatNgn } from '../lib/money.js';
 import { lagosDayStart } from '../lib/time.js';
 import { assertNoResetHold, getUser, verifyPin } from './auth.js';
+import { assertPhoneVerified } from './account.js';
 import { userIdentities } from './identities.js';
 import { post, systemAccountId, walletAccountId } from './ledger.js';
 import { applyDirectPayment, assertCanPayInto } from './pacts.js';
@@ -286,6 +287,7 @@ export async function listBankAccounts(ctx: Ctx, userId: string): Promise<BankAc
 }
 
 export async function addBankAccount(ctx: Ctx, userId: string, input: { bankCode: string; accountNumber: string; pin: string }, meta: ReqMeta) {
+  await assertPhoneVerified(ctx, userId);
   await verifyPin(ctx, userId, input.pin, meta);
   const user = await getUser(ctx.db, userId);
   assertNoResetHold(ctx, user);
@@ -350,6 +352,7 @@ async function toWithdrawal(q: Queryable, w: WithdrawalRow): Promise<WithdrawalD
 }
 
 export async function withdraw(ctx: Ctx, userId: string, input: { amount: number; bankAccountId: string; pin: string }, meta: ReqMeta): Promise<WithdrawalDTO> {
+  await assertPhoneVerified(ctx, userId);
   await verifyPin(ctx, userId, input.pin, meta);
   const user = await getUser(ctx.db, userId);
   assertNoResetHold(ctx, user);

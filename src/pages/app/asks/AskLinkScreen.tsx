@@ -98,7 +98,7 @@ export function AskLinkScreen() {
     recordAskStep(token, 'auth_started');
     setReturnTo(`/a/${token}`);
     setSheet(false);
-    navigate('/app/auth/phone');
+    navigate('/app/auth/welcome');
   };
 
   const doJoin = async () => {
@@ -154,7 +154,7 @@ export function AskLinkScreen() {
       write(key(token, 'join'), '1');
       setReturnTo(`/a/${token}`);
       recordAskStep(token, 'auth_started');
-      navigate('/app/auth/phone');
+      navigate('/app/auth/welcome');
       return;
     }
     void doJoin();

@@ -2,8 +2,10 @@ import { KeyRound, LifeBuoy, LogOut, Monitor, Smartphone } from 'lucide-react';
 import { ResetPinSheet } from './ResetPinSheet';
 import { useState } from 'react';
 import { ApiError } from '../../../api/client';
+import { useAuth } from '../../../api/auth';
 import { useProfileActions, useSessions } from '../../../api/hooks';
 import { PinPad } from '../../../components/app/PinPad';
+import { PinSheet } from '../../../components/app/PinSheet';
 import { RowListSkeleton } from '../../../components/app/Skeleton';
 import { Button } from '../../../components/ui/Button';
 import { Modal } from '../../../components/ui/Modal';
@@ -27,6 +29,8 @@ export function SecurityScreen() {
   const [error, setError] = useState<string | null>(null);
   const [errorKey, setErrorKey] = useState(0);
   const [resetOpen, setResetOpen] = useState(false);
+  const [setupOpen, setSetupOpen] = useState(false);
+  const { user } = useAuth();
 
   const close = () => {
     setOpen(false);
@@ -68,21 +72,34 @@ export function SecurityScreen() {
     <Screen topBar={<TopBar backTo="/app/profile" title="PIN and devices" />}>
       <p className="menu-label">Transaction PIN</p>
       <div className="menu">
-        <button type="button" className="menu__row" onClick={() => setOpen(true)}>
-          <span className="menu__icon tint--mint"><KeyRound /></span>
-          <span className="menu__text">
-            <span className="menu__title">Change PIN</span>
-            <span className="menu__sub">Used to approve every payment</span>
-          </span>
-        </button>
-        <button type="button" className="menu__row" onClick={() => setResetOpen(true)}>
-          <span className="menu__icon tint--sun"><LifeBuoy /></span>
-          <span className="menu__text">
-            <span className="menu__title">Forgot your PIN?</span>
-            <span className="menu__sub">Reset it with a code sent to your number</span>
-          </span>
-        </button>
+        {user && !user.hasPin ? (
+          <button type="button" className="menu__row" onClick={() => setSetupOpen(true)}>
+            <span className="menu__icon tint--mint"><KeyRound /></span>
+            <span className="menu__text">
+              <span className="menu__title">Set up your PIN</span>
+              <span className="menu__sub">Asked for when you move money or change something sensitive</span>
+            </span>
+          </button>
+        ) : (
+          <>
+            <button type="button" className="menu__row" onClick={() => setOpen(true)}>
+              <span className="menu__icon tint--mint"><KeyRound /></span>
+              <span className="menu__text">
+                <span className="menu__title">Change PIN</span>
+                <span className="menu__sub">Used to approve payments and sensitive changes</span>
+              </span>
+            </button>
+            <button type="button" className="menu__row" onClick={() => setResetOpen(true)}>
+              <span className="menu__icon tint--sun"><LifeBuoy /></span>
+              <span className="menu__text">
+                <span className="menu__title">Forgot your PIN?</span>
+                <span className="menu__sub">Reset it with a code sent to your verified phone or email</span>
+              </span>
+            </button>
+          </>
+        )}
       </div>
+      <PinSheet open={setupOpen} onClose={() => setSetupOpen(false)} onSubmit={async () => (setSetupOpen(false), toast('PIN set'))} />
       <ResetPinSheet open={resetOpen} onClose={() => setResetOpen(false)} />
 
       <p className="menu-label">Signed in on</p>

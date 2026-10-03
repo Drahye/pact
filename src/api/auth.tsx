@@ -16,6 +16,8 @@ export interface ServerConfig {
   exposeDevCodes: boolean;
   /** Browser push: whether the server can send it, and the public key a browser subscribes with. */
   push?: { enabled: boolean; publicKey: string | null };
+  /** Which sign-in methods this server offers. Google appears only when it is configured. */
+  auth?: { google: boolean; email: boolean };
 }
 
 interface AuthValue {
@@ -24,7 +26,13 @@ interface AuthValue {
   config: ServerConfig | null;
   requestOtp: (phone: string) => Promise<{ phone: string; expiresInSec: number; devCode?: string }>;
   verifyOtp: (phone: string, code: string) => Promise<OtpVerifyDTO>;
-  signup: (input: { firstName: string; lastName: string; pin: string; referralCode?: string }) => Promise<void>;
+  requestEmail: (email: string) => Promise<{ email: string; expiresInSec: number; devCode?: string }>;
+  verifyEmail: (email: string, code: string) => Promise<OtpVerifyDTO>;
+  /** Starts Google sign-in; the browser is then sent to the returned address. */
+  startGoogle: (returnTo?: string) => Promise<{ url: string }>;
+  /** After Google sends the browser back: collect the session the server just set up. */
+  completeRedirectSignIn: () => Promise<boolean>;
+  signup: (input: { firstName: string; lastName: string; pin?: string; referralCode?: string }) => Promise<void>;
   signOut: () => Promise<void>;
   setUser: (u: MeDTO) => void;
   /** Why the last session ended. Only an expired session should bring the next sign-in back to the same page. */
@@ -135,6 +143,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const out = await api<OtpVerifyDTO>('POST', '/auth/otp/verify', { phone, code, device: deviceName() });
         if (out.status === 'signed_in') accept(out);
         return out;
+      },
+      requestEmail: (email) => api('POST', '/auth/email/request', { email }),
+      verifyEmail: async (email, code) => {
+        const out = await api<OtpVerifyDTO>('POST', '/auth/email/verify', { email, code, device: deviceName() });
+        if (out.status === 'signed_in') accept(out);
+        return out;
+      },
+      startGoogle: (returnTo) => api('POST', '/auth/google/start', returnTo ? { returnTo } : {}),
+      completeRedirectSignIn: async () => {
+        const t = await refreshSession();
+        if (t && t !== 'offline') {
+          accept(t);
+          return true;
+        }
+        return false;
       },
       signup: async (input) => accept(await api<AuthTokensDTO>('POST', '/auth/signup', input)),
       signOut: async () => {

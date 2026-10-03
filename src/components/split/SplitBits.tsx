@@ -11,8 +11,8 @@ export const progressText = (s: Pick<SplitSummaryDTO, 'status' | 'owedCount' | '
   s.status === 'cancelled' ? 'Cancelled' : s.status === 'settled' ? 'All settled' : `${s.settledCount} of ${s.owedCount} settled`;
 
 /** Owes / Settled, always as words with a mark, never colour alone. */
-export function ShareStatus({ status, payer }: { status: 'owed' | 'settled'; payer?: boolean }) {
-  if (payer) return <span className="split-status split-status--paid">Paid</span>;
+export function ShareStatus({ status, payer }: { status: 'not_applicable' | 'owed' | 'settled'; payer?: boolean }) {
+  if (payer || status === 'not_applicable') return <span className="split-status split-status--paid">Paid originally</span>;
   return status === 'settled' ? (
     <span className="split-status split-status--settled">
       Settled <Check aria-hidden strokeWidth={3} />

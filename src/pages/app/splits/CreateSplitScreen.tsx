@@ -123,12 +123,12 @@ export function CreateSplitScreen() {
   const next = () => (last ? void submit() : setStep(steps[idx + 1]));
   const name = (id: string) => (id === me ? 'You' : getUser(id).name);
 
-  const heading = { circle: 'Which Circle?', title: 'What are we splitting?', amount: 'How much?', who: 'Who paid, and who’s sharing?', review: 'Split it' }[step];
+  const heading = { circle: 'Which Circle?', title: 'What are we splitting?', amount: 'How much?', who: 'Who paid?', review: 'Split it' }[step];
   const sub = {
     circle: 'Who is this split with?',
     title: 'Something that already happened.',
     amount: 'The whole amount that was paid.',
-    who: 'Tick everyone who shares the cost. The person who paid can be one of them.',
+    who: 'Then pick who the expense was for.',
     review: 'Check it, then create it.',
   }[step];
 
@@ -189,7 +189,8 @@ export function CreateSplitScreen() {
               </div>
             </fieldset>
             <fieldset style={{ border: 0, padding: 0, margin: 0 }}>
-              <legend className="field__label">Sharing the cost</legend>
+              <legend className="field__label">Who was this expense for?</legend>
+              <p className="split-note">Select everyone whose share should be included. This may include the payer.</p>
               <ul className="split-pick">
                 {members.map((id) => {
                   const on = included.includes(id);
@@ -205,7 +206,7 @@ export function CreateSplitScreen() {
                 })}
               </ul>
             </fieldset>
-            {others.length < 1 && <p className="split-note">Pick at least one person besides whoever paid.</p>}
+            {others.length < 1 && <p className="split-note">Add at least one other person to split this with.</p>}
           </>
         )}
 
@@ -247,7 +248,7 @@ export function CreateSplitScreen() {
                     <Avatar userId={id} size="sm" label={false} />
                     <span className="split-row__who">
                       <span className="split-row__name">{name(id)}</span>
-                      {id === paidBy && <span className="split-note">Paid</span>}
+                      {id === paidBy && <span className="split-note">Paid originally</span>}
                     </span>
                     <span className="split-row__amount">{koboText(amountFor(id))}</span>
                   </li>

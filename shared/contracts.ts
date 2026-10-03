@@ -304,7 +304,8 @@ export interface SplitShareDTO {
   userId: string;
   /** Kobo. */
   amount: number;
-  status: 'owed' | 'settled';
+  /** The payer's own portion is 'not_applicable': they paid it originally, so it is neither owed nor settled. */
+  status: 'not_applicable' | 'owed' | 'settled';
   /** The person who paid: their own share is never "owed". */
   isPayer: boolean;
   settledAt: string | null;
@@ -327,10 +328,12 @@ export interface SplitSummaryDTO {
   /** People who owe the payer (the payer's own share is not counted). */
   owedCount: number;
   settledCount: number;
+  /** Kobo the payer is owed in all: every allocation except the payer's own. */
+  owedTotal: number;
   /** Kobo still unsettled. */
   unsettled: number;
   /** The viewer's own share, if they have one. */
-  mine: { amount: number; status: 'owed' | 'settled'; isPayer: boolean } | null;
+  mine: { amount: number; status: 'not_applicable' | 'owed' | 'settled'; isPayer: boolean } | null;
   createdAt: string;
   settledAt: string | null;
 }
@@ -355,7 +358,7 @@ export interface SplitLinkDTO {
   paidBy: string;
   owedCount: number;
   settledCount: number;
-  mine: { amount: number; status: 'owed' | 'settled'; isPayer: boolean } | null;
+  mine: { amount: number; status: 'not_applicable' | 'owed' | 'settled'; isPayer: boolean } | null;
   signedIn: boolean;
   isMember: boolean;
   canJoinCircle: boolean;

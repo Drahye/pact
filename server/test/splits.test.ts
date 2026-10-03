@@ -66,7 +66,7 @@ describe('Splits', () => {
     assert.deepEqual([d.status, d.paidBy === ana.user.id, d.owedCount, d.settledCount, d.unsettled], ['open', true, 4, 0, 50_000_00]);
     assert.deepEqual(d.shares.map((s: { amount: number }) => s.amount), [12_500_00, 12_500_00, 12_500_00, 12_500_00, 12_500_00]);
     const mine = d.shares.find((s: { userId: string }) => s.userId === ana.user.id);
-    assert.deepEqual([mine.isPayer, mine.status, mine.canChange], [true, 'settled', false], 'Ana does not owe herself');
+    assert.deepEqual([mine.isPayer, mine.status, mine.canChange], [true, 'not_applicable', false], 'Ana does not owe herself, and no settlement is faked for her');
     assert.equal(d.shareToken.length, 43);
   });
 
@@ -76,7 +76,7 @@ describe('Splits', () => {
     const other = (await create(ana, { title: 'Pitch', total: 30_000_00, paidBy: ben.user.id, participants: peopleOf(ana, ben, cleo) })).body.data;
     assert.equal(other.paidBy, ben.user.id);
     assert.deepEqual([other.owedCount, other.unsettled], [2, 20_000_00]);
-    assert.equal(other.shares.find((s: { userId: string }) => s.userId === ben.user.id).status, 'settled');
+    assert.equal(other.shares.find((s: { userId: string }) => s.userId === ben.user.id).status, 'not_applicable');
   });
 
   it('custom split: must add up exactly', async () => {
@@ -102,6 +102,32 @@ describe('Splits', () => {
     const tamper = await create(ana, { title: 'Tamper', total: 9_000_00, mode: 'equal', participants: [{ userId: ben.user.id, amount: 1 }, { userId: cleo.user.id, amount: 1 }] });
     assert.deepEqual(tamper.body.data.shares.map((s: { amount: number }) => s.amount), [4_500_00, 4_500_00], 'the server does the arithmetic');
     assert.equal((await create(zed, { title: 'x', total: 5_000_00, participants: peopleOf(ben) })).status, 404, 'not your Circle');
+  });
+
+  it('participants are not debtors: the payer in or out, derived totals, and the denominators', async () => {
+    // Payer included: ₦60,000 for four, Ana paid.
+    const a = (await create(ana, { title: 'Four', total: 60_000_00, participants: peopleOf(ana, ben, cleo, dan) })).body.data;
+    assert.deepEqual([a.shares.length, a.owedCount, a.owedTotal, a.unsettled], [4, 3, 45_000_00, 45_000_00], 'owed back is 45,000, not 60,000');
+    const row = await t.db.query(`SELECT status, settled_at, settled_by FROM split_shares WHERE split_id = $1 AND user_id = $2`, [a.id, ana.user.id]);
+    assert.deepEqual([row.rows[0].status, row.rows[0].settled_at, row.rows[0].settled_by], ['not_applicable', null, null]);
+    assert.equal((await t.call('GET', `/splits/${a.id}`, tok(ana))).body.data.activity.filter((x: { kind: string }) => x.kind === 'settled').length, 0, 'no settlement event for the payer');
+    const one = await t.call('PUT', `/splits/${a.id}/shares/${ben.user.id}`, tok(ben), { settled: true });
+    assert.deepEqual([one.body.data.settledCount, one.body.data.owedCount, one.body.data.unsettled, one.body.data.status], [1, 3, 30_000_00, 'open'], '1 of 3, not 2 of 4');
+    // Payer not included: a gift for three, no allocation row for the payer.
+    const g = (await create(ana, { title: 'Gift', total: 30_000_00, participants: peopleOf(ben, cleo, dan) })).body.data;
+    assert.deepEqual([g.shares.length, g.owedTotal, g.shares.map((x: { amount: number }) => x.amount)], [3, 30_000_00, [10_000_00, 10_000_00, 10_000_00]]);
+    assert.equal((await t.db.query('SELECT 1 FROM split_shares WHERE split_id = $1 AND user_id = $2', [g.id, ana.user.id])).rowCount, 0, 'nothing is inserted for the payer');
+    // Custom: the payer's own portion is not recoverable.
+    const c = (await create(ana, { title: 'Custom', total: 60_000_00, mode: 'custom', participants: [{ userId: ana.user.id, amount: 20_000_00 }, { userId: ben.user.id, amount: 15_000_00 }, { userId: cleo.user.id, amount: 15_000_00 }, { userId: dan.user.id, amount: 10_000_00 }] })).body.data;
+    assert.deepEqual([c.owedTotal, c.owedCount], [40_000_00, 3]);
+    // Meaningless splits and zero rows are refused.
+    const self = await create(ana, { title: 'Self', total: 10_000_00, participants: peopleOf(ana) });
+    assert.equal(code(self), 'nobody_owes');
+    assert.match(self.body.error?.message ?? self.body.message, /at least one other person/);
+    assert.equal((await create(ana, { title: 'Zero', total: 10_000_00, mode: 'custom', participants: [{ userId: ben.user.id, amount: 10_000_00 }, { userId: cleo.user.id, amount: 0 }] })).status, 400);
+    // Payer is the only one left owing nothing: every non-payer settles, and the Split settles without the payer doing anything.
+    for (const u of [cleo, dan]) await t.call('PUT', `/splits/${a.id}/shares/${u.user.id}`, tok(u), { settled: true });
+    assert.equal((await t.call('GET', `/splits/${a.id}`, tok(ana))).body.data.status, 'settled');
   });
 
   it('settlement: own share, the creator, the payer; nobody else; undo; idempotent; status follows', async () => {

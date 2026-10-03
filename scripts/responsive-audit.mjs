@@ -325,7 +325,7 @@ async function signIn(page, phone) {
   await page.getByLabel('Mobile number').fill(phone.replace(/^0/, ''));
   await page.getByRole('button', { name: 'Send code' }).click();
   await page.getByRole('button', { name: 'Fill it in' }).click();
-  await page.locator('.wallet-strip').waitFor();
+  await page.locator('.home__header').waitFor();
 }
 
 // The demo OTP allows a few codes per number, so sign in once and reuse the session for every viewport.
@@ -394,7 +394,7 @@ for (const [w, h] of VIEWPORTS) {
     writeFileSync(SESSION_FILE, JSON.stringify(session));
   } else {
     await page.goto(`${BASE}/app/home`);
-    await page.locator('.wallet-strip').waitFor();
+    await page.locator('.home__header').waitFor();
   }
   await check('home', { scrolls: [600, 1400] });
   await page.goto(`${BASE}/app/pacts`);

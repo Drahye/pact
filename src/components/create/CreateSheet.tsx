@@ -3,6 +3,7 @@ import { createContext, useCallback, useContext, useMemo, useState, type ReactNo
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../api/auth';
 import { trackClient } from '../../api/circles';
+import { useStartPactPath } from '../../lib/startPact';
 import { Modal } from '../ui/Modal';
 import './create-sheet.css';
 
@@ -18,6 +19,7 @@ const Ctx = createContext<{ open: (o: OpenOptions) => void }>({ open: () => unde
 export const useCreateSheet = () => useContext(Ctx);
 
 export function CreateSheetProvider({ children }: { children: ReactNode }) {
+  const startPath = useStartPactPath();
   const [state, setState] = useState<OpenOptions | null>(null);
   const { status } = useAuth();
   const navigate = useNavigate();
@@ -53,7 +55,7 @@ export function CreateSheetProvider({ children }: { children: ReactNode }) {
   const startPact = () => {
     const circle = state?.circleId;
     close();
-    navigate(circle ? `/app/create?circle=${circle}` : '/app/create');
+    navigate(startPath({ circleId: circle }));
   };
 
   return (

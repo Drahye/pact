@@ -10,7 +10,7 @@ import { InsufficientFunds, post, systemAccountId, walletAccountId } from './led
 import { applyToPact, getPact, joinTx, loadVisible, type MemberRow, type PactRow } from './pacts.js';
 import { audit, enqueue, notify, recordActivity } from './platform.js';
 import { checkPledgeKept } from './pledges.js';
-import { reencodePhoto } from './plan.js';
+import { reencodePhoto } from './pactPlan.js';
 import { namesMatch } from './wallet.js';
 
 /*

@@ -198,7 +198,7 @@ function useInvalidateMoney() {
   const qc = useQueryClient();
   return (pactId?: string) => {
     qc.invalidateQueries({ queryKey: keys.wallet });
-    qc.invalidateQueries({ queryKey: keys.pacts });
+    (qc.invalidateQueries({ queryKey: keys.pacts }), qc.invalidateQueries({ queryKey: ['home'] }));
     qc.invalidateQueries({ queryKey: keys.activity });
     qc.invalidateQueries({ queryKey: keys.notifications });
     if (pactId) qc.invalidateQueries({ queryKey: keys.pact(pactId) });
@@ -255,8 +255,8 @@ export function usePactCommand(pactId: string) {
   const setPact = useSetPact();
   const qc = useQueryClient();
   return {
-    accept: useMutation({ mutationFn: () => api<PactDetail>('POST', `/pacts/${pactId}/accept`, {}), onSuccess: (r) => (setPact(r), qc.invalidateQueries({ queryKey: keys.pacts })) }),
-    leave: useMutation({ mutationFn: () => api('POST', `/pacts/${pactId}/leave`, {}), onSuccess: () => qc.invalidateQueries({ queryKey: keys.pacts }) }),
+    accept: useMutation({ mutationFn: () => api<PactDetail>('POST', `/pacts/${pactId}/accept`, {}), onSuccess: (r) => (setPact(r), (qc.invalidateQueries({ queryKey: keys.pacts }), qc.invalidateQueries({ queryKey: ['home'] }))) }),
+    leave: useMutation({ mutationFn: () => api('POST', `/pacts/${pactId}/leave`, {}), onSuccess: () => (qc.invalidateQueries({ queryKey: keys.pacts }), qc.invalidateQueries({ queryKey: ['home'] })) }),
     nudge: useMutation({ mutationFn: () => api<{ reminded: number }>('POST', `/pacts/${pactId}/nudge`, {}) }),
     invite: useMutation({
       mutationFn: (body: { userIds?: string[]; phones?: string[] }) => api<PactDetail>('POST', `/pacts/${pactId}/invites`, body),
@@ -273,7 +273,7 @@ export function useJoinByCode() {
       api<PactDetail>('POST', `/invites/${code}/join`, participation ? { participation } : {}),
     onSuccess: (r) => {
       setPact(r);
-      qc.invalidateQueries({ queryKey: keys.pacts });
+      (qc.invalidateQueries({ queryKey: keys.pacts }), qc.invalidateQueries({ queryKey: ['home'] }));
     },
   });
 }
@@ -342,35 +342,35 @@ export function useProfileActions() {
 /* ---------------------------------------------------------------- the plan */
 
 /** Every plan edit returns the fresh Pact, which replaces the cached one. */
-function usePlanMutation<V>(run: (v: V) => Promise<PactDetail>) {
+function usePactPlanMutation<V>(run: (v: V) => Promise<PactDetail>) {
   const setPact = useSetPact();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: run,
     onSuccess: (r) => {
       setPact(r);
-      qc.invalidateQueries({ queryKey: keys.pacts });
+      (qc.invalidateQueries({ queryKey: keys.pacts }), qc.invalidateQueries({ queryKey: ['home'] }));
       qc.invalidateQueries({ queryKey: keys.activity });
     },
   });
 }
 
-export function usePlan(pactId: string) {
+export function usePactPlan(pactId: string) {
   const base = `/pacts/${pactId}`;
   return {
-    participation: usePlanMutation((participation: Participation) => api<PactDetail>('PATCH', `${base}/participation`, { participation })),
-    addTask: usePlanMutation((body: { title: string; budgetItemId?: string | null; assigneeId?: string | null }) => api<PactDetail>('POST', `${base}/tasks`, body)),
-    updateTask: usePlanMutation(({ id, ...body }: { id: string; title?: string; status?: 'open' | 'in_progress' | 'done'; assigneeId?: 'me' | string | null }) =>
+    participation: usePactPlanMutation((participation: Participation) => api<PactDetail>('PATCH', `${base}/participation`, { participation })),
+    addTask: usePactPlanMutation((body: { title: string; budgetItemId?: string | null; assigneeId?: string | null }) => api<PactDetail>('POST', `${base}/tasks`, body)),
+    updateTask: usePactPlanMutation(({ id, ...body }: { id: string; title?: string; status?: 'open' | 'in_progress' | 'done'; assigneeId?: 'me' | string | null }) =>
       api<PactDetail>('PATCH', `${base}/tasks/${id}`, body),
     ),
-    deleteTask: usePlanMutation((id: string) => api<PactDetail>('DELETE', `${base}/tasks/${id}`)),
-    addBudget: usePlanMutation((body: { name: string; amount: number }) => api<PactDetail>('POST', `${base}/budget`, body)),
-    updateBudget: usePlanMutation(({ id, ...body }: { id: string; name?: string; amount?: number }) => api<PactDetail>('PATCH', `${base}/budget/${id}`, body)),
-    deleteBudget: usePlanMutation((id: string) => api<PactDetail>('DELETE', `${base}/budget/${id}`)),
-    splitRest: usePlanMutation(() => api<PactDetail & { split: { share: number; people: number } }>('POST', `${base}/split-rest`, {})),
-    saveMemory: usePlanMutation((body: { note?: string | null; happenedOn?: string | null }) => api<PactDetail>('PUT', `${base}/memory`, body)),
-    deletePhoto: usePlanMutation((id: string) => api<PactDetail>('DELETE', `${base}/memory/photos/${id}`)),
-    addPhoto: usePlanMutation((file: File) => uploadPhoto(`${base}/memory/photos`, file)),
+    deleteTask: usePactPlanMutation((id: string) => api<PactDetail>('DELETE', `${base}/tasks/${id}`)),
+    addBudget: usePactPlanMutation((body: { name: string; amount: number }) => api<PactDetail>('POST', `${base}/budget`, body)),
+    updateBudget: usePactPlanMutation(({ id, ...body }: { id: string; name?: string; amount?: number }) => api<PactDetail>('PATCH', `${base}/budget/${id}`, body)),
+    deleteBudget: usePactPlanMutation((id: string) => api<PactDetail>('DELETE', `${base}/budget/${id}`)),
+    splitRest: usePactPlanMutation(() => api<PactDetail & { split: { share: number; people: number } }>('POST', `${base}/split-rest`, {})),
+    saveMemory: usePactPlanMutation((body: { note?: string | null; happenedOn?: string | null }) => api<PactDetail>('PUT', `${base}/memory`, body)),
+    deletePhoto: usePactPlanMutation((id: string) => api<PactDetail>('DELETE', `${base}/memory/photos/${id}`)),
+    addPhoto: usePactPlanMutation((file: File) => uploadPhoto(`${base}/memory/photos`, file)),
   };
 }
 

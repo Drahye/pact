@@ -39,7 +39,7 @@
 
 /* site --------------------------------------------------------------- */
 .section-heading--site .section-heading__title {
-  font-size: clamp(34px, 5.2vw, 64px);
+  font-size: clamp(2.125rem, 5.2vw, 4rem);
   line-height: 1.02;
   letter-spacing: -0.045em;
   max-width: 16ch;

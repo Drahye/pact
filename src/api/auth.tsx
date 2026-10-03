@@ -24,7 +24,7 @@ interface AuthValue {
   config: ServerConfig | null;
   requestOtp: (phone: string) => Promise<{ phone: string; expiresInSec: number; devCode?: string }>;
   verifyOtp: (phone: string, code: string) => Promise<OtpVerifyDTO>;
-  signup: (input: { signupToken: string; firstName: string; lastName: string; pin: string; referralCode?: string }) => Promise<void>;
+  signup: (input: { firstName: string; lastName: string; pin: string; referralCode?: string }) => Promise<void>;
   signOut: () => Promise<void>;
   setUser: (u: MeDTO) => void;
   /** Why the last session ended. Only an expired session should bring the next sign-in back to the same page. */

@@ -1,9 +1,12 @@
-/** Sign-in progress survives a refresh or a trip to the SMS app. Nothing secret is kept here. */
+/**
+ * Sign-in progress survives a refresh or a trip to the SMS app. Nothing secret is kept here: no code, no PIN, no token.
+ * The credential that lets a verified number create an account lives in an httpOnly cookie the page cannot read;
+ * `needsProfile` only remembers that the next step is the name screen.
+ */
 export interface AuthFlow {
   phone?: string;
   displayPhone?: string;
-  devCode?: string;
-  signupToken?: string;
+  needsProfile?: boolean;
   firstName?: string;
   lastName?: string;
   referralCode?: string;

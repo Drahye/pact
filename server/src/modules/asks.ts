@@ -1,8 +1,8 @@
 import type { AskDTO, AskSummaryDTO, Attendance, CircleTint, PersonDTO } from '../../../shared/contracts.js';
 import type { Ctx, ReqMeta } from '../context.js';
 import type { Queryable } from '../db/index.js';
-import { randomToken } from '../lib/crypto.js';
-import { AppError, badRequest, forbidden, notFound } from '../lib/errors.js';
+import { keyedHash, randomToken } from '../lib/crypto.js';
+import { AppError, badRequest, forbidden, notFound, tooMany } from '../lib/errors.js';
 import { track, visitorId } from '../lib/events.js';
 import { joinByToken } from './circles.js';
 import { audit, notify, notifyGrouped } from './platform.js';
@@ -53,6 +53,23 @@ export async function minimalPeople(q: Queryable, ids: string[]): Promise<Person
     [unique],
   );
   return r.rows.map((u) => ({ id: u.id, firstName: u.first_name, lastName: '', color: u.color, tint: u.tint, photoUrl: u.photo_url }));
+}
+
+/**
+ * What a link visitor who is not in the Circle gets: the same shape, but every person other than themselves is an opaque,
+ * per-link alias. First names and colours still show; no account id leaves the server, and the same person has a different
+ * alias on every link, so ids cannot be matched across pages.
+ */
+export function aliasPeople<T extends { data: unknown; people: PersonDTO[] }>(ctx: Ctx, token: string, keep: string | null, out: T, extraIds: string[] = []): T {
+  const alias = (id: string) => {
+    const h = Buffer.from(keyedHash(ctx.config.HASH_SECRET, `alias:${token}:${id}`), 'base64url').toString('hex').slice(0, 32);
+    return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20, 32)}`;
+  };
+  const ids = [...new Set([...out.people.map((p) => p.id), ...extraIds])].filter((id) => id && id !== keep);
+  if (!ids.length) return out;
+  const map = new Map(ids.map((id) => [id, alias(id)]));
+  const text = JSON.stringify(out).replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/g, (m) => map.get(m) ?? m);
+  return JSON.parse(text) as T;
 }
 
 const isMember = async (q: Queryable, circleId: string, userId: string) =>
@@ -241,7 +258,7 @@ export async function previewLink(ctx: Ctx, token: string, req: ReqMeta, authSta
   const day = ctx.now().toISOString().slice(0, 10);
   const who = visitorId(ctx.config, req.ip, req.userAgent, day);
   await track(ctx.db, ctx.config, 'ask_shared_link_opened', { actor: who, askId: a.id, key: `aov:${who}:${a.id}:${authState}`, props: { type: a.type, auth_state: authState, from: fromOf(req), state: b.dto.status } });
-  return { data: b.dto, people: await minimalPeople(ctx.db, b.peopleIds) };
+  return aliasPeople(ctx, token, null, { data: b.dto, people: await minimalPeople(ctx.db, b.peopleIds) }, [b.dto.createdBy, ...b.dto.responders.map((r) => r.userId), ...b.dto.waiting, ...b.dto.activity.map((x) => x.userId)]);
 }
 
 /** The visitor tapped an answer. Anonymous and coarse: one event per visitor pseudonym per Ask. */
@@ -281,7 +298,8 @@ export async function myLinkState(ctx: Ctx, userId: string, token: string) {
   const member = await isMember(ctx.db, a.circle_id, userId);
   const [b] = await build(ctx, ctx.db, [a], userId, () => member, true);
   const live = !member && !!(await ctx.db.query(`SELECT 1 FROM circle_invites WHERE circle_id = $1 AND revoked_at IS NULL AND (expires_at IS NULL OR expires_at > now())`, [a.circle_id])).rowCount;
-  return { data: { ask: b.dto, canJoinCircle: live }, people: await minimalPeople(ctx.db, b.peopleIds) };
+  const out = { data: { ask: b.dto, canJoinCircle: live }, people: await minimalPeople(ctx.db, b.peopleIds) };
+  return member ? out : aliasPeople(ctx, token, userId, out, [b.dto.createdBy, ...b.dto.responders.map((r) => r.userId), ...b.dto.waiting, ...b.dto.activity.map((x) => x.userId)]);
 }
 
 /** Join the Circle from its Ask page. Works only while the Circle's own invite link is on. */
@@ -297,9 +315,21 @@ export async function joinCircleFromAsk(ctx: Ctx, userId: string, token: string,
 
 /* ---------------------------------------------------------------- commands */
 
+/** One person can start only so many Asks, Plans and Splits in a short while: each one tells the whole Circle. */
+export async function assertCreateBudget(ctx: Ctx, q: Queryable, userId: string) {
+  const r = await q.query<{ n: number }>(
+    `SELECT ((SELECT COUNT(*) FROM asks WHERE created_by = $1 AND created_at > now() - make_interval(mins => $2))
+           + (SELECT COUNT(*) FROM plans WHERE created_by = $1 AND created_at > now() - make_interval(mins => $2))
+           + (SELECT COUNT(*) FROM splits WHERE created_by = $1 AND created_at > now() - make_interval(mins => $2)))::int AS n`,
+    [userId, 10],
+  );
+  if (r.rows[0].n >= ctx.config.CREATE_LIMIT_PER_10_MIN) throw tooMany('You’ve started a lot in a short while. Give it a few minutes.');
+}
+
 export async function createAsk(ctx: Ctx, userId: string, circleId: string, input: { type: 'choice' | 'attendance'; title: string; options?: string[]; from: 'circle' | 'home' | 'nav'; planId?: string }, meta: ReqMeta) {
   if (!UUID.test(circleId) || !(await isMember(ctx.db, circleId, userId))) throw notFound('That Circle');
   const id = await ctx.db.tx(async (q) => {
+    await assertCreateBudget(ctx, q, userId);
     const open = await q.query<{ n: number }>(`SELECT COUNT(*)::int AS n FROM asks WHERE circle_id = $1 AND status = 'open'`, [circleId]);
     if (open.rows[0].n >= MAX_OPEN_PER_CIRCLE) throw badRequest('too_many_asks', 'This Circle has a lot of open questions. Close a few first.');
     // A question made from inside a Plan belongs to it (linked, not copied). It must be a Plan of this same Circle.

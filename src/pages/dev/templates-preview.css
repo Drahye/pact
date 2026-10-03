@@ -5,12 +5,12 @@
   color: #0f1713;
 }
 
-.tp h1 { font-size: 28px; letter-spacing: -0.04em; }
+.tp h1 { font-size: 1.75rem; letter-spacing: -0.04em; }
 .tp__head p { margin-top: 4px; color: #4a544f; }
 
 .tp__controls { display: flex; flex-wrap: wrap; gap: var(--space-4) var(--space-8); margin: var(--space-6) 0; }
 .tp fieldset { border: 0; padding: 0; min-width: 0; }
-.tp legend { margin-bottom: 6px; font-size: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: #4a544f; }
+.tp legend { margin-bottom: 6px; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: #4a544f; }
 .tp__chips { display: flex; flex-wrap: wrap; gap: 6px; }
 
 .tp__chip {
@@ -19,7 +19,7 @@
   border-radius: 999px;
   background: #fff;
   box-shadow: inset 0 0 0 1px #d7d3ca;
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 500;
 }
 
@@ -28,7 +28,7 @@
 
 .tp__stage { display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--space-8); }
 .tp__item { max-width: 100%; }
-.tp__tag { margin-bottom: 8px; font-size: 13px; color: #4a544f; }
+.tp__tag { margin-bottom: 8px; font-size: 0.8125rem; color: #4a544f; }
 .tp__tag code { padding: 1px 6px; border-radius: 6px; background: #fff; }
 
 .tp__frame {

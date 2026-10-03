@@ -40,7 +40,7 @@ describe('Splits', () => {
   const peopleOf = (...us: U[]) => us.map((u) => ({ userId: u.user.id }));
 
   before(async () => {
-    t = await setup();
+    t = await setup({ env: { CREATE_LIMIT_PER_10_MIN: '1000' } });
     ana = await t.signIn('08035550001', { firstName: 'Ana', lastName: 'Payer', pin: '2468' });
     ben = await t.signIn('08035550002', { firstName: 'Ben', lastName: 'Owes', pin: '2468' });
     cleo = await t.signIn('08035550003', { firstName: 'Cleo', lastName: 'Owes', pin: '2468' });
@@ -213,7 +213,10 @@ describe('Splits', () => {
     assert.equal(pub.status, 200);
     const d = pub.body.data;
     assert.deepEqual([d.title, d.total, d.mine, d.signedIn, d.splitId, d.owedCount, d.settledCount], ['Shared dinner', 62_500_00, null, false, null, 2, 0]);
-    assert.deepEqual(pub.body.people.map((p: { firstName: string; lastName: string }) => [p.firstName, p.lastName]), [['Ana', '']]);
+    assert.deepEqual([pub.body.people, pub.body.data.payer], [[], { firstName: 'Ana' }], 'the payer\'s first name and nothing else about them');
+    const UUID = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
+    assert.ok(!UUID.test(JSON.stringify(pub.body)), 'no account, Circle or Split id anywhere in a signed-out response');
+    assert.equal(pub.body.data.paidBy, undefined);
     assert.ok(!JSON.stringify(pub.body).match(/Ben|Cleo|0803555|shares|20833/), 'no other person\'s name, number or amount');
     assert.equal((await t.call('GET', `/split-links/${token}/mine`)).status, 401);
     const mine = await t.call('GET', `/split-links/${token}/mine`, tok(ben));
@@ -238,6 +241,7 @@ describe('Splits', () => {
     const s = await dinner({ title: 'Outsider view' });
     const mine = await t.call('GET', `/split-links/${s.shareToken}/mine`, tok(zed));
     assert.deepEqual([mine.body.data.mine, mine.body.data.isMember, mine.body.data.splitId, mine.body.data.canJoinCircle], [null, false, null, true]);
+    assert.ok(!/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i.test(JSON.stringify(mine.body)), 'and none for a signed-in non-member either');
     assert.equal((await t.call('GET', `/splits/${s.id}`, tok(zed))).status, 404);
     assert.equal((await t.call('GET', `/circles/${circleId}`, tok(zed))).status, 404, 'still not a member');
     const j = await t.call('POST', `/split-links/${s.shareToken}/join-circle`, tok(zed), {});

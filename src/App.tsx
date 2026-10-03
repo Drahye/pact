@@ -1,7 +1,7 @@
 import { InstallPactPrompt, PwaInstallTracker } from './components/pwa/InstallPactPrompt';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MotionConfig } from 'framer-motion';
-import { lazy, Suspense, type ReactNode } from 'react';
+import { lazy, Suspense, useEffect, type ReactNode } from 'react';
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom';
 import { AuthProvider, useAuth } from './api/auth';
 import { ApiError } from './api/client';
@@ -11,39 +11,15 @@ import { peekReturnTo } from './pages/app/auth/flow';
 import { ActivityScreen } from './pages/app/ActivityScreen';
 import { AppShell } from './pages/app/AppShell';
 import { CodeScreen, PhoneScreen, PinSetupScreen, ProfileSetupScreen } from './pages/app/auth/AuthScreens';
-import { ContributeScreen } from './pages/app/ContributeScreen';
-import { CreatePactScreen } from './pages/app/CreatePactScreen';
 import { HomeScreen } from './pages/app/HomeScreen';
-import { InviteScreen } from './pages/app/InviteScreen';
-import { JoinScreen } from './pages/app/JoinScreen';
 import { DemoPactScreen } from './features/demo/DemoPactScreen';
-import { GuidedStartScreen } from './features/onboarding/GuidedStartScreen';
 import { JoinWithInviteScreen } from './features/onboarding/JoinWithInviteScreen';
 import { OnboardingScreen } from './features/onboarding/OnboardingScreen';
 import { NotificationDetailScreen } from './pages/app/NotificationDetailScreen';
 import { NotificationsScreen } from './pages/app/NotificationsScreen';
-import { PactRoute } from './pages/app/PactRoute';
 import { PactsScreen } from './pages/app/PactsScreen';
-import { BankAccountsScreen } from './pages/app/profile/BankAccountsScreen';
-import { SecurityScreen } from './pages/app/profile/SecurityScreen';
-import { VerifyScreen } from './pages/app/profile/VerifyScreen';
 import { ProfileScreen } from './pages/app/ProfileScreen';
-import { AskScreen } from './pages/app/asks/AskScreen';
-import { CreateAskScreen } from './pages/app/asks/CreateAskScreen';
-import { CreatePlanScreen } from './pages/app/plans/CreatePlanScreen';
-import { PlanScreen } from './pages/app/plans/PlanScreen';
-import { CreateSplitScreen } from './pages/app/splits/CreateSplitScreen';
-import { SplitScreen } from './pages/app/splits/SplitScreen';
-import { RecapScreen } from './pages/app/recap/RecapScreen';
-import { CircleInviteScreen } from './pages/app/circles/CircleInviteScreen';
-import { CircleScreen } from './pages/app/circles/CircleScreen';
 import { CirclesScreen } from './pages/app/circles/CirclesScreen';
-import { CreateCircleScreen } from './pages/app/circles/CreateCircleScreen';
-import { CheckoutScreen } from './pages/app/wallet/CheckoutScreen';
-import { TopupScreen } from './pages/app/wallet/TopupScreen';
-import { TopupStatusScreen } from './pages/app/wallet/TopupStatusScreen';
-import { WalletScreen } from './pages/app/wallet/WalletScreen';
-import { WithdrawScreen } from './pages/app/wallet/WithdrawScreen';
 import { WelcomeScreen } from './pages/app/WelcomeScreen';
 // The marketing pages (GSAP, scroll choreography) and the style guide load on demand,
 // so people opening the app don't download them, and vice versa.
@@ -72,6 +48,14 @@ const queryClient = new QueryClient({
 function RequireAuth({ children }: { children: ReactNode }) {
   const { status, signOutReason } = useAuth();
   const location = useLocation();
+  // Once someone is signed in and the browser is idle, fetch the feature groups so the first tap into a Pact or a Circle doesn't wait.
+  useEffect(() => {
+    if (status !== 'signedIn') return;
+    const idle = (window as unknown as { requestIdleCallback?: (cb: () => void) => number }).requestIdleCallback;
+    const run = () => void Promise.all([load_pact(), load_social()]).catch(() => undefined);
+    const id = idle ? idle(run) : window.setTimeout(run, 1500);
+    return () => (idle ? undefined : window.clearTimeout(id));
+  }, [status]);
   if (status === 'loading') return <Loading full />;
   // After choosing to sign out, the next person to sign in starts fresh on Home.
   if (status === 'signedOut') return <Navigate to="/app" replace state={signOutReason === 'explicit' ? undefined : { from: location.pathname + location.search }} />;
@@ -91,6 +75,35 @@ function AskLinkRedirect() {
   const { token = '' } = useParams();
   return <Navigate to={`/a/${token}`} replace />;
 }
+
+// Feature groups load on first use, one chunk each. The tab roots (Home, Circles, Activity, Me, Pacts) stay in the entry so switching tabs never waits.
+const load_social = () => import('./pages/app/groups/social');
+const CircleInviteScreen = lazy(() => load_social().then((m) => ({ default: m.CircleInviteScreen })));
+const CircleScreen = lazy(() => load_social().then((m) => ({ default: m.CircleScreen })));
+const CreateCircleScreen = lazy(() => load_social().then((m) => ({ default: m.CreateCircleScreen })));
+const AskScreen = lazy(() => load_social().then((m) => ({ default: m.AskScreen })));
+const CreateAskScreen = lazy(() => load_social().then((m) => ({ default: m.CreateAskScreen })));
+const PlanScreen = lazy(() => load_social().then((m) => ({ default: m.PlanScreen })));
+const CreatePlanScreen = lazy(() => load_social().then((m) => ({ default: m.CreatePlanScreen })));
+const SplitScreen = lazy(() => load_social().then((m) => ({ default: m.SplitScreen })));
+const CreateSplitScreen = lazy(() => load_social().then((m) => ({ default: m.CreateSplitScreen })));
+const RecapScreen = lazy(() => load_social().then((m) => ({ default: m.RecapScreen })));
+const load_pact = () => import('./pages/app/groups/pact');
+const PactRoute = lazy(() => load_pact().then((m) => ({ default: m.PactRoute })));
+const CreatePactScreen = lazy(() => load_pact().then((m) => ({ default: m.CreatePactScreen })));
+const ContributeScreen = lazy(() => load_pact().then((m) => ({ default: m.ContributeScreen })));
+const InviteScreen = lazy(() => load_pact().then((m) => ({ default: m.InviteScreen })));
+const JoinScreen = lazy(() => load_pact().then((m) => ({ default: m.JoinScreen })));
+const GuidedStartScreen = lazy(() => load_pact().then((m) => ({ default: m.GuidedStartScreen })));
+const load_money = () => import('./pages/app/groups/money');
+const CheckoutScreen = lazy(() => load_money().then((m) => ({ default: m.CheckoutScreen })));
+const TopupScreen = lazy(() => load_money().then((m) => ({ default: m.TopupScreen })));
+const TopupStatusScreen = lazy(() => load_money().then((m) => ({ default: m.TopupStatusScreen })));
+const WalletScreen = lazy(() => load_money().then((m) => ({ default: m.WalletScreen })));
+const WithdrawScreen = lazy(() => load_money().then((m) => ({ default: m.WithdrawScreen })));
+const BankAccountsScreen = lazy(() => load_money().then((m) => ({ default: m.BankAccountsScreen })));
+const SecurityScreen = lazy(() => load_money().then((m) => ({ default: m.SecurityScreen })));
+const VerifyScreen = lazy(() => load_money().then((m) => ({ default: m.VerifyScreen })));
 
 const authed = (el: ReactNode) => <RequireAuth>{el}</RequireAuth>;
 

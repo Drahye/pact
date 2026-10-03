@@ -55,14 +55,14 @@
 }
 
 .store__small {
-  font-size: 10.5px;
+  font-size: 0.6562rem;
   letter-spacing: 0.02em;
   font-weight: var(--weight-medium);
   opacity: 0.75;
 }
 
 .store__big {
-  font-size: 19px;
+  font-size: 1.1875rem;
   font-weight: var(--weight-semibold);
   letter-spacing: -0.02em;
 }
@@ -78,7 +78,7 @@
 }
 
 .stores--compact .store__big {
-  font-size: 17px;
+  font-size: 1.0625rem;
 }
 
 @media (max-width: 479px) {
@@ -94,7 +94,7 @@
   }
 
   .stores .store__big {
-    font-size: 16px;
+    font-size: 1rem;
   }
 
   .stores .store__glyph svg {

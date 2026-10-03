@@ -5,8 +5,8 @@ import { randomToken } from '../lib/crypto.js';
 import { AppError, badRequest, forbidden, notFound } from '../lib/errors.js';
 import { track, visitorId } from '../lib/events.js';
 import { formatNgn } from '../lib/money.js';
-import { minimalPeople } from './asks.js';
-import { joinByToken } from './circles.js';
+import { assertCreateBudget, minimalPeople } from './asks.js';
+import { assertCanHandOver, joinByToken, ownerMayTakeOver } from './circles.js';
 import { audit, notify } from './platform.js';
 
 /**
@@ -156,6 +156,7 @@ async function detail(q: Queryable, s: SplitRow, viewerId: string) {
     })),
     activity: act.map((a) => ({ kind: a.kind, userId: a.user_id, targetId: a.target_id, amount: a.amount, at: new Date(a.at).toISOString() })),
     canEdit: isCreator && s.status !== 'cancelled',
+    canHandOver: s.status === 'open' && (isCreator || (await ownerMayTakeOver(q, s.circle_id, viewerId, s.created_by))),
     canEditStructure: isCreator && s.status === 'open' && !started,
     canCancel: isCreator && s.status === 'open',
     shareToken: s.share_token,
@@ -258,6 +259,7 @@ export async function createSplit(ctx: Ctx, userId: string, circleId: string, in
   if (!UUID_RE.test(circleId) || !(await isMember(ctx.db, circleId, userId))) throw notFound('That Circle');
   const paidBy = input.paidBy ?? userId;
   const id = await ctx.db.tx(async (q) => {
+    await assertCreateBudget(ctx, q, userId);
     const open = (await q.query<{ n: number }>(`SELECT COUNT(*)::int AS n FROM splits WHERE circle_id = $1 AND status = 'open'`, [circleId])).rows[0].n;
     if (open >= MAX_OPEN_PER_CIRCLE) throw badRequest('too_many_splits', 'This Circle has a lot of open splits. Settle or cancel a few first.');
     const shares = await resolveShares(q, circleId, input.total, paidBy, input.mode, input.participants);
@@ -371,6 +373,28 @@ export async function cancelSplit(ctx: Ctx, userId: string, splitId: string, met
   return getSplit(ctx, userId, splitId);
 }
 
+/** A link posted in the wrong chat stops working. The old address answers "gone" like any unknown one, so it reveals nothing. */
+export async function resetShare(ctx: Ctx, userId: string, splitId: string, meta: ReqMeta) {
+  await ctx.db.tx(async (q) => {
+    const s = await loadForMember(q, splitId, userId, true);
+    if (s.created_by !== userId) throw forbidden('Only the person who made the split can reset the link.');
+    await q.query('UPDATE splits SET share_token = $2, updated_at = now() WHERE id = $1', [splitId, randomToken(32)]);
+    await audit(q, { actorId: userId, action: 'split.link_reset', targetType: 'split', targetId: splitId, ip: meta.ip });
+  });
+  return getSplit(ctx, userId, splitId);
+}
+
+export async function handOver(ctx: Ctx, userId: string, splitId: string, toId: string, meta: ReqMeta) {
+  await ctx.db.tx(async (q) => {
+    const s = await loadForMember(q, splitId, userId, true);
+    await assertCanHandOver(q, s.circle_id, userId, s.created_by, toId);
+    await q.query('UPDATE splits SET created_by = $2, updated_at = now() WHERE id = $1', [splitId, toId]);
+    await audit(q, { actorId: userId, action: 'split.handed_over', targetType: 'split', targetId: splitId, ip: meta.ip, metadata: { to: toId } });
+    await notify(q, [toId], { type: 'split_new', title: `You’re now running ${s.title}`, body: 'You can edit it and mark shares settled.', refId: splitId, meta: { about: s.cname } });
+  });
+  return getSplit(ctx, userId, splitId);
+}
+
 export async function recordShared(ctx: Ctx, userId: string, splitId: string, via: 'native' | 'copy') {
   await loadForMember(ctx.db, splitId, userId);
   await track(ctx.db, ctx.config, 'split_shared', { userId, splitId, key: `spsh:${userId}:${splitId}:${ctx.now().toISOString().slice(0, 10)}`, props: { via } });
@@ -386,14 +410,14 @@ async function loadByToken(q: Queryable, token: string): Promise<SplitRow> {
   return s;
 }
 
-function linkView(s: SplitRow, shares: ShareRow[], viewerId: string | null, member: boolean, canJoin: boolean): SplitLinkDTO {
+function linkView(s: SplitRow, shares: ShareRow[], viewerId: string | null, member: boolean, canJoin: boolean, payerFirstName: string): SplitLinkDTO {
   const sum = summarise(s, shares, viewerId);
   return {
     circle: sum.circle,
     title: s.title,
     total: s.total_amount,
     status: s.status,
-    paidBy: s.paid_by,
+    payer: { firstName: payerFirstName },
     owedCount: sum.owedCount,
     settledCount: sum.settledCount,
     mine: sum.mine,
@@ -404,13 +428,16 @@ function linkView(s: SplitRow, shares: ShareRow[], viewerId: string | null, memb
   };
 }
 
+const firstName = async (q: Queryable, id: string) => (await q.query<{ first_name: string }>('SELECT first_name FROM users WHERE id = $1', [id])).rows[0]?.first_name ?? 'Someone';
+
 /** What a link shows anyone: the title, the total, who paid and how far along it is. No other person's share, no names but the payer's. */
 export async function previewLink(ctx: Ctx, token: string, req: ReqMeta) {
   const s = await loadByToken(ctx.db, token);
   const shares = await sharesFor(ctx.db, [s.id]);
   const who = visitorId(ctx.config, req.ip, req.userAgent, ctx.now().toISOString().slice(0, 10));
   await track(ctx.db, ctx.config, 'split_share_opened', { actor: who, splitId: s.id, key: `spo:${who}:${s.id}`, props: { auth_state: 'signed_out', state: s.status } });
-  return { data: linkView(s, shares, null, false, false), people: await minimalPeople(ctx.db, [s.paid_by]) };
+  // No people list: the payer's first name is all a bearer link needs, and no account id leaves the server.
+  return { data: linkView(s, shares, null, false, false, await firstName(ctx.db, s.paid_by)), people: [] as PersonDTO[] };
 }
 
 /** The signed-in viewer's side of a link: their own share, matched by user id, and whether they could join the Circle. */
@@ -420,7 +447,7 @@ export async function myLinkState(ctx: Ctx, userId: string, token: string, opene
   const shares = await sharesFor(ctx.db, [s.id]);
   const canJoin = !member && !!(await ctx.db.query(`SELECT 1 FROM circle_invites WHERE circle_id = $1 AND revoked_at IS NULL AND (expires_at IS NULL OR expires_at > now())`, [s.circle_id])).rowCount;
   if (opened) await track(ctx.db, ctx.config, 'split_share_opened', { userId, splitId: s.id, key: `spo:${userId}:${s.id}`, props: { auth_state: 'signed_in', state: s.status } });
-  return { data: linkView(s, shares, userId, member, canJoin), people: await minimalPeople(ctx.db, [s.paid_by]) };
+  return { data: linkView(s, shares, userId, member, canJoin, await firstName(ctx.db, s.paid_by)), people: [] as PersonDTO[] };
 }
 
 /** A link visitor marks (or un-marks) their OWN share, and nothing else. The share is found by user id; no id of a share is accepted. */

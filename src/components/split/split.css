@@ -5,7 +5,7 @@
 
 .split-head__total {
   margin: 0;
-  font-size: var(--text-3xl, 36px);
+  font-size: var(--text-3xl, 2.25rem);
   font-weight: var(--weight-bold);
   font-variant-numeric: tabular-nums;
   overflow-wrap: anywhere;
@@ -26,7 +26,7 @@
 }
 
 .split-done strong {
-  font-size: var(--text-lg, 18px);
+  font-size: var(--text-lg, 1.125rem);
 }
 
 .split-done p {

@@ -1,6 +1,6 @@
 import { FlaskConical, Phone, ShieldCheck } from 'lucide-react';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { Link, Navigate, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../api/auth';
 import { ApiError } from '../../../api/client';
 import { PinPad } from '../../../components/app/PinPad';
@@ -36,8 +36,9 @@ export function PhoneScreen() {
     try {
       const r = await requestOtp(`0${digits}`);
       deviceMemory.set('lastPhone', digits);
-      writeFlow({ phone: r.phone, displayPhone: `0${pretty(digits)}`, devCode: r.devCode, signupToken: undefined });
-      navigate('/app/auth/code');
+      writeFlow({ phone: r.phone, displayPhone: `0${pretty(digits)}`, needsProfile: false });
+      // A sandbox code is passed along in navigation state, never stored: a refresh simply asks to resend.
+      navigate('/app/auth/code', { state: { devCode: r.devCode } });
     } catch (err) {
       setError((err as ApiError).message);
     } finally {
@@ -131,7 +132,8 @@ export function CodeScreen() {
   const [error, setError] = useState<string>();
   const [busy, setBusy] = useState(false);
   const [resendIn, setResendIn] = useState(30);
-  const [devCode, setDevCode] = useState(flow.devCode);
+  const location = useLocation();
+  const [devCode, setDevCode] = useState((location.state as { devCode?: string } | null)?.devCode);
   const input = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -166,7 +168,7 @@ export function CodeScreen() {
         // The guest-only route guard sends them on to wherever they were headed.
         clearFlow();
       } else {
-        writeFlow({ signupToken: out.signupToken });
+        writeFlow({ needsProfile: true });
         navigate('/app/auth/profile');
       }
     } catch (err) {
@@ -190,7 +192,6 @@ export function CodeScreen() {
   const resend = async () => {
     try {
       const r = await requestOtp(flow.phone!);
-      writeFlow({ devCode: r.devCode });
       setDevCode(r.devCode);
       setResendIn(30);
     } catch (err) {
@@ -262,7 +263,7 @@ export function ProfileSetupScreen() {
   const [last, setLast] = useState(flow.lastName ?? '');
   const [referral, setReferral] = useState(flow.referralCode ?? '');
   const [touched, setTouched] = useState(false);
-  if (!flow.signupToken) return <Navigate to="/app/auth/phone" replace />;
+  if (!flow.needsProfile) return <Navigate to="/app/auth/phone" replace />;
 
   const errors = {
     first: first.trim() ? undefined : 'Enter your first name.',
@@ -308,7 +309,7 @@ export function PinSetupScreen() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [errorKey, setErrorKey] = useState(0);
-  if (!flow.signupToken || !flow.firstName) return <Navigate to="/app/auth/phone" replace />;
+  if (!flow.needsProfile || !flow.firstName) return <Navigate to="/app/auth/phone" replace />;
 
   const onComplete = async (pin: string) => {
     if (!first) {
@@ -323,7 +324,7 @@ export function PinSetupScreen() {
     }
     setBusy(true);
     try {
-      await signup({ signupToken: flow.signupToken!, firstName: flow.firstName!, lastName: flow.lastName!, pin, referralCode: flow.referralCode });
+      await signup({ firstName: flow.firstName!, lastName: flow.lastName!, pin, referralCode: flow.referralCode });
       clearFlow();
     } catch (err) {
       const e = err as ApiError;

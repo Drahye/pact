@@ -23,7 +23,7 @@
 
 @media (max-width: 360px) {
   .cookie { padding: var(--space-4); right: var(--space-3); left: var(--space-3); }
-  .cookie__text { font-size: 13px; line-height: 18px; }
+  .cookie__text { font-size: 0.8125rem; line-height: 18px; }
   .cookie__actions { margin-top: var(--space-3); }
 }
 

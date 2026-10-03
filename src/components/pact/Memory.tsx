@@ -1,7 +1,7 @@
 import { Camera, ImagePlus, Pencil, Trash2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { ApiError } from '../../api/client';
-import { usePhoto, usePlan } from '../../api/hooks';
+import { usePhoto, usePactPlan } from '../../api/hooks';
 import type { Pact } from '../../data/types';
 import { getUser } from '../../data/users';
 import { isoDay } from '../../lib/dates';
@@ -29,7 +29,7 @@ function Photo({ pactId, photoId, onOpen }: { pactId: string; photoId: string; o
 export function MemorySection({ pact, meId }: { pact: Pact; meId: string }) {
   const [editing, setEditing] = useState(false);
   const [viewing, setViewing] = useState<string | null>(null);
-  const plan = usePlan(pact.id);
+  const plan = usePactPlan(pact.id);
   const toast = useToast();
   const isOrganizer = pact.organizerId === meId;
   const m = pact.memory;
@@ -110,7 +110,7 @@ export function MemorySection({ pact, meId }: { pact: Pact; meId: string }) {
 }
 
 function MemorySheet({ pact, open, onClose }: { pact: Pact; open: boolean; onClose: () => void }) {
-  const plan = usePlan(pact.id);
+  const plan = usePactPlan(pact.id);
   const toast = useToast();
   const file = useRef<HTMLInputElement>(null);
   const [note, setNote] = useState('');

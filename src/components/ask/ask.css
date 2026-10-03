@@ -376,7 +376,7 @@
 }
 
 .ca__type strong {
-  font-size: var(--text-lg, 18px);
+  font-size: var(--text-lg, 1.125rem);
 }
 
 .ca__type span {
@@ -426,13 +426,13 @@
 }
 
 .quick__title {
-  font-size: var(--text-h5, 18px);
+  font-size: var(--text-h5, 1.125rem);
   font-weight: var(--weight-semibold);
 }
 
 .ask__reward {
   margin-top: var(--space-1);
-  font-size: var(--text-lg, 18px);
+  font-size: var(--text-lg, 1.125rem);
   font-weight: var(--weight-bold);
   animation: ask-in 0.35s var(--ease-out) both;
 }
@@ -459,7 +459,7 @@
 }
 
 .al__join strong {
-  font-size: var(--text-lg, 18px);
+  font-size: var(--text-lg, 1.125rem);
 }
 
 .al__join p {
@@ -472,6 +472,10 @@
   padding: var(--space-4);
   border-radius: var(--radius-xl);
   background: var(--coral-100);
+}
+
+.proto--framed .al__brand {
+  margin-top: 50px; /* clear the fake phone's status bar */
 }
 
 .al__brand {

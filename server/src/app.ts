@@ -9,6 +9,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { z, ZodError } from 'zod';
 import * as C from '../../shared/contracts.js';
+import { stableStringify } from './lib/crypto.js';
 import type { AuthTokensDTO } from '../../shared/contracts.js';
 import type { Config } from './config.js';
 import type { Ctx, ReqMeta } from './context.js';
@@ -28,11 +29,12 @@ import * as pacts from './modules/pacts.js';
 import * as plans from './modules/plans.js';
 import * as splits from './modules/splits.js';
 import * as home from './modules/home.js';
-import * as plan from './modules/plan.js';
+import * as pactPlan from './modules/pactPlan.js';
 import * as users from './modules/users.js';
 import * as wallet from './modules/wallet.js';
 import { CLIENT_EVENTS, pactId as pactPseudo, track, visitorId } from './lib/events.js';
 import { recordClientEvent } from './modules/events.js';
+import { reqSerializer, sanitizeUrl } from './lib/logSafe.js';
 import { handleWebhook } from './modules/webhooks.js';
 import { createPaystackProvider } from './payments/paystack.js';
 import type { PaymentProvider } from './payments/provider.js';
@@ -62,6 +64,10 @@ declare module 'fastify' {
 }
 
 const REFRESH_COOKIE = 'pact_rt';
+/** Web only: the short-lived credential between "code verified" and "account created". Never readable by page scripts. */
+const SIGNUP_COOKIE = 'pact_su';
+const SIGNUP_COOKIE_PATH = '/api/auth/signup';
+const SIGNUP_WINDOW_SEC = 20 * 60;
 
 export interface BuildOptions {
   config: Config;
@@ -70,11 +76,13 @@ export interface BuildOptions {
   sms?: SmsSender;
   push?: PushSender | null;
   now?: () => Date;
+  /** Tests: capture log output. */
+  logStream?: { write: (line: string) => void };
 }
 
-export async function buildApp({ config, db, provider, sms, push, now = () => new Date() }: BuildOptions) {
+export async function buildApp({ config, db, provider, sms, push, now = () => new Date(), logStream }: BuildOptions) {
   const app = Fastify({
-    logger: config.isTest
+    logger: config.isTest && !logStream
       ? false
       : {
           level: config.LOG_LEVEL,
@@ -83,7 +91,9 @@ export async function buildApp({ config, db, provider, sms, push, now = () => ne
             paths: ['req.headers.authorization', 'req.headers.cookie', 'res.headers["set-cookie"]', '*.pin', '*.currentPin', '*.newPin', '*.accountNumber', '*.bvn', '*.refreshToken', '*.signupToken'],
             censor: '[redacted]',
           },
-          transport: config.isProd ? undefined : { target: 'pino-pretty', options: { colorize: true, ignore: 'pid,hostname' } },
+          // Capability links carry a secret in the path; the request log never keeps it.
+          serializers: { req: reqSerializer },
+          ...(logStream ? { stream: logStream } : { transport: config.isProd ? undefined : { target: 'pino-pretty', options: { colorize: true, ignore: 'pid,hostname' } } }),
         },
     trustProxy: config.TRUST_PROXY,
     bodyLimit: 64 * 1024,
@@ -152,7 +162,7 @@ export async function buildApp({ config, db, provider, sms, push, now = () => ne
     onExceeded: (req) => {
       req.log.warn({ route: req.routeOptions.url, ip: req.ip }, 'rate limit exceeded');
       void db
-        .query(`INSERT INTO audit_log (action, target_type, target_id, ip) VALUES ('security.rate_limited', 'route', $1, $2)`, [req.routeOptions.url ?? req.url, req.ip])
+        .query(`INSERT INTO audit_log (action, target_type, target_id, ip) VALUES ('security.rate_limited', 'route', $1, $2)`, [req.routeOptions.url ?? sanitizeUrl(req.url), req.ip])
         .catch(() => undefined);
     },
     errorResponseBuilder: (_req, context) => ({
@@ -179,7 +189,7 @@ export async function buildApp({ config, db, provider, sms, push, now = () => ne
       return reply.status(err.statusCode).send({ error: { code: 'bad_request', message: 'The request couldn’t be processed.' }, requestId: req.id });
     }
     req.log.error({ err }, 'unhandled error');
-    return reply.status(500).send({ error: { code: 'internal', message: 'Something went wrong on our side. Nothing was charged. Try again.' }, requestId: req.id });
+    return reply.status(500).send({ error: { code: 'internal', message: 'Something went wrong on our side. Try again.' }, requestId: req.id });
   });
 
   /* ---------------------------------------------------------------- helpers */
@@ -221,7 +231,7 @@ export async function buildApp({ config, db, provider, sms, push, now = () => ne
     const key = req.headers['idempotency-key'];
     if (typeof key !== 'string' || key.length < 8 || key.length > 100) throw badRequest('idempotency_key_required', 'Missing Idempotency-Key header.');
     const { pin: _pin, ...fingerprint } = (req.body ?? {}) as Record<string, unknown>;
-    const hash = createHash('sha256').update(`${route}:${JSON.stringify(fingerprint, Object.keys(fingerprint).sort())}`).digest('base64url');
+    const hash = createHash('sha256').update(`${route}:${stableStringify(fingerprint)}`).digest('base64url');
     const ins = await db.query(
       'INSERT INTO idempotency_keys (user_id, key, route, request_hash) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING RETURNING key',
       [req.userId, key, route, hash],
@@ -246,6 +256,10 @@ export async function buildApp({ config, db, provider, sms, push, now = () => ne
       throw err;
     }
   };
+
+  /** For creates the client may retry: with a key a retry replays the first answer, without one the request just runs. */
+  const idempotentIfKeyed = async <T>(req: FastifyRequest, reply: FastifyReply, route: string, fn: () => Promise<T>) =>
+    typeof req.headers['idempotency-key'] === 'string' ? idempotent(req, reply, route, fn) : fn();
 
   const strict = (max: number, minutes = 1) =>
     config.RATE_LIMIT_ENABLED ? { config: { rateLimit: { max, timeWindow: `${minutes} minute` } } } : {};
@@ -280,13 +294,34 @@ export async function buildApp({ config, db, provider, sms, push, now = () => ne
           const { status, ...tokens } = out;
           return sendTokens(req, reply, tokens, { status });
         }
+        // Browsers never see the signup credential: it rides in an httpOnly cookie that only /auth/signup can read.
+        if (isWeb(req) && out.status === 'needs_profile' && out.signupToken) {
+          reply.setCookie(SIGNUP_COOKIE, out.signupToken, { httpOnly: true, secure: config.isProd, sameSite: 'strict', path: SIGNUP_COOKIE_PATH, maxAge: SIGNUP_WINDOW_SEC });
+          const { signupToken: _omit, ...rest } = out;
+          return rest;
+        }
         return out;
       });
 
       api.post('/auth/signup', strict(5), async (req, reply) => {
         const body = parse(C.SignupBody, req.body);
-        const tokens = await auth.signup(ctx, body, meta(req));
-        return sendTokens(req, reply, tokens);
+        let signupToken = body.signupToken;
+        if (!signupToken && isWeb(req)) {
+          // Same origin check as the refresh cookie: a request from another site is refused before anything is read.
+          const origin = req.headers.origin;
+          if (origin && !origins.has(origin)) throw unauthorized('Sign in to continue.');
+          signupToken = req.cookies[SIGNUP_COOKIE];
+        }
+        if (!signupToken) throw badRequest('signup_expired', 'Your verification expired. Start again with your phone number.');
+        try {
+          const tokens = await auth.signup(ctx, { ...body, signupToken }, meta(req));
+          reply.clearCookie(SIGNUP_COOKIE, { path: SIGNUP_COOKIE_PATH });
+          return sendTokens(req, reply, tokens);
+        } catch (err) {
+          // An expired or spent continuation is gone either way.
+          if (err instanceof AppError && ['signup_expired', 'already_registered'].includes(err.code)) reply.clearCookie(SIGNUP_COOKIE, { path: SIGNUP_COOKIE_PATH });
+          throw err;
+        }
       });
 
       api.post('/auth/refresh', strict(30), async (req, reply) => {
@@ -449,28 +484,28 @@ export async function buildApp({ config, db, provider, sms, push, now = () => ne
           pacts.acceptInvite(ctx, req.userId, req.params.id, parse(C.ParticipationBody.partial(), req.body).participation ?? null),
         );
         priv.patch<{ Params: { id: string } }>('/pacts/:id/participation', strict(20), async (req) =>
-          plan.setParticipation(ctx, req.userId, req.params.id, parse(C.ParticipationBody, req.body).participation),
+          pactPlan.setParticipation(ctx, req.userId, req.params.id, parse(C.ParticipationBody, req.body).participation),
         );
-        priv.post<{ Params: { id: string } }>('/pacts/:id/split-rest', strict(5), async (req) => plan.splitRest(ctx, req.userId, req.params.id));
+        priv.post<{ Params: { id: string } }>('/pacts/:id/split-rest', strict(5), async (req) => pactPlan.splitRest(ctx, req.userId, req.params.id));
 
         /* ---------- the plan: budget, tasks, memory */
-        priv.post<{ Params: { id: string } }>('/pacts/:id/budget', strict(30), async (req) => plan.addBudgetItem(ctx, req.userId, req.params.id, parse(C.BudgetItemBody, req.body)));
+        priv.post<{ Params: { id: string } }>('/pacts/:id/budget', strict(30), async (req) => pactPlan.addBudgetItem(ctx, req.userId, req.params.id, parse(C.BudgetItemBody, req.body)));
         priv.patch<{ Params: { id: string; itemId: string } }>('/pacts/:id/budget/:itemId', strict(30), async (req) =>
-          plan.updateBudgetItem(ctx, req.userId, req.params.id, req.params.itemId, parse(C.BudgetItemPatchBody, req.body)),
+          pactPlan.updateBudgetItem(ctx, req.userId, req.params.id, req.params.itemId, parse(C.BudgetItemPatchBody, req.body)),
         );
         priv.delete<{ Params: { id: string; itemId: string } }>('/pacts/:id/budget/:itemId', strict(30), async (req) =>
-          plan.removeBudgetItem(ctx, req.userId, req.params.id, req.params.itemId),
+          pactPlan.removeBudgetItem(ctx, req.userId, req.params.id, req.params.itemId),
         );
-        priv.post<{ Params: { id: string } }>('/pacts/:id/tasks', strict(30), async (req) => plan.createTask(ctx, req.userId, req.params.id, parse(C.TaskCreateBody, req.body)));
+        priv.post<{ Params: { id: string } }>('/pacts/:id/tasks', strict(30), async (req) => pactPlan.createTask(ctx, req.userId, req.params.id, parse(C.TaskCreateBody, req.body)));
         priv.patch<{ Params: { id: string; taskId: string } }>('/pacts/:id/tasks/:taskId', strict(60), async (req) =>
-          plan.updateTask(ctx, req.userId, req.params.id, req.params.taskId, parse(C.TaskPatchBody, req.body)),
+          pactPlan.updateTask(ctx, req.userId, req.params.id, req.params.taskId, parse(C.TaskPatchBody, req.body)),
         );
         priv.delete<{ Params: { id: string; taskId: string } }>('/pacts/:id/tasks/:taskId', strict(30), async (req) =>
-          plan.deleteTask(ctx, req.userId, req.params.id, req.params.taskId),
+          pactPlan.deleteTask(ctx, req.userId, req.params.id, req.params.taskId),
         );
-        priv.put<{ Params: { id: string } }>('/pacts/:id/memory', strict(20), async (req) => plan.saveMemory(ctx, req.userId, req.params.id, parse(C.MemoryBody, req.body)));
+        priv.put<{ Params: { id: string } }>('/pacts/:id/memory', strict(20), async (req) => pactPlan.saveMemory(ctx, req.userId, req.params.id, parse(C.MemoryBody, req.body)));
         priv.get<{ Params: { id: string; photoId: string } }>('/pacts/:id/memory/photos/:photoId', async (req, reply) => {
-          const photo = await plan.getPhoto(ctx, req.userId, req.params.id, req.params.photoId);
+          const photo = await pactPlan.getPhoto(ctx, req.userId, req.params.id, req.params.photoId);
           return reply
             .header('Content-Type', photo.mime)
             .header('Cache-Control', 'private, max-age=3600')
@@ -479,13 +514,13 @@ export async function buildApp({ config, db, provider, sms, push, now = () => ne
             .send(photo.data);
         });
         priv.delete<{ Params: { id: string; photoId: string } }>('/pacts/:id/memory/photos/:photoId', strict(20), async (req) =>
-          plan.deletePhoto(ctx, req.userId, req.params.id, req.params.photoId),
+          pactPlan.deletePhoto(ctx, req.userId, req.params.id, req.params.photoId),
         );
         // Photo uploads: raw image bytes, only three image types, 8 MB before re-encoding.
         await priv.register(async (uploads) => {
           uploads.addContentTypeParser(['image/jpeg', 'image/png', 'image/webp'], { parseAs: 'buffer', bodyLimit: 8 * 1024 * 1024 }, (_req, body, done) => done(null, body));
           uploads.post<{ Params: { id: string } }>('/pacts/:id/memory/photos', { bodyLimit: 8 * 1024 * 1024, ...strict(12, 10) }, async (req) =>
-            plan.addPhoto(ctx, req.userId, req.params.id, req.body as Buffer),
+            pactPlan.addPhoto(ctx, req.userId, req.params.id, req.body as Buffer),
           );
           uploads.post<{ Params: { id: string; payoutId: string } }>('/pacts/:id/payouts/:payoutId/receipt', { bodyLimit: 8 * 1024 * 1024, ...strict(12, 10) }, async (req) =>
             pactMoney.addReceipt(ctx, req.userId, req.params.id, req.params.payoutId, req.body as Buffer),
@@ -580,7 +615,7 @@ export async function buildApp({ config, db, provider, sms, push, now = () => ne
 
         /* ---------- Circles */
         priv.get('/circles', async (req) => circles.listCircles(ctx, req.userId));
-        priv.post('/circles', strict(10), async (req) => circles.createCircle(ctx, req.userId, parse(C.CreateCircleBody, req.body), meta(req)));
+        priv.post('/circles', strict(10), async (req, reply) => idempotentIfKeyed(req, reply, 'create_circle', () => circles.createCircle(ctx, req.userId, parse(C.CreateCircleBody, req.body), meta(req))));
         priv.get<{ Params: { id: string } }>('/circles/:id', async (req) => circles.getCircle(ctx, req.userId, req.params.id));
         priv.patch<{ Params: { id: string } }>('/circles/:id', strict(30), async (req) => circles.updateCircle(ctx, req.userId, req.params.id, parse(C.UpdateCircleBody, req.body), meta(req)));
         priv.post<{ Params: { id: string } }>('/circles/:id/leave', strict(20), async (req) => circles.leaveCircle(ctx, req.userId, req.params.id, meta(req)));
@@ -590,7 +625,9 @@ export async function buildApp({ config, db, provider, sms, push, now = () => ne
         /* ---------- Plans */
         priv.get('/plans/needs-you', async (req) => plans.needsYou(ctx, req.userId));
         priv.get<{ Params: { id: string } }>('/circles/:id/plans', async (req) => plans.listCirclePlans(ctx, req.userId, req.params.id));
-        priv.post<{ Params: { id: string } }>('/circles/:id/plans', strict(20), async (req) => plans.createPlan(ctx, req.userId, req.params.id, parse(C.CreatePlanBody, req.body), meta(req)));
+        priv.post<{ Params: { id: string } }>('/circles/:id/plans', strict(20), async (req, reply) =>
+          idempotentIfKeyed(req, reply, `create_plan:${req.params.id}`, () => plans.createPlan(ctx, req.userId, req.params.id, parse(C.CreatePlanBody, req.body), meta(req))),
+        );
         priv.get<{ Params: { id: string }; Querystring: { from?: string } }>('/plans/:id', async (req) => plans.getPlan(ctx, req.userId, req.params.id, req.query.from === 'home' ? 'home' : req.query.from === 'circle' ? 'circle' : undefined));
         priv.patch<{ Params: { id: string } }>('/plans/:id', strict(30), async (req) => plans.updatePlan(ctx, req.userId, req.params.id, parse(C.UpdatePlanBody, req.body), meta(req)));
         priv.put<{ Params: { id: string } }>('/plans/:id/rsvp-open', strict(20), async (req) => plans.setRsvpOpen(ctx, req.userId, req.params.id, parse(C.PlanRsvpOpenBody, req.body).open, meta(req)));
@@ -604,6 +641,7 @@ export async function buildApp({ config, db, provider, sms, push, now = () => ne
         priv.get<{ Params: { id: string } }>('/plans/:id/pact-draft', strict(30), async (req) => plans.pactDraft(ctx, req.userId, req.params.id));
         priv.post<{ Params: { id: string } }>('/plans/:id/shared', strict(60), async (req) => plans.recordShared(ctx, req.userId, req.params.id, parse(C.AskSharedBody, req.body).via));
         priv.post<{ Params: { id: string } }>('/plans/:id/share/reset', strict(10), async (req) => plans.resetShare(ctx, req.userId, req.params.id, meta(req)));
+        priv.get('/feed', strict(60), async (req) => home.getFeed(ctx, req.userId));
         priv.get('/home', strict(120), async (req) => home.getHome(ctx, req.userId));
         const RecapKind = z.enum(['plan', 'pact', 'split']);
         priv.get<{ Params: { kind: string; id: string }; Querystring: { from?: string } }>('/recaps/:kind/:id', async (req) => home.getRecap(ctx, req.userId, parse(RecapKind, req.params.kind), req.params.id, req.query.from === 'home' ? 'home' : 'object'));
@@ -612,9 +650,14 @@ export async function buildApp({ config, db, provider, sms, push, now = () => ne
         priv.post<{ Params: { kind: string; id: string } }>('/recaps/:kind/:id/shared', strict(60), async (req) => home.recordRecapShared(ctx, req.userId, parse(RecapKind, req.params.kind), req.params.id, parse(C.SplitSharedBody, req.body).via));
         priv.get('/splits/needs-you', async (req) => splits.needsYou(ctx, req.userId));
         priv.get<{ Params: { id: string } }>('/circles/:id/splits', async (req) => splits.listCircleSplits(ctx, req.userId, req.params.id));
-        priv.post<{ Params: { id: string }; Querystring: { from?: string } }>('/circles/:id/splits', strict(20), async (req) =>
-          splits.createSplit(ctx, req.userId, req.params.id, parse(C.CreateSplitBody, req.body), meta(req), req.query.from === 'home' ? 'home' : req.query.from === 'nav' ? 'nav' : 'circle'),
+        priv.post<{ Params: { id: string }; Querystring: { from?: string } }>('/circles/:id/splits', strict(20), async (req, reply) =>
+          idempotentIfKeyed(req, reply, `create_split:${req.params.id}`, () =>
+            splits.createSplit(ctx, req.userId, req.params.id, parse(C.CreateSplitBody, req.body), meta(req), req.query.from === 'home' ? 'home' : req.query.from === 'nav' ? 'nav' : 'circle'),
+          ),
         );
+        priv.post<{ Params: { id: string } }>('/splits/:id/organiser', strict(10), async (req) => splits.handOver(ctx, req.userId, req.params.id, parse(C.AssignTransferBody, req.body).userId ?? '', meta(req)));
+        priv.post<{ Params: { id: string } }>('/plans/:id/organiser', strict(10), async (req) => plans.handOver(ctx, req.userId, req.params.id, parse(C.AssignTransferBody, req.body).userId ?? '', meta(req)));
+        priv.post<{ Params: { id: string } }>('/splits/:id/share/reset', strict(10), async (req) => splits.resetShare(ctx, req.userId, req.params.id, meta(req)));
         priv.get<{ Params: { id: string }; Querystring: { from?: string } }>('/splits/:id', async (req) => splits.getSplit(ctx, req.userId, req.params.id, req.query.from === 'home' ? 'home' : req.query.from === 'circle' ? 'circle' : undefined));
         priv.patch<{ Params: { id: string } }>('/splits/:id', strict(30), async (req) => splits.updateSplit(ctx, req.userId, req.params.id, parse(C.UpdateSplitBody, req.body), meta(req)));
         priv.post<{ Params: { id: string } }>('/splits/:id/cancel', strict(10), async (req) => splits.cancelSplit(ctx, req.userId, req.params.id, meta(req)));
@@ -645,7 +688,9 @@ export async function buildApp({ config, db, provider, sms, push, now = () => ne
         priv.post<{ Params: { id: string } }>('/asks/:id/shared', strict(60), async (req) => asks.recordShared(ctx, req.userId, req.params.id, parse(C.AskSharedBody, req.body).via));
         priv.post<{ Params: { id: string } }>('/asks/:id/share/reset', strict(10), async (req) => asks.resetShare(ctx, req.userId, req.params.id, meta(req)));
         priv.get<{ Params: { id: string } }>('/circles/:id/asks', async (req) => asks.listCircleAsks(ctx, req.userId, req.params.id));
-        priv.post<{ Params: { id: string } }>('/circles/:id/asks', strict(20), async (req) => asks.createAsk(ctx, req.userId, req.params.id, parse(C.CreateAskBody, req.body), meta(req)));
+        priv.post<{ Params: { id: string } }>('/circles/:id/asks', strict(20), async (req, reply) =>
+          idempotentIfKeyed(req, reply, `create_ask:${req.params.id}`, () => asks.createAsk(ctx, req.userId, req.params.id, parse(C.CreateAskBody, req.body), meta(req))),
+        );
         priv.get<{ Params: { token: string } }>('/ask-links/:token/mine', strict(120), async (req) => asks.myLinkState(ctx, req.userId, req.params.token));
         priv.put<{ Params: { token: string } }>('/ask-links/:token/response', strict(60), async (req) => {
           const b = parse(C.AskResponseBody, req.body);
@@ -835,6 +880,9 @@ export async function buildApp({ config, db, provider, sms, push, now = () => ne
       }
       return reply.sendFile('index.html');
     });
+  } else {
+    // Fastify's own 404 writes "Route GET:<url> not found" to the log, URL and all. Answer with the API's JSON shape instead.
+    app.setNotFoundHandler((_req, reply) => reply.status(404).send({ error: { code: 'not_found', message: 'Not found.' } }));
   }
 
   return { app, ctx };

@@ -4,7 +4,7 @@ import { useLocation, useNavigate, useParams, useSearchParams } from 'react-rout
 import type { SplitDTO, SplitShareDTO } from '../../../../shared/contracts';
 import { useAuth } from '../../../api/auth';
 import { ApiError } from '../../../api/client';
-import { useCancelSplit, useSettleShare, useSplit } from '../../../api/splits';
+import { useCancelSplit, useHandOverSplit, useResetSplitLink, useSettleShare, useSplit } from '../../../api/splits';
 import { PactDetailSkeleton } from '../../../components/app/Skeleton';
 import { ErrorState, Notice } from '../../../components/app/States';
 import { CircleBadge } from '../../../components/circle/CircleBadge';
@@ -12,6 +12,7 @@ import { ShareStatus, progressText } from '../../../components/split/SplitBits';
 import { Avatar } from '../../../components/ui/Avatar';
 import { Button } from '../../../components/ui/Button';
 import { IconButton } from '../../../components/ui/IconButton';
+import { HandOverSheet } from '../../../components/circle/HandOverSheet';
 import { Modal } from '../../../components/ui/Modal';
 import { SectionHeading } from '../../../components/ui/SectionHeading';
 import { TopBar } from '../../../components/ui/TopBar';
@@ -23,7 +24,7 @@ import { Screen } from '../Screen';
 import '../../../components/ask/ask.css';
 import '../../../components/split/split.css';
 
-type Sheet = null | 'menu' | 'cancel' | { settle: SplitShareDTO } | { undo: SplitShareDTO };
+type Sheet = null | 'menu' | 'cancel' | 'reset' | 'hand' | { settle: SplitShareDTO } | { undo: SplitShareDTO };
 
 /** "Daniel marked ₦15,625 settled", "Anthony marked Sarah settled". Plain words, no chat. */
 function activityText(a: SplitDTO['activity'][number], who: (id: string) => string) {
@@ -57,6 +58,8 @@ export function SplitScreen() {
   const split = useSplit(id, from);
   const settle = useSettleShare(id);
   const cancel = useCancelSplit(id);
+  const reset = useResetSplitLink(id);
+  const handOver = useHandOverSplit(id);
   const [sheet, setSheet] = useState<Sheet>(null);
   const justCreated = (location.state as { justCreated?: boolean } | null)?.justCreated === true;
 
@@ -95,12 +98,12 @@ export function SplitScreen() {
     <Screen
       topBar={
         <TopBar
-          backTo={`/app/circles/${s.circleId}`}
+          backTo={params.get('from') === 'home' ? '/app/home' : `/app/circles/${s.circleId}`}
           title={s.circle.name}
           trailing={
             <span className="detail__top-actions">
               <IconButton label="Share split" icon={<Share2 />} onClick={share} />
-              {s.canEdit && <IconButton label="More" icon={<Ellipsis />} onClick={() => setSheet('menu')} />}
+              {(s.canEdit || s.canHandOver) && <IconButton label="More" icon={<Ellipsis />} onClick={() => setSheet(s.canEdit ? 'menu' : 'hand')} />}
             </span>
           }
         />
@@ -197,6 +200,12 @@ export function SplitScreen() {
               </button>
             </>
           )}
+          <button type="button" className="menu__row" onClick={() => setSheet('hand')}>
+            <span className="menu__text"><span className="menu__title">Hand over</span><span className="menu__sub">Let someone else run this split</span></span>
+          </button>
+          <button type="button" className="menu__row" onClick={() => setSheet('reset')}>
+            <span className="menu__text"><span className="menu__title">Reset the link</span><span className="menu__sub">Turns the old link off</span></span>
+          </button>
           {s.canCancel && (
             <button type="button" className="menu__row menu__row--danger" onClick={() => setSheet('cancel')}>
               <span className="menu__text"><span className="menu__title">Cancel split</span></span>
@@ -231,6 +240,22 @@ export function SplitScreen() {
               Not now
             </Button>
           </>
+        }
+      >
+        <span />
+      </Modal>
+
+      <HandOverSheet open={sheet === 'hand'} onClose={close} circleId={s.circleId} currentId={s.createdBy} busy={handOver.isPending} onPick={async (uid) => (await act(() => handOver.mutateAsync(uid), 'Handed over')) && close()} />
+
+      <Modal
+        open={sheet === 'reset'}
+        onClose={close}
+        title="Reset the link?"
+        description="The current link stops working at once. Share the new one with the people who still need it."
+        footer={
+          <Button fullWidth loading={reset.isPending} onClick={async () => (await act(() => reset.mutateAsync(), 'New link ready')) && close()}>
+            Reset link
+          </Button>
         }
       >
         <span />

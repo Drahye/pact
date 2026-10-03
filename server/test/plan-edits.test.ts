@@ -81,7 +81,10 @@ describe('Plan edits and RSVP access', () => {
     assert.equal(r.status, 200);
     const after = r.body.data.plan;
     assert.deepEqual([after.counts.in, after.mine, after.isMember, after.roughBudget, after.tasks.length], [3, 'in', false, null, 0]);
-    assert.deepEqual(after.rsvps.map((x: { userId: string }) => x.userId).sort(), [ana.user.id, ben.user.id, dan.user.id].sort());
+    assert.equal(after.rsvps.length, 3);
+    assert.ok(after.rsvps.some((x: { userId: string }) => x.userId === dan.user.id), 'their own answer is theirs');
+    assert.ok(!after.rsvps.some((x: { userId: string }) => x.userId === ana.user.id || x.userId === ben.user.id), 'other people are aliases, not account ids');
+    assert.deepEqual(r.body.people.map((x: { firstName: string }) => x.firstName).sort(), ['Ana', 'Ben', 'Dan']);
     assert.ok(r.body.people.every((x: { lastName: string }) => x.lastName === ''), 'first names only');
     assert.equal((await t.call('GET', `/plans/${p.id}`, tok(dan))).status, 404, 'the full plan stays closed');
     assert.equal((await t.call('GET', `/circles/${circleId}`, tok(dan))).status, 404, 'so does the Circle');
@@ -106,6 +109,8 @@ describe('Plan edits and RSVP access', () => {
     const c = await t.call('POST', `/plans/${p.id}/status`, tok(ana), { status: 'cancelled' });
     assert.equal(c.status, 409);
     assert.equal(code(c), 'plan_has_pact');
+    // Once it is a Pact, the action is in the Pact: Home does not keep asking members to RSVP to the Plan.
+    assert.ok(!(await t.call('GET', '/home', tok(ben))).body.data.needsYou.some((n: { sourceId: string }) => n.sourceId === p.id), 'no RSVP card for a converted Plan');
     assert.equal((await t.call('GET', `/plans/${p.id}`, tok(ana))).body.data.status, 'planning');
   });
 });

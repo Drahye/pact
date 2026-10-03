@@ -48,7 +48,7 @@
 }
 
 .panel--lg .panel__title {
-  font-size: 26px;
+  font-size: 1.625rem;
   line-height: 32px;
 }
 
@@ -57,14 +57,14 @@
 }
 
 .panel__raised {
-  font-size: clamp(44px, 5.4vw, 80px);
+  font-size: clamp(2.75rem, 5.4vw, 5rem);
   line-height: 1;
   font-weight: var(--weight-semibold);
   letter-spacing: -0.05em;
 }
 
 .panel--md .panel__raised {
-  font-size: clamp(40px, 4vw, 56px);
+  font-size: clamp(2.5rem, 4vw, 3.5rem);
 }
 
 .panel__target {

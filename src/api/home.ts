@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { HomeDTO, PersonDTO, RecapDTO, WithPeople } from '../../shared/contracts';
+import type { HomeDTO, PersonDTO, RecapDTO, RecentItem, WithPeople } from '../../shared/contracts';
 import { api } from './client';
 import { register } from './mappers';
 
@@ -14,8 +14,18 @@ export function useHome() {
     queryKey: homeKeys.all,
     queryFn: async () => unwrap(await api<WithPeople<HomeDTO>>('GET', '/home')).data,
     staleTime: 10_000,
-    refetchInterval: 20_000,
+    refetchInterval: 30_000,
     refetchOnWindowFocus: true,
+  });
+}
+
+/** Everything that happened across the person's Asks, Plans, Splits and Pacts, for the Activity tab. */
+export function useFeed() {
+  return useQuery({
+    queryKey: [...homeKeys.all, 'feed'] as const,
+    queryFn: async () => unwrap(await api<WithPeople<RecentItem[]>>('GET', '/feed')).data,
+    staleTime: 10_000,
+    refetchInterval: 30_000,
   });
 }
 

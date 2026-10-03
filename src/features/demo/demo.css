@@ -11,7 +11,7 @@
   border-radius: var(--radius-full);
   background: var(--sun-100);
   color: var(--tone-sun-fg);
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: var(--weight-semibold);
   white-space: nowrap;
 }
@@ -111,7 +111,7 @@
   font-weight: var(--weight-medium);
 }
 
-.demo-step__n { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--color-bg-sunken); font-size: 12px; }
+.demo-step__n { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--color-bg-sunken); font-size: 0.75rem; }
 .demo-step.is-on { background: var(--color-selected); color: var(--color-on-selected); box-shadow: none; }
 .demo-step.is-on .demo-step__n { background: rgba(255, 255, 255, 0.16); }
 .demo-step:focus-visible { outline: none; box-shadow: var(--shadow-focus); }
@@ -139,7 +139,7 @@
 .demo-people small { color: var(--color-text-secondary); }
 
 .demo-ring__center { display: flex; flex-direction: column; align-items: center; font-size: var(--text-sm); color: var(--color-text-secondary); }
-.demo-ring__center strong { font-size: 22px; letter-spacing: -0.04em; color: var(--color-text); }
+.demo-ring__center strong { font-size: 1.375rem; letter-spacing: -0.04em; color: var(--color-text); }
 
 .demo-gave { display: flex; flex-direction: column; }
 .demo-gave li { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); min-height: 44px; border-top: var(--border-hairline); }

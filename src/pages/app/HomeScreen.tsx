@@ -3,13 +3,12 @@ import { useEffect, useRef } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../../api/auth';
 import { trackHome, useHome } from '../../api/home';
-import { usePacts, useNotifications, useWallet } from '../../api/hooks';
+import { usePacts, useNotifications } from '../../api/hooks';
 import { HomeFirstTime } from '../../features/onboarding/HomeStates';
 import { introSeen } from '../../features/onboarding/store';
 import { PushPrompt } from '../../components/app/PushPrompt';
 import { ErrorState, Notice } from '../../components/app/States';
 import { PactListSkeleton } from '../../components/app/Skeleton';
-import { WalletStrip } from '../../components/app/WalletCard';
 import { CirclesShelf, ComingUpSection, MadeItHappenSection, MakeHappenSection, NeedsYouSection, RecentSection } from '../../components/home/HomeBits';
 import { PactCard } from '../../components/pact/PactCard';
 import { Avatar } from '../../components/ui/Avatar';
@@ -32,7 +31,6 @@ export function HomeScreen() {
   const { user } = useAuth();
   const home = useHome();
   const pacts = usePacts();
-  const wallet = useWallet();
   const notes = useNotifications();
   const all = pacts.data ?? [];
   const invites = all.filter((p) => p.viewer?.status === 'invited');
@@ -158,10 +156,6 @@ export function HomeScreen() {
           {h.state !== 'finished_only' && <MadeItHappenSection items={h.recaps} />}
         </>
       )}
-
-      <div className="screen-section">
-        <WalletStrip balance={wallet.data?.balance} />
-      </div>
     </Screen>
   );
 }

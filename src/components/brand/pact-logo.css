@@ -15,10 +15,10 @@
 }
 
 /* The mark scales with the size; the wordmark is set relative to it so they always sit together. */
-.pact-logo--sm { --mark: 20px; font-size: 15px; }
-.pact-logo--md { --mark: 24px; font-size: 18px; }
-.pact-logo--lg { --mark: 36px; font-size: 27px; }
-.pact-logo--xl { --mark: 56px; font-size: 42px; }
+.pact-logo--sm { --mark: 20px; font-size: 0.9375rem; }
+.pact-logo--md { --mark: 24px; font-size: 1.125rem; }
+.pact-logo--lg { --mark: 36px; font-size: 1.6875rem; }
+.pact-logo--xl { --mark: 56px; font-size: 2.625rem; }
 
 .pact-logo__mark {
   flex: none;

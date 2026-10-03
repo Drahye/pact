@@ -31,7 +31,7 @@ export function contentFor(kind: CommunicationKind, d: CommunicationData): Conte
         badge: { label: 'You’re in', icon: 'sparkles' },
         title: d.recipientName ? `Welcome, ${first(d.recipientName)}.` : 'Welcome to PACT.',
         message: 'This is where your group makes things happen together: the people, the money, the tasks and the next step, all in one place.',
-        primary: { label: 'Create your first Pact', to: '/app/create' },
+        primary: { label: 'Create your first Pact', to: '/app/start' },
         secondary: { label: 'Explore PACT', to: '/#story' },
       };
       break;

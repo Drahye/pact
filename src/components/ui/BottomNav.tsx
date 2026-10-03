@@ -2,7 +2,6 @@ import { Activity, House, Plus, UserRound, UsersRound } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useCreateSheet } from '../create/CreateSheet';
-import { useNotifications } from '../../api/hooks';
 import { spring } from '../../tokens/tokens';
 import './nav.css';
 
@@ -20,8 +19,6 @@ const right = [
 ];
 
 export function BottomNav() {
-  // Notifications are reached from Home, so Home carries the count. It sits over the icon and never moves the layout.
-  const unread = useNotifications().data?.unread ?? 0;
   const { pathname } = useLocation();
   const create = useCreateSheet();
   const renderTab = (t: (typeof left)[number]) => {
@@ -33,10 +30,8 @@ export function BottomNav() {
             {active && <motion.span layoutId="tab-active" className="tabbar__active" transition={spring.snappy} />}
             <span className="tabbar__icon" aria-hidden>
               {t.icon}
-              {t.to === '/app/home' && unread > 0 && <span className="tabbar__badge num">{unread > 9 ? '9+' : unread}</span>}
             </span>
             <span className="tabbar__label">{t.label}</span>
-            {t.to === '/app/home' && unread > 0 && <span className="visually-hidden">, {unread > 99 ? 'more than 99' : unread} unread notifications</span>}
           </>
         )}
       </NavLink>

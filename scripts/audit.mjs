@@ -31,7 +31,7 @@ async function signIn(phone) {
   await page.getByLabel('Mobile number').fill(phone.replace(/^0/, ''));
   await page.getByRole('button', { name: 'Send code' }).click();
   await page.getByRole('button', { name: 'Fill it in' }).click();
-  await page.locator('.wallet-strip').waitFor();
+  await page.locator('.home__header').waitFor();
 }
 
 async function checkOverflow(url) {

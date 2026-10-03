@@ -65,7 +65,7 @@
   width: 76px;
   height: 64px;
   border-radius: var(--radius-xl);
-  font-size: 26px;
+  font-size: 1.625rem;
   font-weight: var(--weight-medium);
   color: var(--color-text);
   transition: background-color var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out);
@@ -160,7 +160,7 @@
 }
 
 .wallet-card__balance {
-  font-size: 36px;
+  font-size: 2.25rem;
   line-height: 44px;
   font-weight: var(--weight-semibold);
   letter-spacing: var(--tracking-tight);
@@ -659,7 +659,7 @@ button.menu__row:hover {
   border-radius: var(--radius-full);
   background: var(--coral-400);
   box-shadow: 0 0 0 2px var(--color-bg);
-  font-size: 11px;
+  font-size: 0.6875rem;
   line-height: 18px;
   font-weight: var(--weight-bold);
   color: var(--ink-900);

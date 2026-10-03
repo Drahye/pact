@@ -82,7 +82,7 @@
 .sg-hero h1 {
   margin-top: var(--space-3);
   max-width: 16ch;
-  font-size: clamp(40px, 5vw, 72px);
+  font-size: clamp(2.5rem, 5vw, 4.5rem);
   line-height: 1;
   letter-spacing: -0.05em;
 }
@@ -118,7 +118,7 @@
 
 code {
   font-family: ui-monospace, 'SF Mono', Menlo, monospace;
-  font-size: 12px;
+  font-size: 0.75rem;
   color: var(--color-text-secondary);
 }
 
@@ -144,7 +144,7 @@ code {
 }
 
 .sg-swatch__hex {
-  font-size: 12px;
+  font-size: 0.75rem;
   color: var(--color-text-tertiary);
   text-transform: uppercase;
 }
@@ -302,7 +302,7 @@ code {
 }
 
 .sg-ring-num {
-  font-size: 28px;
+  font-size: 1.75rem;
   font-weight: 700;
 }
 

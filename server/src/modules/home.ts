@@ -209,33 +209,33 @@ interface RecentRow {
   url: string;
 }
 
-async function recent(q: Queryable, userId: string): Promise<RecentItem[]> {
-  const win = `now() - interval '14 days'`;
+async function recent(q: Queryable, userId: string, limit = 10, days = 14): Promise<RecentItem[]> {
+  const win = `now() - interval '${Math.floor(days)} days'`;
   const circle = (alias: string, col = 'circle_id') => `JOIN circle_members me ON me.circle_id = ${alias}.${col} AND me.user_id = $1 AND me.status = 'joined'`;
   const [ask, plan, split, pact] = await Promise.all([
     q.query<{ at: Date; uid: string; first: string; kind: string; attendance: string | null; label: string | null; title: string; id: string }>(
       `SELECT aa.created_at AS at, aa.user_id AS uid, u.first_name AS first, aa.kind, aa.attendance, o.label, a.title, a.id
          FROM ask_activity aa JOIN asks a ON a.id = aa.ask_id ${circle('a')} JOIN users u ON u.id = aa.user_id LEFT JOIN ask_options o ON o.id = aa.option_id
-        WHERE aa.created_at > ${win} AND aa.user_id <> $1 AND aa.kind IN ('responded', 'closed') ORDER BY aa.created_at DESC LIMIT 12`,
+        WHERE aa.created_at > ${win} AND aa.user_id <> $1 AND aa.kind IN ('responded', 'closed') ORDER BY aa.created_at DESC LIMIT ${limit + 2}`,
       [userId],
     ),
     q.query<{ at: Date; uid: string; first: string; kind: string; status: string | null; detail: string | null; title: string; id: string }>(
       `SELECT pa.created_at AS at, pa.user_id AS uid, u.first_name AS first, pa.kind, pa.status, pa.detail, p.title, p.id
          FROM plan_activity pa JOIN plans p ON p.id = pa.plan_id ${circle('p')} JOIN users u ON u.id = pa.user_id
         WHERE pa.created_at > ${win} AND pa.user_id <> $1 AND (pa.kind IN ('created', 'task_done', 'confirmed', 'done', 'cancelled', 'pact', 'date_changed') OR (pa.kind = 'rsvp' AND pa.status = 'in'))
-        ORDER BY pa.created_at DESC LIMIT 12`,
+        ORDER BY pa.created_at DESC LIMIT ${limit + 2}`,
       [userId],
     ),
     q.query<{ at: Date; uid: string; first: string; tfirst: string | null; kind: string; amount: number | null; title: string; id: string }>(
       `SELECT sa.created_at AS at, sa.user_id AS uid, u.first_name AS first, t.first_name AS tfirst, sa.kind, sa.amount::float8 AS amount, s.title, s.id
          FROM split_activity sa JOIN splits s ON s.id = sa.split_id ${circle('s')} JOIN users u ON u.id = sa.user_id LEFT JOIN users t ON t.id = sa.target_id
-        WHERE sa.created_at > ${win} AND sa.user_id <> $1 AND sa.kind IN ('created', 'settled', 'completed') ORDER BY sa.created_at DESC LIMIT 12`,
+        WHERE sa.created_at > ${win} AND sa.user_id <> $1 AND sa.kind IN ('created', 'settled', 'completed') ORDER BY sa.created_at DESC LIMIT ${limit + 2}`,
       [userId],
     ),
     q.query<{ at: Date; uid: string | null; first: string | null; type: string; amount: number | null; detail: string | null; title: string; id: string }>(
       `SELECT a.created_at AS at, a.actor_id AS uid, u.first_name AS first, a.type, a.amount::float8 AS amount, a.detail, p.title, p.id
          FROM activities a JOIN pacts p ON p.id = a.pact_id JOIN pact_members me ON me.pact_id = p.id AND me.user_id = $1 AND me.status = 'joined' LEFT JOIN users u ON u.id = a.actor_id
-        WHERE a.created_at > ${win} AND a.actor_id IS DISTINCT FROM $1 AND a.type IN ('contribution', 'task_done', 'join', 'pact_completed', 'completed') ORDER BY a.created_at DESC LIMIT 12`,
+        WHERE a.created_at > ${win} AND a.actor_id IS DISTINCT FROM $1 AND a.type IN ('contribution', 'task_done', 'join', 'pact_completed', 'completed') ORDER BY a.created_at DESC LIMIT ${limit + 2}`,
       [userId],
     ),
   ]);
@@ -272,8 +272,14 @@ async function recent(q: Queryable, userId: string): Promise<RecentItem[]> {
   }
   return rows
     .sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime())
-    .slice(0, 10)
+    .slice(0, limit)
     .map((r, i) => ({ id: `${r.object}-${new Date(r.at).getTime()}-${i}`, objectType: r.object, actorId: r.actor_id, text: r.text, at: new Date(r.at).toISOString(), url: r.url }));
+}
+
+/** The Activity tab: what happened across every Ask, Plan, Split and Pact the person is part of, newest first. */
+export async function getFeed(ctx: Ctx, userId: string) {
+  const items = await recent(ctx.db, userId, 40, 30);
+  return { data: items, people: await minimalPeople(ctx.db, items.map((i) => i.actorId ?? '')) };
 }
 
 async function recaps(q: Queryable, userId: string): Promise<RecapCardDTO[]> {

@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useCircles } from '../../../api/circles';
 import { ApiError } from '../../../api/client';
 import { useCreatePlan } from '../../../api/plans';
 import { CircleBadge } from '../../../components/circle/CircleBadge';
+import { QuickCircle } from '../../../components/circle/QuickCircle';
 import { AmountInput } from '../../../components/ui/AmountInput';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
@@ -29,12 +30,13 @@ export function CreatePlanScreen() {
   const [location, setLocation] = useState('');
   const [budget, setBudget] = useState(0);
   const [circleId, setCircleId] = useState(preCircle);
+  const [madeCircle, setMadeCircle] = useState(false);
   const [step, setStep] = useState<Step>('title');
   const [error, setError] = useState<string>();
   const list = circles.data ?? [];
   const chosen = circleId || (list.length === 1 ? list[0].id : '');
   const create = useCreatePlan(chosen);
-  const needsCircleStep = !preCircle && list.length !== 1;
+  const needsCircleStep = !preCircle && (list.length !== 1 || madeCircle);
   const steps = useMemo<Step[]>(() => (needsCircleStep ? ['title', 'when', 'where', 'budget', 'circle'] : ['title', 'when', 'where', 'budget']), [needsCircleStep]);
   const idx = Math.max(0, steps.indexOf(step));
   const last = idx === steps.length - 1;
@@ -126,9 +128,7 @@ export function CreatePlanScreen() {
               ))}
             </div>
           ) : (
-            <p>
-              You’re not in a Circle yet. <Link to="/app/circles/new" className="link">Create one first</Link>.
-            </p>
+            <QuickCircle onCreated={(id) => (setCircleId(id), setMadeCircle(true))} />
           ))}
         {error && <p className="field__error" role="alert">{error}</p>}
       </div>

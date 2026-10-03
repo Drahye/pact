@@ -1,8 +1,10 @@
+import { useRef } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { PactDraftDTO, PersonDTO, PlanDTO, PlanNeedDTO, PlanStatus, PlanSummaryDTO, WithPeople, Attendance } from '../../shared/contracts';
 import { askKeys } from './asks';
-import { api } from './client';
+import { api, intentKeys } from './client';
 import { circleKeys } from './circles';
+import { homeKeys } from './home';
 import { register } from './mappers';
 
 export const planKeys = {
@@ -16,7 +18,7 @@ export const planKeys = {
 
 type Single = WithPeople<PlanDTO>;
 type Mine = WithPeople<{ plan: PlanDTO; canJoinCircle: boolean }>;
-const LIVE = { refetchInterval: 8_000, refetchOnWindowFocus: true } as const;
+const LIVE = { refetchInterval: 20_000, refetchOnWindowFocus: true } as const;
 const unwrap = <T extends { people: PersonDTO[] }>(r: T) => (register(r.people), r);
 
 export function usePlan(id: string | undefined, from?: 'circle' | 'home') {
@@ -57,6 +59,7 @@ function useRefresh() {
     qc.invalidateQueries({ queryKey: planKeys.needs });
     qc.invalidateQueries({ queryKey: circleKeys.all });
     qc.invalidateQueries({ queryKey: ['notifications'] });
+    qc.invalidateQueries({ queryKey: homeKeys.all });
   };
 }
 
@@ -78,8 +81,9 @@ function usePlanWrite<V>(planId: string, fn: (v: V) => Promise<Single>) {
 export function useCreatePlan(circleId: string) {
   const refresh = useRefresh();
   const qc = useQueryClient();
+  const keyFor = useRef(intentKeys()).current;
   return useMutation({
-    mutationFn: (b: { title: string; category: string; date?: string; endDate?: string; location?: string; roughBudget?: number }) => api<Single>('POST', `/circles/${circleId}/plans`, b),
+    mutationFn: (b: { title: string; category: string; date?: string; endDate?: string; location?: string; roughBudget?: number }) => api<Single>('POST', `/circles/${circleId}/plans`, b, { idempotencyKey: keyFor(b) }),
     onSuccess: (r) => (register(r.people), qc.setQueryData(planKeys.one(r.data.id), r.data), refresh()),
   });
 }
@@ -93,6 +97,7 @@ export const usePatchTask = (id: string) => usePlanWrite(id, (b: { taskId: strin
 export const useDeleteTask = (id: string) => usePlanWrite(id, (taskId: string) => api('DELETE', `/plans/${id}/tasks/${taskId}`));
 export const useLinkAsk = (id: string) => usePlanWrite(id, (askId: string) => api('POST', `/plans/${id}/asks`, { askId }));
 export const useUnlinkAsk = (id: string) => usePlanWrite(id, (askId: string) => api('DELETE', `/plans/${id}/asks/${askId}`));
+export const useHandOverPlan = (id: string) => usePlanWrite(id, (userId: string) => api('POST', `/plans/${id}/organiser`, { userId }));
 export const useResetPlanLink = (id: string) => usePlanWrite(id, (_: void) => api('POST', `/plans/${id}/share/reset`, {}));
 
 export function useRsvpViaLink(token: string) {

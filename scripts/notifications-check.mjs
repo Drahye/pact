@@ -83,7 +83,7 @@ for (const [w, h] of VPS) {
     await page.getByLabel('Mobile number').fill('8010000001');
     await page.getByRole('button', { name: 'Send code' }).click();
     await page.getByRole('button', { name: 'Fill it in' }).click();
-    await page.locator('.wallet-strip').waitFor();
+    await page.locator('.home__header').waitFor();
     session = await ctx.storageState();
   }
   await page.goto(`${B}/app/home`);
@@ -92,7 +92,7 @@ for (const [w, h] of VPS) {
   ok(`stay-in-the-loop card is offered at ${w}`, await prompt.isVisible());
   ok('the browser permission was NOT requested on load', (await page.evaluate(() => window.__asked || 0)) === 0);
   await shot('1-home');
-  const badge = await page.locator('.bell__dot, .tabbar__badge').allTextContents();
+  const badge = await page.locator('.bell__dot').allTextContents();
   ok('unread badge shows on the bell and the Home tab', badge.length >= 2, JSON.stringify(badge));
   await noOverflow('home');
   await axe(page, `home@${w}`);
@@ -187,7 +187,7 @@ for (const [w, h] of VPS) {
   await sp.getByLabel('Mobile number').fill('8010000002');
   await sp.getByRole('button', { name: 'Send code' }).click();
   await sp.getByRole('button', { name: 'Fill it in' }).click();
-  await sp.locator('.wallet-strip').waitFor();
+  await sp.locator('.home__header').waitFor();
   await sp.getByRole('button', { name: 'Turn on notifications' }).click().catch(() => undefined);
   await sp.waitForTimeout(1200);
   await sp.getByRole('link', { name: 'Me' }).last().click();

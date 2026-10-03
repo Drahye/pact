@@ -57,7 +57,7 @@
   border-radius: var(--radius-full);
   background: var(--tone-bg);
   color: var(--tone-fg);
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: var(--weight-semibold);
 }
 
@@ -106,7 +106,7 @@
 .comm--celebrate .comm__hero::after { width: 18px; height: 18px; right: 14%; bottom: 20%; background: var(--pink-400); }
 
 .comm__title {
-  font-size: clamp(24px, 8cqw, 32px);
+  font-size: clamp(1.5rem, 8cqw, 2rem);
   line-height: 1.08;
   letter-spacing: -0.04em;
   font-weight: var(--weight-semibold);
@@ -204,7 +204,7 @@
 .comm-pact__date svg { width: 16px; height: 16px; }
 
 .comm-amount__value {
-  font-size: clamp(32px, 11cqw, 44px);
+  font-size: clamp(2rem, 11cqw, 2.75rem);
   line-height: 1.05;
   letter-spacing: -0.05em;
   font-weight: var(--weight-bold);
@@ -237,7 +237,7 @@
   border-radius: 50%;
   background: var(--color-surface-inverse);
   color: var(--color-text-inverse);
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: var(--weight-semibold);
 }
 
@@ -255,7 +255,7 @@
   height: 26px;
   padding: 0 var(--space-3) 0 var(--space-2);
   border-radius: var(--radius-full);
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: var(--weight-semibold);
   white-space: nowrap;
 }
@@ -311,5 +311,5 @@
   color: var(--color-text-secondary);
 }
 
-.comm-ring-center strong { font-size: 22px; letter-spacing: -0.04em; color: var(--color-text); }
+.comm-ring-center strong { font-size: 1.375rem; letter-spacing: -0.04em; color: var(--color-text); }
 .comm-ring-center svg { width: 28px; height: 28px; padding: 4px; border-radius: 50%; background: var(--color-accent); color: var(--ink-900); }

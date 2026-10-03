@@ -51,7 +51,7 @@
   padding: 0 var(--space-4);
   border-radius: var(--radius-lg);
   background: var(--mint-100);
-  font-size: 26px;
+  font-size: 1.625rem;
   font-weight: var(--weight-bold);
   letter-spacing: 0.02em;
   color: var(--color-text);
@@ -131,7 +131,7 @@
 }
 
 .person__guest {
-  font-size: 11px;
+  font-size: 0.6875rem;
   font-weight: var(--weight-semibold);
   color: var(--color-text-secondary);
 }
@@ -385,7 +385,7 @@
 }
 
 .person__pledge {
-  font-size: 11px;
+  font-size: 0.6875rem;
   font-weight: var(--weight-semibold);
   color: var(--tone-sky-fg);
 }
@@ -495,7 +495,7 @@
 
 .stepper__value {
   min-width: 32px;
-  font-size: 24px;
+  font-size: 1.5rem;
   font-weight: var(--weight-bold);
   text-align: center;
 }

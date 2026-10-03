@@ -33,7 +33,8 @@ export interface PaymentProvider {
     reference: string;
     amount: number;
     channel: 'card' | 'bank_transfer';
-    customer: { id: string; phone: string; name: string };
+    /** `email` is the person's verified email when they have one; the provider falls back to a placeholder otherwise. */
+    customer: { id: string; phone: string | null; name: string; email?: string };
     callbackUrl: string;
   }): Promise<{ checkoutUrl: string }>;
   verifyCheckout(reference: string): Promise<CheckoutStatus>;

@@ -6,7 +6,9 @@ import type { Queryable } from '../db/index.js';
 import { hashSecret, keyedHash, randomCode, randomDigits, randomToken, safeEqual, verifySecret } from '../lib/crypto.js';
 import { AppError, badRequest, tooMany, unauthorized } from '../lib/errors.js';
 import { maskPhone, normalizeNgPhone } from '../lib/phone.js';
-import { addIdentity, findIdentity } from './identities.js';
+import { consumeEmailOtp, EMAIL_OTP_TTL_MS, issueEmailOtp } from './emailAuth.js';
+import { track } from '../lib/events.js';
+import { addIdentity, findIdentity, maskEmail, normalizeEmail, userIdentities } from './identities.js';
 import { createAccount } from './ledger.js';
 import { audit, notify } from './platform.js';
 
@@ -23,7 +25,7 @@ const TINTS = ['mint', 'peach', 'sky', 'lilac', 'sand'] as const;
 
 export interface UserRow {
   id: string;
-  phone: string;
+  phone: string | null;
   first_name: string;
   last_name: string;
   color: string;
@@ -252,75 +254,100 @@ export async function verifyOtp(ctx: Ctx, rawPhone: string, code: string, device
   await consumeOtp(ctx, phone, code, 'login', meta);
 
   const known = await findIdentity(ctx.db, 'phone', phone);
-  const user = known ? await ctx.db.query<{ id: string; status: string }>('SELECT id, status FROM users WHERE id = $1', [known.user_id]) : { rows: [] as { id: string; status: string }[] };
-  if (user.rows[0]) {
-    if (user.rows[0].status !== 'active') throw new AppError(403, 'account_restricted', 'This account is restricted. Contact support.');
-    const tokens = await ctx.db.tx(async (q) => {
-      const t = await createSession(ctx, q, user.rows[0].id, device, meta);
-      await audit(q, { actorId: user.rows[0].id, action: 'auth.sign_in', ip: meta.ip, metadata: { device: device ?? null, provider: 'phone' } });
-      return t;
-    });
-    return { status: 'signed_in', ...tokens };
-  }
+  if (known) return signInUser(ctx, known.user_id, 'phone', device, meta);
+  return { status: 'needs_profile', signupToken: await mintSignupToken(ctx, { provider: 'phone', subject: phone, phone }), phone };
+}
 
-  const signupToken = await new SignJWT({ phone, purpose: 'signup' })
+/**
+ * What a verified sign-in proved, carried (signed, 20 minutes, in an httpOnly cookie on the web) between "verified" and "account created".
+ * It is never stored in page storage and never logged.
+ */
+export interface SignupClaim {
+  provider: 'phone' | 'email' | 'google';
+  subject: string;
+  phone?: string;
+  email?: string;
+  firstName?: string;
+  lastName?: string;
+}
+
+export async function mintSignupToken(ctx: Ctx, claim: SignupClaim) {
+  return new SignJWT({ purpose: 'signup', ...claim })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime('20m')
     .setIssuer('pact-api')
     .setAudience('pact-signup')
     .sign(secretKey(ctx));
-  return { status: 'needs_profile', signupToken, phone };
+}
+
+async function readSignupToken(ctx: Ctx, token: string): Promise<SignupClaim> {
+  try {
+    const { payload } = await jwtVerify(token, secretKey(ctx), { issuer: 'pact-api', audience: 'pact-signup', algorithms: ['HS256'] });
+    if (payload.purpose !== 'signup') throw new Error('bad token');
+    // Tokens minted before identities carried only a phone.
+    if (typeof payload.provider !== 'string' && typeof payload.phone === 'string') return { provider: 'phone', subject: payload.phone, phone: payload.phone };
+    if (!['phone', 'email', 'google'].includes(String(payload.provider)) || typeof payload.subject !== 'string') throw new Error('bad token');
+    return payload as unknown as SignupClaim;
+  } catch {
+    throw badRequest('signup_expired', 'Your sign-in expired. Start again.');
+  }
+}
+
+export async function describeSignup(ctx: Ctx, token: string) {
+  const c = await readSignupToken(ctx, token);
+  return { provider: c.provider, ...(c.email ? { email: maskEmail(c.email) } : {}), suggested: { firstName: c.firstName ?? '', lastName: c.lastName ?? '' } };
+}
+
+/** Anyone who invited this number before the person had an account: turn it into a real invite. Only ever called once the number is verified. */
+export async function claimPhoneInvites(q: Queryable, userId: string, phone: string) {
+  const invites = await q.query<{ pact_id: string; invited_by: string; title: string }>(
+    `UPDATE pact_phone_invites i SET claimed_at = now() FROM pacts p
+      WHERE i.phone = $1 AND i.claimed_at IS NULL AND p.id = i.pact_id AND p.status = 'open'
+      RETURNING i.pact_id, i.invited_by, p.title`,
+    [phone],
+  );
+  for (const inv of invites.rows) {
+    await q.query(
+      `INSERT INTO pact_members (pact_id, user_id, role, status, invited_by) VALUES ($1, $2, 'member', 'invited', $3) ON CONFLICT DO NOTHING`,
+      [inv.pact_id, userId, inv.invited_by],
+    );
+    await notify(q, [userId], { type: 'invite', title: 'You’re invited', body: `You’ve been invited to ${inv.title}.`, pactId: inv.pact_id });
+  }
+  return invites.rowCount ?? 0;
 }
 
 export async function signup(
   ctx: Ctx,
-  input: { signupToken: string; firstName: string; lastName: string; pin: string; referralCode?: string; device?: string },
+  input: { signupToken: string; firstName: string; lastName: string; pin?: string; referralCode?: string; device?: string },
   meta: ReqMeta,
 ): Promise<AuthTokensDTO> {
-  let phone: string;
-  try {
-    const { payload } = await jwtVerify(input.signupToken, secretKey(ctx), { issuer: 'pact-api', audience: 'pact-signup', algorithms: ['HS256'] });
-    if (payload.purpose !== 'signup' || typeof payload.phone !== 'string') throw new Error('bad token');
-    phone = payload.phone;
-  } catch {
-    throw badRequest('signup_expired', 'Your verification expired. Start again with your phone number.');
-  }
-  assertStrongPin(input.pin);
-  const pinHash = await hashSecret(input.pin);
+  const claim = await readSignupToken(ctx, input.signupToken);
+  if (input.pin !== undefined) assertStrongPin(input.pin);
+  const pinHash = input.pin !== undefined ? await hashSecret(input.pin) : null;
 
   return ctx.db.tx(async (q) => {
-    const taken = await findIdentity(q, 'phone', phone);
-    if (taken || (await q.query('SELECT 1 FROM users WHERE phone = $1', [phone])).rowCount) throw badRequest('already_registered', 'This number already has an account. Sign in instead.');
+    // The identity may have been used since the code was verified (a second tab, a retry): the continuation is then spent.
+    if (await findIdentity(q, claim.provider, claim.subject)) throw badRequest('already_registered', 'This sign-in already has an account. Sign in instead.');
+    if (claim.phone && (await q.query('SELECT 1 FROM users WHERE phone = $1', [claim.phone])).rowCount) throw badRequest('already_registered', 'This number already has an account. Sign in instead.');
 
     const referrer = input.referralCode
       ? (await q.query<{ id: string }>('SELECT id FROM users WHERE referral_code = $1', [input.referralCode.toUpperCase()])).rows[0]
       : undefined;
-    const seed = Number.parseInt(phone.slice(-4), 10);
+    const seed = Number.parseInt(keyedHash(ctx.config.HASH_SECRET, claim.subject).replace(/[^0-9]/g, '').slice(0, 6) || '0', 10);
     const u = await q.query<{ id: string }>(
       `INSERT INTO users (phone, first_name, last_name, color, tint, pin_hash, referral_code, referred_by)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
-      [phone, cap(input.firstName), cap(input.lastName), PALETTE[seed % PALETTE.length], TINTS[seed % TINTS.length], pinHash, randomCode(7), referrer?.id ?? null],
+      [claim.phone ?? null, cap(input.firstName), cap(input.lastName), PALETTE[seed % PALETTE.length], TINTS[seed % TINTS.length], pinHash, randomCode(7), referrer?.id ?? null],
     );
     const userId = u.rows[0].id;
-    await addIdentity(q, userId, 'phone', phone, { phone });
+    await addIdentity(q, userId, claim.provider, claim.subject, { ...(claim.email ? { email: claim.email } : {}), ...(claim.phone ? { phone: claim.phone } : {}) });
     await createAccount(q, 'user_wallet', userId);
 
-    // Anyone who invited this number before they had an account: turn it into a real invite.
-    const invites = await q.query<{ pact_id: string; invited_by: string; title: string }>(
-      `UPDATE pact_phone_invites i SET claimed_at = now() FROM pacts p
-        WHERE i.phone = $1 AND i.claimed_at IS NULL AND p.id = i.pact_id AND p.status = 'open'
-        RETURNING i.pact_id, i.invited_by, p.title`,
-      [phone],
-    );
-    for (const inv of invites.rows) {
-      await q.query(
-        `INSERT INTO pact_members (pact_id, user_id, role, status, invited_by) VALUES ($1, $2, 'member', 'invited', $3) ON CONFLICT DO NOTHING`,
-        [inv.pact_id, userId, inv.invited_by],
-      );
-      await notify(q, [userId], { type: 'invite', title: 'You’re invited', body: `You’ve been invited to ${inv.title}.`, pactId: inv.pact_id });
-    }
-    await audit(q, { actorId: userId, action: 'auth.sign_up', ip: meta.ip, metadata: { referred: !!referrer } });
+    // Phone invites are claimed only by someone who has verified that exact number, which a phone sign-up just did.
+    if (claim.provider === 'phone' && claim.phone) await claimPhoneInvites(q, userId, claim.phone);
+    await audit(q, { actorId: userId, action: 'auth.sign_up', ip: meta.ip, metadata: { referred: !!referrer, provider: claim.provider } });
+    await track(q, ctx.config, 'auth_completed', { userId, props: { provider: claim.provider, is_new: true } }, true);
     return createSession(ctx, q, userId, input.device, meta);
   });
 }
@@ -383,17 +410,34 @@ export async function changePin(ctx: Ctx, userId: string, sessionId: string, cur
 
 export const PIN_RESET_HOLD_HOURS = 24;
 
-export async function requestPinReset(ctx: Ctx, userId: string, meta: ReqMeta) {
-  const u = await getUser(ctx.db, userId);
-  const code = await issueOtp(ctx, u.phone, 'pin_reset', meta);
-  await audit(ctx.db, { actorId: userId, action: 'pin.reset_requested', ip: meta.ip });
-  return { expiresInSec: OTP_TTL_MS / 1000, ...(ctx.config.exposeDevCodes ? { devCode: code } : {}) };
+/** The verified ways to reach a person: a phone identity, and any identity that carries a verified email (email, or Google). */
+async function recoveryChannels(ctx: Ctx, userId: string) {
+  const ids = await userIdentities(ctx.db, userId);
+  return { phone: ids.find((i) => i.provider === 'phone')?.phone ?? null, email: ids.find((i) => i.email)?.email ?? null };
 }
 
-export async function resetPin(ctx: Ctx, userId: string, sessionId: string, code: string, newPin: string, meta: ReqMeta) {
-  const u = await getUser(ctx.db, userId);
+export type RecoveryChannel = 'phone' | 'email';
+
+async function pickChannel(ctx: Ctx, userId: string, via?: RecoveryChannel) {
+  const ch = await recoveryChannels(ctx, userId);
+  const chosen: RecoveryChannel | null = via ? (ch[via] ? via : null) : ch.phone ? 'phone' : ch.email ? 'email' : null;
+  if (!chosen) throw badRequest('no_recovery_method', 'Add a verified email or phone number to your account first. Then you can reset your PIN.');
+  return { channel: chosen, address: ch[chosen]! };
+}
+
+export async function requestPinReset(ctx: Ctx, userId: string, meta: ReqMeta, via?: RecoveryChannel) {
+  const { channel, address } = await pickChannel(ctx, userId, via);
+  const code = channel === 'phone' ? await issueOtp(ctx, address, 'pin_reset', meta) : await issueEmailOtp(ctx, address, 'pin_reset', meta, userId);
+  await audit(ctx.db, { actorId: userId, action: 'pin.reset_requested', ip: meta.ip, metadata: { via: channel } });
+  const expose = channel === 'phone' ? ctx.config.exposeDevCodes : ctx.config.exposeEmailCodes;
+  return { via: channel, sentTo: channel === 'phone' ? maskPhone(address) : maskEmail(address), expiresInSec: (channel === 'phone' ? OTP_TTL_MS : EMAIL_OTP_TTL_MS) / 1000, ...(expose ? { devCode: code } : {}) };
+}
+
+export async function resetPin(ctx: Ctx, userId: string, sessionId: string, code: string, newPin: string, meta: ReqMeta, via?: RecoveryChannel) {
   assertStrongPin(newPin);
-  await consumeOtp(ctx, u.phone, code, 'pin_reset', meta);
+  const { channel, address } = await pickChannel(ctx, userId, via);
+  if (channel === 'phone') await consumeOtp(ctx, address, code, 'pin_reset', meta);
+  else await consumeEmailOtp(ctx, address, code, 'pin_reset', meta, userId);
   await ctx.db.tx(async (q) => {
     await q.query(
       'UPDATE users SET pin_hash = $2, pin_failed_attempts = 0, pin_locked_until = NULL, pin_reset_at = now(), updated_at = now() WHERE id = $1',
@@ -416,4 +460,55 @@ export function assertNoResetHold(ctx: Ctx, user: UserRow) {
   if (until > ctx.now()) {
     throw new AppError(423, 'reset_hold', `For your safety, withdrawals and bank changes are paused until ${until.toLocaleString('en-NG', { timeZone: 'Africa/Lagos', dateStyle: 'medium', timeStyle: 'short' })} after your PIN reset.`, { until: until.toISOString() });
   }
+}
+
+/** First PIN. Never at sign-up: asked for the first time a sensitive action needs one. Changing an existing PIN needs the old one. */
+export async function setupPin(ctx: Ctx, userId: string, pin: string, meta: ReqMeta) {
+  assertStrongPin(pin);
+  const hash = await hashSecret(pin);
+  const r = await ctx.db.query('UPDATE users SET pin_hash = $2, pin_failed_attempts = 0, pin_locked_until = NULL, updated_at = now() WHERE id = $1 AND pin_hash IS NULL', [userId, hash]);
+  if (!r.rowCount) throw new AppError(409, 'pin_already_set', 'You already have a PIN. Change it from Security.');
+  await audit(ctx.db, { actorId: userId, action: 'pin.created', ip: meta.ip });
+}
+
+/* --------------------------------------------------------------------------
+   Email sign-in
+   -------------------------------------------------------------------------- */
+
+export async function requestEmailLogin(ctx: Ctx, rawEmail: string, meta: ReqMeta) {
+  const email = normalizeEmail(rawEmail);
+  if (!email) throw badRequest('invalid_email', 'Enter a valid email address.');
+  // The same answer and the same email whether or not this address has an account.
+  const code = await issueEmailOtp(ctx, email, 'login', meta);
+  return { email: maskEmail(email), expiresInSec: EMAIL_OTP_TTL_MS / 1000, ...(ctx.config.exposeEmailCodes ? { devCode: code } : {}) };
+}
+
+export async function verifyEmailLogin(ctx: Ctx, rawEmail: string, code: string, device: string | undefined, meta: ReqMeta): Promise<OtpVerifyDTO> {
+  const email = normalizeEmail(rawEmail);
+  if (!email) throw badRequest('invalid_email', 'Enter a valid email address.');
+  await consumeEmailOtp(ctx, email, code, 'login', meta);
+  const known = await findIdentity(ctx.db, 'email', email);
+  if (known) return signInUser(ctx, known.user_id, 'email', device, meta);
+  // The same mailbox already signs in through Google: the code just proved this person owns it, so attach the address to that account
+  // rather than starting a second one.
+  const viaGoogle = (await ctx.db.query<{ user_id: string }>(`SELECT user_id FROM user_identities WHERE provider = 'google' AND email = $1 LIMIT 1`, [email])).rows[0];
+  if (viaGoogle) {
+    await addIdentity(ctx.db, viaGoogle.user_id, 'email', email, { email });
+    await audit(ctx.db, { actorId: viaGoogle.user_id, action: 'email_identity_linked', ip: meta.ip, metadata: { via: 'google_email' } });
+    return signInUser(ctx, viaGoogle.user_id, 'email', device, meta);
+  }
+  return { status: 'needs_profile', signupToken: await mintSignupToken(ctx, { provider: 'email', subject: email, email }), email };
+}
+
+/** Starts a session for an existing account, whichever identity proved it. */
+export async function signInUser(ctx: Ctx, userId: string, provider: 'phone' | 'email' | 'google', device: string | undefined, meta: ReqMeta): Promise<OtpVerifyDTO> {
+  const u = (await ctx.db.query<{ status: string }>('SELECT status FROM users WHERE id = $1', [userId])).rows[0];
+  if (!u || u.status !== 'active') throw new AppError(403, 'account_restricted', 'This account is restricted. Contact support.');
+  const tokens = await ctx.db.tx(async (q) => {
+    const t = await createSession(ctx, q, userId, device, meta);
+    await audit(q, { actorId: userId, action: 'auth.sign_in', ip: meta.ip, metadata: { device: device ?? null, provider } });
+    await track(q, ctx.config, 'auth_completed', { userId, props: { provider, is_new: false } }, true);
+    return t;
+  });
+  return { status: 'signed_in', ...tokens };
 }

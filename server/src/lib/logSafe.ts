@@ -16,6 +16,8 @@ const CAPABILITY_PATHS = [
 
 export function sanitizeUrl(url: string | undefined): string | undefined {
   if (!url) return url;
+  // The Google callback's query carries the authorization code and the OAuth state: neither is ever written down.
+  if (/^\/api\/auth\/google\/callback\?/.test(url)) return url.replace(/\?.*$/, `?${REDACTED}`);
   for (const re of CAPABILITY_PATHS) if (re.test(url)) return url.replace(re, `$1${REDACTED}`);
   return url;
 }

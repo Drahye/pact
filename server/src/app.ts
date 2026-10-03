@@ -10,7 +10,7 @@ import { resolve } from 'node:path';
 import { z, ZodError } from 'zod';
 import * as C from '../../shared/contracts.js';
 import { stableStringify } from './lib/crypto.js';
-import type { AuthTokensDTO } from '../../shared/contracts.js';
+import type { AuthTokensDTO, OtpVerifyDTO } from '../../shared/contracts.js';
 import type { Config } from './config.js';
 import type { Ctx, ReqMeta } from './context.js';
 import type { Db } from './db/index.js';
@@ -19,6 +19,7 @@ import { postgresRateLimitStore, rateLimitKey } from './lib/rateLimitStore.js';
 import { AppError, badRequest, conflict, notFound, unauthorized } from './lib/errors.js';
 import * as auth from './modules/auth.js';
 import * as asks from './modules/asks.js';
+import * as googleAuth from './modules/googleAuth.js';
 import * as circles from './modules/circles.js';
 import * as conversation from './modules/conversation.js';
 import { reconcile } from './modules/ledger.js';
@@ -39,6 +40,8 @@ import { handleWebhook } from './modules/webhooks.js';
 import { createPaystackProvider } from './payments/paystack.js';
 import type { PaymentProvider } from './payments/provider.js';
 import { createSandboxProvider } from './payments/sandbox.js';
+import { createEmail, type EmailSender } from './payments/email.js';
+import { createGoogle, type GoogleClient } from './payments/google.js';
 import { createSms, type SmsSender } from './payments/sms.js';
 import { createPushSender, pushPublicConfig, removeSubscription, saveSubscription, type PushSender } from './modules/push.js';
 
@@ -74,13 +77,15 @@ export interface BuildOptions {
   db: Db;
   provider?: PaymentProvider;
   sms?: SmsSender;
+  email?: EmailSender;
+  google?: GoogleClient;
   push?: PushSender | null;
   now?: () => Date;
   /** Tests: capture log output. */
   logStream?: { write: (line: string) => void };
 }
 
-export async function buildApp({ config, db, provider, sms, push, now = () => new Date(), logStream }: BuildOptions) {
+export async function buildApp({ config, db, provider, sms, email, google, push, now = () => new Date(), logStream }: BuildOptions) {
   const app = Fastify({
     logger: config.isTest && !logStream
       ? false
@@ -88,7 +93,7 @@ export async function buildApp({ config, db, provider, sms, push, now = () => ne
           level: config.LOG_LEVEL,
           // Never log credentials, codes, PINs or account numbers.
           redact: {
-            paths: ['req.headers.authorization', 'req.headers.cookie', 'res.headers["set-cookie"]', '*.pin', '*.currentPin', '*.newPin', '*.accountNumber', '*.bvn', '*.refreshToken', '*.signupToken'],
+            paths: ['req.headers.authorization', 'req.headers.cookie', 'res.headers["set-cookie"]', '*.pin', '*.currentPin', '*.newPin', '*.accountNumber', '*.bvn', '*.refreshToken', '*.signupToken', '*.code', '*.devCode', '*.state', '*.id_token', '*.access_token'],
             censor: '[redacted]',
           },
           // Capability links carry a secret in the path; the request log never keeps it.
@@ -105,6 +110,8 @@ export async function buildApp({ config, db, provider, sms, push, now = () => ne
     db,
     provider: provider ?? (config.PAYMENTS_PROVIDER === 'paystack' ? createPaystackProvider(config) : createSandboxProvider(config)),
     sms: sms ?? createSms(config, app.log),
+    email: email ?? createEmail(config, app.log),
+    google: google ?? createGoogle(config),
     push: push === undefined ? createPushSender(config) : push,
     log: app.log,
     now,
@@ -279,17 +286,76 @@ export async function buildApp({ config, db, provider, sms, push, now = () => ne
         deployEnv: config.deployEnv,
         exposeDevCodes: config.exposeDevCodes,
         push: pushPublicConfig(config),
+        auth: { google: config.googleEnabled, email: true },
       }));
 
       /* ---------- auth */
+      /** Which way in was chosen. A daily visitor pseudonym and the provider kind: no address, number or code. */
+      const methodSelected = (req: FastifyRequest, provider: 'phone' | 'email') => {
+        const m = meta(req);
+        return track(ctx.db, config, 'auth_method_selected', { actor: visitorId(config, m.ip, m.userAgent, ctx.now().toISOString().slice(0, 10)), key: `ams:${randomUUID()}`, props: { provider } });
+      };
       api.post('/auth/otp/request', strict(5), async (req) => {
         const body = parse(C.OtpRequestBody, req.body);
+        await methodSelected(req, 'phone');
         return auth.requestOtp(ctx, body.phone, meta(req));
       });
 
       api.post('/auth/otp/verify', strict(10), async (req, reply) => {
         const body = parse(C.OtpVerifyBody, req.body);
-        const out = await auth.verifyOtp(ctx, body.phone, body.code, body.device, meta(req));
+        return finishVerify(req, reply, await auth.verifyOtp(ctx, body.phone, body.code, body.device, meta(req)));
+      });
+
+      api.post('/auth/email/request', strict(5), async (req) => {
+        const body = parse(C.EmailRequestBody, req.body);
+        await methodSelected(req, 'email');
+        return auth.requestEmailLogin(ctx, body.email, meta(req));
+      });
+      api.post('/auth/email/verify', strict(10), async (req, reply) => {
+        const body = parse(C.EmailVerifyBody, req.body);
+        return finishVerify(req, reply, await auth.verifyEmailLogin(ctx, body.email, body.code, body.device, meta(req)));
+      });
+
+      /* ---------- Google (OIDC authorization code + PKCE). The callback decides where a person goes from server-side state, never from its own query. */
+      const GOOGLE_COOKIE_PATH = '/api/auth/google';
+      const dest = (path: string, to: string | null) => `${config.APP_ORIGIN}${path}${to ? `${path.includes('?') ? '&' : '?'}to=${encodeURIComponent(to)}` : ''}`;
+      api.post('/auth/google/start', strict(10), async (req, reply) => {
+        const body = parse(z.object({ returnTo: z.string().max(300).optional() }), req.body);
+        const m = meta(req);
+        await track(ctx.db, config, 'auth_method_selected', { actor: visitorId(config, m.ip, m.userAgent, ctx.now().toISOString().slice(0, 10)), key: `ams:${randomUUID()}`, props: { provider: 'google' } });
+        const { state, url } = await googleAuth.startGoogle(ctx, { mode: 'signin', returnTo: body.returnTo });
+        // Lax, not Strict: the callback is a cross-site top-level navigation from Google, and Strict cookies are not sent on those.
+        reply.setCookie(googleAuth.GOOGLE_STATE_COOKIE, state, { httpOnly: true, secure: config.isProd, sameSite: 'lax', path: GOOGLE_COOKIE_PATH, maxAge: 600 });
+        return { url };
+      });
+
+      api.get<{ Querystring: { state?: string; code?: string; error?: string } }>('/auth/google/callback', strict(20), async (req, reply) => {
+        const outcome = await googleAuth.finishGoogle(ctx, { state: req.query.state, cookieState: req.cookies[googleAuth.GOOGLE_STATE_COOKIE], code: req.query.code, providerError: !!req.query.error }, meta(req));
+        reply.clearCookie(googleAuth.GOOGLE_STATE_COOKIE, { path: GOOGLE_COOKIE_PATH });
+        reply.header('Cache-Control', 'no-store');
+        if (outcome.kind === 'signed_in') {
+          // The browser collects its session through the ordinary refresh route: the cookie is set here, the tokens never ride a URL.
+          reply.setCookie(REFRESH_COOKIE, outcome.out.refreshToken!, { httpOnly: true, secure: config.isProd, sameSite: 'strict', path: '/api/auth', maxAge: config.REFRESH_TOKEN_TTL_DAYS * 86_400 });
+          return reply.redirect(dest('/app/auth/google', outcome.returnTo));
+        }
+        if (outcome.kind === 'needs_profile') {
+          reply.setCookie(SIGNUP_COOKIE, outcome.signupToken, { httpOnly: true, secure: config.isProd, sameSite: 'strict', path: SIGNUP_COOKIE_PATH, maxAge: SIGNUP_WINDOW_SEC });
+          return reply.redirect(dest('/app/auth/profile?via=google', outcome.returnTo));
+        }
+        if (outcome.kind === 'linked') return reply.redirect(`${config.APP_ORIGIN}/app/profile/account?linked=google`);
+        return reply.redirect(`${config.APP_ORIGIN}${outcome.reason === 'conflict' ? '/app/profile/account?google=conflict' : '/app/auth/welcome?error=google'}`);
+      });
+
+      /** What the browser's signup continuation is for, without its secret: which sign-in, and any name Google or the address can suggest. */
+      api.post('/auth/signup/pending', strict(20), async (req) => {
+        const body = parse(z.object({ signupToken: z.string().min(10).optional() }), req.body);
+        const token = body.signupToken ?? (isWeb(req) ? req.cookies[SIGNUP_COOKIE] : undefined);
+        if (!token) throw badRequest('signup_expired', 'Your sign-in expired. Start again.');
+        return auth.describeSignup(ctx, token);
+      });
+
+      /** One answer for every way of proving who you are: tokens, or a signup continuation that browsers keep only in an httpOnly cookie. */
+      const finishVerify = (req: FastifyRequest, reply: FastifyReply, out: OtpVerifyDTO) => {
         if (out.status === 'signed_in') {
           const { status, ...tokens } = out;
           return sendTokens(req, reply, tokens, { status });
@@ -301,7 +367,7 @@ export async function buildApp({ config, db, provider, sms, push, now = () => ne
           return rest;
         }
         return out;
-      });
+      };
 
       api.post('/auth/signup', strict(5), async (req, reply) => {
         const body = parse(C.SignupBody, req.body);
@@ -312,7 +378,7 @@ export async function buildApp({ config, db, provider, sms, push, now = () => ne
           if (origin && !origins.has(origin)) throw unauthorized('Sign in to continue.');
           signupToken = req.cookies[SIGNUP_COOKIE];
         }
-        if (!signupToken) throw badRequest('signup_expired', 'Your verification expired. Start again with your phone number.');
+        if (!signupToken) throw badRequest('signup_expired', 'Your sign-in expired. Start again.');
         try {
           const tokens = await auth.signup(ctx, { ...body, signupToken }, meta(req));
           reply.clearCookie(SIGNUP_COOKIE, { path: SIGNUP_COOKIE_PATH });
@@ -410,10 +476,14 @@ export async function buildApp({ config, db, provider, sms, push, now = () => ne
           await auth.changePin(ctx, req.userId, req.sessionId, body.currentPin, body.newPin, meta(req));
           return { ok: true };
         });
-        priv.post('/me/pin/reset/request', strict(3, 15), async (req) => auth.requestPinReset(ctx, req.userId, meta(req)));
+        priv.post('/me/pin/setup', strict(5), async (req) => {
+          await auth.setupPin(ctx, req.userId, parse(C.SetPinBody, req.body).pin, meta(req));
+          return { ok: true };
+        });
+        priv.post('/me/pin/reset/request', strict(3, 15), async (req) => auth.requestPinReset(ctx, req.userId, meta(req), parse(C.PinResetRequestBody, req.body ?? {}).via));
         priv.post('/me/pin/reset', strict(5, 15), async (req) => {
           const body = parse(C.PinResetBody, req.body);
-          await auth.resetPin(ctx, req.userId, req.sessionId, body.code, body.newPin, meta(req));
+          await auth.resetPin(ctx, req.userId, req.sessionId, body.code, body.newPin, meta(req), body.via);
           return { ok: true };
         });
         priv.get('/me/export', strict(3, 60), async (req, reply) => {

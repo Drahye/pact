@@ -92,6 +92,11 @@ export const EVENT_NAMES = [
   'recap_viewed',
   'recap_shared',
   'recap_share_opened',
+  'auth_method_selected',
+  'auth_completed',
+  'identity_linked',
+  'phone_verification_started',
+  'phone_verified',
 ] as const;
 
 /** The events the app itself sends (what someone looked at or chose). The rest are worked out from server records. */
@@ -104,6 +109,7 @@ const CATEGORY = ['birthday', 'dinner', 'gift', 'trip', 'event', 'household', 'w
 const DEMOS = ['sarahs_birthday', 'december_trip', 'graduation_gift'] as const;
 const OBJECTS = ['ask', 'plan', 'split', 'pact'] as const;
 const SECTIONS = ['needs_you', 'circles', 'coming_up', 'recent', 'recap'] as const;
+const AUTH_PROVIDERS = ['google', 'email', 'phone'] as const;
 const PARTICIPATION = ['money', 'task', 'both', 'later'] as const;
 
 /** What each event may carry. */
@@ -198,6 +204,12 @@ export const EVENT_PROPS: Record<EventName, Record<string, Rule>> = {
   coming_up_opened: { object_type: OBJECTS, section: SECTIONS },
   recent_activity_opened: { object_type: OBJECTS, section: SECTIONS },
   recap_viewed: { object_type: OBJECTS, from: ['home', 'object', 'share'] },
+  // Sign-in methods. Only the provider kind, never an address, number, Google subject or code.
+  auth_method_selected: { provider: AUTH_PROVIDERS },
+  auth_completed: { provider: AUTH_PROVIDERS, is_new: 'bool' },
+  identity_linked: { provider: AUTH_PROVIDERS },
+  phone_verification_started: {},
+  phone_verified: { claimed_invites: 'bool' },
   recap_shared: { object_type: OBJECTS, via: ['native', 'copy'], section: SECTIONS },
   recap_share_opened: { object_type: OBJECTS },
   pact_outcome_completed: { days_since_funded: 'count', paid_lines: 'count', tasks_done_band: ['none', 'some', 'most', 'all', 'no_tasks'], released_remaining: 'bool' },

@@ -20,7 +20,7 @@ describe('product events', () => {
   });
 
   const counts = async () => {
-    const r = await t.db.query<{ name: string; n: number }>('SELECT name, COUNT(*)::int AS n FROM product_events GROUP BY name');
+    const r = await t.db.query<{ name: string; n: number }>(`SELECT name, COUNT(*)::int AS n FROM product_events WHERE name NOT LIKE 'auth\\_%' GROUP BY name`);
     return Object.fromEntries(r.rows.map((x) => [x.name, x.n]));
   };
 
@@ -140,7 +140,7 @@ describe('product events', () => {
     // Unknown names never reach the table (and never throw).
     await track(t.db, t.ctx.config, 'pin_entered' as never, {});
     assert.equal((await t.db.query(`SELECT 1 FROM product_events WHERE name = 'pin_entered'`)).rowCount, 0);
-    assert.equal(EVENT_NAMES.length, 81);
+    assert.equal(EVENT_NAMES.length, 86);
   });
 
   it('is invisible to the restricted app role', async () => {

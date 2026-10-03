@@ -43,7 +43,7 @@ describe('shared Split and Recap link metadata', () => {
     assert.match(r.body, /og:description" content="A shared expense on PACT\."/);
     assert.match(r.body, /name="robots" content="noindex,nofollow"/);
     assert.match(r.body, /<div id="root">/);
-    assert.ok(!/62,?500|Ana|Ben|owes|0803554/i.test(r.body.replace(/Owes/g, '')), 'no amount, name, number or debt');
+    assert.ok(!/62,?500|Ana|Ben|owes|0803554/i.test(r.body.replace(/Owes/g, '').split(token).join('')), 'no amount, name, number or debt (the link\'s own random token aside)');
   });
 
   it('says nothing for a wrong token', async () => {

@@ -12,7 +12,6 @@ import { ShareStatus, progressText } from '../../../components/split/SplitBits';
 import { Button } from '../../../components/ui/Button';
 import { Modal } from '../../../components/ui/Modal';
 import { useToast } from '../../../components/ui/Toast';
-import { getUser } from '../../../data/users';
 import { koboText } from '../../../lib/splitMoney';
 import { shareSplit } from '../../../lib/splitShare';
 import { setReturnTo } from '../auth/flow';
@@ -55,7 +54,7 @@ export function SplitLinkScreen() {
   // Members get the full split, not the summary.
   if (signedIn && view.isMember && view.splitId && !join.isPending && !joined) return <Navigate to={`/app/splits/${view.splitId}?from=circle`} replace />;
 
-  const payer = getUser(view.paidBy).name;
+  const payer = view.payer.firstName;
   const circleName = `${view.circle.name} ${view.circle.emoji}`;
   const m = view.mine;
   const open = view.status === 'open';

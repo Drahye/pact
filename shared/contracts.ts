@@ -34,7 +34,8 @@ export const OtpRequestBody = z.object({ phone });
 export const OtpVerifyBody = z.object({ phone, code: z.string().regex(/^\d{6}$/), device: text(0, 80).optional() });
 export const PinResetBody = z.object({ code: z.string().regex(/^\d{6}$/), newPin: pin });
 export const SignupBody = z.object({
-  signupToken: z.string().min(10),
+  /** Native clients send the token they were given. The web keeps it in an httpOnly cookie and sends none. */
+  signupToken: z.string().min(10).optional(),
   firstName: name,
   lastName: name,
   pin,
@@ -449,7 +450,8 @@ export interface SplitLinkDTO {
   title: string;
   total: number;
   status: SplitStatus;
-  paidBy: string;
+  /** First name only. A link visitor never receives an account id or a profile. */
+  payer: { firstName: string };
   owedCount: number;
   settledCount: number;
   mine: { amount: number; status: 'not_applicable' | 'owed' | 'settled'; isPayer: boolean } | null;
@@ -566,7 +568,7 @@ export interface AuthTokensDTO {
 
 export type OtpVerifyDTO =
   | ({ status: 'signed_in' } & AuthTokensDTO)
-  | { status: 'needs_profile'; signupToken: string; phone: string };
+  | { status: 'needs_profile'; signupToken?: string; phone: string };
 
 export interface WalletDTO {
   balance: number;

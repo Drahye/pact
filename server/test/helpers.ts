@@ -10,13 +10,13 @@ import { runDueJobs } from '../src/jobs/worker.js';
 import { addDays, lagosToday } from '../src/lib/time.js';
 import type { PushSender } from '../src/modules/push.js';
 
-export async function setup(opts: { seed?: boolean; now?: () => Date; env?: Record<string, string>; push?: PushSender | null } = {}) {
+export async function setup(opts: { seed?: boolean; now?: () => Date; env?: Record<string, string>; push?: PushSender | null; logStream?: { write: (line: string) => void } } = {}) {
   resetLedgerCache();
   const config = loadConfig({ NODE_ENV: 'test', SEED_DEMO: 'false', RATE_LIMIT_ENABLED: 'false', ...opts.env });
   const db = await createDb(config);
   await migrate(db);
   let clock = opts.now ?? (() => new Date());
-  const { app, ctx } = await buildApp({ config, db, now: () => clock(), ...(opts.push !== undefined ? { push: opts.push } : {}) });
+  const { app, ctx } = await buildApp({ config, db, now: () => clock(), ...(opts.push !== undefined ? { push: opts.push } : {}), ...(opts.logStream ? { logStream: opts.logStream } : {}) });
   // Demo data backdates ledger rows, which the runtime role can't do; it never runs in production.
   if (opts.seed) await seedDemo(ctx);
   if (process.env.TEST_DB_ROLE === 'service') await useServiceRole(db);

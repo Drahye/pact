@@ -33,6 +33,7 @@ import * as users from './modules/users.js';
 import * as wallet from './modules/wallet.js';
 import { CLIENT_EVENTS, pactId as pactPseudo, track, visitorId } from './lib/events.js';
 import { recordClientEvent } from './modules/events.js';
+import { reqSerializer, sanitizeUrl } from './lib/logSafe.js';
 import { handleWebhook } from './modules/webhooks.js';
 import { createPaystackProvider } from './payments/paystack.js';
 import type { PaymentProvider } from './payments/provider.js';
@@ -62,6 +63,10 @@ declare module 'fastify' {
 }
 
 const REFRESH_COOKIE = 'pact_rt';
+/** Web only: the short-lived credential between "code verified" and "account created". Never readable by page scripts. */
+const SIGNUP_COOKIE = 'pact_su';
+const SIGNUP_COOKIE_PATH = '/api/auth/signup';
+const SIGNUP_WINDOW_SEC = 20 * 60;
 
 export interface BuildOptions {
   config: Config;
@@ -70,11 +75,13 @@ export interface BuildOptions {
   sms?: SmsSender;
   push?: PushSender | null;
   now?: () => Date;
+  /** Tests: capture log output. */
+  logStream?: { write: (line: string) => void };
 }
 
-export async function buildApp({ config, db, provider, sms, push, now = () => new Date() }: BuildOptions) {
+export async function buildApp({ config, db, provider, sms, push, now = () => new Date(), logStream }: BuildOptions) {
   const app = Fastify({
-    logger: config.isTest
+    logger: config.isTest && !logStream
       ? false
       : {
           level: config.LOG_LEVEL,
@@ -83,7 +90,9 @@ export async function buildApp({ config, db, provider, sms, push, now = () => ne
             paths: ['req.headers.authorization', 'req.headers.cookie', 'res.headers["set-cookie"]', '*.pin', '*.currentPin', '*.newPin', '*.accountNumber', '*.bvn', '*.refreshToken', '*.signupToken'],
             censor: '[redacted]',
           },
-          transport: config.isProd ? undefined : { target: 'pino-pretty', options: { colorize: true, ignore: 'pid,hostname' } },
+          // Capability links carry a secret in the path; the request log never keeps it.
+          serializers: { req: reqSerializer },
+          ...(logStream ? { stream: logStream } : { transport: config.isProd ? undefined : { target: 'pino-pretty', options: { colorize: true, ignore: 'pid,hostname' } } }),
         },
     trustProxy: config.TRUST_PROXY,
     bodyLimit: 64 * 1024,
@@ -152,7 +161,7 @@ export async function buildApp({ config, db, provider, sms, push, now = () => ne
     onExceeded: (req) => {
       req.log.warn({ route: req.routeOptions.url, ip: req.ip }, 'rate limit exceeded');
       void db
-        .query(`INSERT INTO audit_log (action, target_type, target_id, ip) VALUES ('security.rate_limited', 'route', $1, $2)`, [req.routeOptions.url ?? req.url, req.ip])
+        .query(`INSERT INTO audit_log (action, target_type, target_id, ip) VALUES ('security.rate_limited', 'route', $1, $2)`, [req.routeOptions.url ?? sanitizeUrl(req.url), req.ip])
         .catch(() => undefined);
     },
     errorResponseBuilder: (_req, context) => ({
@@ -280,13 +289,34 @@ export async function buildApp({ config, db, provider, sms, push, now = () => ne
           const { status, ...tokens } = out;
           return sendTokens(req, reply, tokens, { status });
         }
+        // Browsers never see the signup credential: it rides in an httpOnly cookie that only /auth/signup can read.
+        if (isWeb(req) && out.status === 'needs_profile' && out.signupToken) {
+          reply.setCookie(SIGNUP_COOKIE, out.signupToken, { httpOnly: true, secure: config.isProd, sameSite: 'strict', path: SIGNUP_COOKIE_PATH, maxAge: SIGNUP_WINDOW_SEC });
+          const { signupToken: _omit, ...rest } = out;
+          return rest;
+        }
         return out;
       });
 
       api.post('/auth/signup', strict(5), async (req, reply) => {
         const body = parse(C.SignupBody, req.body);
-        const tokens = await auth.signup(ctx, body, meta(req));
-        return sendTokens(req, reply, tokens);
+        let signupToken = body.signupToken;
+        if (!signupToken && isWeb(req)) {
+          // Same origin check as the refresh cookie: a request from another site is refused before anything is read.
+          const origin = req.headers.origin;
+          if (origin && !origins.has(origin)) throw unauthorized('Sign in to continue.');
+          signupToken = req.cookies[SIGNUP_COOKIE];
+        }
+        if (!signupToken) throw badRequest('signup_expired', 'Your verification expired. Start again with your phone number.');
+        try {
+          const tokens = await auth.signup(ctx, { ...body, signupToken }, meta(req));
+          reply.clearCookie(SIGNUP_COOKIE, { path: SIGNUP_COOKIE_PATH });
+          return sendTokens(req, reply, tokens);
+        } catch (err) {
+          // An expired or spent continuation is gone either way.
+          if (err instanceof AppError && ['signup_expired', 'already_registered'].includes(err.code)) reply.clearCookie(SIGNUP_COOKIE, { path: SIGNUP_COOKIE_PATH });
+          throw err;
+        }
       });
 
       api.post('/auth/refresh', strict(30), async (req, reply) => {
@@ -835,6 +865,9 @@ export async function buildApp({ config, db, provider, sms, push, now = () => ne
       }
       return reply.sendFile('index.html');
     });
+  } else {
+    // Fastify's own 404 writes "Route GET:<url> not found" to the log, URL and all. Answer with the API's JSON shape instead.
+    app.setNotFoundHandler((_req, reply) => reply.status(404).send({ error: { code: 'not_found', message: 'Not found.' } }));
   }
 
   return { app, ctx };

@@ -1,7 +1,7 @@
 import { Banknote, Check, CircleDot, Hand, Handshake, ListChecks, RotateCcw, Trash2, UserMinus } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { ApiError } from '../../../api/client';
-import { usePlan } from '../../../api/hooks';
+import { usePactPlan } from '../../../api/hooks';
 import { Notice } from '../../../components/app/States';
 import { AmountInput } from '../../../components/ui/AmountInput';
 import { Avatar } from '../../../components/ui/Avatar';
@@ -53,7 +53,7 @@ export function ParticipationPicker({ value, onChange }: { value: Participation 
 }
 
 export function ParticipationSheet({ pact, open, onClose, current }: { pact: Pact; open: boolean; onClose: () => void; current: Participation | null }) {
-  const plan = usePlan(pact.id);
+  const plan = usePactPlan(pact.id);
   const run = useRun();
   const [value, setValue] = useState<Participation | null>(current);
   useEffect(() => setValue(current), [current, open]);
@@ -77,7 +77,7 @@ export function ParticipationSheet({ pact, open, onClose, current }: { pact: Pac
 /* Task actions ------------------------------------------------------------- */
 
 export function TaskSheet({ pact, task, meId, onClose }: { pact: Pact; task: Task | null; meId: string; onClose: () => void }) {
-  const plan = usePlan(pact.id);
+  const plan = usePactPlan(pact.id);
   const run = useRun();
   const [assignOpen, setAssignOpen] = useState(false);
   useEffect(() => setAssignOpen(false), [task?.id]);
@@ -162,7 +162,7 @@ export function TaskSheet({ pact, task, meId, onClose }: { pact: Pact; task: Tas
 }
 
 export function AddTaskSheet({ pact, meId, open, onClose }: { pact: Pact; meId: string; open: boolean; onClose: () => void }) {
-  const plan = usePlan(pact.id);
+  const plan = usePactPlan(pact.id);
   const run = useRun();
   const [title, setTitle] = useState('');
   const [line, setLine] = useState<string | null>(null);
@@ -222,7 +222,7 @@ export function AddTaskSheet({ pact, meId, open, onClose }: { pact: Pact; meId: 
 /* Budget line (organiser) ---------------------------------------------------- */
 
 export function BudgetLineSheet({ pact, line, open, onClose }: { pact: Pact; line: BudgetLine | null; open: boolean; onClose: () => void }) {
-  const plan = usePlan(pact.id);
+  const plan = usePactPlan(pact.id);
   const run = useRun();
   const [name, setName] = useState('');
   const [amount, setAmount] = useState(0);
@@ -277,7 +277,7 @@ export function BudgetLineSheet({ pact, line, open, onClose }: { pact: Pact; lin
 /* Split the rest --------------------------------------------------------------- */
 
 export function SplitSheet({ pact, open, onClose }: { pact: Pact; open: boolean; onClose: () => void }) {
-  const plan = usePlan(pact.id);
+  const plan = usePactPlan(pact.id);
   const run = useRun();
   const s = summarize(pact);
   const payers = pact.members.filter((m) => m.status === 'joined' && (m.participation ?? 'later') !== 'task');

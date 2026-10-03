@@ -52,6 +52,9 @@ export function GuidedStartScreen() {
   const create = useCreatePact();
   const pacts = usePacts();
   const from = (location.state as { from?: string } | null)?.from;
+  // Started from inside a Circle: the Pact belongs to it (the server checks they are in it).
+  const circleParam = params.get('circle') ?? '';
+  const circleId = /^[0-9a-f-]{36}$/i.test(circleParam) ? circleParam : undefined;
   // "Do another dinner" arrives with the kind of the last Pact; a few kinds share a tile here.
   const asked = params.get('category');
   const preset = (KINDS.find((k) => k.category === (asked === 'dinner' ? 'event' : asked === 'fund' ? 'other' : asked))?.category ?? null) as PactCategory | null;
@@ -96,7 +99,7 @@ export function GuidedStartScreen() {
     try {
       const r = await create.mutateAsync({
         key,
-        input: { title: title.trim(), category: category!, target: toKobo(roughly ? STARTING_POINT : target), tasks: [], deadline, missedGoalPolicy: 'refund', splitMode: 'flexible', inviteUserIds: [], invitePhones: [] },
+        input: { title: title.trim(), category: category!, target: toKobo(roughly ? STARTING_POINT : target), tasks: [], deadline, missedGoalPolicy: 'refund', splitMode: 'flexible', inviteUserIds: [], invitePhones: [], ...(circleId ? { circleId } : {}) },
       });
       navigate(`/app/pact/${r.data.pact.id}/invite`, { replace: true, state: { created: true } });
     } catch (err) {

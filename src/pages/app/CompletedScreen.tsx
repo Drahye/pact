@@ -29,8 +29,10 @@ import { colorOf, joinedMembers, sharesOf, summarize } from '../../lib/pact';
 import { ease, spring } from '../../tokens/tokens';
 import { Screen } from './Screen';
 import './completed.css';
+import { useStartPactPath } from '../../lib/startPact';
 
 export function CompletedScreen({ pact, activity = [] }: { pact: Pact; activity?: Activity[] }) {
+  const startPath = useStartPactPath();
   const reduce = useReducedMotion();
   const { user } = useAuth();
   const toast = useToast();
@@ -81,7 +83,7 @@ export function CompletedScreen({ pact, activity = [] }: { pact: Pact; activity?
               </Button>
             )
           ) : (
-            <Button to="/app/create" fullWidth>
+            <Button to={startPath()} fullWidth>
               Create another Pact
             </Button>
           )}

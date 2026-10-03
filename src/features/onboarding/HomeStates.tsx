@@ -5,6 +5,7 @@ import { Button } from '../../components/ui/Button';
 import { SectionHeading } from '../../components/ui/SectionHeading';
 import type { Pact } from '../../data/types';
 import { categoryLabel } from '../../lib/pact';
+import { useStartPactPath } from '../../lib/startPact';
 import { DemoPactCard } from '../demo/DemoPactCard';
 import { DEMOS, DEMO_ORDER } from '../demo/fixtures';
 import './home-states.css';
@@ -79,6 +80,7 @@ export function HomeFirstTime({ compact }: { compact?: boolean } = {}) {
  */
 export function HomeRepeat({ finished }: { finished: Pact[] }) {
   const last = finished[0];
+  const startPath = useStartPactPath();
   return (
     <div className="hs">
       <section className="hs__start" aria-labelledby="hs-again">
@@ -87,7 +89,7 @@ export function HomeRepeat({ finished }: { finished: Pact[] }) {
         </h2>
         <p className="hs__lede">{finished.length ? 'Nothing is running right now. Start the next one, or join someone else’s.' : 'Nothing is running right now.'}</p>
         <div className="hs__ctas">
-          <Button to="/app/start" state={{ from: 'home' }} fullWidth iconRight={<ArrowRight />}>
+          <Button to={startPath()} state={{ from: 'home' }} fullWidth iconRight={<ArrowRight />}>
             Create another Pact
           </Button>
           <Button to="/app/join-invite" variant="secondary" fullWidth>

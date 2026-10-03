@@ -5,6 +5,7 @@ import type { ComingUpItem, HomeCircleDTO, NeedsYouItem, RecapCardDTO, RecentIte
 import { trackHome } from '../../api/home';
 import { formatDate, formatRelative } from '../../lib/format';
 import { dateRange } from '../../lib/planDates';
+import { useStartPactPath } from '../../lib/startPact';
 import { CircleBadge } from '../circle/CircleBadge';
 import { Avatar } from '../ui/Avatar';
 import { AvatarGroup } from '../ui/AvatarGroup';
@@ -169,6 +170,7 @@ export function MadeItHappenSection({ items, title = 'Made it happen' }: { items
 
 /** Nothing started, or nothing running: the four things you can begin. */
 export function MakeHappenSection({ heading }: { heading: string }) {
+  const startPath = useStartPactPath();
   return (
     <section className="hv2-start" aria-labelledby="hv2-start-h">
       <h2 id="hv2-start-h" className="hv2-start__title">
@@ -179,7 +181,7 @@ export function MakeHappenSection({ heading }: { heading: string }) {
           ['Ask the group', '/app/asks/new'],
           ['Make a plan', '/app/plans/new'],
           ['Split an expense', '/app/splits/new'],
-          ['Start a Pact', '/app/start'],
+          ['Start a Pact', startPath()],
         ].map(([label, to]) => (
           <li key={to}>
             <Link to={to} className="hv2-start__btn" state={{ from: 'home' }}>

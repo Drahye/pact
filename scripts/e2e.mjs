@@ -66,7 +66,7 @@ try {
   await page.getByText('Confirm your PIN').waitFor();
   await shot('pin-confirm');
   await pin();
-  await page.locator('.wallet-strip').waitFor();
+  await page.locator('.home__header').waitFor();
   await shot('home-new-user');
 
   // Top up by card through the sandbox checkout

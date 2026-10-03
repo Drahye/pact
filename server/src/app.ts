@@ -28,7 +28,7 @@ import * as pacts from './modules/pacts.js';
 import * as plans from './modules/plans.js';
 import * as splits from './modules/splits.js';
 import * as home from './modules/home.js';
-import * as plan from './modules/plan.js';
+import * as pactPlan from './modules/pactPlan.js';
 import * as users from './modules/users.js';
 import * as wallet from './modules/wallet.js';
 import { CLIENT_EVENTS, pactId as pactPseudo, track, visitorId } from './lib/events.js';
@@ -188,7 +188,7 @@ export async function buildApp({ config, db, provider, sms, push, now = () => ne
       return reply.status(err.statusCode).send({ error: { code: 'bad_request', message: 'The request couldn’t be processed.' }, requestId: req.id });
     }
     req.log.error({ err }, 'unhandled error');
-    return reply.status(500).send({ error: { code: 'internal', message: 'Something went wrong on our side. Nothing was charged. Try again.' }, requestId: req.id });
+    return reply.status(500).send({ error: { code: 'internal', message: 'Something went wrong on our side. Try again.' }, requestId: req.id });
   });
 
   /* ---------------------------------------------------------------- helpers */
@@ -479,28 +479,28 @@ export async function buildApp({ config, db, provider, sms, push, now = () => ne
           pacts.acceptInvite(ctx, req.userId, req.params.id, parse(C.ParticipationBody.partial(), req.body).participation ?? null),
         );
         priv.patch<{ Params: { id: string } }>('/pacts/:id/participation', strict(20), async (req) =>
-          plan.setParticipation(ctx, req.userId, req.params.id, parse(C.ParticipationBody, req.body).participation),
+          pactPlan.setParticipation(ctx, req.userId, req.params.id, parse(C.ParticipationBody, req.body).participation),
         );
-        priv.post<{ Params: { id: string } }>('/pacts/:id/split-rest', strict(5), async (req) => plan.splitRest(ctx, req.userId, req.params.id));
+        priv.post<{ Params: { id: string } }>('/pacts/:id/split-rest', strict(5), async (req) => pactPlan.splitRest(ctx, req.userId, req.params.id));
 
         /* ---------- the plan: budget, tasks, memory */
-        priv.post<{ Params: { id: string } }>('/pacts/:id/budget', strict(30), async (req) => plan.addBudgetItem(ctx, req.userId, req.params.id, parse(C.BudgetItemBody, req.body)));
+        priv.post<{ Params: { id: string } }>('/pacts/:id/budget', strict(30), async (req) => pactPlan.addBudgetItem(ctx, req.userId, req.params.id, parse(C.BudgetItemBody, req.body)));
         priv.patch<{ Params: { id: string; itemId: string } }>('/pacts/:id/budget/:itemId', strict(30), async (req) =>
-          plan.updateBudgetItem(ctx, req.userId, req.params.id, req.params.itemId, parse(C.BudgetItemPatchBody, req.body)),
+          pactPlan.updateBudgetItem(ctx, req.userId, req.params.id, req.params.itemId, parse(C.BudgetItemPatchBody, req.body)),
         );
         priv.delete<{ Params: { id: string; itemId: string } }>('/pacts/:id/budget/:itemId', strict(30), async (req) =>
-          plan.removeBudgetItem(ctx, req.userId, req.params.id, req.params.itemId),
+          pactPlan.removeBudgetItem(ctx, req.userId, req.params.id, req.params.itemId),
         );
-        priv.post<{ Params: { id: string } }>('/pacts/:id/tasks', strict(30), async (req) => plan.createTask(ctx, req.userId, req.params.id, parse(C.TaskCreateBody, req.body)));
+        priv.post<{ Params: { id: string } }>('/pacts/:id/tasks', strict(30), async (req) => pactPlan.createTask(ctx, req.userId, req.params.id, parse(C.TaskCreateBody, req.body)));
         priv.patch<{ Params: { id: string; taskId: string } }>('/pacts/:id/tasks/:taskId', strict(60), async (req) =>
-          plan.updateTask(ctx, req.userId, req.params.id, req.params.taskId, parse(C.TaskPatchBody, req.body)),
+          pactPlan.updateTask(ctx, req.userId, req.params.id, req.params.taskId, parse(C.TaskPatchBody, req.body)),
         );
         priv.delete<{ Params: { id: string; taskId: string } }>('/pacts/:id/tasks/:taskId', strict(30), async (req) =>
-          plan.deleteTask(ctx, req.userId, req.params.id, req.params.taskId),
+          pactPlan.deleteTask(ctx, req.userId, req.params.id, req.params.taskId),
         );
-        priv.put<{ Params: { id: string } }>('/pacts/:id/memory', strict(20), async (req) => plan.saveMemory(ctx, req.userId, req.params.id, parse(C.MemoryBody, req.body)));
+        priv.put<{ Params: { id: string } }>('/pacts/:id/memory', strict(20), async (req) => pactPlan.saveMemory(ctx, req.userId, req.params.id, parse(C.MemoryBody, req.body)));
         priv.get<{ Params: { id: string; photoId: string } }>('/pacts/:id/memory/photos/:photoId', async (req, reply) => {
-          const photo = await plan.getPhoto(ctx, req.userId, req.params.id, req.params.photoId);
+          const photo = await pactPlan.getPhoto(ctx, req.userId, req.params.id, req.params.photoId);
           return reply
             .header('Content-Type', photo.mime)
             .header('Cache-Control', 'private, max-age=3600')
@@ -509,13 +509,13 @@ export async function buildApp({ config, db, provider, sms, push, now = () => ne
             .send(photo.data);
         });
         priv.delete<{ Params: { id: string; photoId: string } }>('/pacts/:id/memory/photos/:photoId', strict(20), async (req) =>
-          plan.deletePhoto(ctx, req.userId, req.params.id, req.params.photoId),
+          pactPlan.deletePhoto(ctx, req.userId, req.params.id, req.params.photoId),
         );
         // Photo uploads: raw image bytes, only three image types, 8 MB before re-encoding.
         await priv.register(async (uploads) => {
           uploads.addContentTypeParser(['image/jpeg', 'image/png', 'image/webp'], { parseAs: 'buffer', bodyLimit: 8 * 1024 * 1024 }, (_req, body, done) => done(null, body));
           uploads.post<{ Params: { id: string } }>('/pacts/:id/memory/photos', { bodyLimit: 8 * 1024 * 1024, ...strict(12, 10) }, async (req) =>
-            plan.addPhoto(ctx, req.userId, req.params.id, req.body as Buffer),
+            pactPlan.addPhoto(ctx, req.userId, req.params.id, req.body as Buffer),
           );
           uploads.post<{ Params: { id: string; payoutId: string } }>('/pacts/:id/payouts/:payoutId/receipt', { bodyLimit: 8 * 1024 * 1024, ...strict(12, 10) }, async (req) =>
             pactMoney.addReceipt(ctx, req.userId, req.params.id, req.params.payoutId, req.body as Buffer),

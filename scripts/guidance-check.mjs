@@ -31,7 +31,7 @@ const signIn = async (page, phone) => {
   await page.waitForURL(/\/app\/(home|onboarding)/);
   await page.waitForTimeout(1800); // Home briefly loads before sending a brand-new person to the intro
   if (/onboarding/.test(page.url())) await page.getByRole('button', { name: 'Skip' }).click();
-  await page.locator('.wallet-strip').waitFor();
+  await page.locator('.home__header').waitFor();
 };
 const overflow = async (page, label) => {
   for (const w of [390, 430, 768, 1280]) {

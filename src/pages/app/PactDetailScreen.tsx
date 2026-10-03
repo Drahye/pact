@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../api/auth';
 import { ApiError } from '../../api/client';
-import { usePactAction, usePactCommand, usePlan } from '../../api/hooks';
+import { usePactAction, usePactCommand, usePactPlan } from '../../api/hooks';
 import { PinSheet } from '../../components/app/PinSheet';
 import { Notice } from '../../components/app/States';
 import { AnimatedNumber } from '../../components/pact/AnimatedNumber';
@@ -86,7 +86,7 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
   const [coOpen, setCoOpen] = useState(false);
   const [guest, setGuest] = useState<GuestGroup | null>(null);
   const cmd = usePactCommand(pact.id);
-  const plan = usePlan(pact.id);
+  const plan = usePactPlan(pact.id);
   const cancel = usePactAction(pact.id, 'cancel');
 
   const s = summarize(pact);

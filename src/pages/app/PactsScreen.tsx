@@ -16,6 +16,7 @@ import { countByTab, defaultTab, lifecycleOf, matchesTitle, MAX_SEARCH, normaliz
 import { attentionFor } from '../../lib/plan';
 import { Screen } from './Screen';
 import './pacts-screen.css';
+import { useStartPactPath } from '../../lib/startPact';
 
 const SCROLL_KEY = 'pact.pactsScroll';
 
@@ -38,6 +39,7 @@ const emptyCopy: Record<Lifecycle, string> = {
  * - A selected tab never changes by itself. If its last Pact moves elsewhere you see that tab's empty state.
  */
 export function PactsScreen() {
+  const startPath = useStartPactPath();
   const { user } = useAuth();
   const pacts = usePacts();
   const initial = useRef(readView()).current;
@@ -136,7 +138,7 @@ export function PactsScreen() {
         icon={<Plus />}
         title="No Pacts yet"
         body="Start one for a trip, a gift or a shared bill, or join with an invite link."
-        action={<Button to="/app/create">Create a Pact</Button>}
+        action={<Button to={startPath()}>Create a Pact</Button>}
       />
     );
   } else if (!tabItems.length) {
@@ -168,7 +170,7 @@ export function PactsScreen() {
   const announce = loading || failed || !mine.length ? '' : nq ? `${shown.length} of ${tabItems.length} ${tabLabel[tab]} Pacts match` : `${tabItems.length} ${tabLabel[tab]} Pacts`;
 
   return (
-    <Screen tabBar={<BottomNav />} topBar={<TopBar leading="none" title="Pacts" collapse trailing={<IconButton label="Create a Pact" icon={<Plus />} to="/app/create" />} />}>
+    <Screen tabBar={<BottomNav />} topBar={<TopBar leading="none" title="Pacts" collapse trailing={<IconButton label="Create a Pact" icon={<Plus />} to={startPath()} />} />}>
       <LargeTitle className="pacts-head">Your Pacts</LargeTitle>
       <div ref={root} aria-busy={loading || pacts.isFetching ? true : undefined}>
         {showControls && (

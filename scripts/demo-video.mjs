@@ -180,7 +180,7 @@ try {
   await chapter(1, 'Plan it together', 'Abraham is organising a weekend in Lagos for six friends.');
   await signInAs(ABRAHAM);
   await cap('Abraham signs in with his number and a one-time code. The code fills itself in.', 2600);
-  await page.locator('.wallet-strip').waitFor();
+  await page.locator('.home__header').waitFor();
   await cap('Home shows what needs him across every Pact.', 2600);
 
   // Skeleton loaders: hold the Pacts list back for a moment so the loading state is visible.

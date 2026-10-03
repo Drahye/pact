@@ -1,3 +1,7 @@
+/**
+ * The planning side of a Pact: participation, budget lines, tasks, the memory and its photos.
+ * Not the social Plan (see plans.ts), which is a separate object that can become a Pact.
+ */
 import sharp from 'sharp';
 import type { Participation } from '../../../shared/contracts.js';
 import type { Ctx } from '../context.js';

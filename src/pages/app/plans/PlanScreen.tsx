@@ -22,6 +22,7 @@ import { useToast } from '../../../components/ui/Toast';
 import { getUser } from '../../../data/users';
 import { budgetText, dateRange } from '../../../lib/planDates';
 import { sharePlan } from '../../../lib/planShare';
+import { startPactPath } from '../../../lib/startPactPath';
 import { Screen } from '../Screen';
 import '../../../components/plan/plan.css';
 
@@ -478,7 +479,7 @@ export function PlanScreen() {
         description="Turn this plan into a Pact when the group is ready to commit money, responsibilities and a deadline. You’ll review everything before anything is created."
         footer={
           <>
-            <Button fullWidth onClick={() => navigate(`/app/create?plan=${p.id}`)}>
+            <Button fullWidth onClick={() => navigate(startPactPath({ planId: p.id, hasCreated: true }))}>
               Continue to Pact setup
             </Button>
             <Button fullWidth variant="ghost" onClick={close}>

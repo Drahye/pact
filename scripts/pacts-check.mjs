@@ -57,7 +57,7 @@ const login = async () => {
   await page.getByLabel('Mobile number').fill(phone.replace(/^0/, ''));
   await page.getByRole('button', { name: 'Send code' }).click();
   await page.getByRole('button', { name: 'Fill it in' }).click();
-  await page.locator('.wallet-strip, .home__empty').first().waitFor();
+  await page.locator('.home__header').first().waitFor();
 };
 const open = async (path = '/app/pacts') => {
   await page.goto(`${BASE}${path}`, { waitUntil: 'load' });

@@ -371,9 +371,11 @@ export interface PlanDTO extends PlanSummaryDTO {
   /** Linked questions, never copies. Empty for link visitors. */
   asks: AskSummaryDTO[];
   decisions: number;
-  activity: { kind: 'created' | 'rsvp' | 'rsvp_changed' | 'task_added' | 'task_done' | 'ask_linked' | 'confirmed' | 'done' | 'cancelled' | 'pact' | 'date_changed' | 'location_changed'; userId: string; status: Attendance | null; detail: string | null; at: string }[];
+  activity: { kind: 'created' | 'rsvp' | 'rsvp_changed' | 'task_added' | 'task_done' | 'ask_linked' | 'confirmed' | 'done' | 'cancelled' | 'pact' | 'date_changed' | 'location_changed' | 'pact_closed'; userId: string; status: Attendance | null; detail: string | null; at: string }[];
   isMember: boolean;
   canEdit: boolean;
+  /** The organiser, or the Circle's owner when the organiser has gone. */
+  canHandOver: boolean;
   /** The organiser may turn it into a Pact: not cancelled, and not already one. */
   canMakePact: boolean;
   /** Members receive the link to share. */
@@ -437,6 +439,8 @@ export interface SplitDTO extends SplitSummaryDTO {
   shares: SplitShareDTO[];
   activity: { kind: 'created' | 'settled' | 'unsettled' | 'completed' | 'reopened' | 'cancelled'; userId: string; targetId: string | null; amount: number | null; at: string }[];
   canEdit: boolean;
+  /** The organiser, or the Circle's owner when the organiser has gone. */
+  canHandOver: boolean;
   /** Total, payer, method and amounts can only change before anyone settles. */
   canEditStructure: boolean;
   canCancel: boolean;

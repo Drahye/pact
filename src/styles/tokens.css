@@ -112,15 +112,15 @@
   --weight-bold: 700;
 
   /* size / line-height pairs */
-  --text-caption: 12px;     --leading-caption: 16px;
-  --text-sm: 14px;          --leading-sm: 20px;
-  --text-body: 16px;        --leading-body: 24px;
-  --text-lg: 18px;          --leading-lg: 28px;
-  --text-title: 22px;       --leading-title: 28px;
-  --text-h3: 28px;          --leading-h3: 32px;
-  --text-h2: 40px;          --leading-h2: 44px;
-  --text-h1: 56px;          --leading-h1: 58px;
-  --text-display: 88px;     --leading-display: 88px;
+  --text-caption: 0.75rem;     --leading-caption: 1rem;
+  --text-sm: 0.875rem;          --leading-sm: 1.25rem;
+  --text-body: 1rem;        --leading-body: 1.5rem;
+  --text-lg: 1.125rem;          --leading-lg: 1.75rem;
+  --text-title: 1.375rem;       --leading-title: 1.75rem;
+  --text-h3: 1.75rem;          --leading-h3: 2rem;
+  --text-h2: 2.5rem;          --leading-h2: 2.75rem;
+  --text-h1: 3.5rem;          --leading-h1: 3.625rem;
+  --text-display: 5.5rem;     --leading-display: 5.5rem;
 
   /* Large financial numbers */
   --num-sm: 22px;

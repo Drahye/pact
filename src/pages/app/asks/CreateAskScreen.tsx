@@ -1,10 +1,11 @@
 import { Plus, X } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useCircles } from '../../../api/circles';
 import { useCreateAsk } from '../../../api/asks';
 import { ApiError } from '../../../api/client';
 import { CircleBadge } from '../../../components/circle/CircleBadge';
+import { QuickCircle } from '../../../components/circle/QuickCircle';
 import { Button } from '../../../components/ui/Button';
 import { IconButton } from '../../../components/ui/IconButton';
 import { Input } from '../../../components/ui/Input';
@@ -28,6 +29,7 @@ export function CreateAskScreen() {
   const [type, setType] = useState<'choice' | 'attendance' | null>(params.get('type') === 'attendance' ? 'attendance' : params.get('type') === 'choice' ? 'choice' : null);
   const [options, setOptions] = useState<string[]>(['', '']);
   const [circleId, setCircleId] = useState(preCircle);
+  const [madeCircle, setMadeCircle] = useState(false);
   const [step, setStep] = useState<Step>('title');
   const [error, setError] = useState<string>();
   const list = circles.data ?? [];
@@ -37,7 +39,7 @@ export function CreateAskScreen() {
   const steps = useMemo<Step[]>(() => (type === 'choice' ? ['title', 'type', 'options', 'circle'] : ['title', 'type', 'circle']), [type]);
   const idx = Math.max(0, steps.indexOf(step));
   // With a Circle already chosen (from inside it, or the only one), the last step is just the button.
-  const needsCircleStep = !preCircle && list.length > 1;
+  const needsCircleStep = !preCircle && (list.length > 1 || madeCircle);
   const last = step === 'circle' || (step === (type === 'choice' ? 'options' : 'type') && !needsCircleStep && !!chosen);
   const cleaned = options.map((o) => o.trim()).filter(Boolean);
   const dup = new Set(cleaned.map((o) => o.toLowerCase())).size !== cleaned.length;
@@ -119,9 +121,7 @@ export function CreateAskScreen() {
         {step === 'circle' && (
           <>
             {circles.isLoading ? null : !list.length ? (
-              <p>
-                You’re not in a Circle yet. <Link to="/app/circles/new" className="link">Create one first</Link>.
-              </p>
+              <QuickCircle onCreated={(id) => (setCircleId(id), setMadeCircle(true))} />
             ) : (
               <div className="ca__opts" role="radiogroup" aria-label="Circle">
                 {list.map((c) => (

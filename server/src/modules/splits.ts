@@ -5,8 +5,8 @@ import { randomToken } from '../lib/crypto.js';
 import { AppError, badRequest, forbidden, notFound } from '../lib/errors.js';
 import { track, visitorId } from '../lib/events.js';
 import { formatNgn } from '../lib/money.js';
-import { minimalPeople } from './asks.js';
-import { joinByToken } from './circles.js';
+import { assertCreateBudget, minimalPeople } from './asks.js';
+import { assertCanHandOver, joinByToken, ownerMayTakeOver } from './circles.js';
 import { audit, notify } from './platform.js';
 
 /**
@@ -156,6 +156,7 @@ async function detail(q: Queryable, s: SplitRow, viewerId: string) {
     })),
     activity: act.map((a) => ({ kind: a.kind, userId: a.user_id, targetId: a.target_id, amount: a.amount, at: new Date(a.at).toISOString() })),
     canEdit: isCreator && s.status !== 'cancelled',
+    canHandOver: s.status === 'open' && (isCreator || (await ownerMayTakeOver(q, s.circle_id, viewerId, s.created_by))),
     canEditStructure: isCreator && s.status === 'open' && !started,
     canCancel: isCreator && s.status === 'open',
     shareToken: s.share_token,
@@ -258,6 +259,7 @@ export async function createSplit(ctx: Ctx, userId: string, circleId: string, in
   if (!UUID_RE.test(circleId) || !(await isMember(ctx.db, circleId, userId))) throw notFound('That Circle');
   const paidBy = input.paidBy ?? userId;
   const id = await ctx.db.tx(async (q) => {
+    await assertCreateBudget(ctx, q, userId);
     const open = (await q.query<{ n: number }>(`SELECT COUNT(*)::int AS n FROM splits WHERE circle_id = $1 AND status = 'open'`, [circleId])).rows[0].n;
     if (open >= MAX_OPEN_PER_CIRCLE) throw badRequest('too_many_splits', 'This Circle has a lot of open splits. Settle or cancel a few first.');
     const shares = await resolveShares(q, circleId, input.total, paidBy, input.mode, input.participants);
@@ -367,6 +369,28 @@ export async function cancelSplit(ctx: Ctx, userId: string, splitId: string, met
     await log(q, splitId, userId, 'cancelled');
     await audit(q, { actorId: userId, action: 'split.cancelled', targetType: 'split', targetId: splitId, ip: meta.ip });
     await track(q, ctx.config, 'split_cancelled', { userId, splitId, key: `spx:${splitId}`, props: { had_settlements: owedOf(shares, s.paid_by).some((x) => x.status === 'settled') } }, true);
+  });
+  return getSplit(ctx, userId, splitId);
+}
+
+/** A link posted in the wrong chat stops working. The old address answers "gone" like any unknown one, so it reveals nothing. */
+export async function resetShare(ctx: Ctx, userId: string, splitId: string, meta: ReqMeta) {
+  await ctx.db.tx(async (q) => {
+    const s = await loadForMember(q, splitId, userId, true);
+    if (s.created_by !== userId) throw forbidden('Only the person who made the split can reset the link.');
+    await q.query('UPDATE splits SET share_token = $2, updated_at = now() WHERE id = $1', [splitId, randomToken(32)]);
+    await audit(q, { actorId: userId, action: 'split.link_reset', targetType: 'split', targetId: splitId, ip: meta.ip });
+  });
+  return getSplit(ctx, userId, splitId);
+}
+
+export async function handOver(ctx: Ctx, userId: string, splitId: string, toId: string, meta: ReqMeta) {
+  await ctx.db.tx(async (q) => {
+    const s = await loadForMember(q, splitId, userId, true);
+    await assertCanHandOver(q, s.circle_id, userId, s.created_by, toId);
+    await q.query('UPDATE splits SET created_by = $2, updated_at = now() WHERE id = $1', [splitId, toId]);
+    await audit(q, { actorId: userId, action: 'split.handed_over', targetType: 'split', targetId: splitId, ip: meta.ip, metadata: { to: toId } });
+    await notify(q, [toId], { type: 'split_new', title: `You’re now running ${s.title}`, body: 'You can edit it and mark shares settled.', refId: splitId, meta: { about: s.cname } });
   });
   return getSplit(ctx, userId, splitId);
 }

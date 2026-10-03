@@ -5,7 +5,7 @@ import type { Attendance, PlanDTO, PlanStatus } from '../../../../shared/contrac
 import { useAuth } from '../../../api/auth';
 import { useCircleAsks } from '../../../api/asks';
 import { ApiError } from '../../../api/client';
-import { useAddTask, useDeleteTask, useLinkAsk, usePatchTask, usePlan, useResetPlanLink, useRsvp, useSetRsvpOpen, useSetPlanStatus, useUpdatePlan } from '../../../api/plans';
+import { useAddTask, useDeleteTask, useHandOverPlan, useLinkAsk, usePatchTask, usePlan, useResetPlanLink, useRsvp, useSetRsvpOpen, useSetPlanStatus, useUpdatePlan } from '../../../api/plans';
 import { PactDetailSkeleton } from '../../../components/app/Skeleton';
 import { ErrorState, Notice } from '../../../components/app/States';
 import { AskCard } from '../../../components/ask/AskCard';
@@ -15,6 +15,7 @@ import { Avatar } from '../../../components/ui/Avatar';
 import { Button } from '../../../components/ui/Button';
 import { IconButton } from '../../../components/ui/IconButton';
 import { Input } from '../../../components/ui/Input';
+import { HandOverSheet } from '../../../components/circle/HandOverSheet';
 import { Modal } from '../../../components/ui/Modal';
 import { SectionHeading } from '../../../components/ui/SectionHeading';
 import { TopBar } from '../../../components/ui/TopBar';
@@ -26,7 +27,7 @@ import { startPactPath } from '../../../lib/startPactPath';
 import { Screen } from '../Screen';
 import '../../../components/plan/plan.css';
 
-type Sheet = null | 'menu' | 'edit' | 'link' | 'pact' | 'cancel' | 'reset' | 'sure';
+type Sheet = null | 'menu' | 'edit' | 'link' | 'pact' | 'cancel' | 'reset' | 'sure' | 'hand';
 const attLabel: Record<Attendance, string> = { in: 'In', maybe: 'Maybe', out: 'Can’t' };
 
 /** "Sarah is in", "Daniel changed to Maybe", "Tobi completed “Pick hotel”". Plain words; no chat. */
@@ -57,6 +58,8 @@ function activityText(a: PlanDTO['activity'][number], who: string, me: boolean) 
     }
     case 'location_changed':
       return a.detail ? `${who} changed the location to ${a.detail}` : `${who} removed the location`;
+    case 'pact_closed':
+      return 'The Pact was closed, so the plan is open again';
     default:
       return 'The plan became a Pact';
   }
@@ -80,6 +83,7 @@ export function PlanScreen() {
   const delTask = useDeleteTask(id);
   const link = useLinkAsk(id);
   const reset = useResetPlanLink(id);
+  const handOver = useHandOverPlan(id);
   const rsvpOpen = useSetRsvpOpen(id);
   const circleAsks = useCircleAsks(plan.data?.circleId);
   const [sheet, setSheet] = useState<Sheet>(null);
@@ -152,12 +156,12 @@ export function PlanScreen() {
     <Screen
       topBar={
         <TopBar
-          backTo={`/app/circles/${p.circleId}`}
+          backTo={params.get('from') === 'home' ? '/app/home' : `/app/circles/${p.circleId}`}
           title={p.circle.name}
           trailing={
             <span className="detail__top-actions">
               <IconButton label="Share" icon={<Share2 />} onClick={share} />
-              {p.canEdit && <IconButton label="More" icon={<Ellipsis />} onClick={() => setSheet('menu')} />}
+              {(p.canEdit || p.canHandOver) && <IconButton label="More" icon={<Ellipsis />} onClick={() => setSheet(p.canEdit ? 'menu' : 'hand')} />}
             </span>
           }
         />
@@ -410,6 +414,9 @@ export function PlanScreen() {
               <span className="menu__text"><span className="menu__title">Mark as done</span><span className="menu__sub">The Plan happened</span></span>
             </button>
           )}
+          <button type="button" className="menu__row" onClick={() => setSheet('hand')}>
+            <span className="menu__text"><span className="menu__title">Hand over</span><span className="menu__sub">Let someone else run this plan</span></span>
+          </button>
           <button type="button" className="menu__row" onClick={() => setSheet('reset')}>
             <span className="menu__text"><span className="menu__title">Reset the link</span><span className="menu__sub">Turns the old link off</span></span>
           </button>
@@ -508,6 +515,8 @@ export function PlanScreen() {
       >
         <span />
       </Modal>
+
+      <HandOverSheet open={sheet === 'hand'} onClose={close} circleId={p.circleId} currentId={p.createdBy} busy={handOver.isPending} onPick={async (uid) => (await act(() => handOver.mutateAsync(uid), 'Handed over')) && close()} />
 
       <Modal
         open={sheet === 'reset'}

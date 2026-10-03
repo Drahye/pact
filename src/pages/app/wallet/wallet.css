@@ -96,7 +96,7 @@
 
 .receipt__ref {
   font-family: ui-monospace, 'SF Mono', Menlo, monospace;
-  font-size: 12px;
+  font-size: 0.75rem;
   word-break: break-all;
 }
 
@@ -206,7 +206,7 @@
 .checkout__ref {
   margin: var(--space-1) 0 var(--space-6);
   font-family: ui-monospace, 'SF Mono', Menlo, monospace;
-  font-size: 12px;
+  font-size: 0.75rem;
   color: var(--color-text-tertiary);
 }
 
@@ -234,7 +234,7 @@
 }
 
 .checkout__pan {
-  font-size: 20px;
+  font-size: 1.25rem;
   letter-spacing: 0.06em;
 }
 

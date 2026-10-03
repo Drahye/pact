@@ -2,7 +2,7 @@ import type { CircleDTO, CircleInvitePreviewDTO, CircleSummaryDTO, CircleTint, W
 import type { Ctx, ReqMeta } from '../context.js';
 import type { Queryable } from '../db/index.js';
 import { randomToken } from '../lib/crypto.js';
-import { AppError, badRequest, notFound } from '../lib/errors.js';
+import { AppError, badRequest, forbidden, notFound } from '../lib/errors.js';
 import { track, visitorId } from '../lib/events.js';
 import { peopleByIds } from './pacts.js';
 import { liveSignals } from './asks.js';
@@ -35,6 +35,7 @@ interface MemberRow {
   user_id: string;
   role: 'owner' | 'member';
   status: 'invited' | 'joined' | 'left';
+  removed_at: Date | null;
   joined_at: Date | null;
   created_at: Date;
 }
@@ -147,6 +148,31 @@ export async function updateCircle(ctx: Ctx, userId: string, circleId: string, p
   return getCircle(ctx, userId, circleId);
 }
 
+/**
+ * Who may hand a Plan or Split to someone else, and to whom. The organiser can, to anyone still in the Circle. If the organiser
+ * has left, been removed or closed their account, the Circle's owner can take it over (or hand it on), so it is never stuck.
+ */
+export async function assertCanHandOver(q: Queryable, circleId: string, actorId: string, organiserId: string, toId: string) {
+  if (!UUID.test(toId) || toId === organiserId) throw badRequest('invalid_member', 'Choose someone else in the Circle.');
+  const to = await q.query(`SELECT 1 FROM circle_members WHERE circle_id = $1 AND user_id = $2 AND status = 'joined'`, [circleId, toId]);
+  if (!to.rowCount) throw badRequest('invalid_member', 'That person isn’t in this Circle.');
+  if (actorId === organiserId) return;
+  const organiserHere = await q.query(`SELECT 1 FROM circle_members WHERE circle_id = $1 AND user_id = $2 AND status = 'joined'`, [circleId, organiserId]);
+  const actorOwns = await q.query(`SELECT 1 FROM circle_members WHERE circle_id = $1 AND user_id = $2 AND status = 'joined' AND role = 'owner'`, [circleId, actorId]);
+  if (organiserHere.rowCount || !actorOwns.rowCount) throw forbidden('Only the person running this can hand it over.');
+}
+
+/** The circle-owner-takes-over case: the viewer owns the Circle and the organiser is no longer in it. */
+export async function ownerMayTakeOver(q: Queryable, circleId: string, viewerId: string | null, organiserId: string): Promise<boolean> {
+  if (!viewerId) return false;
+  const r = await q.query(
+    `SELECT 1 FROM circle_members o WHERE o.circle_id = $1 AND o.user_id = $2 AND o.status = 'joined' AND o.role = 'owner'
+        AND NOT EXISTS (SELECT 1 FROM circle_members c WHERE c.circle_id = $1 AND c.user_id = $3 AND c.status = 'joined')`,
+    [circleId, viewerId, organiserId],
+  );
+  return !!r.rowCount;
+}
+
 export async function leaveCircle(ctx: Ctx, userId: string, circleId: string, meta: ReqMeta) {
   await ctx.db.tx(async (q) => {
     const { member } = await loadAsMember(q, circleId, userId, true);
@@ -167,7 +193,7 @@ export async function removeMember(ctx: Ctx, userId: string, circleId: string, t
     const { member } = await loadAsMember(q, circleId, userId, true);
     requireOwner(member);
     if (!UUID.test(targetId) || targetId === userId) throw badRequest('invalid_member', 'You can’t remove yourself. Leave the Circle instead.');
-    const r = await q.query(`UPDATE circle_members SET status = 'left' WHERE circle_id = $1 AND user_id = $2 AND status = 'joined' AND role = 'member'`, [circleId, targetId]);
+    const r = await q.query(`UPDATE circle_members SET status = 'left', removed_at = now() WHERE circle_id = $1 AND user_id = $2 AND status = 'joined' AND role = 'member'`, [circleId, targetId]);
     if (!r.rowCount) throw notFound('That person');
     await audit(q, { actorId: userId, action: 'circle.member_removed', targetType: 'circle', targetId: circleId, ip: meta.ip });
   });
@@ -248,6 +274,7 @@ export async function joinByToken(ctx: Ctx, userId: string, token: string, meta:
     await q.query('SELECT 1 FROM circles WHERE id = $1 FOR UPDATE', [i.circle_id]);
     const m = await q.query<MemberRow>('SELECT * FROM circle_members WHERE circle_id = $1 AND user_id = $2', [i.circle_id, userId]);
     if (m.rows[0]?.status === 'joined') return i.circle_id; // already in: just take them there
+    if (m.rows[0]?.removed_at) throw new AppError(403, 'removed_from_circle', 'You were removed from this Circle, so this link won’t add you back. Ask the person who runs it.');
     const n = await q.query<{ n: number }>(`SELECT COUNT(*)::int AS n FROM circle_members WHERE circle_id = $1 AND status = 'joined'`, [i.circle_id]);
     if (n.rows[0].n >= MAX_MEMBERS) throw badRequest('circle_full', 'This Circle is full.');
     if (m.rows[0]) await q.query(`UPDATE circle_members SET status = 'joined', joined_at = now() WHERE circle_id = $1 AND user_id = $2`, [i.circle_id, userId]);

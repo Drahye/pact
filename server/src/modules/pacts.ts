@@ -13,7 +13,7 @@ import { createAccount, post, walletAccountId } from './ledger.js';
 import { closePactAccountTx, refundGuestsTx, settleWaitingPayouts } from './pactMoney.js';
 import { checkPledgeKept, closePledgesTx } from './pledges.js';
 import { insertItems, lapseUnpaidOrders, orderOutstanding, paidOrders } from './orders.js';
-import { completeConversion, completeFromPact, lockPlanForPact } from './plans.js';
+import { completeConversion, completeFromPact, lockPlanForPact, releaseFromPact } from './plans.js';
 import { audit, enqueue, notify, notifyGrouped, recordActivity } from './platform.js';
 
 export interface PactRow {
@@ -568,7 +568,7 @@ export async function createPact(ctx: Ctx, userId: string, input: CreateInput, m
       `INSERT INTO pacts (id, slug, invite_code, title, note, category, target_amount, deadline, organizer_id, account_id, missed_goal_policy, split_mode, mode, circle_id, plan_id)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
       // People buy what they order, so an order Pact can pay its suppliers before every order is in.
-      [pactId, slug, randomCode(8), input.title.trim(), input.note?.trim() || null, input.category, target, input.deadline, userId, accountId, orders ? 'release' : input.missedGoalPolicy, input.splitMode, input.mode, circleId, plan?.id ?? null],
+      [pactId, slug, randomCode(12), input.title.trim(), input.note?.trim() || null, input.category, target, input.deadline, userId, accountId, orders ? 'release' : input.missedGoalPolicy, input.splitMode, input.mode, circleId, plan?.id ?? null],
     );
     if (orders) await insertItems(q, pactId, userId, input.items);
     await q.query(
@@ -1077,6 +1077,7 @@ async function refundTx(q: Queryable, pact: PactRow, finalStatus: 'refunded' | '
   await q.query(`UPDATE pacts SET status = $2, closed_at = now(), release_requested_by = NULL, release_requested_at = NULL WHERE id = $1`, [pact.id, finalStatus]);
   await closePactAccountTx(q, pact.id);
   await closePledgesTx(q, pact.id);
+  await releaseFromPact(q, pact.id, actorId);
   await recordActivity(q, { pactId: pact.id, actorId, type: finalStatus === 'cancelled' ? 'cancelled' : 'refunded', amount: refunded });
   const members = await q.query<{ user_id: string }>(`SELECT user_id FROM pact_members WHERE pact_id = $1 AND status = 'joined'`, [pact.id]);
   for (const c of contributors.rows) {

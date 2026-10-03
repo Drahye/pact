@@ -96,6 +96,19 @@ export async function api<T>(method: string, path: string, body?: unknown, opts:
 export const newIdempotencyKey = () =>
   typeof crypto !== 'undefined' && 'randomUUID' in crypto ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
+/**
+ * One key per intent, reused while the same body is retried (a double tap, a flaky connection) and renewed when the body changes.
+ * Call `keyFor(body)` when sending; the server replays the first answer instead of creating a second object.
+ */
+export function intentKeys() {
+  let last: { fp: string; key: string } | null = null;
+  return (body: unknown) => {
+    const fp = JSON.stringify(body);
+    if (!last || last.fp !== fp) last = { fp, key: newIdempotencyKey() };
+    return last.key;
+  };
+}
+
 /** Uploads raw image bytes (the server checks the actual content, not the name or type). */
 export async function uploadPhoto<T>(path: string, file: File): Promise<T> {
   const send = () =>

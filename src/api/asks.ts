@@ -1,7 +1,9 @@
+import { useRef } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { AskDTO, AskSummaryDTO, Attendance, PersonDTO, WithPeople } from '../../shared/contracts';
-import { api } from './client';
+import { api, intentKeys } from './client';
 import { circleKeys } from './circles';
+import { homeKeys } from './home';
 import { register } from './mappers';
 
 export const askKeys = {
@@ -17,7 +19,7 @@ type Single = WithPeople<AskDTO>;
 type List = WithPeople<AskSummaryDTO[]>;
 type Mine = WithPeople<{ ask: AskDTO; canJoinCircle: boolean }>;
 
-const LIVE = { refetchInterval: 8_000, refetchOnWindowFocus: true } as const;
+const LIVE = { refetchInterval: 20_000, refetchOnWindowFocus: true } as const;
 const unwrap = <T extends { people: PersonDTO[] }>(r: T) => (register(r.people), r);
 
 /** One Ask, for a Circle member. `from` is only for coarse analytics. */
@@ -73,14 +75,16 @@ function useRefresh() {
     qc.invalidateQueries({ queryKey: askKeys.needs });
     qc.invalidateQueries({ queryKey: circleKeys.all });
     qc.invalidateQueries({ queryKey: ['notifications'] });
+    qc.invalidateQueries({ queryKey: homeKeys.all });
   };
 }
 
 export function useCreateAsk(circleId: string) {
   const refresh = useRefresh();
   const qc = useQueryClient();
+  const keyFor = useRef(intentKeys()).current;
   return useMutation({
-    mutationFn: (b: { type: 'choice' | 'attendance'; title: string; options?: string[]; from: 'circle' | 'home' | 'nav'; planId?: string }) => api<Single>('POST', `/circles/${circleId}/asks`, b),
+    mutationFn: (b: { type: 'choice' | 'attendance'; title: string; options?: string[]; from: 'circle' | 'home' | 'nav'; planId?: string }) => api<Single>('POST', `/circles/${circleId}/asks`, b, { idempotencyKey: keyFor(b) }),
     onSuccess: (r) => {
       register(r.people);
       qc.setQueryData(askKeys.one(r.data.id), r.data);

@@ -13,7 +13,8 @@ const OTP_TTL_MS = 5 * 60_000;
 const SESSION_IDLE_DAYS = 14;
 const REFRESH_GRACE_SEC = 60;
 const OTP_MAX_ATTEMPTS = 5;
-const OTP_PER_PHONE_WINDOW = { minutes: 15, max: 4 };
+// A number's budget is per requester (same IP), so a stranger spending it cannot lock the owner out; the ceiling bounds SMS cost.
+const OTP_PER_PHONE_WINDOW = { minutes: 15, max: 4, ceiling: 12 };
 const OTP_PER_IP_WINDOW = { minutes: 60, max: 30 };
 
 const PALETTE = ['#3dd68c', '#ff7a5c', '#4da3ff', '#9b7bff', '#ffc53d', '#ff6fb5', '#22b8a6', '#ff9f43'];
@@ -186,14 +187,15 @@ type OtpPurpose = 'login' | 'pin_reset';
 
 /** Sends a code bound to one purpose, so a sign-in code can never reset a PIN and vice versa. */
 async function issueOtp(ctx: Ctx, phone: string, purpose: OtpPurpose, meta: ReqMeta) {
-  const recent = await ctx.db.query<{ by_phone: number; by_ip: number }>(
+  const recent = await ctx.db.query<{ by_phone: number; by_phone_ip: number; by_ip: number }>(
     `SELECT
        COUNT(*) FILTER (WHERE phone = $1 AND created_at > now() - make_interval(mins => $3))::int AS by_phone,
+       COUNT(*) FILTER (WHERE phone = $1 AND ip IS NOT DISTINCT FROM $2 AND created_at > now() - make_interval(mins => $3))::int AS by_phone_ip,
        COUNT(*) FILTER (WHERE ip = $2 AND created_at > now() - make_interval(mins => $4))::int AS by_ip
      FROM otp_challenges WHERE created_at > now() - make_interval(mins => GREATEST($3, $4))`,
     [phone, meta.ip, OTP_PER_PHONE_WINDOW.minutes, OTP_PER_IP_WINDOW.minutes],
   );
-  if (recent.rows[0].by_phone >= OTP_PER_PHONE_WINDOW.max || (meta.ip && recent.rows[0].by_ip >= OTP_PER_IP_WINDOW.max)) {
+  if (recent.rows[0].by_phone_ip >= OTP_PER_PHONE_WINDOW.max || recent.rows[0].by_phone >= OTP_PER_PHONE_WINDOW.ceiling || (meta.ip && recent.rows[0].by_ip >= OTP_PER_IP_WINDOW.max)) {
     await audit(ctx.db, { action: 'auth.otp_rate_limited', ip: meta.ip, metadata: { phone: maskPhone(phone), purpose } });
     throw tooMany('Too many codes requested. Try again in 15 minutes.');
   }

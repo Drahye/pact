@@ -9,6 +9,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { z, ZodError } from 'zod';
 import * as C from '../../shared/contracts.js';
+import { stableStringify } from './lib/crypto.js';
 import type { AuthTokensDTO } from '../../shared/contracts.js';
 import type { Config } from './config.js';
 import type { Ctx, ReqMeta } from './context.js';
@@ -230,7 +231,7 @@ export async function buildApp({ config, db, provider, sms, push, now = () => ne
     const key = req.headers['idempotency-key'];
     if (typeof key !== 'string' || key.length < 8 || key.length > 100) throw badRequest('idempotency_key_required', 'Missing Idempotency-Key header.');
     const { pin: _pin, ...fingerprint } = (req.body ?? {}) as Record<string, unknown>;
-    const hash = createHash('sha256').update(`${route}:${JSON.stringify(fingerprint, Object.keys(fingerprint).sort())}`).digest('base64url');
+    const hash = createHash('sha256').update(`${route}:${stableStringify(fingerprint)}`).digest('base64url');
     const ins = await db.query(
       'INSERT INTO idempotency_keys (user_id, key, route, request_hash) VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING RETURNING key',
       [req.userId, key, route, hash],
@@ -255,6 +256,10 @@ export async function buildApp({ config, db, provider, sms, push, now = () => ne
       throw err;
     }
   };
+
+  /** For creates the client may retry: with a key a retry replays the first answer, without one the request just runs. */
+  const idempotentIfKeyed = async <T>(req: FastifyRequest, reply: FastifyReply, route: string, fn: () => Promise<T>) =>
+    typeof req.headers['idempotency-key'] === 'string' ? idempotent(req, reply, route, fn) : fn();
 
   const strict = (max: number, minutes = 1) =>
     config.RATE_LIMIT_ENABLED ? { config: { rateLimit: { max, timeWindow: `${minutes} minute` } } } : {};
@@ -610,7 +615,7 @@ export async function buildApp({ config, db, provider, sms, push, now = () => ne
 
         /* ---------- Circles */
         priv.get('/circles', async (req) => circles.listCircles(ctx, req.userId));
-        priv.post('/circles', strict(10), async (req) => circles.createCircle(ctx, req.userId, parse(C.CreateCircleBody, req.body), meta(req)));
+        priv.post('/circles', strict(10), async (req, reply) => idempotentIfKeyed(req, reply, 'create_circle', () => circles.createCircle(ctx, req.userId, parse(C.CreateCircleBody, req.body), meta(req))));
         priv.get<{ Params: { id: string } }>('/circles/:id', async (req) => circles.getCircle(ctx, req.userId, req.params.id));
         priv.patch<{ Params: { id: string } }>('/circles/:id', strict(30), async (req) => circles.updateCircle(ctx, req.userId, req.params.id, parse(C.UpdateCircleBody, req.body), meta(req)));
         priv.post<{ Params: { id: string } }>('/circles/:id/leave', strict(20), async (req) => circles.leaveCircle(ctx, req.userId, req.params.id, meta(req)));
@@ -620,7 +625,9 @@ export async function buildApp({ config, db, provider, sms, push, now = () => ne
         /* ---------- Plans */
         priv.get('/plans/needs-you', async (req) => plans.needsYou(ctx, req.userId));
         priv.get<{ Params: { id: string } }>('/circles/:id/plans', async (req) => plans.listCirclePlans(ctx, req.userId, req.params.id));
-        priv.post<{ Params: { id: string } }>('/circles/:id/plans', strict(20), async (req) => plans.createPlan(ctx, req.userId, req.params.id, parse(C.CreatePlanBody, req.body), meta(req)));
+        priv.post<{ Params: { id: string } }>('/circles/:id/plans', strict(20), async (req, reply) =>
+          idempotentIfKeyed(req, reply, `create_plan:${req.params.id}`, () => plans.createPlan(ctx, req.userId, req.params.id, parse(C.CreatePlanBody, req.body), meta(req))),
+        );
         priv.get<{ Params: { id: string }; Querystring: { from?: string } }>('/plans/:id', async (req) => plans.getPlan(ctx, req.userId, req.params.id, req.query.from === 'home' ? 'home' : req.query.from === 'circle' ? 'circle' : undefined));
         priv.patch<{ Params: { id: string } }>('/plans/:id', strict(30), async (req) => plans.updatePlan(ctx, req.userId, req.params.id, parse(C.UpdatePlanBody, req.body), meta(req)));
         priv.put<{ Params: { id: string } }>('/plans/:id/rsvp-open', strict(20), async (req) => plans.setRsvpOpen(ctx, req.userId, req.params.id, parse(C.PlanRsvpOpenBody, req.body).open, meta(req)));
@@ -634,6 +641,7 @@ export async function buildApp({ config, db, provider, sms, push, now = () => ne
         priv.get<{ Params: { id: string } }>('/plans/:id/pact-draft', strict(30), async (req) => plans.pactDraft(ctx, req.userId, req.params.id));
         priv.post<{ Params: { id: string } }>('/plans/:id/shared', strict(60), async (req) => plans.recordShared(ctx, req.userId, req.params.id, parse(C.AskSharedBody, req.body).via));
         priv.post<{ Params: { id: string } }>('/plans/:id/share/reset', strict(10), async (req) => plans.resetShare(ctx, req.userId, req.params.id, meta(req)));
+        priv.get('/feed', strict(60), async (req) => home.getFeed(ctx, req.userId));
         priv.get('/home', strict(120), async (req) => home.getHome(ctx, req.userId));
         const RecapKind = z.enum(['plan', 'pact', 'split']);
         priv.get<{ Params: { kind: string; id: string }; Querystring: { from?: string } }>('/recaps/:kind/:id', async (req) => home.getRecap(ctx, req.userId, parse(RecapKind, req.params.kind), req.params.id, req.query.from === 'home' ? 'home' : 'object'));
@@ -642,9 +650,14 @@ export async function buildApp({ config, db, provider, sms, push, now = () => ne
         priv.post<{ Params: { kind: string; id: string } }>('/recaps/:kind/:id/shared', strict(60), async (req) => home.recordRecapShared(ctx, req.userId, parse(RecapKind, req.params.kind), req.params.id, parse(C.SplitSharedBody, req.body).via));
         priv.get('/splits/needs-you', async (req) => splits.needsYou(ctx, req.userId));
         priv.get<{ Params: { id: string } }>('/circles/:id/splits', async (req) => splits.listCircleSplits(ctx, req.userId, req.params.id));
-        priv.post<{ Params: { id: string }; Querystring: { from?: string } }>('/circles/:id/splits', strict(20), async (req) =>
-          splits.createSplit(ctx, req.userId, req.params.id, parse(C.CreateSplitBody, req.body), meta(req), req.query.from === 'home' ? 'home' : req.query.from === 'nav' ? 'nav' : 'circle'),
+        priv.post<{ Params: { id: string }; Querystring: { from?: string } }>('/circles/:id/splits', strict(20), async (req, reply) =>
+          idempotentIfKeyed(req, reply, `create_split:${req.params.id}`, () =>
+            splits.createSplit(ctx, req.userId, req.params.id, parse(C.CreateSplitBody, req.body), meta(req), req.query.from === 'home' ? 'home' : req.query.from === 'nav' ? 'nav' : 'circle'),
+          ),
         );
+        priv.post<{ Params: { id: string } }>('/splits/:id/organiser', strict(10), async (req) => splits.handOver(ctx, req.userId, req.params.id, parse(C.AssignTransferBody, req.body).userId ?? '', meta(req)));
+        priv.post<{ Params: { id: string } }>('/plans/:id/organiser', strict(10), async (req) => plans.handOver(ctx, req.userId, req.params.id, parse(C.AssignTransferBody, req.body).userId ?? '', meta(req)));
+        priv.post<{ Params: { id: string } }>('/splits/:id/share/reset', strict(10), async (req) => splits.resetShare(ctx, req.userId, req.params.id, meta(req)));
         priv.get<{ Params: { id: string }; Querystring: { from?: string } }>('/splits/:id', async (req) => splits.getSplit(ctx, req.userId, req.params.id, req.query.from === 'home' ? 'home' : req.query.from === 'circle' ? 'circle' : undefined));
         priv.patch<{ Params: { id: string } }>('/splits/:id', strict(30), async (req) => splits.updateSplit(ctx, req.userId, req.params.id, parse(C.UpdateSplitBody, req.body), meta(req)));
         priv.post<{ Params: { id: string } }>('/splits/:id/cancel', strict(10), async (req) => splits.cancelSplit(ctx, req.userId, req.params.id, meta(req)));
@@ -675,7 +688,9 @@ export async function buildApp({ config, db, provider, sms, push, now = () => ne
         priv.post<{ Params: { id: string } }>('/asks/:id/shared', strict(60), async (req) => asks.recordShared(ctx, req.userId, req.params.id, parse(C.AskSharedBody, req.body).via));
         priv.post<{ Params: { id: string } }>('/asks/:id/share/reset', strict(10), async (req) => asks.resetShare(ctx, req.userId, req.params.id, meta(req)));
         priv.get<{ Params: { id: string } }>('/circles/:id/asks', async (req) => asks.listCircleAsks(ctx, req.userId, req.params.id));
-        priv.post<{ Params: { id: string } }>('/circles/:id/asks', strict(20), async (req) => asks.createAsk(ctx, req.userId, req.params.id, parse(C.CreateAskBody, req.body), meta(req)));
+        priv.post<{ Params: { id: string } }>('/circles/:id/asks', strict(20), async (req, reply) =>
+          idempotentIfKeyed(req, reply, `create_ask:${req.params.id}`, () => asks.createAsk(ctx, req.userId, req.params.id, parse(C.CreateAskBody, req.body), meta(req))),
+        );
         priv.get<{ Params: { token: string } }>('/ask-links/:token/mine', strict(120), async (req) => asks.myLinkState(ctx, req.userId, req.params.token));
         priv.put<{ Params: { token: string } }>('/ask-links/:token/response', strict(60), async (req) => {
           const b = parse(C.AskResponseBody, req.body);

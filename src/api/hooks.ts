@@ -198,7 +198,7 @@ function useInvalidateMoney() {
   const qc = useQueryClient();
   return (pactId?: string) => {
     qc.invalidateQueries({ queryKey: keys.wallet });
-    qc.invalidateQueries({ queryKey: keys.pacts });
+    (qc.invalidateQueries({ queryKey: keys.pacts }), qc.invalidateQueries({ queryKey: ['home'] }));
     qc.invalidateQueries({ queryKey: keys.activity });
     qc.invalidateQueries({ queryKey: keys.notifications });
     if (pactId) qc.invalidateQueries({ queryKey: keys.pact(pactId) });
@@ -255,8 +255,8 @@ export function usePactCommand(pactId: string) {
   const setPact = useSetPact();
   const qc = useQueryClient();
   return {
-    accept: useMutation({ mutationFn: () => api<PactDetail>('POST', `/pacts/${pactId}/accept`, {}), onSuccess: (r) => (setPact(r), qc.invalidateQueries({ queryKey: keys.pacts })) }),
-    leave: useMutation({ mutationFn: () => api('POST', `/pacts/${pactId}/leave`, {}), onSuccess: () => qc.invalidateQueries({ queryKey: keys.pacts }) }),
+    accept: useMutation({ mutationFn: () => api<PactDetail>('POST', `/pacts/${pactId}/accept`, {}), onSuccess: (r) => (setPact(r), (qc.invalidateQueries({ queryKey: keys.pacts }), qc.invalidateQueries({ queryKey: ['home'] }))) }),
+    leave: useMutation({ mutationFn: () => api('POST', `/pacts/${pactId}/leave`, {}), onSuccess: () => (qc.invalidateQueries({ queryKey: keys.pacts }), qc.invalidateQueries({ queryKey: ['home'] })) }),
     nudge: useMutation({ mutationFn: () => api<{ reminded: number }>('POST', `/pacts/${pactId}/nudge`, {}) }),
     invite: useMutation({
       mutationFn: (body: { userIds?: string[]; phones?: string[] }) => api<PactDetail>('POST', `/pacts/${pactId}/invites`, body),
@@ -273,7 +273,7 @@ export function useJoinByCode() {
       api<PactDetail>('POST', `/invites/${code}/join`, participation ? { participation } : {}),
     onSuccess: (r) => {
       setPact(r);
-      qc.invalidateQueries({ queryKey: keys.pacts });
+      (qc.invalidateQueries({ queryKey: keys.pacts }), qc.invalidateQueries({ queryKey: ['home'] }));
     },
   });
 }
@@ -349,7 +349,7 @@ function usePactPlanMutation<V>(run: (v: V) => Promise<PactDetail>) {
     mutationFn: run,
     onSuccess: (r) => {
       setPact(r);
-      qc.invalidateQueries({ queryKey: keys.pacts });
+      (qc.invalidateQueries({ queryKey: keys.pacts }), qc.invalidateQueries({ queryKey: ['home'] }));
       qc.invalidateQueries({ queryKey: keys.activity });
     },
   });

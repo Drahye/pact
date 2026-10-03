@@ -63,7 +63,7 @@ export function AskScreen() {
     <Screen
       topBar={
         <TopBar
-          backTo={`/app/circles/${a.circleId}`}
+          backTo={params.get('from') === 'home' ? '/app/home' : `/app/circles/${a.circleId}`}
           title={a.circle.name}
           trailing={
             <span className="detail__top-actions">

@@ -116,6 +116,25 @@ export function ComingUpSection({ items }: { items: ComingUpItem[] }) {
   );
 }
 
+/** The same rows as Home's Recent, without the heading: the Activity tab's list of everything. */
+export function RecentList({ items }: { items: RecentItem[] }) {
+  return (
+    <ul className="hv2-list">
+      {items.map((r) => (
+        <li key={r.id}>
+          <Link to={r.url} className="hv2-recent">
+            {r.actorId ? <Avatar userId={r.actorId} size="sm" label={false} /> : <span className="hv2-recent__dot" aria-hidden />}
+            <span className="hv2-recent__text">{r.text}</span>
+            <time className="hv2-recent__time" dateTime={r.at}>
+              {formatRelative(r.at)}
+            </time>
+          </Link>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 export function RecentSection({ items }: { items: RecentItem[] }) {
   if (!items.length) return null;
   return (

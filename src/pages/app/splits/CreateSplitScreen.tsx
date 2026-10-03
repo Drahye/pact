@@ -1,11 +1,12 @@
 import { Check } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../../api/auth';
 import { useCircle, useCircles } from '../../../api/circles';
 import { ApiError } from '../../../api/client';
 import { useCreateSplit, useSplit, useUpdateSplit } from '../../../api/splits';
 import { CircleBadge } from '../../../components/circle/CircleBadge';
+import { QuickCircle } from '../../../components/circle/QuickCircle';
 import { AmountInput } from '../../../components/ui/AmountInput';
 import { Avatar } from '../../../components/ui/Avatar';
 import { Button } from '../../../components/ui/Button';
@@ -36,6 +37,7 @@ export function CreateSplitScreen() {
   const preCircle = params.get('circle') ?? '';
   const list = circles.data ?? [];
   const [circleId, setCircleId] = useState(preCircle);
+  const [madeCircle, setMadeCircle] = useState(false);
   const chosen = existing.data?.circleId ?? (circleId || (list.length === 1 ? list[0].id : ''));
   const circle = useCircle(chosen || undefined);
   const create = useCreateSplit(chosen);
@@ -53,7 +55,7 @@ export function CreateSplitScreen() {
   const seeded = useState({ done: false })[0];
 
   const members = useMemo(() => (circle.data?.members ?? []).map((m) => m.userId), [circle.data]);
-  const needsCircleStep = !editId && !preCircle && list.length !== 1;
+  const needsCircleStep = !editId && !preCircle && (list.length !== 1 || madeCircle);
   const locked = !!editId && !!existing.data && !existing.data.canEditStructure;
   const steps = useMemo<Step[]>(() => (locked ? ['title', 'review'] : needsCircleStep ? ['circle', 'title', 'amount', 'who', 'review'] : ['title', 'amount', 'who', 'review']), [needsCircleStep, locked]);
   const idx = Math.max(0, steps.indexOf(step));
@@ -156,9 +158,7 @@ export function CreateSplitScreen() {
               ))}
             </div>
           ) : (
-            <p>
-              You’re not in a Circle yet. <Link to="/app/circles/new" className="link">Create one first</Link>.
-            </p>
+            <QuickCircle onCreated={(id) => (setCircleId(id), setMadeCircle(true))} />
           ))}
 
         {step === 'title' && (

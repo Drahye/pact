@@ -5,7 +5,8 @@ import { randomToken } from '../lib/crypto.js';
 import { AppError, badRequest, forbidden, notFound } from '../lib/errors.js';
 import { track, visitorId } from '../lib/events.js';
 import { addDays, lagosToday } from '../lib/time.js';
-import { askSummariesForPlans, minimalPeople } from './asks.js';
+import { assertCanHandOver, ownerMayTakeOver } from './circles.js';
+import { aliasPeople, askSummariesForPlans, assertCreateBudget, minimalPeople } from './asks.js';
 import { joinByToken } from './circles.js';
 import { audit, notify } from './platform.js';
 
@@ -110,6 +111,8 @@ async function build(ctx: Ctx, q: Queryable, rows: PlanRow[], viewerId: string |
       }
     }
   }
+  const takeover = new Set<string>();
+  if (viewerId && !publicView) for (const r of rows) if (member(r.circle_id) && r.created_by !== viewerId && (await ownerMayTakeOver(q, r.circle_id, viewerId, r.created_by))) takeover.add(r.id);
   return rows.map((p) => {
     const counts = { in: 0, maybe: 0, out: 0 };
     for (const r of rsvp.rows) if (r.plan_id === p.id) counts[r.status] = r.n;
@@ -146,6 +149,7 @@ async function build(ctx: Ctx, q: Queryable, rows: PlanRow[], viewerId: string |
       activity: activity.filter((a) => a.plan_id === p.id).slice(0, 15).map((a) => ({ kind: a.kind, userId: a.user_id, status: a.status, detail: a.detail, at: new Date(a.at).toISOString() })),
       isMember: isM,
       canEdit: isM && isCreator && isOpen(p),
+      canHandOver: isM && isOpen(p) && (isCreator || takeover.has(p.id)),
       canMakePact: isM && isCreator && isOpen(p) && !p.pact_id,
       shareToken: isM ? p.share_token : null,
     };
@@ -153,6 +157,8 @@ async function build(ctx: Ctx, q: Queryable, rows: PlanRow[], viewerId: string |
     return { dto, peopleIds };
   });
 }
+
+const planIds = (d: PlanDTO) => [d.createdBy, ...d.rsvps.map((r) => r.userId), ...d.waiting, ...d.activity.map((a) => a.userId), ...d.tasks.flatMap((t) => [t.createdBy, ...(t.assigneeId ? [t.assigneeId] : [])])];
 
 const summary = (d: PlanDTO): PlanSummaryDTO => ({
   id: d.id,
@@ -273,6 +279,7 @@ export async function createPlan(ctx: Ctx, userId: string, circleId: string, inp
   const today = lagosToday(ctx.now());
   if (input.date && input.date < today) throw badRequest('invalid_date', 'Choose a date that hasn’t passed.');
   const id = await ctx.db.tx(async (q) => {
+    await assertCreateBudget(ctx, q, userId);
     const active = await q.query<{ n: number }>(`SELECT COUNT(*)::int AS n FROM plans WHERE circle_id = $1 AND status IN ('planning', 'confirmed')`, [circleId]);
     if (active.rows[0].n >= MAX_ACTIVE_PER_CIRCLE) throw badRequest('too_many_plans', 'This Circle has a lot of active plans. Finish or cancel a few first.');
     const r = await q.query<{ id: string }>(
@@ -548,7 +555,7 @@ export async function previewLink(ctx: Ctx, token: string, req: ReqMeta) {
   b.peopleIds = [p.created_by];
   const who = visitorId(ctx.config, req.ip, req.userAgent, ctx.now().toISOString().slice(0, 10));
   await track(ctx.db, ctx.config, 'plan_opened', { actor: who, planId: p.id, key: `pov:${who}:${p.id}`, props: { from: 'share', status: p.status } });
-  return { data: b.dto, people: await minimalPeople(ctx.db, b.peopleIds) };
+  return aliasPeople(ctx, token, null, { data: b.dto, people: await minimalPeople(ctx.db, b.peopleIds) }, planIds(b.dto));
 }
 
 /** The signed-in viewer's side of a link: their RSVP, whether they are in the Circle, and whether they could join it. */
@@ -562,7 +569,8 @@ export async function myLinkState(ctx: Ctx, userId: string, token: string) {
     b.peopleIds = [p.created_by, ...b.dto.rsvps.map((r) => r.userId)];
   }
   const canJoin = !member && !!(await ctx.db.query(`SELECT 1 FROM circle_invites WHERE circle_id = $1 AND revoked_at IS NULL AND (expires_at IS NULL OR expires_at > now())`, [p.circle_id])).rowCount;
-  return { data: { plan: b.dto, canJoinCircle: canJoin }, people: await minimalPeople(ctx.db, b.peopleIds) };
+  const out = { data: { plan: b.dto, canJoinCircle: canJoin }, people: await minimalPeople(ctx.db, b.peopleIds) };
+  return member ? out : aliasPeople(ctx, token, userId, out, planIds(b.dto));
 }
 
 export async function rsvpViaLink(ctx: Ctx, userId: string, token: string, status: Attendance, afterAuth = false) {
@@ -592,6 +600,17 @@ export async function recordLinkShared(ctx: Ctx, userId: string, token: string, 
   const p = await loadByToken(ctx.db, token);
   await track(ctx.db, ctx.config, 'plan_shared', { userId, planId: p.id, key: `psd:${userId}:${p.id}:${ctx.now().toISOString().slice(0, 10)}`, props: { via } });
   return { ok: true };
+}
+
+export async function handOver(ctx: Ctx, userId: string, planId: string, toId: string, meta: ReqMeta) {
+  await ctx.db.tx(async (q) => {
+    const p = await loadForMember(q, planId, userId, true);
+    await assertCanHandOver(q, p.circle_id, userId, p.created_by, toId);
+    await q.query('UPDATE plans SET created_by = $2, updated_at = now() WHERE id = $1', [planId, toId]);
+    await audit(q, { actorId: userId, action: 'plan.handed_over', targetType: 'plan', targetId: planId, ip: meta.ip, metadata: { to: toId } });
+    await notify(q, [toId], { type: 'plan_pact', title: `You’re now running ${p.title}`, body: 'You can edit it and make it a Pact.', refId: planId, meta: { about: p.cname }, push: `You were handed a plan in ${p.cname}.` });
+  });
+  return getPlan(ctx, userId, planId);
 }
 
 export async function resetShare(ctx: Ctx, userId: string, planId: string, meta: ReqMeta) {
@@ -640,6 +659,15 @@ export async function lockPlanForPact(q: Queryable, planId: string, userId: stri
 export async function completeFromPact(q: Queryable, pactId: string, userId: string) {
   const r = await q.query<{ id: string }>(`UPDATE plans SET status = 'done', updated_at = now() WHERE pact_id = $1 AND status IN ('planning', 'confirmed') RETURNING id`, [pactId]);
   for (const { id } of r.rows) await logActivity(q, id, userId, 'done', null, 'pact');
+}
+
+/**
+ * Called inside the transaction that closes a Pact without completing it (cancelled, or refunded because the goal was missed).
+ * The Plan was waiting on that Pact; it gets its link cleared and a line in its history, so the group can edit it, cancel it or try again.
+ */
+export async function releaseFromPact(q: Queryable, pactId: string, actorId: string | null) {
+  const r = await q.query<{ id: string; created_by: string }>(`UPDATE plans SET pact_id = NULL, updated_at = now() WHERE pact_id = $1 AND status IN ('planning', 'confirmed') RETURNING id, created_by`, [pactId]);
+  for (const p of r.rows) await logActivity(q, p.id, actorId ?? p.created_by, 'pact_closed');
 }
 
 /** Called by Pact creation once the Pact exists: ties the two together, keeps the Plan, tells the people who were in. */

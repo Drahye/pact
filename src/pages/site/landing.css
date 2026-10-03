@@ -57,13 +57,13 @@
   border-radius: var(--radius-full);
   background: var(--color-surface);
   box-shadow: inset 0 0 0 1px var(--color-border);
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: var(--weight-medium);
   color: var(--color-text-secondary);
 }
 
 .hero__title {
-  font-size: clamp(46px, 6vw, 92px);
+  font-size: clamp(2.875rem, 6vw, 5.75rem);
   line-height: 0.98;
   letter-spacing: -0.055em;
   font-weight: var(--weight-semibold);
@@ -103,14 +103,14 @@
 
 .hero__faces .avatar {
   --avatar-size: clamp(34px, 4.6vw, 70px);
-  font-size: 16px;
+  font-size: 1rem;
   border: 3px solid #fff;
 }
 
 .hero__lede {
   margin-top: var(--space-6);
   max-width: 44ch;
-  font-size: clamp(17px, 1.5vw, 20px);
+  font-size: clamp(1.0625rem, 1.5vw, 1.25rem);
   line-height: 1.5;
   color: var(--color-text-secondary);
 }
@@ -197,7 +197,7 @@
   border-radius: var(--radius-full);
   background: var(--white);
   box-shadow: inset 0 0 0 1px var(--ink-100), var(--shadow-md);
-  font-size: 13px;
+  font-size: 0.8125rem;
   white-space: nowrap;
   opacity: 0;
   transform: translateY(10px) scale(0.94);
@@ -360,7 +360,7 @@
   border-radius: var(--radius-full);
   background: var(--color-surface);
   box-shadow: inset 0 0 0 1px var(--color-border);
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: var(--weight-semibold);
   color: var(--color-text-secondary);
 }
@@ -370,7 +370,7 @@
 .story__title {
   margin-top: var(--space-4);
   max-width: 14ch;
-  font-size: clamp(36px, 4.6vw, 64px);
+  font-size: clamp(2.25rem, 4.6vw, 4rem);
   line-height: 1;
   letter-spacing: -0.05em;
   font-weight: var(--weight-semibold);
@@ -390,7 +390,7 @@
 .story__h2 {
   max-width: 14ch;
   margin-top: var(--space-2);
-  font-size: clamp(34px, 5vw, 68px);
+  font-size: clamp(2.125rem, 5vw, 4.25rem);
   line-height: 1;
   letter-spacing: -0.05em;
   font-weight: var(--weight-semibold);
@@ -445,7 +445,7 @@
 .story__stack > .story__head .story__h2 { max-width: 16ch; margin-inline: auto; }
 .story__card .story__points { align-items: flex-start; text-align: left; }
 
-.story__card .story__title { max-width: 16ch; font-size: clamp(32px, 9vw, 44px); }
+.story__card .story__title { max-width: 16ch; font-size: clamp(2rem, 9vw, 2.75rem); }
 .story__card .story__body { font-size: var(--text-body); }
 
 .story__card-stage {
@@ -634,7 +634,7 @@
   height: 48px;
   padding: 0 var(--space-5);
   border-radius: var(--radius-full);
-  font-size: 16px;
+  font-size: 1rem;
   font-weight: var(--weight-semibold);
   letter-spacing: -0.02em;
   white-space: nowrap;
@@ -649,7 +649,7 @@
 .ribbons__pill--pink { background: var(--pink-100); color: var(--tone-pink-fg); }
 
 @media (min-width: 768px) {
-  .ribbons__pill { height: 56px; padding: 0 var(--space-6); font-size: 19px; }
+  .ribbons__pill { height: 56px; padding: 0 var(--space-6); font-size: 1.1875rem; }
 }
 
 .what__inner {
@@ -668,7 +668,7 @@
   border-radius: var(--radius-full);
   background: var(--color-surface);
   box-shadow: inset 0 0 0 1px var(--color-border);
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: var(--weight-semibold);
   color: var(--color-text-secondary);
 }
@@ -676,7 +676,7 @@
 .what__lead {
   max-width: 30ch;
   margin-top: var(--space-6);
-  font-size: clamp(18px, 2vw, 24px);
+  font-size: clamp(1.125rem, 2vw, 1.5rem);
   line-height: 1.35;
   letter-spacing: -0.02em;
   color: var(--color-text-secondary);
@@ -685,7 +685,7 @@
 .what__statement {
   max-width: 1040px;
   margin-top: var(--space-5);
-  font-size: clamp(36px, 8.4vw, 52px);
+  font-size: clamp(2.25rem, 8.4vw, 3.25rem);
   line-height: 1.08;
   letter-spacing: -0.045em;
   font-weight: var(--weight-semibold);
@@ -739,7 +739,7 @@
 
 @media (min-width: 768px) {
   .what { padding: var(--space-16) 0 var(--space-24); }
-  .what__statement { font-size: clamp(52px, 5.6vw, 80px); line-height: 1.04; }
+  .what__statement { font-size: clamp(3.25rem, 5.6vw, 5rem); line-height: 1.04; }
 }
 
 /* Use cases ---------------------------------------------------------------------------------- */
@@ -807,7 +807,7 @@
   padding: 5px 12px;
   border-radius: var(--radius-full);
   background: var(--white);
-  font-size: 12.5px;
+  font-size: 0.7812rem;
   font-weight: var(--weight-semibold);
   color: var(--fg);
 }
@@ -862,7 +862,7 @@
 
 .final__title {
   max-width: 14ch;
-  font-size: clamp(38px, 6.4vw, 92px);
+  font-size: clamp(2.375rem, 6.4vw, 5.75rem);
   line-height: 0.98;
   letter-spacing: -0.055em;
 }
@@ -971,7 +971,7 @@
   border-radius: var(--radius-full);
   background: var(--color-surface);
   box-shadow: inset 0 0 0 1px var(--color-border);
-  font-size: 12.5px;
+  font-size: 0.7812rem;
   font-weight: var(--weight-semibold);
   color: var(--color-text-secondary);
 }

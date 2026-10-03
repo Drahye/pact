@@ -40,7 +40,7 @@ describe('Splits', () => {
   const peopleOf = (...us: U[]) => us.map((u) => ({ userId: u.user.id }));
 
   before(async () => {
-    t = await setup();
+    t = await setup({ env: { CREATE_LIMIT_PER_10_MIN: '1000' } });
     ana = await t.signIn('08035550001', { firstName: 'Ana', lastName: 'Payer', pin: '2468' });
     ben = await t.signIn('08035550002', { firstName: 'Ben', lastName: 'Owes', pin: '2468' });
     cleo = await t.signIn('08035550003', { firstName: 'Cleo', lastName: 'Owes', pin: '2468' });

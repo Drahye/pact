@@ -24,7 +24,7 @@ export function injectOg(html: string, m: OgMeta): string {
   const title = esc(m.title);
   const desc = esc(m.description);
   let out = html
-    .replace(/<title>[^<]*<\/title>/, `<title>${title}</title>`)
+    .replace(/<title>[^<]*<\/title>/, () => `<title>${title}</title>`)
     .replace(/(<meta name="description" content=")[^"]*(")/, (_x, a: string, b: string) => `${a}${desc}${b}`);
   out = set(out, /(<meta property="og:title" content=")[^"]*(")/, title);
   out = set(out, /(<meta property="og:description" content=")[^"]*(")/, desc);
@@ -38,7 +38,7 @@ export function injectOg(html: string, m: OgMeta): string {
   ]
     .filter(Boolean)
     .join('\n    ');
-  return out.replace(/(<meta name="twitter:card"[^>]*>)/, `$1\n    ${extra}`);
+  return out.replace(/(<meta name="twitter:card"[^>]*>)/, (_m, card: string) => `${card}\n    ${extra}`);
 }
 
 const people = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;

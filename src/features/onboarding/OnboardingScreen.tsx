@@ -10,7 +10,7 @@ import { trackOnboarding } from './track';
 import './onboarding.css';
 
 const SLIDES = [
-  { title: 'Make plans happen together.', body: 'Bring the people, money, tasks and next steps for a shared plan into one place.', Scene: PromiseScene },
+  { title: 'Make plans happen together.', body: 'Start a Circle with your people. Ask a question, plan something, split a cost, or pool money in a Pact.', Scene: PromiseScene },
   { title: 'Everyone can see what’s happening.', body: 'No more chasing people or guessing what’s left.', Scene: HowScene },
   { title: 'Real plans. Finished together.', body: 'Here is how sample Pacts ended. Yours could be next.', Scene: ProofScene },
 ] as const;

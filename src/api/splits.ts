@@ -1,7 +1,9 @@
+import { useRef } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { PersonDTO, SplitDTO, SplitLinkDTO, SplitNeedDTO, SplitSummaryDTO, WithPeople } from '../../shared/contracts';
-import { api } from './client';
+import { api, intentKeys } from './client';
 import { circleKeys } from './circles';
+import { homeKeys } from './home';
 import { register } from './mappers';
 
 export const splitKeys = {
@@ -14,7 +16,7 @@ export const splitKeys = {
 
 type Single = WithPeople<SplitDTO>;
 type Link = WithPeople<SplitLinkDTO>;
-const LIVE = { refetchInterval: 8_000, refetchOnWindowFocus: true } as const;
+const LIVE = { refetchInterval: 20_000, refetchOnWindowFocus: true } as const;
 const unwrap = <T extends { people: PersonDTO[] }>(r: T) => (register(r.people), r);
 
 export function useSplit(id: string | undefined, from?: 'circle' | 'home') {
@@ -50,6 +52,7 @@ function useRefresh() {
     qc.invalidateQueries({ queryKey: splitKeys.needs });
     qc.invalidateQueries({ queryKey: circleKeys.all });
     qc.invalidateQueries({ queryKey: ['notifications'] });
+    qc.invalidateQueries({ queryKey: homeKeys.all });
   };
 }
 
@@ -77,16 +80,19 @@ export interface SplitInput {
 export function useCreateSplit(circleId: string) {
   const refresh = useRefresh();
   const qc = useQueryClient();
+  const keyFor = useRef(intentKeys()).current;
   return useMutation({
     mutationFn: (b: SplitInput & { from?: 'circle' | 'home' | 'nav' }) => {
       const { from, ...body } = b;
-      return api<Single>('POST', `/circles/${circleId}/splits${from ? `?from=${from}` : ''}`, body);
+      return api<Single>('POST', `/circles/${circleId}/splits${from ? `?from=${from}` : ''}`, body, { idempotencyKey: keyFor(body) });
     },
     onSuccess: (r) => (register(r.people), qc.setQueryData(splitKeys.one(r.data.id), r.data), refresh()),
   });
 }
 
 export const useUpdateSplit = (id: string) => useSplitWrite(id, (b: Partial<SplitInput>) => api('PATCH', `/splits/${id}`, b));
+export const useResetSplitLink = (id: string) => useSplitWrite(id, (_: void) => api('POST', `/splits/${id}/share/reset`, {}));
+export const useHandOverSplit = (id: string) => useSplitWrite(id, (userId: string) => api('POST', `/splits/${id}/organiser`, { userId }));
 export const useCancelSplit = (id: string) => useSplitWrite(id, (_: void) => api('POST', `/splits/${id}/cancel`, {}));
 export const useSettleShare = (id: string) => useSplitWrite(id, (b: { userId: string; settled: boolean }) => api('PUT', `/splits/${id}/shares/${b.userId}`, { settled: b.settled }));
 

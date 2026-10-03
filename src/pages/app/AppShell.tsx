@@ -62,7 +62,7 @@ function DemoPanel() {
       </Link>
       <div className="proto-panel__intro">
         <PactLogo size="lg" />
-        <p>The full PACT app, running against the live API. Sign up with any Nigerian number, or use a demo account below.</p>
+        <p>{config?.deployEnv === 'development' ? 'The full PACT app, running against the live API. Sign up with any Nigerian number, or use a demo account below.' : 'PACT is made for your phone. For the best experience, open this link on it.'}</p>
         {config?.sandbox && (
           <span className="sandbox-tag">
             <FlaskConical aria-hidden /> Sandbox payments: no real money moves
@@ -79,7 +79,7 @@ function DemoPanel() {
             <li>Tell us what confused you. That is the point of this beta.</li>
           </ol>
         </div>
-      ) : (
+      ) : config?.deployEnv === 'development' ? (
       <div className="proto-panel__nav">
         <p className="proto-panel__label">Demo accounts</p>
         <ul className="demo-list">
@@ -102,7 +102,7 @@ function DemoPanel() {
           <li>Withdraw to a bank account in your name</li>
         </ol>
       </div>
-      )}
+      ) : null}
       {status === 'signedIn' && user && (
         <p className="demo-hint demo-hint--end">
           Signed in as <strong>{user.firstName}</strong>

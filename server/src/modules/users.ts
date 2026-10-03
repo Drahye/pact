@@ -123,7 +123,7 @@ export async function markNotificationsRead(ctx: Ctx, userId: string, ids?: stri
 /** Everything PACT holds about you that you can see in the app, as one JSON document. */
 export async function exportData(ctx: Ctx, userId: string) {
   const u = await getUser(ctx.db, userId);
-  const [memberships, txns, banks, sessions, notes] = await Promise.all([
+  const [memberships, txns, banks, sessions, notes, circles, answers, rsvps, plans, splits] = await Promise.all([
     ctx.db.query(
       `SELECT p.title, p.status, p.target_amount, p.deadline, m.role, m.status AS member_status, m.contributed, m.joined_at
          FROM pact_members m JOIN pacts p ON p.id = m.pact_id WHERE m.user_id = $1 ORDER BY m.created_at`,
@@ -138,6 +138,20 @@ export async function exportData(ctx: Ctx, userId: string) {
     ctx.db.query(`SELECT bank_name, last4, account_name, created_at, deleted_at FROM bank_accounts WHERE user_id = $1`, [userId]),
     ctx.db.query(`SELECT device, ip, created_at, last_used_at, revoked_at FROM sessions WHERE user_id = $1 ORDER BY created_at`, [userId]),
     ctx.db.query(`SELECT type, title, body, created_at, read_at FROM notifications WHERE user_id = $1 ORDER BY created_at`, [userId]),
+    ctx.db.query(`SELECT c.name, m.role, m.status, m.joined_at, m.removed_at FROM circle_members m JOIN circles c ON c.id = m.circle_id WHERE m.user_id = $1 ORDER BY m.created_at`, [userId]),
+    ctx.db.query(
+      `SELECT a.title, a.type, o.label AS choice, r.attendance, r.updated_at
+         FROM ask_responses r JOIN asks a ON a.id = r.ask_id LEFT JOIN ask_options o ON o.id = r.option_id WHERE r.user_id = $1 ORDER BY r.created_at`,
+      [userId],
+    ),
+    ctx.db.query(`SELECT p.title, r.status, r.updated_at FROM plan_rsvps r JOIN plans p ON p.id = r.plan_id WHERE r.user_id = $1 ORDER BY r.created_at`, [userId]),
+    ctx.db.query(`SELECT title, category, date, end_date, location, rough_budget, status, created_at FROM plans WHERE created_by = $1 ORDER BY created_at`, [userId]),
+    ctx.db.query(
+      `SELECT s.title, s.total_amount, s.status, (s.paid_by = $1) AS you_paid, (s.created_by = $1) AS you_created, x.amount AS your_share, x.status AS your_share_status, x.settled_at, s.created_at
+         FROM splits s LEFT JOIN split_shares x ON x.split_id = s.id AND x.user_id = $1
+        WHERE s.paid_by = $1 OR s.created_by = $1 OR x.user_id = $1 ORDER BY s.created_at`,
+      [userId],
+    ),
   ]);
   await audit(ctx.db, { actorId: userId, action: 'privacy.data_exported' });
   return {
@@ -149,6 +163,11 @@ export async function exportData(ctx: Ctx, userId: string) {
     bankAccounts: banks.rows,
     sessions: sessions.rows,
     notifications: notes.rows,
+    circles: circles.rows,
+    asksYouAnswered: answers.rows,
+    planRsvps: rsvps.rows,
+    plansYouMade: plans.rows,
+    splits: splits.rows,
   };
 }
 
@@ -158,13 +177,18 @@ export async function exportData(ctx: Ctx, userId: string) {
  * erased; transaction records are kept because financial regulations require it.
  */
 export async function closeAccount(ctx: Ctx, userId: string, meta: ReqMeta) {
-  const blockers = await ctx.db.query<{ balance: number; organizing: number; invested: number; payouts: number }>(
+  const blockers = await ctx.db.query<{ balance: number; organizing: number; invested: number; payouts: number; splits: number; circles: number }>(
     `SELECT
        (SELECT balance FROM accounts WHERE kind = 'user_wallet' AND owner_id = $1) AS balance,
        (SELECT COUNT(*)::int FROM pacts WHERE organizer_id = $1 AND status IN ('open', 'funded')) AS organizing,
        (SELECT COUNT(*)::int FROM pact_members m JOIN pacts p ON p.id = m.pact_id
          WHERE m.user_id = $1 AND m.contributed > 0 AND p.status IN ('open', 'funded')) AS invested,
-       (SELECT COUNT(*)::int FROM withdrawals WHERE user_id = $1 AND status IN ('pending', 'processing')) AS payouts`,
+       (SELECT COUNT(*)::int FROM withdrawals WHERE user_id = $1 AND status IN ('pending', 'processing')) AS payouts,
+       (SELECT COUNT(*)::int FROM splits s WHERE s.status = 'open' AND (
+          EXISTS (SELECT 1 FROM split_shares x WHERE x.split_id = s.id AND x.user_id = $1 AND x.status = 'owed')
+          OR (s.paid_by = $1 AND EXISTS (SELECT 1 FROM split_shares x WHERE x.split_id = s.id AND x.user_id <> $1 AND x.status = 'owed')))) AS splits,
+       (SELECT COUNT(*)::int FROM circle_members o WHERE o.user_id = $1 AND o.role = 'owner' AND o.status = 'joined'
+          AND EXISTS (SELECT 1 FROM circle_members t WHERE t.circle_id = o.circle_id AND t.status = 'joined' AND t.user_id <> $1)) AS circles`,
     [userId],
   );
   const b = blockers.rows[0];
@@ -172,6 +196,9 @@ export async function closeAccount(ctx: Ctx, userId: string, meta: ReqMeta) {
   if (b.payouts > 0) throw new AppError(409, 'payout_pending', 'Wait for your withdrawal to finish, then try again.');
   if (b.organizing > 0) throw new AppError(409, 'organizing_pacts', 'Close or release the Pacts you organise first.');
   if (b.invested > 0) throw new AppError(409, 'money_in_pacts', 'You have money in a Pact that’s still open. Close your account once it finishes.');
+
+  if (b.splits > 0) throw new AppError(409, 'open_splits', 'You still owe, or are owed, on a split that isn’t settled. Settle or cancel it first, then close your account.');
+  if (b.circles > 0) throw new AppError(409, 'owns_circles', 'You started a Circle that other people are still in. Remove them first, then close your account.');
 
   const u = await getUser(ctx.db, userId);
   await ctx.db.tx(async (q) => {
@@ -184,6 +211,14 @@ export async function closeAccount(ctx: Ctx, userId: string, meta: ReqMeta) {
     await q.query(`UPDATE sessions SET revoked_at = now() WHERE user_id = $1 AND revoked_at IS NULL`, [userId]);
     await q.query(`UPDATE bank_accounts SET deleted_at = COALESCE(deleted_at, now()), account_number_enc = 'erased', account_name = 'erased', recipient_code = NULL WHERE user_id = $1`, [userId]);
     await q.query(`DELETE FROM notifications WHERE user_id = $1`, [userId]);
+    await q.query(`DELETE FROM push_subscriptions WHERE user_id = $1`, [userId]);
+    // Out of every Circle, so the member count is honest. A Circle nobody is left in stops answering to its links.
+    const left = await q.query<{ circle_id: string }>(`UPDATE circle_members SET status = 'left' WHERE user_id = $1 AND status IN ('joined', 'invited') RETURNING circle_id`, [userId]);
+    await q.query(
+      `UPDATE circle_invites SET revoked_at = now() WHERE revoked_at IS NULL AND circle_id = ANY($1::uuid[])
+          AND NOT EXISTS (SELECT 1 FROM circle_members m WHERE m.circle_id = circle_invites.circle_id AND m.status = 'joined')`,
+      [left.rows.map((r) => r.circle_id)],
+    );
     await q.query(`UPDATE pact_members SET status = 'left' WHERE user_id = $1 AND status = 'invited'`, [userId]);
     // Kept for fraud and anti-money-laundering lookups: a keyed hash, never the number itself.
     await audit(q, { actorId: userId, action: 'account.closed', ip: meta.ip, metadata: { phoneHash: keyedHash(ctx.config.HASH_SECRET, `phone:${u.phone}`) } });

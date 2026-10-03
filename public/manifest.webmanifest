@@ -1,7 +1,7 @@
 {
   "name": "PACT",
   "short_name": "PACT",
-  "description": "Make it happen together. The people, money, tasks and deadline for a group plan, in one place.",
+  "description": "Make it happen together. Circles, questions, plans, splits and Pacts for your group.",
   "start_url": "/app",
   "scope": "/",
   "display": "standalone",

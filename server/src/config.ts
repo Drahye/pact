@@ -71,6 +71,8 @@ const Env = z.object({
   TRUST_PROXY: bool(false),
   /** Per-IP HTTP rate limits. Business limits (OTP per number, PIN attempts) always apply. */
   RATE_LIMIT_ENABLED: bool(true),
+  /** How many Asks, Plans and Splits one person may start in ten minutes. Each one tells the whole Circle. */
+  CREATE_LIMIT_PER_10_MIN: z.coerce.number().int().min(1).default(10),
   /** Where per-IP counters live: postgres is shared by every instance; memory is per process. */
   RATE_LIMIT_STORE: z.enum(['postgres', 'memory']).default('postgres'),
   /**

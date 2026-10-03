@@ -1,111 +1,768 @@
 {
-  "overflow": [],
-  "axe": [],
-  "console": [],
-  "links": [],
-  "routes": [
-    {
-      "path": "/",
-      "status": 200
+  "meta": {
+    "commit": "0eeffba",
+    "date": "2026-10-03",
+    "target": "dev stack with seeded demo data (scripts/demo-stack.sh), Chromium headless, iPhone-class emulation",
+    "commands": [
+      "AUDIT_BASE=http://localhost:5174 node scripts/audit.mjs /tmp/audit-legacy.json",
+      "AUDIT_BASE=http://localhost:5174 node scripts/audit-v2.mjs /tmp/audit-v2.json",
+      "E2E_BASE=http://localhost:5174 npm run e2e",
+      "npm audit --omit=dev"
+    ],
+    "notRunHere": [
+      "real iOS/Android devices",
+      "VoiceOver/TalkBack",
+      "200% text zoom",
+      "production or staging deployment",
+      "Paystack live or test mode"
+    ],
+    "note": "audit-results.json now holds two sections. \"legacy\" is the site and original Pact screens; \"v2\" is Circles, Asks, Plans, Splits, Recaps, Home and the shared links. Rerun both; do not edit by hand."
+  },
+  "legacy": {
+    "overflow": [],
+    "axe": [],
+    "console": [],
+    "links": [],
+    "routes": [
+      {
+        "path": "/",
+        "status": 200
+      },
+      {
+        "path": "/download",
+        "status": 200
+      },
+      {
+        "path": "/terms",
+        "status": 200
+      },
+      {
+        "path": "/privacy",
+        "status": 200
+      },
+      {
+        "path": "/refunds",
+        "status": 200
+      },
+      {
+        "path": "/cookies",
+        "status": 200
+      },
+      {
+        "path": "/styleguide",
+        "status": 200
+      },
+      {
+        "path": "/app/home",
+        "status": 200,
+        "landed": "/app/home"
+      },
+      {
+        "path": "/app/pacts",
+        "status": 200,
+        "landed": "/app/pacts"
+      },
+      {
+        "path": "/app/pact/9da61ea3-e0c6-429b-87a7-3136bd3c3af9",
+        "status": 200,
+        "landed": "/app/pact/9da61ea3-e0c6-429b-87a7-3136bd3c3af9"
+      },
+      {
+        "path": "/app/pact/9da61ea3-e0c6-429b-87a7-3136bd3c3af9/invite",
+        "status": 200,
+        "landed": "/app/pact/9da61ea3-e0c6-429b-87a7-3136bd3c3af9/invite"
+      },
+      {
+        "path": "/app/pact/9da61ea3-e0c6-429b-87a7-3136bd3c3af9/contribute",
+        "status": 200,
+        "landed": "/app/pact/9da61ea3-e0c6-429b-87a7-3136bd3c3af9/contribute"
+      },
+      {
+        "path": "/app/create",
+        "status": 200,
+        "landed": "/app/create"
+      },
+      {
+        "path": "/app/wallet",
+        "status": 200,
+        "landed": "/app/wallet"
+      },
+      {
+        "path": "/app/wallet/topup",
+        "status": 200,
+        "landed": "/app/wallet/topup"
+      },
+      {
+        "path": "/app/wallet/withdraw",
+        "status": 200,
+        "landed": "/app/wallet/withdraw"
+      },
+      {
+        "path": "/app/activity",
+        "status": 200,
+        "landed": "/app/activity"
+      },
+      {
+        "path": "/app/notifications",
+        "status": 200,
+        "landed": "/app/notifications"
+      },
+      {
+        "path": "/app/profile",
+        "status": 200,
+        "landed": "/app/profile"
+      },
+      {
+        "path": "/app/profile/verify",
+        "status": 200,
+        "landed": "/app/profile/verify"
+      },
+      {
+        "path": "/app/profile/security",
+        "status": 200,
+        "landed": "/app/profile/security"
+      },
+      {
+        "path": "/app/profile/banks",
+        "status": 200,
+        "landed": "/app/profile/banks"
+      }
+    ]
+  },
+  "v2": {
+    "widths": [
+      320,
+      360,
+      375,
+      390,
+      393,
+      412,
+      430,
+      768
+    ],
+    "routes": [
+      {
+        "label": "home-brand-new",
+        "url": "/app/home",
+        "who": "Newcomer",
+        "status": 200,
+        "landed": "/app/home",
+        "axeViolations": 0,
+        "landedAsExpected": true
+      },
+      {
+        "label": "home-active-needs",
+        "url": "/app/home",
+        "who": "Anthony",
+        "status": 200,
+        "landed": "/app/home",
+        "axeViolations": 0,
+        "landedAsExpected": true
+      },
+      {
+        "label": "home-multiple-circles",
+        "url": "/app/home",
+        "who": "Anthony",
+        "status": 200,
+        "landed": "/app/home",
+        "axeViolations": 0,
+        "landedAsExpected": true
+      },
+      {
+        "label": "home-no-needs",
+        "url": "/app/home",
+        "who": "Quiet",
+        "status": 200,
+        "landed": "/app/home",
+        "axeViolations": 0,
+        "landedAsExpected": true
+      },
+      {
+        "label": "home-finished-only",
+        "url": "/app/home",
+        "who": "Finn",
+        "status": 200,
+        "landed": "/app/home",
+        "axeViolations": 0,
+        "landedAsExpected": true
+      },
+      {
+        "label": "home-long-content",
+        "url": "/app/home",
+        "who": "Oluwadamilareayomide",
+        "status": 200,
+        "landed": "/app/home",
+        "axeViolations": 0,
+        "landedAsExpected": true
+      },
+      {
+        "label": "circles-list",
+        "url": "/app/circles",
+        "who": "Anthony",
+        "status": 200,
+        "landed": "/app/circles",
+        "axeViolations": 0,
+        "landedAsExpected": true
+      },
+      {
+        "label": "circle-create",
+        "url": "/app/circles/new",
+        "who": "Anthony",
+        "status": 200,
+        "landed": "/app/circles/new",
+        "axeViolations": 0,
+        "landedAsExpected": true
+      },
+      {
+        "label": "circle-detail-populated",
+        "url": "/app/circles/:id",
+        "who": "Anthony",
+        "status": 200,
+        "landed": "/app/circles/:id",
+        "axeViolations": 0,
+        "landedAsExpected": true
+      },
+      {
+        "label": "circle-detail-empty",
+        "url": "/app/circles/:id",
+        "who": "Quiet",
+        "status": 200,
+        "landed": "/app/circles/:id",
+        "axeViolations": 0,
+        "landedAsExpected": true
+      },
+      {
+        "label": "circle-detail-long-name",
+        "url": "/app/circles/:id",
+        "who": "Anthony",
+        "status": 200,
+        "landed": "/app/circles/:id",
+        "axeViolations": 0,
+        "landedAsExpected": true
+      },
+      {
+        "label": "circle-invite-signed-in-outsider",
+        "url": "/app/c/:token",
+        "who": "Newcomer",
+        "status": 200,
+        "landed": "/app/c/:token",
+        "axeViolations": 0,
+        "landedAsExpected": true
+      },
+      {
+        "label": "circle-invite-signed-out",
+        "url": "/app/c/:token",
+        "who": "signed-out",
+        "status": 200,
+        "landed": "/app/c/:token",
+        "axeViolations": 0,
+        "landedAsExpected": true
+      },
+      {
+        "label": "ask-create",
+        "url": "/app/asks/new?circle=:id",
+        "who": "Anthony",
+        "status": 200,
+        "landed": "/app/asks/new",
+        "axeViolations": 0,
+        "landedAsExpected": true
+      },
+      {
+        "label": "ask-member-choice",
+        "url": "/app/asks/:id",
+        "who": "Anthony",
+        "status": 200,
+        "landed": "/app/asks/:id",
+        "axeViolations": 0,
+        "landedAsExpected": true
+      },
+      {
+        "label": "ask-member-attendance",
+        "url": "/app/asks/:id",
+        "who": "Daniel",
+        "status": 200,
+        "landed": "/app/asks/:id",
+        "axeViolations": 0,
+        "landedAsExpected": true
+      },
+      {
+        "label": "ask-closed",
+        "url": "/app/asks/:id",
+        "who": "Daniel",
+        "status": 200,
+        "landed": "/app/asks/:id",
+        "axeViolations": 0,
+        "landedAsExpected": true
+      },
+      {
+        "label": "ask-shared-signed-out",
+        "url": "/a/:token",
+        "who": "signed-out",
+        "status": 200,
+        "landed": "/a/:token",
+        "axeViolations": 0,
+        "landedAsExpected": true
+      },
+      {
+        "label": "ask-shared-signed-in",
+        "url": "/a/:token",
+        "who": "Newcomer",
+        "status": 200,
+        "landed": "/a/:token",
+        "axeViolations": 0,
+        "landedAsExpected": true
+      },
+      {
+        "label": "plan-create",
+        "url": "/app/plans/new?circle=:id",
+        "who": "Anthony",
+        "status": 200,
+        "landed": "/app/plans/new",
+        "axeViolations": 0,
+        "landedAsExpected": true
+      },
+      {
+        "label": "plan-detail-member-unanswered",
+        "url": "/app/plans/:id",
+        "who": "Anthony",
+        "status": 200,
+        "landed": "/app/plans/:id",
+        "axeViolations": 0,
+        "landedAsExpected": true
+      },
+      {
+        "label": "plan-detail-organiser",
+        "url": "/app/plans/:id",
+        "who": "Daniel",
+        "status": 200,
+        "landed": "/app/plans/:id",
+        "axeViolations": 0,
+        "landedAsExpected": true
+      },
+      {
+        "label": "plan-edit-sheet",
+        "url": "/app/plans/:id",
+        "who": "Daniel",
+        "status": 200,
+        "landed": "/app/plans/:id",
+        "axeViolations": 0,
+        "landedAsExpected": true
+      },
+      {
+        "label": "plan-rsvp-changed",
+        "url": "/app/plans/:id",
+        "who": "Sarah",
+        "status": 200,
+        "landed": "/app/plans/:id",
+        "axeViolations": 0,
+        "landedAsExpected": true
+      },
+      {
+        "label": "plan-converted-to-pact",
+        "url": "/app/plans/:id",
+        "who": "Anthony",
+        "status": 200,
+        "landed": "/app/plans/:id",
+        "axeViolations": 0,
+        "landedAsExpected": true
+      },
+      {
+        "label": "plan-long-title",
+        "url": "/app/plans/:id",
+        "who": "Oluwadamilareayomide",
+        "status": 200,
+        "landed": "/app/plans/:id",
+        "axeViolations": 0,
+        "landedAsExpected": true
+      },
+      {
+        "label": "plan-shared-signed-out",
+        "url": "/p/:token",
+        "who": "signed-out",
+        "status": 200,
+        "landed": "/p/:token",
+        "axeViolations": 0,
+        "landedAsExpected": true
+      },
+      {
+        "label": "plan-shared-signed-in",
+        "url": "/p/:token",
+        "who": "Newcomer",
+        "status": 200,
+        "landed": "/p/:token",
+        "axeViolations": 0,
+        "landedAsExpected": true
+      },
+      {
+        "label": "split-create-equal",
+        "url": "/app/splits/new?circle=:id",
+        "who": "Anthony",
+        "status": 200,
+        "landed": "/app/splits/new",
+        "axeViolations": 0,
+        "landedAsExpected": true
+      },
+      {
+        "label": "split-create-custom",
+        "url": "/app/splits/new?circle=:id",
+        "who": "Anthony",
+        "status": 200,
+        "landed": "/app/splits/new",
+        "axeViolations": 0,
+        "landedAsExpected": true
+      },
+      {
+        "label": "split-payer-included-open",
+        "url": "/app/splits/:id",
+        "who": "Anthony",
+        "status": 200,
+        "landed": "/app/splits/:id",
+        "axeViolations": 0,
+        "landedAsExpected": true
+      },
+      {
+        "label": "split-payer-excluded",
+        "url": "/app/splits/:id",
+        "who": "Anthony",
+        "status": 200,
+        "landed": "/app/splits/:id",
+        "axeViolations": 0,
+        "landedAsExpected": true
+      },
+      {
+        "label": "split-custom-partly-settled",
+        "url": "/app/splits/:id",
+        "who": "Anthony",
+        "status": 200,
+        "landed": "/app/splits/:id",
+        "axeViolations": 0,
+        "landedAsExpected": true
+      },
+      {
+        "label": "split-fully-settled",
+        "url": "/app/splits/:id",
+        "who": "Anthony",
+        "status": 200,
+        "landed": "/app/splits/:id",
+        "axeViolations": 0,
+        "landedAsExpected": true
+      },
+      {
+        "label": "split-long-title-long-name",
+        "url": "/app/splits/:id",
+        "who": "Oluwadamilareayomide",
+        "status": 200,
+        "landed": "/app/splits/:id",
+        "axeViolations": 0,
+        "landedAsExpected": true
+      },
+      {
+        "label": "split-shared-signed-out",
+        "url": "/s/:token",
+        "who": "signed-out",
+        "status": 200,
+        "landed": "/s/:token",
+        "axeViolations": 0,
+        "landedAsExpected": true
+      },
+      {
+        "label": "split-shared-signed-in-outsider",
+        "url": "/s/:token",
+        "who": "Newcomer",
+        "status": 200,
+        "landed": "/s/:token",
+        "axeViolations": 0,
+        "landedAsExpected": true
+      },
+      {
+        "label": "split-shared-participant",
+        "url": "/s/:token",
+        "who": "Daniel",
+        "status": 200,
+        "landed": "/app/splits/:id",
+        "axeViolations": 0,
+        "landedAsExpected": true
+      },
+      {
+        "label": "recap-in-app",
+        "url": "/app/recap/plan/:id",
+        "who": "Daniel",
+        "status": 200,
+        "landed": "/app/recap/plan/:id",
+        "axeViolations": 0,
+        "landedAsExpected": true
+      },
+      {
+        "label": "recap-organiser-share",
+        "url": "/app/recap/plan/:id",
+        "who": "Anthony",
+        "status": 200,
+        "landed": "/app/recap/plan/:id",
+        "axeViolations": 0,
+        "landedAsExpected": true
+      },
+      {
+        "label": "recap-public",
+        "url": "/r/:token",
+        "who": "signed-out",
+        "status": 200,
+        "landed": "/r/:token",
+        "axeViolations": 0,
+        "landedAsExpected": true
+      },
+      {
+        "label": "recap-split-in-app",
+        "url": "/app/recap/split/:id",
+        "who": "Anthony",
+        "status": 200,
+        "landed": "/app/recap/split/:id",
+        "axeViolations": 0,
+        "landedAsExpected": true
+      }
+    ],
+    "axe": [],
+    "overflow": [],
+    "console": [],
+    "interactions": [
+      {
+        "name": "create sheet moves focus inside",
+        "ok": true,
+        "detail": ""
+      },
+      {
+        "name": "create sheet returns focus to the + button",
+        "ok": true,
+        "detail": ""
+      },
+      {
+        "name": "settle confirmation says it is outside PACT",
+        "ok": true,
+        "detail": ""
+      },
+      {
+        "name": "settle sheet returns focus to its trigger",
+        "ok": true,
+        "detail": ""
+      },
+      {
+        "name": "settle answers \"did it work?\" (toast and row)",
+        "ok": true,
+        "detail": "Marked settled"
+      },
+      {
+        "name": "undo answers \"did it work?\"",
+        "ok": true,
+        "detail": ""
+      },
+      {
+        "name": "organiser sees no RSVP prompt on their own plan header",
+        "ok": true,
+        "detail": ""
+      },
+      {
+        "name": "RSVP shows the new state at once",
+        "ok": true,
+        "detail": ""
+      },
+      {
+        "name": "changing an RSVP shows the new state",
+        "ok": true,
+        "detail": ""
+      },
+      {
+        "name": "completing a task shows it done",
+        "ok": true,
+        "detail": ""
+      },
+      {
+        "name": "voting by keyboard selects the option",
+        "ok": true,
+        "detail": ""
+      },
+      {
+        "name": "the result is announced (aria-live)",
+        "ok": true,
+        "detail": ""
+      },
+      {
+        "name": "changing a vote moves the selection",
+        "ok": true,
+        "detail": ""
+      },
+      {
+        "name": "copying a split link says \"Link copied\"",
+        "ok": true,
+        "detail": "Link copied"
+      },
+      {
+        "name": "copying a Circle invite says it copied",
+        "ok": true,
+        "detail": "Link copied"
+      },
+      {
+        "name": "turning a recap link on shows the link and Share",
+        "ok": true,
+        "detail": ""
+      },
+      {
+        "name": "creating a Circle moves on to inviting people",
+        "ok": true,
+        "detail": ""
+      },
+      {
+        "name": "skipping the invite lands on the new Circle",
+        "ok": true,
+        "detail": ""
+      },
+      {
+        "name": "creating a Plan lands on it with a confirmation",
+        "ok": true,
+        "detail": ""
+      }
+    ],
+    "authReturn": [
+      {
+        "flow": "ask",
+        "start": "/a/AH5b0Zr7vBhWrLYWLlbXbsz11nrg7XkD2mtA4rOuHGw",
+        "landed": "/a/AH5b0Zr7vBhWrLYWLlbXbsz11nrg7XkD2mtA4rOuHGw",
+        "ok": true,
+        "detail": "saved"
+      },
+      {
+        "flow": "plan",
+        "start": "/p/9_91VeAqTLyHABpvSZIXqD_cmGLL1_CQ_NUWxI3nI00",
+        "landed": "/p/9_91VeAqTLyHABpvSZIXqD_cmGLL1_CQ_NUWxI3nI00",
+        "ok": true,
+        "detail": "saved"
+      },
+      {
+        "flow": "split",
+        "start": "/s/6E5W6ol5D25DVFTxpXcAJThA3Z66G6GDoLs9pc1GwLU",
+        "landed": "/s/6E5W6ol5D25DVFTxpXcAJThA3Z66G6GDoLs9pc1GwLU",
+        "ok": true,
+        "detail": "saved"
+      },
+      {
+        "flow": "circle-invite",
+        "start": "/app/c/eOv1fNkT5E7B6t2Z07O9W9VK5RIQJ6MdRyA4IhLvbdk",
+        "landed": "/app/circles/a55e4092-4564-4b3c-8bed-8dce6e1a1590",
+        "ok": true,
+        "detail": ""
+      },
+      {
+        "flow": "split-participant",
+        "start": "/s/<token>",
+        "landed": "/app/splits/:id",
+        "ok": true,
+        "detail": "own share shown: true, marked settled: true"
+      }
+    ],
+    "dark": [
+      {
+        "label": "home-brand-new",
+        "axeViolations": 0
+      },
+      {
+        "label": "home-active-needs",
+        "axeViolations": 0
+      },
+      {
+        "label": "home-no-needs",
+        "axeViolations": 0
+      },
+      {
+        "label": "home-finished-only",
+        "axeViolations": 0
+      },
+      {
+        "label": "home-long-content",
+        "axeViolations": 0
+      },
+      {
+        "label": "circles-list",
+        "axeViolations": 0
+      },
+      {
+        "label": "circle-detail-populated",
+        "axeViolations": 0
+      },
+      {
+        "label": "ask-member-choice",
+        "axeViolations": 0
+      },
+      {
+        "label": "ask-closed",
+        "axeViolations": 0
+      },
+      {
+        "label": "ask-shared-signed-out",
+        "axeViolations": 0
+      },
+      {
+        "label": "plan-detail-member-unanswered",
+        "axeViolations": 0
+      },
+      {
+        "label": "plan-detail-organiser",
+        "axeViolations": 0
+      },
+      {
+        "label": "plan-shared-signed-out",
+        "axeViolations": 0
+      },
+      {
+        "label": "split-payer-included-open",
+        "axeViolations": 0
+      },
+      {
+        "label": "split-custom-partly-settled",
+        "axeViolations": 0
+      },
+      {
+        "label": "split-fully-settled",
+        "axeViolations": 0
+      },
+      {
+        "label": "split-shared-signed-out",
+        "axeViolations": 0
+      },
+      {
+        "label": "recap-in-app",
+        "axeViolations": 0
+      },
+      {
+        "label": "recap-public",
+        "axeViolations": 0
+      }
+    ]
+  },
+  "summary": {
+    "legacy": {
+      "routes": 22,
+      "axe": 0,
+      "overflow": 0,
+      "consoleErrors": 0,
+      "brokenAnchors": 0
     },
-    {
-      "path": "/download",
-      "status": 200
-    },
-    {
-      "path": "/terms",
-      "status": 200
-    },
-    {
-      "path": "/privacy",
-      "status": 200
-    },
-    {
-      "path": "/refunds",
-      "status": 200
-    },
-    {
-      "path": "/cookies",
-      "status": 200
-    },
-    {
-      "path": "/styleguide",
-      "status": 200
-    },
-    {
-      "path": "/app/home",
-      "status": 200,
-      "landed": "/app/home"
-    },
-    {
-      "path": "/app/pacts",
-      "status": 200,
-      "landed": "/app/pacts"
-    },
-    {
-      "path": "/app/pact/398a25dc-5c9b-40a0-b0af-95b62179610f",
-      "status": 200,
-      "landed": "/app/pact/398a25dc-5c9b-40a0-b0af-95b62179610f"
-    },
-    {
-      "path": "/app/pact/398a25dc-5c9b-40a0-b0af-95b62179610f/invite",
-      "status": 200,
-      "landed": "/app/pact/398a25dc-5c9b-40a0-b0af-95b62179610f/invite"
-    },
-    {
-      "path": "/app/pact/398a25dc-5c9b-40a0-b0af-95b62179610f/contribute",
-      "status": 200,
-      "landed": "/app/pact/398a25dc-5c9b-40a0-b0af-95b62179610f/contribute"
-    },
-    {
-      "path": "/app/create",
-      "status": 200,
-      "landed": "/app/create"
-    },
-    {
-      "path": "/app/wallet",
-      "status": 200,
-      "landed": "/app/wallet"
-    },
-    {
-      "path": "/app/wallet/topup",
-      "status": 200,
-      "landed": "/app/wallet/topup"
-    },
-    {
-      "path": "/app/wallet/withdraw",
-      "status": 200,
-      "landed": "/app/wallet/withdraw"
-    },
-    {
-      "path": "/app/activity",
-      "status": 200,
-      "landed": "/app/activity"
-    },
-    {
-      "path": "/app/notifications",
-      "status": 200,
-      "landed": "/app/notifications"
-    },
-    {
-      "path": "/app/profile",
-      "status": 200,
-      "landed": "/app/profile"
-    },
-    {
-      "path": "/app/profile/verify",
-      "status": 200,
-      "landed": "/app/profile/verify"
-    },
-    {
-      "path": "/app/profile/security",
-      "status": 200,
-      "landed": "/app/profile/security"
-    },
-    {
-      "path": "/app/profile/banks",
-      "status": 200,
-      "landed": "/app/profile/banks"
+    "v2": {
+      "statesAudited": 42,
+      "widths": [
+        320,
+        360,
+        375,
+        390,
+        393,
+        412,
+        430,
+        768
+      ],
+      "darkPasses": 19,
+      "axeViolations": 0,
+      "overflow": 0,
+      "consoleErrors": 0,
+      "authReturnOk": "5/5",
+      "interactionsOk": "19/19",
+      "landedUnexpectedly": []
     }
-  ]
+  }
 }

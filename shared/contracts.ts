@@ -68,6 +68,10 @@ export const CreatePactBody = z
     /** `orders`: people order items and the total is what they order (aso-ebi, souvenirs, tickets). */
     mode: z.enum(['goal', 'orders']).default('goal'),
     items: z.array(itemLine).max(20).default([]),
+    /** Optional: the Circle this Pact belongs to. The server checks the person is in it. */
+    circleId: z.string().uuid().optional(),
+    /** Optional: the Plan this Pact is made from. The server checks it is theirs and still free. */
+    planId: z.string().uuid().optional(),
   })
   .refine((b) => b.mode === 'orders' || b.budget.length > 0 || b.target !== undefined, { message: 'Set a target or add what the money covers.', path: ['target'] })
   .refine((b) => b.mode !== 'orders' || b.items.length > 0, { message: 'Add at least one item people can order.', path: ['items'] });
@@ -122,6 +126,106 @@ export const VerifyBvnBody = z.object({ bvn: z.string().regex(/^\d{11}$/, 'BVN i
 export const ChangePinBody = z.object({ currentPin: pin, newPin: pin });
 export const UpdateProfileBody = z.object({ firstName: name.optional(), lastName: name.optional() });
 
+/* ---- Circles: the people I regularly make things happen with */
+export const CIRCLE_TINTS = ['mint', 'sun', 'sky', 'lilac', 'pink', 'coral'] as const;
+export type CircleTint = (typeof CIRCLE_TINTS)[number];
+const emoji = z
+  .string()
+  .trim()
+  .min(1)
+  .max(16)
+  .refine((v) => /[\p{Extended_Pictographic}\p{Regional_Indicator}]/u.test(v) && !/[A-Za-z0-9<>]/.test(v), 'Pick an emoji.');
+export const CreateCircleBody = z.object({ name: text(1, 40), emoji, tint: z.enum(CIRCLE_TINTS).default('mint') });
+export const UpdateCircleBody = z.object({ name: text(1, 40).optional(), emoji: emoji.optional(), tint: z.enum(CIRCLE_TINTS).optional() }).refine((b) => Object.keys(b).length > 0, 'Nothing to change.');
+
+/* ---- Ask the group */
+export const ASK_TYPES = ['choice', 'attendance'] as const;
+export type AskType = (typeof ASK_TYPES)[number];
+export type Attendance = 'in' | 'maybe' | 'out';
+export const CreateAskBody = z
+  .object({
+    type: z.enum(ASK_TYPES),
+    title: text(1, 80),
+    options: z.array(text(1, 40)).max(6).optional(),
+    from: z.enum(['circle', 'home', 'nav']).default('circle'),
+    /** Optional: the Plan this question belongs to. */
+    planId: z.string().uuid().optional(),
+  })
+  .superRefine((b, ctx) => {
+    if (b.type === 'choice') {
+      const labels = (b.options ?? []).map((o) => o.toLowerCase());
+      if (labels.length < 2) ctx.addIssue({ code: 'custom', path: ['options'], message: 'Add at least two options.' });
+      else if (new Set(labels).size !== labels.length) ctx.addIssue({ code: 'custom', path: ['options'], message: 'Each option needs to be different.' });
+    } else if (b.options?.length) ctx.addIssue({ code: 'custom', path: ['options'], message: 'Who’s in? has fixed answers.' });
+  });
+export const AskResponseBody = z
+  .object({ optionId: z.string().uuid().optional(), attendance: z.enum(['in', 'maybe', 'out']).optional(), afterAuth: z.boolean().optional() })
+  .refine((b) => (b.optionId !== undefined) !== (b.attendance !== undefined), 'Choose one answer.');
+export const AskSharedBody = z.object({ via: z.enum(['native', 'copy']) });
+
+/* ---- Plans */
+export const PLAN_STATUSES = ['planning', 'confirmed', 'done', 'cancelled'] as const;
+export type PlanStatus = (typeof PLAN_STATUSES)[number];
+const optText = (max: number) => text(1, max).nullable().optional();
+export const CreatePlanBody = z
+  .object({
+    title: text(1, 80),
+    category: z.enum(categories).default('event'),
+    description: text(1, 280).optional(),
+    date: isoDate.optional(),
+    endDate: isoDate.optional(),
+    location: text(1, 80).optional(),
+    roughBudget: kobo(0).optional(),
+  })
+  .refine((b) => !b.endDate || (b.date && b.endDate >= b.date), { message: 'The end date needs to be on or after the start.', path: ['endDate'] });
+export const UpdatePlanBody = z
+  .object({
+    title: text(1, 80).optional(),
+    category: z.enum(categories).optional(),
+    description: optText(280),
+    date: isoDate.nullable().optional(),
+    endDate: isoDate.nullable().optional(),
+    location: optText(80),
+    roughBudget: kobo(0).nullable().optional(),
+    /** Set once the organiser has agreed to a change that affects people who have already answered. */
+    confirm: z.boolean().optional(),
+  })
+  .refine((b) => Object.keys(b).filter((k) => k !== 'confirm').length > 0, 'Nothing to change.');
+export const PlanRsvpOpenBody = z.object({ open: z.boolean() });
+export const PlanStatusBody = z.object({ status: z.enum(PLAN_STATUSES) });
+export const PlanRsvpBody = z.object({ status: z.enum(['in', 'maybe', 'out']), afterAuth: z.boolean().optional() });
+export const PlanTaskBody = z.object({ title: text(1, 80), assigneeId: z.string().uuid().nullable().optional() });
+export const PlanTaskPatchBody = z
+  .object({ title: text(1, 80).optional(), assigneeId: z.string().uuid().nullable().optional(), status: z.enum(['open', 'done']).optional() })
+  .refine((b) => Object.keys(b).length > 0, 'Nothing to change.');
+export const LinkAskBody = z.object({ askId: z.string().uuid() });
+
+/* ---- Splits */
+export const SPLIT_STATUSES = ['open', 'settled', 'cancelled'] as const;
+export type SplitStatus = (typeof SPLIT_STATUSES)[number];
+const splitPerson = z.object({ userId: z.string().uuid(), amount: z.number().int().min(1).max(MAX_PACT_TARGET).optional() });
+export const CreateSplitBody = z.object({
+  title: text(1, 80),
+  total: kobo(100),
+  /** Defaults to the person creating it. */
+  paidBy: z.string().uuid().optional(),
+  mode: z.enum(['equal', 'custom']).default('equal'),
+  /** Everyone included, the payer too if they share the cost. Custom splits carry each person's amount. */
+  participants: z.array(splitPerson).min(1).max(30),
+});
+/** The title can change any time. Anything else changes who owes what, so it is refused once someone has settled. */
+export const UpdateSplitBody = z
+  .object({
+    title: text(1, 80).optional(),
+    total: kobo(100).optional(),
+    paidBy: z.string().uuid().optional(),
+    mode: z.enum(['equal', 'custom']).optional(),
+    participants: z.array(splitPerson).min(1).max(30).optional(),
+  })
+  .refine((b) => Object.keys(b).length > 0, 'Nothing to change.');
+export const SplitSettleBody = z.object({ settled: z.boolean(), afterAuth: z.boolean().optional() });
+export const SplitSharedBody = z.object({ via: z.enum(['native', 'copy']) });
+
 export type CreatePactInput = z.input<typeof CreatePactBody>;
 
 /* ==========================================================================
@@ -135,6 +239,215 @@ export interface PersonDTO {
   color: string;
   tint: 'mint' | 'peach' | 'lilac' | 'sky' | 'sand';
   photoUrl: string | null;
+}
+
+export interface PlanSummaryDTO {
+  id: string;
+  circleId: string;
+  circle: { name: string; emoji: string; tint: CircleTint };
+  title: string;
+  category: (typeof categories)[number];
+  date: string | null;
+  endDate: string | null;
+  location: string | null;
+  status: PlanStatus;
+  pactId: string | null;
+  /** The organiser can close answers. Existing answers stay. */
+  rsvpOpen: boolean;
+  counts: { in: number; maybe: number; out: number };
+  memberCount: number;
+  /** The viewer's RSVP. */
+  mine: Attendance | null;
+  /** Linked questions that are still open. */
+  undecided: number;
+  tasksOpen: number;
+  createdAt: string;
+}
+
+export interface PlanDTO extends PlanSummaryDTO {
+  description: string | null;
+  /** Kobo. Hidden from link visitors. */
+  roughBudget: number | null;
+  createdBy: string;
+  rsvps: { userId: string; status: Attendance; at: string }[];
+  /** Circle members who have not responded (members only). */
+  waiting: string[];
+  tasks: { id: string; title: string; assigneeId: string | null; status: 'open' | 'done'; createdBy: string; completedAt: string | null }[];
+  /** Linked questions, never copies. Empty for link visitors. */
+  asks: AskSummaryDTO[];
+  decisions: number;
+  activity: { kind: 'created' | 'rsvp' | 'rsvp_changed' | 'task_added' | 'task_done' | 'ask_linked' | 'confirmed' | 'done' | 'cancelled' | 'pact' | 'date_changed' | 'location_changed'; userId: string; status: Attendance | null; detail: string | null; at: string }[];
+  isMember: boolean;
+  canEdit: boolean;
+  /** The organiser may turn it into a Pact: not cancelled, and not already one. */
+  canMakePact: boolean;
+  /** Members receive the link to share. */
+  shareToken: string | null;
+}
+
+/** What a Plan carries into the existing Pact creation form. Nothing is created until the organiser confirms there. */
+export interface PactDraftDTO {
+  planId: string;
+  title: string;
+  category: (typeof categories)[number];
+  circleId: string;
+  /** A sensible deadline: a couple of days before the plan, if that is still ahead. */
+  deadline: string | null;
+  /** Kobo, from the rough budget. */
+  target: number | null;
+  tasks: string[];
+  /** Circle mates who said they are in or maybe. */
+  inviteUserIds: string[];
+}
+
+export interface SplitShareDTO {
+  userId: string;
+  /** Kobo. */
+  amount: number;
+  status: 'owed' | 'settled';
+  /** The person who paid: their own share is never "owed". */
+  isPayer: boolean;
+  settledAt: string | null;
+  settledBy: string | null;
+  /** The viewer may mark this share settled or owed again. */
+  canChange: boolean;
+}
+
+export interface SplitSummaryDTO {
+  id: string;
+  circleId: string;
+  circle: { name: string; emoji: string; tint: CircleTint };
+  title: string;
+  /** Kobo. */
+  total: number;
+  status: SplitStatus;
+  paidBy: string;
+  createdBy: string;
+  mode: 'equal' | 'custom';
+  /** People who owe the payer (the payer's own share is not counted). */
+  owedCount: number;
+  settledCount: number;
+  /** Kobo still unsettled. */
+  unsettled: number;
+  /** The viewer's own share, if they have one. */
+  mine: { amount: number; status: 'owed' | 'settled'; isPayer: boolean } | null;
+  createdAt: string;
+  settledAt: string | null;
+}
+
+export interface SplitDTO extends SplitSummaryDTO {
+  shares: SplitShareDTO[];
+  activity: { kind: 'created' | 'settled' | 'unsettled' | 'completed' | 'reopened' | 'cancelled'; userId: string; targetId: string | null; amount: number | null; at: string }[];
+  canEdit: boolean;
+  /** Total, payer, method and amounts can only change before anyone settles. */
+  canEditStructure: boolean;
+  canCancel: boolean;
+  /** Members receive the link to share. */
+  shareToken: string | null;
+}
+
+/** What a share link shows: the Split in general, and the viewer's own share once they are signed in. No other shares. */
+export interface SplitLinkDTO {
+  circle: { name: string; emoji: string; tint: CircleTint };
+  title: string;
+  total: number;
+  status: SplitStatus;
+  paidBy: string;
+  owedCount: number;
+  settledCount: number;
+  mine: { amount: number; status: 'owed' | 'settled'; isPayer: boolean } | null;
+  signedIn: boolean;
+  isMember: boolean;
+  canJoinCircle: boolean;
+  /** Members go to the full Split. */
+  splitId: string | null;
+}
+
+export interface SplitNeedDTO {
+  splitId: string;
+  title: string;
+  circle: { name: string; emoji: string; tint: CircleTint };
+  kind: 'owe' | 'collect';
+  /** "You still owe ₦15,625", "2 people still need to settle". */
+  text: string;
+}
+
+export interface PlanNeedDTO {
+  planId: string;
+  title: string;
+  circle: { name: string; emoji: string; tint: CircleTint };
+  kind: 'rsvp' | 'task' | 'soon';
+  /** "Are you coming?", "You're handling “Pick hotel”", "Starts Sunday". */
+  text: string;
+}
+
+export interface AskSummaryDTO {
+  id: string;
+  /** The Plan it is linked to, if any. */
+  planId: string | null;
+  circleId: string;
+  circle: { name: string; emoji: string; tint: CircleTint };
+  type: AskType;
+  title: string;
+  status: 'open' | 'closed';
+  responseCount: number;
+  memberCount: number;
+  /** The viewer has answered. */
+  answered: boolean;
+  /** "Labadi is winning", "5 in · 2 maybe", "Labadi won with 4 votes". */
+  headline: string;
+  createdAt: string;
+}
+
+export interface AskDTO extends AskSummaryDTO {
+  createdBy: string;
+  closedAt: string | null;
+  options: { id: string; label: string; count: number }[];
+  attendance: { in: number; maybe: number; out: number };
+  /** Who answered what, newest first. First names and avatars only. */
+  responders: { userId: string; optionId: string | null; attendance: Attendance | null; at: string }[];
+  /** Circle members who have not answered yet (members only; never shown to link visitors). */
+  waiting: string[];
+  activity: { kind: 'responded' | 'changed' | 'closed'; userId: string; optionId: string | null; attendance: Attendance | null; at: string }[];
+  /** The viewer's own answer. */
+  mine: { optionId: string | null; attendance: Attendance | null } | null;
+  /** The viewer is in the Circle. */
+  isMember: boolean;
+  canClose: boolean;
+  /** Members receive the link to share. */
+  shareToken: string | null;
+}
+
+export interface CircleSummaryDTO {
+  id: string;
+  name: string;
+  emoji: string;
+  tint: CircleTint;
+  memberCount: number;
+  /** A few member ids for the avatar stack. */
+  memberIds: string[];
+  role: 'owner' | 'member';
+  /** One useful live line, if the Circle has something going on. */
+  live: { text: string; needsYou: boolean } | null;
+}
+
+export interface CircleDTO extends CircleSummaryDTO {
+  members: { userId: string; role: 'owner' | 'member'; joinedAt: string | null }[];
+  /** What has happened in the Circle so far, newest first. Phase 1: it was made, people joined. */
+  activity: { type: 'created' | 'joined'; actorId: string; at: string }[];
+  /** The link people can use to join. Only joined members ever receive it. */
+  invite: { token: string } | null;
+  /** How many Pacts belong to this Circle (that the viewer is also in). */
+  pactCount: number;
+}
+
+export interface CircleInvitePreviewDTO {
+  circleId: string;
+  name: string;
+  emoji: string;
+  tint: CircleTint;
+  memberCount: number;
+  inviter: { firstName: string; color: string; photoUrl: string | null };
 }
 
 export interface MeDTO extends PersonDTO {
@@ -316,6 +629,8 @@ export interface PactDTO {
   id: string;
   slug: string;
   inviteCode: string;
+  /** The Circle this Pact belongs to, if any. */
+  circleId: string | null;
   title: string;
   note: string | null;
   category: (typeof categories)[number];

@@ -18,6 +18,8 @@ import { Avatar } from '../../components/ui/Avatar';
 import { BottomNav } from '../../components/ui/BottomNav';
 import '../../components/ui/button.css';
 import { SectionHeading } from '../../components/ui/SectionHeading';
+import { HomeNeedsYou } from '../../components/ask/HomeNeedsYou';
+import { HomeCircles } from '../../components/circle/HomeCircles';
 import { LargeTitle } from '../../components/ui/LargeTitle';
 import { TopBar } from '../../components/ui/TopBar';
 import { formatDate, greeting } from '../../lib/format';
@@ -151,6 +153,10 @@ export function HomeScreen() {
           )}
         </>
       )}
+
+      <HomeNeedsYou />
+
+      <HomeCircles />
 
       {!!activity.data?.length && (
         <section className="screen-section" aria-labelledby="recent">

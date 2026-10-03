@@ -52,6 +52,13 @@ Pseudonyms are keyed hashes, so nobody with only the table can tell who is who, 
 | `first_pact_created` | A person's first Pact | `category` |
 | `first_invite_created` | A person's first invite, by member or phone | `via` |
 | `first_pact_joined` | The first Pact a person joins | `via` (link, invite) |
+| `pwa_install_started` / `pwa_install_completed` | Someone asked the browser to install PACT, and it finished. Signed-in people only. Sent by the app, once per person per day | none |
+| `circle_created` | A Circle is made (once per Circle). Never its name or emoji | none |
+| `circle_joined` | Someone joins a Circle by link (once per person per Circle) | `via` (link) |
+| `circle_invite_created` | A Circle's invite link is made or reset. Never the link | `role` (owner, member) |
+| `circle_invite_opened` | A Circle invite link is opened, signed in or not (once per daily visitor pseudonym per state) | `state` (valid, revoked, expired) |
+| `circle_invite_shared` | A member shares the link from the app (once per person per day). Sent by the app | `via` (native, copy) |
+| `universal_create_opened` | The create sheet is opened (once per person per day). Sent by the app | `from` (nav, circle, home) |
 
 ## Activation: understand, then act
 
@@ -116,6 +123,24 @@ SELECT COUNT(*) AS participants,
        COUNT(*) FILTER (WHERE EXISTS (SELECT 1 FROM product_events c WHERE c.name = 'pact_created' AND c.actor = j.actor AND c.occurred_at > j.first_join)) AS later_created
 FROM j;
 ```
+
+## Splits (Split an expense)
+
+Each Split has its own pseudonym in the `split` column, so one expense's whole path reads as one thing. No title, name, amount, id or link is ever stored; props are coarse choices from a fixed list.
+
+| Event | Props |
+| --- | --- |
+| `split_created` | `split_mode` (equal, custom), `participant_count_band`, `from` (circle, home, nav) |
+| `split_opened` | `from` (circle, home, share), `state` |
+| `split_shared` | `via` (native, copy) |
+| `split_share_opened` | `auth_state` (signed_in, signed_out), `state` |
+| `split_settlement_marked` | `by` (self, organiser), `after_auth` |
+| `split_settlement_undone` | `by` |
+| `split_completed` | `participant_count_band` |
+| `split_cancelled` | `had_settlements` |
+| `circle_joined_from_split` | none |
+
+The funnel: created, shared, opened (`split_share_opened`, signed out then signed in), marked settled (`after_auth` says they signed in on the way), completed, joined the Circle (`circle_joined_from_split`), and later creating something (join `actor` to later `*_created` events). Money never moves through PACT; "settled" is a record only.
 
 ## Limits to keep in mind
 

@@ -1,8 +1,9 @@
 import { CalendarDays, Check, ChevronDown, ChevronRight, History, ListChecks, Phone, Plus, RotateCcw, Scale, ShoppingBag, Wallet, X } from 'lucide-react';
-import { useId, useMemo, useState, type FormEvent, type ReactNode } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useId, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ApiError, newIdempotencyKey } from '../../api/client';
 import { useCreatePact, useRecentPeople } from '../../api/hooks';
+import { usePactDraft, usePlan } from '../../api/plans';
 import { Notice } from '../../components/app/States';
 import { categoryMeta } from '../../components/pact/category';
 import { AmountInput } from '../../components/ui/AmountInput';
@@ -90,6 +91,14 @@ export function CreatePactScreen() {
   const navigate = useNavigate();
   const toast = useToast();
   const create = useCreatePact();
+  // Started from inside a Circle (the create sheet passes ?circle=). The server checks they are in it.
+  const [params] = useSearchParams();
+  const circleId = /^[0-9a-f-]{36}$/i.test(params.get('circle') ?? '') ? params.get('circle')! : undefined;
+  // Made from a Plan ("Make it a Pact"): the form starts with what the plan knows, and nothing is created until it is confirmed here.
+  const planParam = params.get('plan') ?? '';
+  const planId = /^[0-9a-f-]{36}$/i.test(planParam) ? planParam : undefined;
+  const planDraft = usePactDraft(planId);
+  const planInfo = usePlan(planId);
   const people = useRecentPeople();
   const minDate = isoDay(new Date(Date.now() + 86_400_000));
   // A half-finished Pact comes back after a refresh, a dropped connection or an expired session.
@@ -133,6 +142,21 @@ export function CreatePactScreen() {
   const template = TEMPLATES[category];
   const budgetTotal = lines.reduce((sum, l) => sum + l.amount, 0);
   const goal = mode === 'budget' ? budgetTotal : target;
+  const applied = useRef(false);
+  useEffect(() => {
+    const d = planDraft.data;
+    if (!d || applied.current) return;
+    applied.current = true;
+    setTitle(d.title);
+    setPicked(d.category as PactCategory);
+    setMode('target');
+    setTarget(d.target ? Math.round(d.target / 100) : 0);
+    setDeadline(d.deadline ?? '');
+    setTasks(d.tasks);
+    setTasksOpen(d.tasks.length > 0);
+    setInvitees(d.inviteUserIds);
+    setRestored(false);
+  }, [planDraft.data]);
   const addLine = (name = '') => setLines((l) => [...l, { key: lineKey++, name, amount: 0 }]);
   const toggleTask = (t: string) => setTasks((list) => (list.includes(t) ? list.filter((x) => x !== t) : [...list, t]));
 
@@ -161,7 +185,7 @@ export function CreatePactScreen() {
   const count = invitees.length + phones.length;
 
   const untouched = !title.trim() && !target && !deadline && !count && !picked && !lines.length && !items.length && !tasks.length;
-  useSaveDraft<CreateDraft>(DRAFT_KEY, { title, target, deadline, invitees, phones, picked, policy, split, mode, items, lines, tasks }, untouched, !create.isSuccess);
+  useSaveDraft<CreateDraft>(DRAFT_KEY, { title, target, deadline, invitees, phones, picked, policy, split, mode, items, lines, tasks }, untouched, !create.isSuccess && !planId);
   const startOver = () => {
     clearDraft(DRAFT_KEY);
     setTitle('');
@@ -211,6 +235,7 @@ export function CreatePactScreen() {
           splitMode: split,
           inviteUserIds: invitees,
           invitePhones: phones,
+          ...(planId ? { planId } : circleId ? { circleId } : {}),
         },
       });
       clearDraft(DRAFT_KEY);
@@ -241,6 +266,13 @@ export function CreatePactScreen() {
       }
       className="create"
     >
+      {planId && (
+        <Notice tone={planDraft.error ? 'danger' : 'accent'}>
+          {planDraft.error
+            ? (planDraft.error as ApiError).message
+            : `Started from your plan${planInfo.data ? ` “${planInfo.data.title}”` : ''}. Set the target, deadline and rules, then confirm. Nothing is created until you do.`}
+        </Notice>
+      )}
       <h1 className="large-title">What are you planning?</h1>
       <p className="screen-lede">Name it, pick a date, say roughly how much. Everything else can wait.</p>
 

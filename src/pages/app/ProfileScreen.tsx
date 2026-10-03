@@ -1,5 +1,5 @@
 import { TopBar } from '../../components/ui/TopBar';
-import { BadgeCheck, ChevronRight, Download, FileText, Gift, Landmark, LifeBuoy, LockKeyhole, LogOut, ShieldCheck, Smartphone, UserX } from 'lucide-react';
+import { BadgeCheck, ChevronRight, Download, FileText, Gift, Handshake, Landmark, LifeBuoy, LockKeyhole, LogOut, ShieldCheck, Smartphone, UserX, Wallet as WalletIcon } from 'lucide-react';
 import { useState } from 'react';
 import { IosInstallSheet } from '../../components/pwa/InstallPactPrompt';
 import { usePwaInstall } from '../../hooks/usePwaInstall';
@@ -86,6 +86,20 @@ export function ProfileScreen() {
             <strong className="num">{formatNaira(given)}</strong> contributed
           </span>
         </div>
+      </div>
+
+      <p className="menu-label">Yours</p>
+      <div className="menu">
+        <Link to="/app/pacts" className="menu__row">
+          <span className="menu__icon tint--mint"><Handshake /></span>
+          <span className="menu__text"><span className="menu__title">Your Pacts</span><span className="menu__sub">{mine.length ? `${mine.length} ${mine.length === 1 ? 'Pact' : 'Pacts'}, running and finished` : 'Everything you’re part of'}</span></span>
+          <span className="menu__end"><ChevronRight /></span>
+        </Link>
+        <Link to="/app/wallet" className="menu__row">
+          <span className="menu__icon tint--sun"><WalletIcon /></span>
+          <span className="menu__text"><span className="menu__title">Wallet</span><span className="menu__sub">Balance, top up and withdraw</span></span>
+          <span className="menu__end"><ChevronRight /></span>
+        </Link>
       </div>
 
       <p className="menu-label">Appearance</p>

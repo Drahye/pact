@@ -130,6 +130,9 @@ export function SplitScreen() {
           <div className="split-done" role="status">
             <strong>All settled ✓</strong>
             <p>Everyone is square.</p>
+            <Button variant="secondary" to={`/app/recap/split/${s.id}`}>
+              View recap
+            </Button>
           </div>
         )}
         {cancelled && <Notice tone="neutral">This split was cancelled.</Notice>}

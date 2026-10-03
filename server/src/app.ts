@@ -27,6 +27,7 @@ import * as orders from './modules/orders.js';
 import * as pacts from './modules/pacts.js';
 import * as plans from './modules/plans.js';
 import * as splits from './modules/splits.js';
+import * as home from './modules/home.js';
 import * as plan from './modules/plan.js';
 import * as users from './modules/users.js';
 import * as wallet from './modules/wallet.js';
@@ -346,6 +347,9 @@ export async function buildApp({ config, db, provider, sms, push, now = () => ne
       /* ---------- Split share links (public: a safe summary is visible before anyone signs in) */
       api.get<{ Params: { token: string } }>('/split-links/:token', strict(120), async (req) => splits.previewLink(ctx, req.params.token, meta(req)));
 
+      /* ---------- Recap share links (public: a safe, celebratory summary) */
+      api.get<{ Params: { token: string } }>('/recap-links/:token', strict(120), async (req) => home.previewShared(ctx, req.params.token, meta(req)));
+
       /* ---------- webhooks: raw body for signature verification */
       await api.register(async (hooks) => {
         hooks.addContentTypeParser('application/json', { parseAs: 'string' }, (_req, body, done) => done(null, body));
@@ -600,6 +604,12 @@ export async function buildApp({ config, db, provider, sms, push, now = () => ne
         priv.get<{ Params: { id: string } }>('/plans/:id/pact-draft', strict(30), async (req) => plans.pactDraft(ctx, req.userId, req.params.id));
         priv.post<{ Params: { id: string } }>('/plans/:id/shared', strict(60), async (req) => plans.recordShared(ctx, req.userId, req.params.id, parse(C.AskSharedBody, req.body).via));
         priv.post<{ Params: { id: string } }>('/plans/:id/share/reset', strict(10), async (req) => plans.resetShare(ctx, req.userId, req.params.id, meta(req)));
+        priv.get('/home', strict(120), async (req) => home.getHome(ctx, req.userId));
+        const RecapKind = z.enum(['plan', 'pact', 'split']);
+        priv.get<{ Params: { kind: string; id: string }; Querystring: { from?: string } }>('/recaps/:kind/:id', async (req) => home.getRecap(ctx, req.userId, parse(RecapKind, req.params.kind), req.params.id, req.query.from === 'home' ? 'home' : 'object'));
+        priv.post<{ Params: { kind: string; id: string } }>('/recaps/:kind/:id/share', strict(20), async (req) => home.enableShare(ctx, req.userId, parse(RecapKind, req.params.kind), req.params.id, meta(req)));
+        priv.delete<{ Params: { kind: string; id: string } }>('/recaps/:kind/:id/share', strict(20), async (req) => home.revokeShare(ctx, req.userId, parse(RecapKind, req.params.kind), req.params.id, meta(req)));
+        priv.post<{ Params: { kind: string; id: string } }>('/recaps/:kind/:id/shared', strict(60), async (req) => home.recordRecapShared(ctx, req.userId, parse(RecapKind, req.params.kind), req.params.id, parse(C.SplitSharedBody, req.body).via));
         priv.get('/splits/needs-you', async (req) => splits.needsYou(ctx, req.userId));
         priv.get<{ Params: { id: string } }>('/circles/:id/splits', async (req) => splits.listCircleSplits(ctx, req.userId, req.params.id));
         priv.post<{ Params: { id: string }; Querystring: { from?: string } }>('/circles/:id/splits', strict(20), async (req) =>
@@ -803,6 +813,24 @@ export async function buildApp({ config, db, provider, sms, push, now = () => ne
         const meta = row?.rows[0]
           ? { ...splitPreviewText(row.rows[0].title), url: `${origin}/s/${splitShare[1]}`, image, noindex: true }
           : { ...unavailablePreview, description: 'This split is no longer available.', image };
+        return reply.header('Cache-Control', 'no-store').header('X-Robots-Tag', 'noindex, nofollow').type('text/html').send(injectOg(indexHtml, meta));
+      }
+      // A shared recap: a generic celebratory card. No names, no amounts.
+      const recapShare = /^\/r\/([A-Za-z0-9_-]{32,64})\/?(?:\?.*)?$/.exec(req.url);
+      if (recapShare) {
+        const origin = config.APP_ORIGIN.replace(/\/$/, '');
+        const image = `${origin}/brand/og-ask.png`;
+        const row = await db
+          .query<{ title: string }>(
+            `SELECT COALESCE(p.title, a.title, s.title) AS title FROM recap_links r
+               LEFT JOIN plans p ON r.kind = 'plan' AND p.id = r.object_id LEFT JOIN pacts a ON r.kind = 'pact' AND a.id = r.object_id LEFT JOIN splits s ON r.kind = 'split' AND s.id = r.object_id
+              WHERE r.token = $1 AND r.revoked_at IS NULL`,
+            [recapShare[1]],
+          )
+          .catch(() => null);
+        const meta = row?.rows[0]
+          ? { title: row.rows[0].title, description: 'We made it happen.', url: `${origin}/r/${recapShare[1]}`, image, noindex: true }
+          : { ...unavailablePreview, description: 'This recap is no longer available.', image };
         return reply.header('Cache-Control', 'no-store').header('X-Robots-Tag', 'noindex, nofollow').type('text/html').send(injectOg(indexHtml, meta));
       }
       return reply.sendFile('index.html');

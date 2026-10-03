@@ -142,6 +142,23 @@ Each Split has its own pseudonym in the `split` column, so one expense's whole p
 
 The funnel: created, shared, opened (`split_share_opened`, signed out then signed in), marked settled (`after_auth` says they signed in on the way), completed, joined the Circle (`circle_joined_from_split`), and later creating something (join `actor` to later `*_created` events). Money never moves through PACT; "settled" is a record only.
 
+## Home and Recaps
+
+Home asks one question: what needs me? These events say whether it did. Coarse choices only: an object kind (`ask`, `plan`, `split`, `pact`) and a section of Home (`needs_you`, `circles`, `coming_up`, `recent`, `recap`). Never a title, a name, an amount or a link. Client events count once per person per day per object kind and section.
+
+| Event | Props | Meaning |
+| --- | --- | --- |
+| `home_viewed` | `state` (new, active, finished_only), `has_needs` | Home was looked at |
+| `home_needs_you_opened` | `count` | Needs You had something on it |
+| `home_needs_you_actioned` | `object_type`, `section` | A Needs You card was tapped |
+| `circle_opened_from_home` | `section` | |
+| `coming_up_opened`, `recent_activity_opened` | `object_type`, `section` | |
+| `recap_viewed` | `object_type`, `from` (home, object, share) | A member opened a recap (carries the object's own pseudonym) |
+| `recap_shared` | `object_type`, `via`, `section` | The organiser used the share sheet or copied |
+| `recap_share_opened` | `object_type` | Someone opened a shared recap link |
+
+Questions this answers: what share of people have an actionable item (`home_viewed.has_needs`); which kind of card is tapped most; how many Home visits lead to an action; whether people who view a recap later create another object (join `actor` to later `*_created` events); and Circle vs standalone return rate (join `actor` to `circle_created` / `circle_joined`).
+
 ## Limits to keep in mind
 
 - Preview to join is a ratio of counts, not a conversion of the same people.

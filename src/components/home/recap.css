@@ -1,0 +1,105 @@
+.recap {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-3);
+  padding: var(--space-6) var(--space-5);
+  border-radius: var(--radius-2xl, 28px);
+  background: var(--ink-900, #0e1a14);
+  color: var(--paper-50, #f7f5ef);
+  animation: recap-in 480ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.recap__brand {
+  color: var(--paper-50, #f7f5ef);
+  opacity: 0.8;
+}
+
+.recap__emoji {
+  margin: var(--space-2) 0 0;
+  font-size: 48px;
+  line-height: 1;
+}
+
+.recap__title {
+  margin: 0;
+  font-size: var(--text-3xl, 34px);
+  line-height: 1.1;
+  font-weight: var(--weight-bold);
+  overflow-wrap: anywhere;
+}
+
+.recap__headline {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: var(--text-xl, 22px);
+  font-weight: var(--weight-bold);
+  color: var(--green-300, #7be0a8);
+}
+
+.recap__mark {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--green-500, #2fd07a);
+  color: var(--ink-900, #0e1a14);
+  font-size: 16px;
+}
+
+.recap__sub,
+.recap__when {
+  margin: 0;
+  opacity: 0.85;
+}
+
+.recap__metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4) var(--space-6);
+  margin: var(--space-3) 0;
+}
+
+.recap__metric {
+  display: grid;
+  gap: 2px;
+}
+
+.recap__metric dd {
+  margin: 0;
+  font-size: var(--text-2xl, 28px);
+  font-weight: var(--weight-bold);
+  font-variant-numeric: tabular-nums;
+}
+
+.recap__metric dt {
+  font-size: var(--text-sm);
+  opacity: 0.8;
+}
+
+.recap__circle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: var(--space-2) 0 0;
+  opacity: 0.9;
+}
+
+@keyframes recap-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .recap {
+    animation: none;
+  }
+}

@@ -200,6 +200,100 @@ export const PlanTaskPatchBody = z
   .refine((b) => Object.keys(b).length > 0, 'Nothing to change.');
 export const LinkAskBody = z.object({ askId: z.string().uuid() });
 
+/* ---- Home and Recaps */
+export type NeedsYouType = 'ask' | 'attendance' | 'plan_rsvp' | 'plan_task' | 'split_debt' | 'split_collect' | 'pact_contribution' | 'pact_task' | 'pact_approval';
+export type HomeObject = 'ask' | 'plan' | 'split' | 'pact';
+
+/** One thing the viewer can act on now. Several actions on the same object are one card. */
+export interface NeedsYouItem {
+  id: string;
+  /** The most important action on this object. */
+  type: NeedsYouType;
+  objectType: HomeObject;
+  sourceId: string;
+  circleId?: string;
+  circle?: { name: string; emoji: string; tint: CircleTint } | null;
+  title: string;
+  /** One plain sentence: "You still owe ₦12,500". */
+  context: string;
+  /** Short labels for the actions on this object: ["RSVP", "Vote", "1 task"]. One entry when it is a single action. */
+  parts: string[];
+  actionLabel: string;
+  actionUrl: string;
+  /** Higher first. Deterministic: see server/src/modules/home.ts. */
+  priority: number;
+  dueAt?: string;
+}
+
+export interface HomeCircleDTO {
+  id: string;
+  name: string;
+  emoji: string;
+  tint: CircleTint;
+  memberCount: number;
+  memberIds: string[];
+  /** One live line. */
+  signal: { text: string; kind: 'needs_you' | 'soon' | 'plan' | 'split' | 'pact' | 'recent' | 'quiet' };
+}
+
+export interface ComingUpItem {
+  kind: 'plan' | 'pact';
+  id: string;
+  title: string;
+  emoji: string;
+  date: string;
+  endDate: string | null;
+  text: string;
+  url: string;
+}
+
+export interface RecentItem {
+  id: string;
+  objectType: HomeObject;
+  actorId: string | null;
+  text: string;
+  at: string;
+  url: string;
+}
+
+export interface RecapCardDTO {
+  kind: 'plan' | 'pact' | 'split';
+  id: string;
+  title: string;
+  emoji: string;
+  circleName: string | null;
+  completedAt: string;
+  people: number;
+  url: string;
+}
+
+export interface HomeDTO {
+  state: 'new' | 'active' | 'finished_only';
+  needsYou: NeedsYouItem[];
+  needsYouTotal: number;
+  circles: HomeCircleDTO[];
+  comingUp: ComingUpItem[];
+  recent: RecentItem[];
+  recaps: RecapCardDTO[];
+}
+
+export interface RecapDTO {
+  kind: 'plan' | 'pact' | 'split';
+  title: string;
+  emoji: string;
+  circle: { name: string; emoji: string; tint: CircleTint } | null;
+  /** "We made it happen." / "All settled ✓" */
+  headline: string;
+  completedAt: string;
+  /** Short labelled numbers: people, decisions, tasks, days. Never someone's debt. */
+  metrics: { label: string; value: string }[];
+  when: string | null;
+  /** Members only: who was part of it. */
+  personIds: string[];
+  /** Members only. */
+  share: { token: string | null; canManage: boolean } | null;
+}
+
 /* ---- Splits */
 export const SPLIT_STATUSES = ['open', 'settled', 'cancelled'] as const;
 export type SplitStatus = (typeof SPLIT_STATUSES)[number];

@@ -20,9 +20,10 @@ const STEPS = [
  * Home for someone with nothing started yet. Never a blank page: the two things to do, proof of how others use PACT (clearly
  * labelled samples), and a short reminder of how it works. Education lives here only until they have a Pact of their own.
  */
-export function HomeFirstTime() {
+export function HomeFirstTime({ compact }: { compact?: boolean } = {}) {
   return (
     <div className="hs">
+      {!compact && (
       <section className="hs__start" aria-labelledby="hs-ready">
         <h2 id="hs-ready" className="hs__title">
           Ready to make something happen together?
@@ -37,6 +38,7 @@ export function HomeFirstTime() {
           </Button>
         </div>
       </section>
+      )}
 
       <section className="screen-section" aria-labelledby="hs-proof">
         <SectionHeading id="hs-proof" title="See how people use PACT" />

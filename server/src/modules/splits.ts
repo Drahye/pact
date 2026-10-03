@@ -191,7 +191,7 @@ export async function listCircleSplits(ctx: Ctx, userId: string, circleId: strin
   return { data: rows.map((r) => summarise(r, shares.filter((x) => x.split_id === r.id), userId)), people: [] as PersonDTO[] };
 }
 
-const compactNgn = (kobo: number) => {
+export const compactNgn = (kobo: number) => {
   const n = kobo / 100;
   if (n >= 1_000_000) return `₦${+(n / 1_000_000).toFixed(1)}m`;
   if (n >= 1_000) return `₦${+(n / 1_000).toFixed(n % 1000 ? 1 : 0)}k`;

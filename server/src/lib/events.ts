@@ -83,16 +83,27 @@ export const EVENT_NAMES = [
   'split_completed',
   'split_cancelled',
   'circle_joined_from_split',
+  'home_viewed',
+  'home_needs_you_opened',
+  'home_needs_you_actioned',
+  'circle_opened_from_home',
+  'coming_up_opened',
+  'recent_activity_opened',
+  'recap_viewed',
+  'recap_shared',
+  'recap_share_opened',
 ] as const;
 
 /** The events the app itself sends (what someone looked at or chose). The rest are worked out from server records. */
-export const CLIENT_EVENTS = ['onboarding_started', 'onboarding_completed', 'onboarding_intent_selected', 'demo_pact_opened', 'demo_pact_completed_view', 'first_pact_started', 'pwa_install_started', 'pwa_install_completed', 'circle_invite_shared', 'universal_create_opened'] as const;
+export const CLIENT_EVENTS = ['onboarding_started', 'onboarding_completed', 'onboarding_intent_selected', 'demo_pact_opened', 'demo_pact_completed_view', 'first_pact_started', 'pwa_install_started', 'pwa_install_completed', 'circle_invite_shared', 'universal_create_opened', 'home_viewed', 'home_needs_you_opened', 'home_needs_you_actioned', 'circle_opened_from_home', 'coming_up_opened', 'recent_activity_opened', 'recap_shared'] as const;
 export type ClientEventName = (typeof CLIENT_EVENTS)[number];
 export type EventName = (typeof EVENT_NAMES)[number];
 
 type Rule = 'bool' | 'count' | readonly string[];
 const CATEGORY = ['birthday', 'dinner', 'gift', 'trip', 'event', 'household', 'wedding', 'fund', 'other'] as const;
 const DEMOS = ['sarahs_birthday', 'december_trip', 'graduation_gift'] as const;
+const OBJECTS = ['ask', 'plan', 'split', 'pact'] as const;
+const SECTIONS = ['needs_you', 'circles', 'coming_up', 'recent', 'recap'] as const;
 const PARTICIPATION = ['money', 'task', 'both', 'later'] as const;
 
 /** What each event may carry. */
@@ -179,6 +190,16 @@ export const EVENT_PROPS: Record<EventName, Record<string, Rule>> = {
   split_completed: { participant_count_band: ['2', '3_4', '5_8', '9_plus'] },
   split_cancelled: { had_settlements: 'bool' },
   circle_joined_from_split: {},
+  // Home and Recaps. The object's own pseudonym is used where there is one; never a title, a name, an amount or a link.
+  home_viewed: { state: ['new', 'active', 'finished_only'], has_needs: 'bool' },
+  home_needs_you_opened: { count: 'count' },
+  home_needs_you_actioned: { object_type: OBJECTS, section: SECTIONS },
+  circle_opened_from_home: { section: SECTIONS },
+  coming_up_opened: { object_type: OBJECTS, section: SECTIONS },
+  recent_activity_opened: { object_type: OBJECTS, section: SECTIONS },
+  recap_viewed: { object_type: OBJECTS, from: ['home', 'object', 'share'] },
+  recap_shared: { object_type: OBJECTS, via: ['native', 'copy'], section: SECTIONS },
+  recap_share_opened: { object_type: OBJECTS },
   pact_outcome_completed: { days_since_funded: 'count', paid_lines: 'count', tasks_done_band: ['none', 'some', 'most', 'all', 'no_tasks'], released_remaining: 'bool' },
 };
 

@@ -78,4 +78,4 @@ export const takeReturnTo = () => {
  * origins, no protocol-relative or backslash tricks.
  */
 export const safeAppPath = (raw: string | null | undefined): string | null =>
-  raw && (/^\/app\/[A-Za-z0-9/_\-?=&%.]*$/.test(raw) || /^\/[aps]\/[A-Za-z0-9_-]{16,64}$/.test(raw)) && !raw.includes('//') && !raw.includes('\\') ? raw : null;
+  raw && (/^\/app\/[A-Za-z0-9/_\-?=&%.]*$/.test(raw) || /^\/[apsr]\/[A-Za-z0-9_-]{16,64}$/.test(raw)) && !raw.includes('//') && !raw.includes('\\') ? raw : null;

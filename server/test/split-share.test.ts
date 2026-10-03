@@ -8,10 +8,11 @@ import { setup } from './helpers.js';
 
 const SHELL = `<!doctype html><html><head><meta name="description" content="g" /><meta property="og:type" content="website" /><meta property="og:title" content="g" /><meta property="og:description" content="g" /><meta property="og:image" content="/brand/og.png" /><meta name="twitter:card" content="summary_large_image" /><title>g</title></head><body><div id="root"></div></body></html>`;
 
-describe('shared Split link metadata', () => {
+describe('shared Split and Recap link metadata', () => {
   let t: Awaited<ReturnType<typeof setup>>;
   const cwd = process.cwd();
   let token: string;
+  let recapToken: string;
 
   before(async () => {
     const root = mkdtempSync(join(tmpdir(), 'pact-ogs-'));
@@ -24,7 +25,10 @@ describe('shared Split link metadata', () => {
     const circle = (await t.call('POST', '/circles', ana.accessToken, { name: 'The Boys', emoji: '🍻' })).body.data.id;
     const inv = (await t.call('POST', `/circles/${circle}/invites`, ana.accessToken, {})).body.data.invite.token;
     await t.call('POST', `/circle-invites/${inv}/join`, ben.accessToken, {});
-    token = (await t.call('POST', `/circles/${circle}/splits`, ana.accessToken, { title: 'Dinner at Yellow Chilli', total: 62_500_00, participants: [{ userId: ben.user.id }] })).body.data.shareToken;
+    const sp = (await t.call('POST', `/circles/${circle}/splits`, ana.accessToken, { title: 'Dinner at Yellow Chilli', total: 62_500_00, participants: [{ userId: ben.user.id }] })).body.data;
+    token = sp.shareToken;
+    await t.call('PUT', `/splits/${sp.id}/shares/${ben.user.id}`, ben.accessToken, { settled: true });
+    recapToken = (await t.call('POST', `/recaps/split/${sp.id}/share`, ana.accessToken, {})).body.data.share.token;
   });
   after(async () => {
     process.chdir(cwd);
@@ -46,5 +50,16 @@ describe('shared Split link metadata', () => {
     const wrong = (await t.app.inject({ method: 'GET', url: `/s/${'z'.repeat(43)}` })).body;
     assert.match(wrong, /no longer available/);
     assert.ok(!/Yellow|Boys/.test(wrong));
+  });
+
+  it('gives crawlers a generic recap card, noindex, with no amount or name', async () => {
+    const r = await t.app.inject({ method: 'GET', url: `/r/${recapToken}` });
+    assert.equal(r.statusCode, 200);
+    assert.equal(r.headers['x-robots-tag'], 'noindex, nofollow');
+    assert.match(r.body, /og:title" content="Dinner at Yellow Chilli"/);
+    assert.match(r.body, /og:description" content="We made it happen\."/);
+    assert.ok(!/62,?500|Ana|Ben/.test(r.body), 'no amount or name');
+    const wrong = (await t.app.inject({ method: 'GET', url: `/r/${'z'.repeat(43)}` })).body;
+    assert.match(wrong, /no longer available/);
   });
 });

@@ -198,6 +198,13 @@ export function PlanScreen() {
           )}
           {open && !p.rsvpOpen && !canAnswer && <p className="plan-note">RSVPs are closed.{p.mine ? ' Your answer is saved.' : ''}</p>}
           {!open && <p className="plan-note">{p.status === 'done' ? 'This plan happened.' : 'This plan was cancelled.'}</p>}
+          {p.status === 'done' && (
+            <div className="plan-section__row">
+              <Button variant="secondary" to={`/app/recap/plan/${p.id}`}>
+                View recap
+              </Button>
+            </div>
+          )}
         </section>
 
         {/* Organiser prompt for what is still missing (never shown to others) */}

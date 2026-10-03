@@ -1,62 +1,60 @@
-import { Bell, ChevronRight, Plus } from 'lucide-react';
+import { Bell, Plus } from 'lucide-react';
+import { useEffect, useRef } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../../api/auth';
-import { useActivity, useNotifications, usePacts, useWallet } from '../../api/hooks';
-import { HomeFirstTime, HomeRepeat } from '../../features/onboarding/HomeStates';
+import { trackHome, useHome } from '../../api/home';
+import { usePacts, useNotifications, useWallet } from '../../api/hooks';
+import { HomeFirstTime } from '../../features/onboarding/HomeStates';
 import { introSeen } from '../../features/onboarding/store';
-import { phaseOf } from '../../lib/execution';
 import { PushPrompt } from '../../components/app/PushPrompt';
-import { ErrorState } from '../../components/app/States';
+import { ErrorState, Notice } from '../../components/app/States';
 import { PactListSkeleton } from '../../components/app/Skeleton';
 import { WalletStrip } from '../../components/app/WalletCard';
-import { attentionFor } from '../../lib/plan';
-import { isoDay } from '../../lib/dates';
-import { FeaturedPactCard } from '../../components/pact/FeaturedPactCard';
+import { CirclesShelf, ComingUpSection, MadeItHappenSection, MakeHappenSection, NeedsYouSection, RecentSection } from '../../components/home/HomeBits';
 import { PactCard } from '../../components/pact/PactCard';
-import { ActivityItem } from '../../components/ui/ActivityItem';
 import { Avatar } from '../../components/ui/Avatar';
 import { BottomNav } from '../../components/ui/BottomNav';
 import '../../components/ui/button.css';
 import { SectionHeading } from '../../components/ui/SectionHeading';
-import { HomeNeedsYou } from '../../components/ask/HomeNeedsYou';
-import { HomeCircles } from '../../components/circle/HomeCircles';
 import { LargeTitle } from '../../components/ui/LargeTitle';
 import { TopBar } from '../../components/ui/TopBar';
+import { isoDay } from '../../lib/dates';
 import { formatDate, greeting } from '../../lib/format';
-import { summarize } from '../../lib/pact';
 import { Screen } from './Screen';
 import { InvitationCard } from './InvitationCard';
 import './home.css';
 
+/**
+ * Home answers one question: what needs me right now? One request builds it (Needs You, Circles, Coming up, Recent, what we
+ * finished). Pacts stay a short list below, and invitations stay on top until answered.
+ */
 export function HomeScreen() {
   const { user } = useAuth();
+  const home = useHome();
   const pacts = usePacts();
   const wallet = useWallet();
   const notes = useNotifications();
-  const activity = useActivity();
   const all = pacts.data ?? [];
   const invites = all.filter((p) => p.viewer?.status === 'invited');
   const mine = all.filter((p) => p.viewer?.status === 'joined');
-  const open = mine.filter((p) => p.status === 'open');
-  // Feature the open Pact that closes soonest.
-  const featured = [...open].sort((a, b) => summarize(a).daysLeft - summarize(b).daysLeft)[0];
-  const rest = mine.filter((p) => p.id !== featured?.id && (p.status === 'open' || p.status === 'funded')).slice(0, 4);
+  const running = mine.filter((p) => p.status === 'open' || p.status === 'funded').slice(0, 3);
   const unread = notes.data?.unread ?? 0;
-  // Three different homes. Nothing started yet teaches; finished-only welcomes you back; anything running stays primary, with no sample Pacts.
-  const loaded = pacts.isSuccess;
-  const running = mine.filter((p) => !['completed', 'closed'].includes(phaseOf(p)));
-  const finished = mine.filter((p) => phaseOf(p) === 'completed').sort((a, b) => String(b.completedAt ?? '').localeCompare(String(a.completedAt ?? '')));
-  const firstTime = loaded && !mine.length && !invites.length;
-  const noneRunning = loaded && mine.length > 0 && !running.length;
-  // The most personal thing each open Pact needs from you, across all your Pacts.
-  const needs = open
-    .map((p) => ({ pact: p, item: attentionFor(p, user?.id ?? '')[0] }))
-    .filter((x) => x.item)
-    .slice(0, 4);
+  const h = home.data;
+  const firstTime = pacts.isSuccess && !mine.length && !invites.length && h?.state === 'new';
+
+  // One coarse "Home was looked at" per visit, once the data is in. Never what was on it.
+  const seen = useRef(false);
+  useEffect(() => {
+    if (!h || seen.current) return;
+    seen.current = true;
+    trackHome('home_viewed', { state: h.state, has_needs: h.needsYou.length > 0 });
+    if (h.needsYou.length) trackHome('home_needs_you_opened', { count: h.needsYou.length });
+  }, [h]);
 
   // Brand new and has not seen the intro: show it first, then land back here.
   if (firstTime && user && !introSeen(user.id)) return <Navigate to="/app/onboarding" replace />;
 
+  const stale = home.isError && !!h;
   return (
     <Screen
       tabBar={<BottomNav />}
@@ -86,6 +84,12 @@ export function HomeScreen() {
 
       <PushPrompt hasPact={mine.length > 0} />
 
+      {stale && (
+        <Notice tone="neutral">
+          {typeof navigator !== 'undefined' && navigator.onLine === false ? 'You’re offline. This may be out of date.' : 'Couldn’t refresh. This may be out of date.'}
+        </Notice>
+      )}
+
       {invites.length > 0 && (
         <section className="screen-section" aria-labelledby="invites">
           <SectionHeading id="invites" title={`Invitations · ${invites.length}`} />
@@ -97,78 +101,62 @@ export function HomeScreen() {
         </section>
       )}
 
-      {needs.length > 0 && (
-        <section className="screen-section screen-section--first" aria-labelledby="needs">
-          <SectionHeading id="needs" title="Needs your attention" />
-          <ul className="needs">
-            {needs.map(({ pact, item }) => (
-              <li key={pact.id}>
-                <Link to={`/app/pact/${pact.id}`} className={`needs__row needs__row--${item!.tone}`}>
-                  <span className="needs__dot" aria-hidden />
-                  <span className="needs__text">
-                    <span className="needs__pact">{pact.title}</span>
-                    <strong>{item!.title}</strong>
-                  </span>
-                  <ChevronRight aria-hidden />
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      {pacts.error ? (
-        <ErrorState onRetry={() => pacts.refetch()} />
-      ) : pacts.isLoading ? (
+      {home.isLoading && !h ? (
         <div className="screen-section list-stack">
-          <PactListSkeleton label="Loading your Pacts" />
+          <PactListSkeleton label="Loading your Home" />
         </div>
+      ) : !h ? (
+        <ErrorState onRetry={() => home.refetch()} />
+      ) : firstTime ? (
+        <>
+          <MakeHappenSection heading="What do you want to make happen?" />
+          <section className="screen-section" aria-labelledby="home-circles">
+            <Link to="/app/circles/new" className="home-circles__cta">
+              <span className="icon-btn icon-btn--surface" aria-hidden>
+                <Plus />
+              </span>
+              <span>
+                <strong id="home-circles">Your people</strong>
+                <span>Create a Circle for the groups you regularly do things with.</span>
+              </span>
+            </Link>
+          </section>
+          <HomeFirstTime compact />
+        </>
       ) : (
         <>
-          {firstTime && <HomeFirstTime />}
-          {noneRunning && <HomeRepeat finished={finished} />}
-          {featured && (
-            <section className="screen-section" aria-label="Closing soonest">
-              <FeaturedPactCard pact={featured} to={`/app/pact/${featured.id}`} />
-            </section>
-          )}
-          {mine.length > 0 && !noneRunning && (
-          <section className="screen-section" aria-labelledby="your-pacts">
-            <SectionHeading id="your-pacts" title="Your Pacts" action={mine.length > 1 ? { label: 'See all', to: '/app/pacts' } : undefined} />
-            <div className="list-stack">
-              {rest.map((p) => (
-                <PactCard key={p.id} pact={p} to={`/app/pact/${p.id}`} />
-              ))}
-              <Link to="/app/create" className="home__new">
-                <span className="icon-btn icon-btn--surface home__new-icon" aria-hidden>
+          {h.state === 'finished_only' && <MakeHappenSection heading="You’ve made things happen before." />}
+          <NeedsYouSection items={h.needsYou} total={h.needsYouTotal} />
+          {h.state === 'finished_only' && <MadeItHappenSection items={h.recaps} />}
+          {h.circles.length > 0 ? (
+            <CirclesShelf circles={h.circles} />
+          ) : (
+            <section className="screen-section" aria-labelledby="home-circles">
+              <Link to="/app/circles/new" className="home-circles__cta">
+                <span className="icon-btn icon-btn--surface" aria-hidden>
                   <Plus />
                 </span>
                 <span>
-                  <strong>{mine.length ? 'Start a new Pact' : 'Start your first Pact'}</strong>
-                  <span>A trip, a gift, a celebration, a shared bill</span>
+                  <strong id="home-circles">Your people, in one place</strong>
+                  <span>Create a Circle for the groups you regularly do things with.</span>
                 </span>
               </Link>
-            </div>
-          </section>
+            </section>
           )}
+          <ComingUpSection items={h.comingUp} />
+          {running.length > 0 && (
+            <section className="screen-section" aria-labelledby="your-pacts">
+              <SectionHeading id="your-pacts" title="Your Pacts" action={mine.length > 1 ? { label: 'See all', to: '/app/pacts' } : undefined} />
+              <div className="list-stack">
+                {running.map((p) => (
+                  <PactCard key={p.id} pact={p} to={`/app/pact/${p.id}`} />
+                ))}
+              </div>
+            </section>
+          )}
+          <RecentSection items={h.recent} />
+          {h.state !== 'finished_only' && <MadeItHappenSection items={h.recaps} />}
         </>
-      )}
-
-      <HomeNeedsYou />
-
-      <HomeCircles />
-
-      {!!activity.data?.length && (
-        <section className="screen-section" aria-labelledby="recent">
-          <SectionHeading id="recent" title="Recent activity" action={{ label: 'See all', to: '/app/activity' }} />
-          <ul className="activity-list">
-            {activity.data.slice(0, 4).map((a) => (
-              <li key={a.id}>
-                <ActivityItem activity={a} to={`/app/pact/${a.pactId}`} meta={undefined} />
-              </li>
-            ))}
-          </ul>
-        </section>
       )}
 
       <div className="screen-section">

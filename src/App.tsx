@@ -34,6 +34,7 @@ import { CreatePlanScreen } from './pages/app/plans/CreatePlanScreen';
 import { PlanScreen } from './pages/app/plans/PlanScreen';
 import { CreateSplitScreen } from './pages/app/splits/CreateSplitScreen';
 import { SplitScreen } from './pages/app/splits/SplitScreen';
+import { RecapScreen } from './pages/app/recap/RecapScreen';
 import { CircleInviteScreen } from './pages/app/circles/CircleInviteScreen';
 import { CircleScreen } from './pages/app/circles/CircleScreen';
 import { CirclesScreen } from './pages/app/circles/CirclesScreen';
@@ -48,6 +49,7 @@ import { WelcomeScreen } from './pages/app/WelcomeScreen';
 // so people opening the app don't download them, and vice versa.
 const AskLinkScreen = lazy(() => import('./pages/app/asks/AskLinkScreen').then((m) => ({ default: m.AskLinkScreen })));
 const SplitLinkScreen = lazy(() => import('./pages/app/splits/SplitLinkScreen').then((m) => ({ default: m.SplitLinkScreen })));
+const RecapLinkScreen = lazy(() => import('./pages/app/recap/RecapLinkScreen').then((m) => ({ default: m.RecapLinkScreen })));
 const PlanLinkScreen = lazy(() => import('./pages/app/plans/PlanLinkScreen').then((m) => ({ default: m.PlanLinkScreen })));
 const LandingPage = lazy(() => import('./pages/site/LandingPage').then((m) => ({ default: m.LandingPage })));
 const DownloadPage = lazy(() => import('./pages/download/DownloadPage').then((m) => ({ default: m.DownloadPage })));
@@ -126,6 +128,7 @@ export function App() {
                 <Route path="circles" element={authed(<CirclesScreen />)} />
                 <Route path="circles/new" element={authed(<CreateCircleScreen />)} />
                 <Route path="circles/:id" element={authed(<CircleScreen />)} />
+                <Route path="recap/:kind/:id" element={authed(<RecapScreen />)} />
                 <Route path="splits/new" element={authed(<CreateSplitScreen />)} />
                 <Route path="splits/:id" element={authed(<SplitScreen />)} />
                 <Route path="plans/new" element={authed(<CreatePlanScreen />)} />
@@ -156,6 +159,9 @@ export function App() {
               {/* A shared Ask: its own short address, inside the app shell but with no navigation of its own. */}
               <Route path="/a" element={<AppShell />}>
                 <Route path=":token" element={<AskLinkScreen />} />
+              </Route>
+              <Route path="/r" element={<AppShell />}>
+                <Route path=":token" element={<RecapLinkScreen />} />
               </Route>
               <Route path="/s" element={<AppShell />}>
                 <Route path=":token" element={<SplitLinkScreen />} />

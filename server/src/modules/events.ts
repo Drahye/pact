@@ -226,6 +226,6 @@ export async function recordClientEvent(ctx: Ctx, userId: string, input: { name:
   const p = input.props ?? {};
   // Installing, sharing a link and opening the create sheet can all happen again, so these count once per person per day rather than once ever.
   const day = new Date().toISOString().slice(0, 10);
-  const suffix = input.name === 'pwa_install_started' || input.name === 'pwa_install_completed' || input.name === 'circle_invite_shared' || input.name === 'universal_create_opened' ? `:${day}` : input.name === 'onboarding_intent_selected' ? `:${String(p.intent)}` : input.name === 'demo_pact_opened' || input.name === 'demo_pact_completed_view' ? `:${String(p.demo)}` : '';
+  const suffix = input.name === 'pwa_install_started' || input.name === 'pwa_install_completed' || input.name === 'circle_invite_shared' || input.name === 'universal_create_opened' ? `:${day}` : input.name.startsWith('home_') || input.name === 'circle_opened_from_home' || input.name === 'coming_up_opened' || input.name === 'recent_activity_opened' || input.name === 'recap_shared' ? `:${day}:${String(p.object_type ?? '')}:${String(p.section ?? '')}` : input.name === 'onboarding_intent_selected' ? `:${String(p.intent)}` : input.name === 'demo_pact_opened' || input.name === 'demo_pact_completed_view' ? `:${String(p.demo)}` : '';
   await track(ctx.db, ctx.config, input.name, { userId, key: `cl:${input.name}:${who}${suffix}`, props: p });
 }

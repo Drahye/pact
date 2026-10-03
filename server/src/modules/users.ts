@@ -210,6 +210,8 @@ export async function closeAccount(ctx: Ctx, userId: string, meta: ReqMeta) {
     );
     await q.query(`UPDATE sessions SET revoked_at = now() WHERE user_id = $1 AND revoked_at IS NULL`, [userId]);
     await q.query(`UPDATE bank_accounts SET deleted_at = COALESCE(deleted_at, now()), account_number_enc = 'erased', account_name = 'erased', recipient_code = NULL WHERE user_id = $1`, [userId]);
+    // No live sign-in credential stays attached to a closed account: the phone, email and Google subjects are erased.
+    await q.query(`DELETE FROM user_identities WHERE user_id = $1`, [userId]);
     await q.query(`DELETE FROM notifications WHERE user_id = $1`, [userId]);
     await q.query(`DELETE FROM push_subscriptions WHERE user_id = $1`, [userId]);
     // Out of every Circle, so the member count is honest. A Circle nobody is left in stops answering to its links.

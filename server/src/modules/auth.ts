@@ -6,6 +6,7 @@ import type { Queryable } from '../db/index.js';
 import { hashSecret, keyedHash, randomCode, randomDigits, randomToken, safeEqual, verifySecret } from '../lib/crypto.js';
 import { AppError, badRequest, tooMany, unauthorized } from '../lib/errors.js';
 import { maskPhone, normalizeNgPhone } from '../lib/phone.js';
+import { addIdentity, findIdentity } from './identities.js';
 import { createAccount } from './ledger.js';
 import { audit, notify } from './platform.js';
 
@@ -250,12 +251,13 @@ export async function verifyOtp(ctx: Ctx, rawPhone: string, code: string, device
   if (!phone) throw badRequest('invalid_phone', 'Enter a valid Nigerian mobile number.');
   await consumeOtp(ctx, phone, code, 'login', meta);
 
-  const user = await ctx.db.query<{ id: string; status: string }>('SELECT id, status FROM users WHERE phone = $1', [phone]);
+  const known = await findIdentity(ctx.db, 'phone', phone);
+  const user = known ? await ctx.db.query<{ id: string; status: string }>('SELECT id, status FROM users WHERE id = $1', [known.user_id]) : { rows: [] as { id: string; status: string }[] };
   if (user.rows[0]) {
     if (user.rows[0].status !== 'active') throw new AppError(403, 'account_restricted', 'This account is restricted. Contact support.');
     const tokens = await ctx.db.tx(async (q) => {
       const t = await createSession(ctx, q, user.rows[0].id, device, meta);
-      await audit(q, { actorId: user.rows[0].id, action: 'auth.sign_in', ip: meta.ip, metadata: { device: device ?? null } });
+      await audit(q, { actorId: user.rows[0].id, action: 'auth.sign_in', ip: meta.ip, metadata: { device: device ?? null, provider: 'phone' } });
       return t;
     });
     return { status: 'signed_in', ...tokens };
@@ -288,8 +290,8 @@ export async function signup(
   const pinHash = await hashSecret(input.pin);
 
   return ctx.db.tx(async (q) => {
-    const taken = await q.query('SELECT 1 FROM users WHERE phone = $1', [phone]);
-    if (taken.rowCount) throw badRequest('already_registered', 'This number already has an account. Sign in instead.');
+    const taken = await findIdentity(q, 'phone', phone);
+    if (taken || (await q.query('SELECT 1 FROM users WHERE phone = $1', [phone])).rowCount) throw badRequest('already_registered', 'This number already has an account. Sign in instead.');
 
     const referrer = input.referralCode
       ? (await q.query<{ id: string }>('SELECT id FROM users WHERE referral_code = $1', [input.referralCode.toUpperCase()])).rows[0]
@@ -301,6 +303,7 @@ export async function signup(
       [phone, cap(input.firstName), cap(input.lastName), PALETTE[seed % PALETTE.length], TINTS[seed % TINTS.length], pinHash, randomCode(7), referrer?.id ?? null],
     );
     const userId = u.rows[0].id;
+    await addIdentity(q, userId, 'phone', phone, { phone });
     await createAccount(q, 'user_wallet', userId);
 
     // Anyone who invited this number before they had an account: turn it into a real invite.

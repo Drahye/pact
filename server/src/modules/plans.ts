@@ -208,7 +208,7 @@ export async function needsYou(ctx: Ctx, userId: string): Promise<{ data: PlanNe
   const out: PlanNeedDTO[] = [];
   const rsvp = await ctx.db.query<PlanRow>(
     `${SELECT} JOIN circle_members me ON me.circle_id = p.circle_id AND me.user_id = $1 AND me.status = 'joined'
-      WHERE p.status IN ('planning', 'confirmed') AND (p.date IS NULL OR p.date >= $2::date) AND p.created_by <> $1
+      WHERE p.status IN ('planning', 'confirmed') AND p.pact_id IS NULL AND (p.date IS NULL OR p.date >= $2::date) AND p.created_by <> $1
         AND NOT EXISTS (SELECT 1 FROM plan_rsvps r WHERE r.plan_id = p.id AND r.user_id = $1)
       ORDER BY p.created_at DESC LIMIT 5`,
     [userId, today],

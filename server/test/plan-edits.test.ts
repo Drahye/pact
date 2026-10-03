@@ -106,6 +106,8 @@ describe('Plan edits and RSVP access', () => {
     const c = await t.call('POST', `/plans/${p.id}/status`, tok(ana), { status: 'cancelled' });
     assert.equal(c.status, 409);
     assert.equal(code(c), 'plan_has_pact');
+    // Once it is a Pact, the action is in the Pact: Home does not keep asking members to RSVP to the Plan.
+    assert.ok(!(await t.call('GET', '/home', tok(ben))).body.data.needsYou.some((n: { sourceId: string }) => n.sourceId === p.id), 'no RSVP card for a converted Plan');
     assert.equal((await t.call('GET', `/plans/${p.id}`, tok(ana))).body.data.status, 'planning');
   });
 });

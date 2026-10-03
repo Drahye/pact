@@ -70,7 +70,7 @@ try {
   await shot('home-new-user');
 
   // Top up by card through the sandbox checkout
-  await link('Top up');
+  await page.goto(`${BASE}/app/wallet/topup`);
   await page.getByText('Add money').waitFor();
   await page.getByRole('radio', { name: /Debit card/ }).click();
   await page.getByRole('radio', { name: '₦20k' }).click();

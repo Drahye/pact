@@ -48,7 +48,7 @@ interface ShareRow {
   split_id: string;
   user_id: string;
   amount: number;
-  status: 'owed' | 'settled';
+  status: 'not_applicable' | 'owed' | 'settled';
   settled_at: Date | null;
   settled_by: string | null;
 }
@@ -92,7 +92,7 @@ async function resolveShares(q: Queryable, circleId: string, total: number, paid
   const ids = people.map((p) => p.userId);
   if (new Set(ids).size !== ids.length) throw badRequest('duplicate_person', 'Each person can only be in a split once.');
   for (const id of new Set([...ids, paidBy])) if (!(await isMember(q, circleId, id))) throw badRequest('unknown_person', 'Everyone in a split needs to be in the Circle.');
-  if (!ids.some((id) => id !== paidBy)) throw badRequest('nobody_owes', 'Add at least one other person to split with.');
+  if (!ids.some((id) => id !== paidBy)) throw badRequest('nobody_owes', 'Add at least one other person to split this with.');
   if (mode === 'equal') {
     if (total < ids.length) throw badRequest('amount_too_small', 'That’s too small to split between this many people.');
     return equalShares(total, ids);
@@ -123,6 +123,7 @@ function summarise(s: SplitRow, shares: ShareRow[], viewerId: string | null): Sp
     mode: s.split_mode,
     owedCount: others.length,
     settledCount: others.filter((x) => x.status === 'settled').length,
+    owedTotal: others.reduce((t, x) => t + x.amount, 0),
     unsettled: others.filter((x) => x.status === 'owed').reduce((t, x) => t + x.amount, 0),
     mine: mineRow ? { amount: mineRow.amount, status: mineRow.status, isPayer: mineRow.user_id === s.paid_by } : null,
     createdAt: s.created_at.toISOString(),
@@ -266,9 +267,8 @@ export async function createSplit(ctx: Ctx, userId: string, circleId: string, in
     );
     const splitId = r.rows[0].id;
     for (const s of shares) {
-      // The payer already paid their own part: that row is born settled and never counts as owed.
-      const self = s.userId === paidBy;
-      await q.query(`INSERT INTO split_shares (split_id, user_id, amount, status, settled_at, settled_by) VALUES ($1, $2, $3, $4, ${self ? 'now()' : 'NULL'}, ${self ? '$5' : 'NULL'})`, self ? [splitId, s.userId, s.amount, 'settled', paidBy] : [splitId, s.userId, s.amount, 'owed']);
+      // The payer's own portion is an allocation, not a debt: 'not_applicable', never 'settled', and no settlement is recorded for it.
+      await q.query('INSERT INTO split_shares (split_id, user_id, amount, status) VALUES ($1, $2, $3, $4)', [splitId, s.userId, s.amount, s.userId === paidBy ? 'not_applicable' : 'owed']);
     }
     await log(q, splitId, userId, 'created');
     await q.query('UPDATE circles SET updated_at = now() WHERE id = $1', [circleId]);
@@ -347,8 +347,7 @@ export async function updateSplit(ctx: Ctx, userId: string, splitId: string, pat
       const next = await resolveShares(q, s.circle_id, total, paidBy, mode, people);
       await q.query('DELETE FROM split_shares WHERE split_id = $1', [splitId]);
       for (const x of next) {
-        const self = x.userId === paidBy;
-        await q.query(`INSERT INTO split_shares (split_id, user_id, amount, status, settled_at, settled_by) VALUES ($1, $2, $3, $4, ${self ? 'now()' : 'NULL'}, ${self ? '$5' : 'NULL'})`, self ? [splitId, x.userId, x.amount, 'settled', paidBy] : [splitId, x.userId, x.amount, 'owed']);
+        await q.query('INSERT INTO split_shares (split_id, user_id, amount, status) VALUES ($1, $2, $3, $4)', [splitId, x.userId, x.amount, x.userId === paidBy ? 'not_applicable' : 'owed']);
       }
       await q.query('UPDATE splits SET total_amount = $2, paid_by = $3, split_mode = $4, updated_at = now() WHERE id = $1', [splitId, total, paidBy, mode]);
     }

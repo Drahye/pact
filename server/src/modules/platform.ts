@@ -72,7 +72,7 @@ export async function notifyGrouped(
   userIds: string[],
   n: {
     type: string;
-    pactId: string;
+    pactId: string | null;
     refId: string;
     first: { title: string; body: string };
     meta?: NotificationMeta;

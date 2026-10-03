@@ -5,7 +5,7 @@ import rateLimit from '@fastify/rate-limit';
 import fastifyStatic from '@fastify/static';
 import Fastify, { type FastifyInstance, type FastifyReply, type FastifyRequest } from 'fastify';
 import { createHash, randomUUID } from 'node:crypto';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { z, ZodError } from 'zod';
 import * as C from '../../shared/contracts.js';
@@ -13,15 +13,20 @@ import type { AuthTokensDTO } from '../../shared/contracts.js';
 import type { Config } from './config.js';
 import type { Ctx, ReqMeta } from './context.js';
 import type { Db } from './db/index.js';
+import { askPreviewText, injectOg, planPreviewText, splitPreviewText, unavailablePreview } from './lib/og.js';
 import { postgresRateLimitStore, rateLimitKey } from './lib/rateLimitStore.js';
 import { AppError, badRequest, conflict, notFound, unauthorized } from './lib/errors.js';
 import * as auth from './modules/auth.js';
+import * as asks from './modules/asks.js';
+import * as circles from './modules/circles.js';
 import * as conversation from './modules/conversation.js';
 import { reconcile } from './modules/ledger.js';
 import * as pactMoney from './modules/pactMoney.js';
 import * as pledges from './modules/pledges.js';
 import * as orders from './modules/orders.js';
 import * as pacts from './modules/pacts.js';
+import * as plans from './modules/plans.js';
+import * as splits from './modules/splits.js';
 import * as plan from './modules/plan.js';
 import * as users from './modules/users.js';
 import * as wallet from './modules/wallet.js';
@@ -321,6 +326,26 @@ export async function buildApp({ config, db, provider, sms, push, now = () => ne
         return preview;
       });
 
+      /* ---------- Circle invite previews (public: a shared link shows what it is for before anyone signs in) */
+      api.get<{ Params: { token: string } }>('/circle-invites/:token', strict(60), async (req) => circles.previewInvite(ctx, req.params.token, meta(req)));
+
+      /* ---------- Ask share links (public: the question is visible before anyone signs in) */
+      api.get<{ Params: { token: string }; Querystring: { auth?: string } }>('/ask-links/:token', strict(120), async (req) => asks.previewLink(ctx, req.params.token, meta(req), req.query.auth === '1' ? 'signed_in' : 'signed_out'));
+      api.post<{ Params: { token: string } }>('/ask-links/:token/started', strict(60), async (req) => {
+        const b = parse(z.object({ signedIn: z.boolean().optional() }), req.body ?? {});
+        return asks.markStarted(ctx, req.params.token, meta(req), b.signedIn ? 'signed_in' : 'signed_out');
+      });
+      api.post<{ Params: { token: string } }>('/ask-links/:token/step', strict(60), async (req) => {
+        const b = parse(z.object({ step: z.enum(['auth_started', 'join_prompt']), signedIn: z.boolean().optional() }), req.body);
+        return asks.recordLinkStep(ctx, req.params.token, b.step, meta(req), b.signedIn ? 'signed_in' : 'signed_out');
+      });
+
+      /* ---------- Plan share links (public: the plan is visible before anyone signs in) */
+      api.get<{ Params: { token: string } }>('/plan-links/:token', strict(120), async (req) => plans.previewLink(ctx, req.params.token, meta(req)));
+
+      /* ---------- Split share links (public: a safe summary is visible before anyone signs in) */
+      api.get<{ Params: { token: string } }>('/split-links/:token', strict(120), async (req) => splits.previewLink(ctx, req.params.token, meta(req)));
+
       /* ---------- webhooks: raw body for signature verification */
       await api.register(async (hooks) => {
         hooks.addContentTypeParser('application/json', { parseAs: 'string' }, (_req, body, done) => done(null, body));
@@ -549,6 +574,78 @@ export async function buildApp({ config, db, provider, sms, push, now = () => ne
           pacts.joinByCode(ctx, req.userId, req.params.code, parse(C.ParticipationBody.partial(), req.body).participation ?? null),
         );
 
+        /* ---------- Circles */
+        priv.get('/circles', async (req) => circles.listCircles(ctx, req.userId));
+        priv.post('/circles', strict(10), async (req) => circles.createCircle(ctx, req.userId, parse(C.CreateCircleBody, req.body), meta(req)));
+        priv.get<{ Params: { id: string } }>('/circles/:id', async (req) => circles.getCircle(ctx, req.userId, req.params.id));
+        priv.patch<{ Params: { id: string } }>('/circles/:id', strict(30), async (req) => circles.updateCircle(ctx, req.userId, req.params.id, parse(C.UpdateCircleBody, req.body), meta(req)));
+        priv.post<{ Params: { id: string } }>('/circles/:id/leave', strict(20), async (req) => circles.leaveCircle(ctx, req.userId, req.params.id, meta(req)));
+        priv.delete<{ Params: { id: string; userId: string } }>('/circles/:id/members/:userId', strict(30), async (req) => circles.removeMember(ctx, req.userId, req.params.id, req.params.userId, meta(req)));
+        priv.post<{ Params: { id: string } }>('/circles/:id/invites', strict(30), async (req) => circles.ensureInvite(ctx, req.userId, req.params.id, meta(req)));
+        priv.post<{ Params: { id: string } }>('/circles/:id/invites/reset', strict(10), async (req) => circles.resetInvite(ctx, req.userId, req.params.id, meta(req)));
+        /* ---------- Plans */
+        priv.get('/plans/needs-you', async (req) => plans.needsYou(ctx, req.userId));
+        priv.get<{ Params: { id: string } }>('/circles/:id/plans', async (req) => plans.listCirclePlans(ctx, req.userId, req.params.id));
+        priv.post<{ Params: { id: string } }>('/circles/:id/plans', strict(20), async (req) => plans.createPlan(ctx, req.userId, req.params.id, parse(C.CreatePlanBody, req.body), meta(req)));
+        priv.get<{ Params: { id: string }; Querystring: { from?: string } }>('/plans/:id', async (req) => plans.getPlan(ctx, req.userId, req.params.id, req.query.from === 'home' ? 'home' : req.query.from === 'circle' ? 'circle' : undefined));
+        priv.patch<{ Params: { id: string } }>('/plans/:id', strict(30), async (req) => plans.updatePlan(ctx, req.userId, req.params.id, parse(C.UpdatePlanBody, req.body), meta(req)));
+        priv.put<{ Params: { id: string } }>('/plans/:id/rsvp-open', strict(20), async (req) => plans.setRsvpOpen(ctx, req.userId, req.params.id, parse(C.PlanRsvpOpenBody, req.body).open, meta(req)));
+        priv.post<{ Params: { id: string } }>('/plans/:id/status', strict(20), async (req) => plans.setStatus(ctx, req.userId, req.params.id, parse(C.PlanStatusBody, req.body).status, meta(req)));
+        priv.put<{ Params: { id: string } }>('/plans/:id/rsvp', strict(60), async (req) => plans.rsvpAsMember(ctx, req.userId, req.params.id, parse(C.PlanRsvpBody, req.body).status));
+        priv.post<{ Params: { id: string } }>('/plans/:id/tasks', strict(40), async (req) => plans.addTask(ctx, req.userId, req.params.id, parse(C.PlanTaskBody, req.body)));
+        priv.patch<{ Params: { id: string; taskId: string } }>('/plans/:id/tasks/:taskId', strict(60), async (req) => plans.patchTask(ctx, req.userId, req.params.id, req.params.taskId, parse(C.PlanTaskPatchBody, req.body)));
+        priv.delete<{ Params: { id: string; taskId: string } }>('/plans/:id/tasks/:taskId', strict(40), async (req) => plans.deleteTask(ctx, req.userId, req.params.id, req.params.taskId));
+        priv.post<{ Params: { id: string } }>('/plans/:id/asks', strict(30), async (req) => plans.linkAsk(ctx, req.userId, req.params.id, parse(C.LinkAskBody, req.body).askId));
+        priv.delete<{ Params: { id: string; askId: string } }>('/plans/:id/asks/:askId', strict(30), async (req) => plans.unlinkAsk(ctx, req.userId, req.params.id, req.params.askId));
+        priv.get<{ Params: { id: string } }>('/plans/:id/pact-draft', strict(30), async (req) => plans.pactDraft(ctx, req.userId, req.params.id));
+        priv.post<{ Params: { id: string } }>('/plans/:id/shared', strict(60), async (req) => plans.recordShared(ctx, req.userId, req.params.id, parse(C.AskSharedBody, req.body).via));
+        priv.post<{ Params: { id: string } }>('/plans/:id/share/reset', strict(10), async (req) => plans.resetShare(ctx, req.userId, req.params.id, meta(req)));
+        priv.get('/splits/needs-you', async (req) => splits.needsYou(ctx, req.userId));
+        priv.get<{ Params: { id: string } }>('/circles/:id/splits', async (req) => splits.listCircleSplits(ctx, req.userId, req.params.id));
+        priv.post<{ Params: { id: string }; Querystring: { from?: string } }>('/circles/:id/splits', strict(20), async (req) =>
+          splits.createSplit(ctx, req.userId, req.params.id, parse(C.CreateSplitBody, req.body), meta(req), req.query.from === 'home' ? 'home' : req.query.from === 'nav' ? 'nav' : 'circle'),
+        );
+        priv.get<{ Params: { id: string }; Querystring: { from?: string } }>('/splits/:id', async (req) => splits.getSplit(ctx, req.userId, req.params.id, req.query.from === 'home' ? 'home' : req.query.from === 'circle' ? 'circle' : undefined));
+        priv.patch<{ Params: { id: string } }>('/splits/:id', strict(30), async (req) => splits.updateSplit(ctx, req.userId, req.params.id, parse(C.UpdateSplitBody, req.body), meta(req)));
+        priv.post<{ Params: { id: string } }>('/splits/:id/cancel', strict(10), async (req) => splits.cancelSplit(ctx, req.userId, req.params.id, meta(req)));
+        priv.put<{ Params: { id: string; userId: string } }>('/splits/:id/shares/:userId', strict(60), async (req) =>
+          splits.settleShare(ctx, req.userId, req.params.id, req.params.userId, parse(C.SplitSettleBody, req.body).settled, meta(req)),
+        );
+        priv.post<{ Params: { id: string } }>('/splits/:id/shared', strict(60), async (req) => splits.recordShared(ctx, req.userId, req.params.id, parse(C.SplitSharedBody, req.body).via));
+        priv.get<{ Params: { token: string } }>('/split-links/:token/mine', strict(120), async (req) => splits.myLinkState(ctx, req.userId, req.params.token, true));
+        priv.put<{ Params: { token: string } }>('/split-links/:token/settle', strict(30), async (req) => {
+          const b = parse(C.SplitSettleBody, req.body);
+          return splits.settleViaLink(ctx, req.userId, req.params.token, b.settled, b.afterAuth === true, meta(req));
+        });
+        priv.post<{ Params: { token: string } }>('/split-links/:token/join-circle', strict(20), async (req) => splits.joinCircleFromSplit(ctx, req.userId, req.params.token, meta(req)));
+        priv.post<{ Params: { token: string } }>('/split-links/:token/shared', strict(60), async (req) => splits.recordLinkShared(ctx, req.userId, req.params.token, parse(C.SplitSharedBody, req.body).via));
+        priv.get<{ Params: { token: string } }>('/plan-links/:token/mine', strict(120), async (req) => plans.myLinkState(ctx, req.userId, req.params.token));
+        priv.put<{ Params: { token: string } }>('/plan-links/:token/rsvp', strict(60), async (req) => {
+          const b = parse(C.PlanRsvpBody, req.body);
+          return plans.rsvpViaLink(ctx, req.userId, req.params.token, b.status, b.afterAuth === true);
+        });
+        priv.post<{ Params: { token: string } }>('/plan-links/:token/join-circle', strict(20), async (req) => plans.joinCircleFromPlan(ctx, req.userId, req.params.token, meta(req)));
+        priv.post<{ Params: { token: string } }>('/plan-links/:token/shared', strict(60), async (req) => plans.recordLinkShared(ctx, req.userId, req.params.token, parse(C.AskSharedBody, req.body).via));
+
+        /* ---------- Ask the group */
+        priv.get('/asks/needs-you', async (req) => asks.needsYou(ctx, req.userId));
+        priv.get<{ Params: { id: string }; Querystring: { from?: string } }>('/asks/:id', async (req) => asks.getAsk(ctx, req.userId, req.params.id, req.query.from === 'home' ? 'home' : req.query.from === 'circle' ? 'circle' : undefined));
+        priv.put<{ Params: { id: string } }>('/asks/:id/response', strict(60), async (req) => asks.respondAsMember(ctx, req.userId, req.params.id, parse(C.AskResponseBody, req.body)));
+        priv.post<{ Params: { id: string } }>('/asks/:id/close', strict(20), async (req) => asks.closeAsk(ctx, req.userId, req.params.id, meta(req)));
+        priv.post<{ Params: { id: string } }>('/asks/:id/shared', strict(60), async (req) => asks.recordShared(ctx, req.userId, req.params.id, parse(C.AskSharedBody, req.body).via));
+        priv.post<{ Params: { id: string } }>('/asks/:id/share/reset', strict(10), async (req) => asks.resetShare(ctx, req.userId, req.params.id, meta(req)));
+        priv.get<{ Params: { id: string } }>('/circles/:id/asks', async (req) => asks.listCircleAsks(ctx, req.userId, req.params.id));
+        priv.post<{ Params: { id: string } }>('/circles/:id/asks', strict(20), async (req) => asks.createAsk(ctx, req.userId, req.params.id, parse(C.CreateAskBody, req.body), meta(req)));
+        priv.get<{ Params: { token: string } }>('/ask-links/:token/mine', strict(120), async (req) => asks.myLinkState(ctx, req.userId, req.params.token));
+        priv.put<{ Params: { token: string } }>('/ask-links/:token/response', strict(60), async (req) => {
+          const b = parse(C.AskResponseBody, req.body);
+          return asks.respondViaLink(ctx, req.userId, req.params.token, b, b.afterAuth === true);
+        });
+        priv.post<{ Params: { token: string } }>('/ask-links/:token/auth-completed', strict(30), async (req) => asks.authCompleted(ctx, req.userId, req.params.token));
+        priv.post<{ Params: { token: string } }>('/ask-links/:token/reshared', strict(60), async (req) => asks.reshared(ctx, req.userId, req.params.token, parse(C.AskSharedBody, req.body).via));
+        priv.post<{ Params: { token: string } }>('/ask-links/:token/join-circle', strict(20), async (req) => asks.joinCircleFromAsk(ctx, req.userId, req.params.token, meta(req)));
+        priv.post<{ Params: { token: string } }>('/circle-invites/:token/join', strict(20), async (req) => circles.joinByToken(ctx, req.userId, req.params.token, meta(req)));
+
         priv.get('/activity', async (req) => pacts.feed(ctx, req.userId));
         priv.get('/people/recent', async (req) => pacts.recentPeople(ctx, req.userId));
 
@@ -657,8 +754,57 @@ export async function buildApp({ config, db, provider, sms, push, now = () => ne
       cacheControl: false,
       setHeaders: (res, path) => res.header('Cache-Control', staticCacheControl(path)),
     });
-    app.setNotFoundHandler((req, reply) => {
+    const indexHtml = readFileSync(resolve(dist, 'index.html'), 'utf8');
+    app.setNotFoundHandler(async (req, reply) => {
       if (req.url.startsWith('/api/')) return reply.status(404).send({ error: { code: 'not_found', message: 'Not found.' } });
+      // A shared Ask link: the same page for everyone, with a real title, description and card for crawlers.
+      const share = /^\/a\/([A-Za-z0-9_-]{32,64})\/?(?:\?.*)?$/.exec(req.url);
+      if (share) {
+        const origin = config.APP_ORIGIN.replace(/\/$/, '');
+        const image = `${origin}/brand/og-ask.png`;
+        const row = await db
+          .query<{ title: string; type: 'choice' | 'attendance'; status: string; closes_at: Date | null; name: string; emoji: string; n: number }>(
+            `SELECT a.title, a.type, a.status, a.closes_at, c.name, c.emoji, (SELECT COUNT(*)::int FROM ask_responses r WHERE r.ask_id = a.id) AS n
+               FROM asks a JOIN circles c ON c.id = a.circle_id WHERE a.share_token = $1 AND a.share_revoked_at IS NULL`,
+            [share[1]],
+          )
+          .catch(() => null);
+        const r = row?.rows[0];
+        const meta = r
+          ? { ...askPreviewText({ circleName: r.name, circleEmoji: r.emoji, title: r.title, type: r.type, responses: r.n, closed: r.status === 'closed' || (!!r.closes_at && r.closes_at <= ctx.now()) }), url: `${origin}/a/${share[1]}`, image, noindex: true }
+          : { ...unavailablePreview, image };
+        return reply.header('Cache-Control', 'no-store').header('X-Robots-Tag', 'noindex, nofollow').type('text/html').send(injectOg(indexHtml, meta));
+      }
+      // A shared Plan link: the same idea, with when, where and how many are in.
+      const planShare = /^\/p\/([A-Za-z0-9_-]{32,64})\/?(?:\?.*)?$/.exec(req.url);
+      if (planShare) {
+        const origin = config.APP_ORIGIN.replace(/\/$/, '');
+        const image = `${origin}/brand/og-ask.png`;
+        const row = await db
+          .query<{ title: string; status: string; date: string | null; end_date: string | null; location: string | null; name: string; emoji: string; n: number }>(
+            `SELECT p.title, p.status, p.date::text AS date, p.end_date::text AS end_date, p.location, c.name, c.emoji,
+                    (SELECT COUNT(*)::int FROM plan_rsvps r WHERE r.plan_id = p.id AND r.status = 'in') AS n
+               FROM plans p JOIN circles c ON c.id = p.circle_id WHERE p.share_token = $1`,
+            [planShare[1]],
+          )
+          .catch(() => null);
+        const r = row?.rows[0];
+        const meta = r
+          ? { ...planPreviewText({ title: r.title, circleName: r.name, circleEmoji: r.emoji, date: r.date, endDate: r.end_date, location: r.location, going: r.n, status: r.status }), url: `${origin}/p/${planShare[1]}`, image, noindex: true }
+          : { ...unavailablePreview, description: 'This plan is no longer available.', image };
+        return reply.header('Cache-Control', 'no-store').header('X-Robots-Tag', 'noindex, nofollow').type('text/html').send(injectOg(indexHtml, meta));
+      }
+      // A shared Split link: deliberately generic. A debt is never put in a link preview.
+      const splitShare = /^\/s\/([A-Za-z0-9_-]{32,64})\/?(?:\?.*)?$/.exec(req.url);
+      if (splitShare) {
+        const origin = config.APP_ORIGIN.replace(/\/$/, '');
+        const image = `${origin}/brand/og-ask.png`;
+        const row = await db.query<{ title: string }>('SELECT title FROM splits WHERE share_token = $1', [splitShare[1]]).catch(() => null);
+        const meta = row?.rows[0]
+          ? { ...splitPreviewText(row.rows[0].title), url: `${origin}/s/${splitShare[1]}`, image, noindex: true }
+          : { ...unavailablePreview, description: 'This split is no longer available.', image };
+        return reply.header('Cache-Control', 'no-store').header('X-Robots-Tag', 'noindex, nofollow').type('text/html').send(injectOg(indexHtml, meta));
+      }
       return reply.sendFile('index.html');
     });
   }

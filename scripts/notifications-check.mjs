@@ -190,7 +190,7 @@ for (const [w, h] of VPS) {
   await sp.locator('.wallet-strip').waitFor();
   await sp.getByRole('button', { name: 'Turn on notifications' }).click().catch(() => undefined);
   await sp.waitForTimeout(1200);
-  await sp.getByRole('link', { name: 'Profile' }).last().click();
+  await sp.getByRole('link', { name: 'Me' }).last().click();
   await sp.waitForTimeout(1000);
   const subscribed = soCalls.some((c) => c.includes('subscribe 200'));
   await sp.getByRole('button', { name: 'Sign out' }).click();

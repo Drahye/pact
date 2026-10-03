@@ -77,7 +77,8 @@
 
 .tabbar__pill {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
   gap: 4px;
   padding: 6px;
   border-radius: var(--radius-full);
@@ -97,6 +98,36 @@
   border-radius: var(--radius-full);
   color: var(--color-text-tertiary);
   transition: color var(--duration-fast) var(--ease-out);
+}
+
+/* The create button: the one round, coloured thing in the bar. Always the same place, always the same name. */
+.tabbar__create {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  margin: 0 var(--space-1);
+  border-radius: var(--radius-full);
+  background: var(--color-accent, var(--green-500));
+  color: var(--ink-900);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--color-accent, var(--green-500)) 40%, transparent);
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+.tabbar__create:active {
+  transform: scale(0.94);
+}
+
+.tabbar__create svg {
+  width: 26px;
+  height: 26px;
+  stroke-width: 2.6;
+}
+
+@media (max-width: 359px) {
+  .tabbar__label {
+    font-size: 10px;
+  }
 }
 
 .tabbar__item:hover {

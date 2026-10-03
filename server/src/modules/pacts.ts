@@ -13,12 +13,14 @@ import { createAccount, post, walletAccountId } from './ledger.js';
 import { closePactAccountTx, refundGuestsTx, settleWaitingPayouts } from './pactMoney.js';
 import { checkPledgeKept, closePledgesTx } from './pledges.js';
 import { insertItems, lapseUnpaidOrders, orderOutstanding, paidOrders } from './orders.js';
+import { completeConversion, completeFromPact, lockPlanForPact } from './plans.js';
 import { audit, enqueue, notify, notifyGrouped, recordActivity } from './platform.js';
 
 export interface PactRow {
   id: string;
   slug: string;
   invite_code: string;
+  circle_id: string | null;
   title: string;
   note: string | null;
   category: PactDTO['category'];
@@ -233,6 +235,7 @@ async function hydrate(q: Queryable, rows: PactRow[], viewerId: string): Promise
       id: p.id,
       slug: p.slug,
       inviteCode: p.invite_code,
+      circleId: p.circle_id,
       title: p.title,
       note: p.note,
       category: p.category,
@@ -525,7 +528,7 @@ export async function preview(ctx: Ctx, code: string): Promise<PactPreviewDTO & 
    Commands
    -------------------------------------------------------------------------- */
 
-type CreateInput = Omit<Required<CreatePactInput>, 'note' | 'target'> & { note?: string; target?: number };
+type CreateInput = Omit<Required<CreatePactInput>, 'note' | 'target' | 'circleId' | 'planId'> & { note?: string; target?: number; circleId?: string; planId?: string };
 
 export async function createPact(ctx: Ctx, userId: string, input: CreateInput, meta: ReqMeta) {
   const today = lagosToday(ctx.now());
@@ -546,6 +549,15 @@ export async function createPact(ctx: Ctx, userId: string, input: CreateInput, m
     const open = await q.query<{ n: number }>(`SELECT COUNT(*)::int AS n FROM pacts WHERE organizer_id = $1 AND status = 'open'`, [userId]);
     if (open.rows[0].n >= 20) throw badRequest('too_many_pacts', 'You can organise up to 20 open Pacts at once.');
 
+    // A Pact can belong to one of the organiser's Circles. Anyone else's id is simply not found.
+    // Made from a Plan: the Plan must be theirs, open and not yet a Pact, and the Pact belongs to the Plan's Circle.
+    const plan = input.planId ? await lockPlanForPact(q, input.planId, userId) : null;
+    const circleId = plan?.circle_id ?? input.circleId ?? null;
+    if (circleId && !plan) {
+      const inCircle = await q.query(`SELECT 1 FROM circle_members WHERE circle_id = $1 AND user_id = $2 AND status = 'joined'`, [circleId, userId]);
+      if (!inCircle.rowCount) throw notFound('That Circle');
+    }
+
     const base = slugify(input.title);
     let slug = `${base}-${randomCode(4).toLowerCase()}`;
     for (let i = 0; (await q.query('SELECT 1 FROM pacts WHERE slug = $1', [slug])).rowCount && i < 5; i++) slug = `${base}-${randomCode(6).toLowerCase()}`;
@@ -553,10 +565,10 @@ export async function createPact(ctx: Ctx, userId: string, input: CreateInput, m
     const pactId = (await q.query<{ id: string }>('SELECT gen_random_uuid() AS id')).rows[0].id;
     const accountId = await createAccount(q, 'pact_pool', pactId);
     await q.query(
-      `INSERT INTO pacts (id, slug, invite_code, title, note, category, target_amount, deadline, organizer_id, account_id, missed_goal_policy, split_mode, mode)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+      `INSERT INTO pacts (id, slug, invite_code, title, note, category, target_amount, deadline, organizer_id, account_id, missed_goal_policy, split_mode, mode, circle_id, plan_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
       // People buy what they order, so an order Pact can pay its suppliers before every order is in.
-      [pactId, slug, randomCode(8), input.title.trim(), input.note?.trim() || null, input.category, target, input.deadline, userId, accountId, orders ? 'release' : input.missedGoalPolicy, input.splitMode, input.mode],
+      [pactId, slug, randomCode(8), input.title.trim(), input.note?.trim() || null, input.category, target, input.deadline, userId, accountId, orders ? 'release' : input.missedGoalPolicy, input.splitMode, input.mode, circleId, plan?.id ?? null],
     );
     if (orders) await insertItems(q, pactId, userId, input.items);
     await q.query(
@@ -571,6 +583,7 @@ export async function createPact(ctx: Ctx, userId: string, input: CreateInput, m
     }
     await recordActivity(q, { pactId, actorId: userId, type: 'created' });
     await invite(ctx, q, pactId, userId, input.title.trim(), input.inviteUserIds, phones as string[]);
+    if (plan) await completeConversion(ctx, q, plan, pactId, userId, { tasks: input.tasks.length, invitees: input.inviteUserIds.length + phones.length, hasBudget: target > 0 });
     await audit(q, { actorId: userId, action: 'pact.created', targetType: 'pact', targetId: pactId, ip: meta.ip, metadata: { target, budgetLines: input.budget.length, mode: input.mode, items: input.items.length } });
     // Reminders and the missed-goal rule run from the deadline sweep.
     return pactId;
@@ -583,10 +596,13 @@ async function invite(ctx: Ctx, q: Queryable, pactId: string, inviterId: string,
   const count = await q.query<{ n: number }>(`SELECT COUNT(*)::int AS n FROM pact_members WHERE pact_id = $1 AND status <> 'left'`, [pactId]);
   if (count.rows[0].n + userIds.length + phones.length > MAX_PACT_MEMBERS) throw badRequest('too_many_members', `A Pact can have up to ${MAX_PACT_MEMBERS} people.`);
 
-  // Invites by id only reach people the inviter already shares a Pact with; anyone else is invited by phone.
+  // Invites by id only reach people the inviter already shares a Pact or a Circle with; anyone else is invited by phone.
   if (userIds.length) {
     const ok = await q.query<{ id: string }>(
       `SELECT DISTINCT b.user_id AS id FROM pact_members a JOIN pact_members b ON b.pact_id = a.pact_id
+        WHERE a.user_id = $1 AND a.status = 'joined' AND b.status = 'joined' AND b.user_id = ANY($2::uuid[])
+       UNION
+       SELECT DISTINCT b.user_id FROM circle_members a JOIN circle_members b ON b.circle_id = a.circle_id
         WHERE a.user_id = $1 AND a.status = 'joined' AND b.status = 'joined' AND b.user_id = ANY($2::uuid[])`,
       [inviterId, userIds],
     );
@@ -923,6 +939,7 @@ export async function completePact(ctx: Ctx, userId: string, pactId: string, inp
     }
     await q.query('UPDATE pacts SET completed_at = now(), completed_by = $2 WHERE id = $1', [pactId, userId]);
     await recordActivity(q, { pactId, actorId: userId, type: 'pact_completed' });
+    await completeFromPact(q, pactId, userId);
     const others = await q.query<{ user_id: string }>(`SELECT user_id FROM pact_members WHERE pact_id = $1 AND status = 'joined' AND user_id <> $2`, [pactId, userId]);
     await notify(q, others.rows.map((x) => x.user_id), { type: 'completed', title: 'We made it happen', body: `${pact.title} is complete.`, pactId, push: `${pact.title} is complete.` });
     await audit(q, { actorId: userId, action: 'pact.completed', targetType: 'pact', targetId: pactId, ip: meta.ip, metadata: { remaining: pool, release: !!input.releaseRemaining && pool > 0 } });

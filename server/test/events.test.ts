@@ -140,7 +140,7 @@ describe('product events', () => {
     // Unknown names never reach the table (and never throw).
     await track(t.db, t.ctx.config, 'pin_entered' as never, {});
     assert.equal((await t.db.query(`SELECT 1 FROM product_events WHERE name = 'pin_entered'`)).rowCount, 0);
-    assert.equal(EVENT_NAMES.length, 31);
+    assert.equal(EVENT_NAMES.length, 72);
   });
 
   it('is invisible to the restricted app role', async () => {

@@ -3,6 +3,8 @@ import { useActivity, usePacts } from '../../api/hooks';
 import { Empty, ErrorState } from '../../components/app/States';
 import { PactListSkeleton } from '../../components/app/Skeleton';
 import { FeedGroup } from '../../components/pact/FeedGroup';
+import { BottomNav } from '../../components/ui/BottomNav';
+import { LargeTitle } from '../../components/ui/LargeTitle';
 import { TopBar } from '../../components/ui/TopBar';
 import type { Activity, PactId } from '../../data/types';
 import { summarize } from '../../lib/pact';
@@ -21,7 +23,8 @@ export function ActivityScreen() {
   }, []);
 
   return (
-    <Screen topBar={<TopBar backTo="/app/home" title="Activity" />}>
+    <Screen tabBar={<BottomNav />} topBar={<TopBar leading="none" title="Activity" collapse />}>
+      <LargeTitle className="pacts-head">Activity</LargeTitle>
       {activity.isLoading ? (
         <PactListSkeleton count={2} label="Loading activity" />
       ) : activity.error ? (

@@ -6,6 +6,7 @@ import { useAuth } from '../../api/auth';
 import { setFixedClock } from '../../lib/clock';
 import { clearReturnTo } from './auth/flow';
 import { PactLogo } from '../../components/brand/PactLogo';
+import { CreateSheetProvider } from '../../components/create/CreateSheet';
 import { OverlayRootContext } from '../../components/ui/overlay';
 import { ToastProvider } from '../../components/ui/Toast';
 import { useMediaQuery } from '../../lib/useMediaQuery';
@@ -15,12 +16,12 @@ import './app.css';
 /** Navigation depth per route decides whether a transition pushes, pops or presents. */
 function depthOf(path: string) {
   if (path === '/app' || path === '/app/') return 0;
-  if (/^\/app\/(home|pacts|wallet|profile)$/.test(path)) return 1;
+  if (/^\/app\/(home|pacts|wallet|profile|circles|activity)$/.test(path)) return 1;
   if (/^\/app\/auth\//.test(path)) return 2 + ['phone', 'code', 'profile', 'pin'].findIndex((s) => path.endsWith(s));
-  if (/^\/app\/(pact\/[^/]+|activity|notifications|profile\/\w+|wallet\/withdraw)$/.test(path)) return 2;
+  if (/^\/app\/(pact\/[^/]+|circles\/[^/]+|asks\/[^/]+|plans\/[^/]+|notifications|profile\/\w+|wallet\/withdraw)$/.test(path)) return 2;
   return 3; // create, invite, contribute, top up
 }
-const isModal = (path: string) => /\/(create|contribute|topup|checkout\/[^/]+)$/.test(path);
+const isModal = (path: string) => /\/(create|contribute|topup|checkout\/[^/]+|circles\/new|asks\/new|plans\/new)$/.test(path);
 const isTab = (path: string) => depthOf(path) === 1;
 
 function useTransitionDirection(path: string) {
@@ -182,7 +183,9 @@ export function AppShell() {
 function ToastProviderWithRoot({ root, children }: { root: HTMLElement | null; children: ReactNode }) {
   return (
     <OverlayRootContext.Provider value={root}>
-      <ToastProvider>{children}</ToastProvider>
+      <ToastProvider>
+        <CreateSheetProvider>{children}</CreateSheetProvider>
+      </ToastProvider>
     </OverlayRootContext.Provider>
   );
 }

@@ -139,6 +139,8 @@ export interface Pact {
   /* Live fields from the API (absent on the website's static showcase data). */
   status?: 'open' | 'funded' | 'released' | 'refunded' | 'cancelled';
   inviteCode?: string;
+  /** The Circle this Pact belongs to, if any. */
+  circleId?: string | null;
   note?: string | null;
   poolBalance?: number;
   /** Set when the organiser says the plan happened. Funded (status) is the money; this is the outcome. */

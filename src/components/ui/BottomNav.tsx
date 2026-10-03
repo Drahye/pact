@@ -1,48 +1,55 @@
-import { House, UserRound, Wallet } from 'lucide-react';
+import { Activity, House, Plus, UserRound, UsersRound } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
+import { useCreateSheet } from '../create/CreateSheet';
 import { useNotifications } from '../../api/hooks';
 import { spring } from '../../tokens/tokens';
 import './nav.css';
 
-/** Small progress-ring glyph so the Pacts tab echoes the product's core object. */
-function RingIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-      <circle cx="12" cy="12" r="8.5" opacity="0.35" />
-      <path d="M12 3.5a8.5 8.5 0 1 1-8.1 11.1" />
-    </svg>
-  );
-}
-
-const tabs = [
-  { to: '/app/home', label: 'Home', icon: <House /> },
-  { to: '/app/pacts', label: 'Pacts', icon: <RingIcon /> },
-  { to: '/app/wallet', label: 'Wallet', icon: <Wallet /> },
-  { to: '/app/profile', label: 'Profile', icon: <UserRound /> },
+/**
+ * Home, Circles, a create button, Activity, Me. Pacts and Wallet are not tabs: they live under Home and Me
+ * (a Pact is reached from Home, Circles and Me; the wallet from Home and Me), and stay highlighted there.
+ */
+const left = [
+  { to: '/app/home', label: 'Home', icon: <House />, also: ['/app/pacts'] },
+  { to: '/app/circles', label: 'Circles', icon: <UsersRound />, also: [] },
+];
+const right = [
+  { to: '/app/activity', label: 'Activity', icon: <Activity />, also: [] },
+  { to: '/app/profile', label: 'Me', icon: <UserRound />, also: ['/app/wallet'] },
 ];
 
 export function BottomNav() {
   // Notifications are reached from Home, so Home carries the count. It sits over the icon and never moves the layout.
   const unread = useNotifications().data?.unread ?? 0;
+  const { pathname } = useLocation();
+  const create = useCreateSheet();
+  const renderTab = (t: (typeof left)[number]) => {
+    const active = pathname === t.to || pathname.startsWith(`${t.to}/`) || t.also.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+    return (
+      <NavLink key={t.to} to={t.to} className={() => `tabbar__item ${active ? 'is-active' : ''}`} aria-current={active ? 'page' : undefined}>
+        {() => (
+          <>
+            {active && <motion.span layoutId="tab-active" className="tabbar__active" transition={spring.snappy} />}
+            <span className="tabbar__icon" aria-hidden>
+              {t.icon}
+              {t.to === '/app/home' && unread > 0 && <span className="tabbar__badge num">{unread > 9 ? '9+' : unread}</span>}
+            </span>
+            <span className="tabbar__label">{t.label}</span>
+            {t.to === '/app/home' && unread > 0 && <span className="visually-hidden">, {unread > 99 ? 'more than 99' : unread} unread notifications</span>}
+          </>
+        )}
+      </NavLink>
+    );
+  };
   return (
     <nav className="tabbar" aria-label="Primary">
       <div className="tabbar__pill">
-        {tabs.map((t) => (
-          <NavLink key={t.to} to={t.to} className={({ isActive }) => `tabbar__item ${isActive ? 'is-active' : ''}`}>
-            {({ isActive }) => (
-              <>
-                {isActive && <motion.span layoutId="tab-active" className="tabbar__active" transition={spring.snappy} />}
-                <span className="tabbar__icon" aria-hidden>
-                  {t.icon}
-                  {t.to === '/app/home' && unread > 0 && <span className="tabbar__badge num">{unread > 9 ? '9+' : unread}</span>}
-                </span>
-                <span className="tabbar__label">{t.label}</span>
-                {t.to === '/app/home' && unread > 0 && <span className="visually-hidden">, {unread > 99 ? 'more than 99' : unread} unread notifications</span>}
-              </>
-            )}
-          </NavLink>
-        ))}
+        {left.map(renderTab)}
+        <button type="button" className="tabbar__create" aria-label="Create" aria-haspopup="dialog" onClick={() => create.open({ from: 'nav' })}>
+          <Plus aria-hidden />
+        </button>
+        {right.map(renderTab)}
       </div>
     </nav>
   );

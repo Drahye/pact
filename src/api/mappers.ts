@@ -27,6 +27,7 @@ export function toPact(p: PactDTO): Pact {
       })),
     status: p.status,
     inviteCode: p.inviteCode,
+    circleId: p.circleId,
     note: p.note,
     poolBalance: fromKobo(p.poolBalance),
     completedAt: p.completedAt,

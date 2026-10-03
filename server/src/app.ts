@@ -347,6 +347,15 @@ export async function buildApp({ config, db, provider, sms, email, google, push,
         return reply.redirect(`${config.APP_ORIGIN}${outcome.reason === 'conflict' ? '/app/profile/account?google=conflict' : '/app/auth/welcome?error=google'}`);
       });
 
+      if (config.GOOGLE_PROVIDER === 'fake' && !config.isProd) {
+        // Local browser tests only: stands in for Google's consent page, then calls the real callback with a code the fake client understands.
+        api.get<{ Querystring: { state?: string } }>('/auth/google/fake', async (req, reply) => {
+          const claims = req.cookies.pact_fake_google ?? '';
+          const code = `fake.${Buffer.from(decodeURIComponent(claims) || '{}').toString('base64url')}`;
+          return reply.redirect(`/api/auth/google/callback?state=${encodeURIComponent(req.query.state ?? '')}&code=${code}`);
+        });
+      }
+
       /** What the browser's signup continuation is for, without its secret: which sign-in, and any name Google or the address can suggest. */
       api.post('/auth/signup/pending', strict(20), async (req) => {
         const body = parse(z.object({ signupToken: z.string().min(10).optional() }), req.body);

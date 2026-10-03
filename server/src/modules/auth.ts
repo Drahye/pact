@@ -468,7 +468,7 @@ export async function setupPin(ctx: Ctx, userId: string, pin: string, meta: ReqM
   const hash = await hashSecret(pin);
   const r = await ctx.db.query('UPDATE users SET pin_hash = $2, pin_failed_attempts = 0, pin_locked_until = NULL, updated_at = now() WHERE id = $1 AND pin_hash IS NULL', [userId, hash]);
   if (!r.rowCount) throw new AppError(409, 'pin_already_set', 'You already have a PIN. Change it from Security.');
-  await audit(ctx.db, { actorId: userId, action: 'pin.created', ip: meta.ip });
+  await audit(ctx.db, { actorId: userId, action: 'pin_created', ip: meta.ip });
 }
 
 /* --------------------------------------------------------------------------

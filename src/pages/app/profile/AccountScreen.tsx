@@ -1,5 +1,5 @@
 import { BadgeCheck, ChevronRight, Mail, Phone, ShieldCheck } from 'lucide-react';
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAccount, useAccountActions } from '../../../api/account';
 import { useAuth } from '../../../api/auth';
@@ -43,7 +43,10 @@ export function AccountScreen() {
   const a = account.data;
 
   // Back from Google after connecting it.
+  const handled = useRef(false);
   useEffect(() => {
+    if (handled.current) return;
+    handled.current = true;
     if (params.get('linked') === 'google') {
       toast('Google connected');
       void account.refetch();
@@ -90,7 +93,7 @@ export function AccountScreen() {
                 <span className="menu__icon tint--mint"><GoogleMark /></span>
                 <span className="menu__text">
                   <span className="menu__title">Google</span>
-                  <span className="menu__sub">{a.google.connected ? `Connected${a.google.email ? ` · ${a.google.email}` : ''}` : 'Not connected'}</span>
+                  <span className="menu__sub">{a.google.connected ? (a.google.email ? <>Connected<br />{a.google.email}</> : 'Connected') : 'Not connected'}</span>
                 </span>
                 {a.google.connected ? (
                   <Button variant="ghost" size="sm" onClick={() => setSheet({ disconnect: 'google' })} disabled={a.signInMethods <= 1}>

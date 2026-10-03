@@ -215,7 +215,7 @@ describe('accounts with several ways in', () => {
       assert.equal((await t.call('POST', '/me/pin/setup', u.accessToken, { pin: '2468' })).status, 200);
       assert.equal(code(await t.call('POST', '/me/pin/setup', u.accessToken, { pin: '1357' })), 'pin_already_set', 'it cannot be used to overwrite a PIN');
       assert.equal((await t.call('POST', `/pacts/${pact}/cancel`, u.accessToken, { pin: '2468' })).status, 200, 'the original action now goes through');
-      assert.equal((await t.db.query(`SELECT 1 FROM audit_log WHERE action = 'pin.created' AND actor_id = $1`, [u.user.id])).rowCount, 1);
+      assert.equal((await t.db.query(`SELECT 1 FROM audit_log WHERE action = 'pin_created' AND actor_id = $1`, [u.user.id])).rowCount, 1);
     });
 
     it('resets by email OTP without a phone, and the 24-hour hold still applies', async () => {
@@ -243,6 +243,27 @@ describe('accounts with several ways in', () => {
       const viaPhone = await t.call('POST', '/me/pin/reset/request', u.accessToken, {});
       assert.equal(viaPhone.body.via, 'phone', 'a verified phone remains a recovery path');
     });
+  });
+
+  it('sends Paystack the verified email when there is one, and the placeholder path otherwise', async () => {
+    const seen: { email?: string }[] = [];
+    const original = t.ctx.provider.initializeCheckout.bind(t.ctx.provider);
+    t.ctx.provider.initializeCheckout = async (input) => (seen.push(input.customer), original(input));
+    try {
+      const withEmail = await emailUser('pay@example.com', 'Pay');
+      await t.call('POST', '/wallet/topups', withEmail.accessToken, { amount: 5_000_00, channel: 'card' });
+      const phoneOnly = await t.signIn('08036665001', { firstName: 'Pho', lastName: 'Nely', pin: '2468' });
+      await t.call('POST', '/wallet/topups', phoneOnly.accessToken, { amount: 5_000_00, channel: 'card' });
+      const viaGoogle = await t.signIn('08036665002', { firstName: 'Goo', lastName: 'Gle', pin: '2468' });
+      const start = await t.call('POST', '/me/identities/google/start', viaGoogle.accessToken, {});
+      const state = new URL(start.body.url).searchParams.get('state')!;
+      byCode.set('pay-g', claims('g-pay', 'googler@example.com'));
+      await t.app.inject({ method: 'GET', url: `/api/auth/google/callback?state=${state}&code=pay-g`, headers: { cookie: `pact_oa=${state}` } });
+      await t.call('POST', '/wallet/topups', viaGoogle.accessToken, { amount: 5_000_00, channel: 'card' });
+    } finally {
+      t.ctx.provider.initializeCheckout = original;
+    }
+    assert.deepEqual(seen.map((c) => c.email), ['pay@example.com', undefined, 'googler@example.com']);
   });
 
   it('closing an account removes every way in, and needs words instead of a PIN when there never was one', async () => {

@@ -1,7 +1,7 @@
 import { InstallPactPrompt, PwaInstallTracker } from './components/pwa/InstallPactPrompt';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MotionConfig } from 'framer-motion';
-import { lazy, Suspense, useEffect, type ReactNode } from 'react';
+import { lazy, Suspense, useEffect, useMemo, type ReactNode } from 'react';
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom';
 import { AuthProvider, useAuth } from './api/auth';
 import { ApiError } from './api/client';
@@ -57,9 +57,12 @@ function RequireAuth({ children }: { children: ReactNode }) {
     const id = idle ? idle(run) : window.setTimeout(run, 1500);
     return () => (idle ? undefined : window.clearTimeout(id));
   }, [status]);
+  // A stable object: a fresh one every render made a page that lingers while it animates away re-fire its redirect without end.
+  const from = location.pathname + location.search;
+  const state = useMemo(() => (signOutReason === 'explicit' ? undefined : { from }), [signOutReason, from]);
   if (status === 'loading') return <Loading full />;
-  // After choosing to sign out, the next person to sign in starts fresh on Home.
-  if (status === 'signedOut') return <Navigate to="/app" replace state={signOutReason === 'explicit' ? undefined : { from: location.pathname + location.search }} />;
+  // After choosing to sign out, the next person to sign in starts fresh on Home. Already there: nowhere to redirect to.
+  if (status === 'signedOut') return location.pathname === '/app' ? null : <Navigate to="/app" replace state={state} />;
   return <>{children}</>;
 }
 

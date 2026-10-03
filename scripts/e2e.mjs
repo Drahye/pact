@@ -47,7 +47,7 @@ try {
   // Sign up
   // Welcome renders a live WebGL scene; under headless software rendering Playwright's
   // stability check can time out, so this one click skips it.
-  await page.getByRole('link', { name: 'Get started' }).click({ force: true });
+  await page.getByRole('link', { name: 'Sign in with phone' }).click({ force: true });
   await page.getByText('What’s your number?').waitFor();
   await page.waitForTimeout(600); // let the push transition settle
   await page.getByLabel('Mobile number').fill(phone.slice(1));
@@ -61,11 +61,7 @@ try {
   await page.getByLabel('Last name').fill('Adebayo');
   await shot('profile');
   await tap('Continue');
-  await page.getByText('Create a PIN').waitFor();
-  await pin();
-  await page.getByText('Confirm your PIN').waitFor();
-  await shot('pin-confirm');
-  await pin();
+  // No PIN at sign-up: the account is ready straight away.
   await page.locator('.home__header').waitFor();
   await shot('home-new-user');
 
@@ -117,7 +113,12 @@ try {
   await page.locator('.hold').focus();
   await page.keyboard.press('Enter');
   await page.getByRole('dialog').waitFor();
-  await shot('pin-sheet');
+  // First sensitive action: the PIN is created right here, then the contribution goes through.
+  await page.getByText('Set up your security PIN').waitFor();
+  await shot('pin-setup');
+  await pin();
+  await page.getByText('Confirm your PIN').waitFor();
+  await shot('pin-confirm');
   await pin();
   await page.getByText('You’re in.').waitFor();
   await shot('contribute-done');

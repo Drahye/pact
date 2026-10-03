@@ -33,7 +33,22 @@ export async function verifyGoogleIdToken(idToken: string, opts: { jwks: JWTVeri
 
 export const googleRedirectUri = (config: Pick<Config, 'GOOGLE_REDIRECT_URI' | 'APP_ORIGIN'>) => config.GOOGLE_REDIRECT_URI || `${config.APP_ORIGIN}/api/auth/google/callback`;
 
+/** Local browser tests: "Google" returns whatever the test put in its cookie. Never reachable in production (the config refuses it). */
+export const FAKE_GOOGLE_COOKIE = 'pact_fake_google';
+function createFakeGoogle(config: Config): GoogleClient {
+  return {
+    enabled: true,
+    authorizeUrl: ({ state }) => `${config.APP_ORIGIN}/api/auth/google/fake?state=${encodeURIComponent(state)}`,
+    exchange: async ({ code }) => {
+      const claims = JSON.parse(Buffer.from(code.replace(/^fake\./, ''), 'base64url').toString('utf8')) as Partial<GoogleClaims>;
+      if (!claims.sub) throw new Error('no subject');
+      return { sub: claims.sub, email: claims.email ?? null, emailVerified: claims.emailVerified ?? true, firstName: claims.firstName ?? null, lastName: claims.lastName ?? null };
+    },
+  };
+}
+
 export function createGoogle(config: Config): GoogleClient {
+  if (config.GOOGLE_PROVIDER === 'fake') return createFakeGoogle(config);
   const enabled = !!config.GOOGLE_CLIENT_ID;
   const redirectUri = googleRedirectUri(config);
   const jwks = createRemoteJWKSet(JWKS_URL);

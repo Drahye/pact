@@ -75,6 +75,8 @@ const Env = z.object({
   GOOGLE_CLIENT_ID: z.string().default(''),
   GOOGLE_CLIENT_SECRET: z.string().default(''),
   GOOGLE_REDIRECT_URI: z.string().default(''),
+  /** `fake` is a local stand-in for browser tests only (no real Google): refused whenever the app runs in production mode. */
+  GOOGLE_PROVIDER: z.enum(['live', 'fake']).default('live'),
 
   /** Run the background job worker inside the API process. Set false and run `npm run worker` to scale separately. */
   RUN_WORKER: bool(true),
@@ -140,6 +142,7 @@ export function loadConfig(overrides: Partial<Record<keyof z.infer<typeof Env>, 
   const googleSet = [env.GOOGLE_CLIENT_ID, env.GOOGLE_CLIENT_SECRET].filter(Boolean).length;
   if (googleSet === 1) problems.push('GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET must both be set, or neither');
   if (env.GOOGLE_REDIRECT_URI && !/^https?:\/\/[^\s#]+$/.test(env.GOOGLE_REDIRECT_URI)) problems.push('GOOGLE_REDIRECT_URI must be an absolute http(s) URL');
+  if (env.GOOGLE_PROVIDER === 'fake' && isProd) problems.push('GOOGLE_PROVIDER=fake is for local browser tests only');
   if (env.EMAIL_PROVIDER === 'resend' && !env.RESEND_API_KEY) problems.push('EMAIL_PROVIDER=resend needs RESEND_API_KEY');
   if (isProd) {
     if (env.JWT_SECRET.startsWith('dev-only')) problems.push('JWT_SECRET must be set');
@@ -181,7 +184,7 @@ export function loadConfig(overrides: Partial<Record<keyof z.infer<typeof Env>, 
     push: pushSet === 3 ? { publicKey: env.WEB_PUSH_VAPID_PUBLIC_KEY, privateKey: env.WEB_PUSH_VAPID_PRIVATE_KEY, subject: env.WEB_PUSH_SUBJECT } : null,
     // OTP codes are returned in API responses only when SMS is not really sent: local development, or a staging beta that asked for it.
     exposeDevCodes: (!isProd && env.SMS_PROVIDER === 'log') || (deployEnv === 'staging' && env.STAGING_SHOW_CODES),
-    googleEnabled: googleSet === 2,
+    googleEnabled: googleSet === 2 || env.GOOGLE_PROVIDER === 'fake',
     // Same rule for email codes: returned in responses only when no email is really sent.
     exposeEmailCodes: (!isProd && env.EMAIL_PROVIDER === 'log') || (deployEnv === 'staging' && env.STAGING_SHOW_CODES && env.EMAIL_PROVIDER === 'log'),
   };

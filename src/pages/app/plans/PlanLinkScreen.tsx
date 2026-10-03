@@ -191,7 +191,7 @@ export function PlanLinkScreen() {
             </Button>
           </div>
         )}
-        {!signedIn && !saved && open && <p className="ask__hint">Tap an answer. We’ll ask for your number so the group knows it’s you.</p>}
+        {!signedIn && !saved && open && <p className="ask__hint">Tap an answer. We’ll ask you to sign in so the group knows it’s you.</p>}
         {reward && (
           <p className="ask__reward" role="status" aria-live="polite">
             {reward}
@@ -237,7 +237,7 @@ export function PlanLinkScreen() {
         open={sheet}
         onClose={() => setSheet(false)}
         title="Save your answer"
-        description="Enter your number so the group knows it’s you. We’ll bring you straight back here."
+        description="Sign in so the group knows it’s you. We’ll bring you straight back here."
         footer={
           <>
             <Button fullWidth onClick={continueToSignIn}>

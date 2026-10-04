@@ -34,6 +34,10 @@ New accounts of any kind ask only for a name (Google pre-fills it). The signup c
 - PIN reset: verified phone (SMS) or verified email (email OTP), then the existing 24-hour hold. `via` selects the channel.
 - Changing the email needs the new address verified, plus the PIN when one exists; the old address is told. Unlinking needs the PIN when one exists, and the last way in can never be removed.
 
+## Beta rollout: Google is off
+
+`ENABLE_GOOGLE_AUTH=false` (the default). While off: the front door offers email first and phone as the fallback; the Account screen shows no Google row; `/config` reports `auth.google: false`; `/auth/google/start`, the link route and the callback refuse. The OIDC code, identities, account matching and tests are untouched. Re-enable with `ENABLE_GOOGLE_AUTH=true` plus `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` and an explicit `GOOGLE_REDIRECT_URI`.
+
 ## Config
 
 `EMAIL_PROVIDER` (`resend` in production; `log` prints codes, development only), `RESEND_API_KEY`, `EMAIL_FROM`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI` (derived from `APP_ORIGIN` if empty; set it explicitly in production), `GOOGLE_PROVIDER=fake` (local browser tests only; refused in production mode). Production refuses to start with half a Google config or without real email.

@@ -347,7 +347,7 @@ export async function buildApp({ config, db, provider, sms, email, google, push,
         return reply.redirect(`${config.APP_ORIGIN}${outcome.reason === 'conflict' ? '/app/profile/account?google=conflict' : '/app/auth/welcome?error=google'}`);
       });
 
-      if (config.GOOGLE_PROVIDER === 'fake' && !config.isProd) {
+      if (config.GOOGLE_PROVIDER === 'fake' && config.ENABLE_GOOGLE_AUTH && !config.isProd) {
         // Local browser tests only: stands in for Google's consent page, then calls the real callback with a code the fake client understands.
         api.get<{ Querystring: { state?: string } }>('/auth/google/fake', async (req, reply) => {
           const claims = req.cookies.pact_fake_google ?? '';

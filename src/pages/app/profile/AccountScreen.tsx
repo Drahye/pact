@@ -88,7 +88,7 @@ export function AccountScreen() {
               </span>
               <span className="menu__end">{a.email ? 'Change' : 'Add email'}</span>
             </button>
-            {googleOn || a.google.connected ? (
+            {googleOn ? (
               <div className="menu__row acct__row">
                 <span className="menu__icon tint--mint"><GoogleMark /></span>
                 <span className="menu__text">

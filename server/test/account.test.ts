@@ -44,7 +44,7 @@ describe('accounts with several ways in', () => {
   };
 
   before(async () => {
-    t = await setup({ google: fake });
+    t = await setup({ google: fake, env: { ENABLE_GOOGLE_AUTH: 'true', GOOGLE_PROVIDER: 'fake' } });
   });
   after(async () => t.close());
 

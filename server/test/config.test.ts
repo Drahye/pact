@@ -35,11 +35,13 @@ describe('deployment guards', () => {
     refuses({ ...base, EMAIL_PROVIDER: 'log' }, /EMAIL_PROVIDER=resend/);
     refuses({ ...base, RESEND_API_KEY: '' }, /RESEND_API_KEY/);
     refuses({ ...base, GOOGLE_CLIENT_ID: 'id' }, /both be set, or neither/);
-    refuses({ ...base, GOOGLE_CLIENT_ID: 'id', GOOGLE_CLIENT_SECRET: 's', APP_ORIGIN: 'https://pact.example' }, /explicitly/);
-    refuses({ ...base, GOOGLE_CLIENT_ID: 'id', GOOGLE_CLIENT_SECRET: 's', GOOGLE_REDIRECT_URI: 'http://pact.example/api/auth/google/callback' }, /https redirect/);
-    const ok = prod({ ...base, GOOGLE_CLIENT_ID: 'id', GOOGLE_CLIENT_SECRET: 's', GOOGLE_REDIRECT_URI: 'https://pact.example/api/auth/google/callback' });
-    assert.equal(ok.googleEnabled, true);
-    assert.equal(prod(base).googleEnabled, false);
+    refuses({ ...base, ENABLE_GOOGLE_AUTH: 'true', GOOGLE_CLIENT_ID: 'id', GOOGLE_CLIENT_SECRET: 's', APP_ORIGIN: 'https://pact.example' }, /explicitly/);
+    refuses({ ...base, ENABLE_GOOGLE_AUTH: 'true', GOOGLE_CLIENT_ID: 'id', GOOGLE_CLIENT_SECRET: 's', GOOGLE_REDIRECT_URI: 'http://pact.example/api/auth/google/callback' }, /https redirect/);
+    const creds = { GOOGLE_CLIENT_ID: 'id', GOOGLE_CLIENT_SECRET: 's', GOOGLE_REDIRECT_URI: 'https://pact.example/api/auth/google/callback' };
+    assert.equal(prod({ ...base, ...creds }).googleEnabled, false, 'credentials alone do not switch Google on: the flag does');
+    assert.equal(prod({ ...base, ...creds, ENABLE_GOOGLE_AUTH: 'true' }).googleEnabled, true);
+    assert.equal(prod(base).googleEnabled, false, 'off by default');
+    refuses({ ...base, ENABLE_GOOGLE_AUTH: 'true' }, /ENABLE_GOOGLE_AUTH needs GOOGLE_CLIENT_ID/);
     refuses({ DEPLOY_ENV: 'staging', PAYMENTS_PROVIDER: 'sandbox', SMS_PROVIDER: 'termii', EMAIL_PROVIDER: 'log' }, /EMAIL_PROVIDER=resend, or STAGING_SHOW_CODES/);
   });
 

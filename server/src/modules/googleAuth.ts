@@ -21,7 +21,7 @@ const stateHash = (ctx: Ctx, state: string) => keyedHash(ctx.config.HASH_SECRET,
 const challengeOf = (verifier: string) => createHash('sha256').update(verifier).digest('base64url');
 
 export async function startGoogle(ctx: Ctx, input: { mode: 'signin' | 'link'; userId?: string; returnTo?: string | null }) {
-  if (!ctx.google.enabled) throw new AppError(503, 'google_unavailable', 'Google sign-in isn’t available right now.');
+  if (!ctx.config.googleEnabled || !ctx.google.enabled) throw new AppError(503, 'google_unavailable', 'Google sign-in isn’t available right now.');
   const state = randomToken(24);
   const nonce = randomToken(16);
   const verifier = randomToken(32);
@@ -41,6 +41,7 @@ export type GoogleOutcome =
 /** Resolves a Google callback to what the browser should do next. One generic failure; the reason never carries provider detail. */
 export async function finishGoogle(ctx: Ctx, input: { state: string | undefined; cookieState: string | undefined; code: string | undefined; providerError: boolean }, meta: ReqMeta): Promise<GoogleOutcome> {
   const fail = (returnTo: string | null = null, reason: 'failed' | 'conflict' = 'failed'): GoogleOutcome => ({ kind: 'error', reason, returnTo });
+  if (!ctx.config.googleEnabled) return fail();
   // The state must be the one this browser was given: a callback someone else started cannot log this browser in.
   if (!input.state || !input.cookieState || !safeEqual(input.state, input.cookieState)) return fail();
 

@@ -38,8 +38,8 @@ export function WelcomeScreen() {
   const [link, setLink] = useState('');
   const [error, setError] = useState<string>();
   const [googleBusy, setGoogleBusy] = useState(false);
-  const [googleError, setGoogleError] = useState(params.get('error') === 'google');
   const googleOn = config?.auth?.google ?? false;
+  const [googleError, setGoogleError] = useState(params.get('error') === 'google');
 
   // Came here from a protected screen: go back there after signing in.
   useEffect(() => {
@@ -83,7 +83,7 @@ export function WelcomeScreen() {
               Continue with Google
             </Button>
           )}
-          {googleError && (
+          {googleOn && googleError && (
             <p className="field__error signin__error" role="alert">
               We couldn’t sign you in with Google. Try again.
             </p>

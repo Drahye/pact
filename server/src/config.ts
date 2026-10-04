@@ -77,6 +77,12 @@ const Env = z.object({
   GOOGLE_REDIRECT_URI: z.string().default(''),
   /** `fake` is a local stand-in for browser tests only (no real Google): refused whenever the app runs in production mode. */
   GOOGLE_PROVIDER: z.enum(['live', 'fake']).default('live'),
+  /**
+   * The switch for Google sign-in. Off by default and off for the beta: email is the open way in, phone the fallback. While it is off
+   * Google is not offered in any screen and its routes refuse to start; the code, identities and tests stay in place.
+   * Turning it on needs GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET (or GOOGLE_PROVIDER=fake for local tests).
+   */
+  ENABLE_GOOGLE_AUTH: bool(false),
 
   /** Run the background job worker inside the API process. Set false and run `npm run worker` to scale separately. */
   RUN_WORKER: bool(true),
@@ -142,6 +148,7 @@ export function loadConfig(overrides: Partial<Record<keyof z.infer<typeof Env>, 
   const googleSet = [env.GOOGLE_CLIENT_ID, env.GOOGLE_CLIENT_SECRET].filter(Boolean).length;
   if (googleSet === 1) problems.push('GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET must both be set, or neither');
   if (env.GOOGLE_REDIRECT_URI && !/^https?:\/\/[^\s#]+$/.test(env.GOOGLE_REDIRECT_URI)) problems.push('GOOGLE_REDIRECT_URI must be an absolute http(s) URL');
+  if (env.ENABLE_GOOGLE_AUTH && googleSet !== 2 && env.GOOGLE_PROVIDER !== 'fake') problems.push('ENABLE_GOOGLE_AUTH needs GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET');
   if (env.GOOGLE_PROVIDER === 'fake' && isProd) problems.push('GOOGLE_PROVIDER=fake is for local browser tests only');
   if (env.EMAIL_PROVIDER === 'resend' && !env.RESEND_API_KEY) problems.push('EMAIL_PROVIDER=resend needs RESEND_API_KEY');
   if (isProd) {
@@ -157,7 +164,7 @@ export function loadConfig(overrides: Partial<Record<keyof z.infer<typeof Env>, 
       if (env.SMS_PROVIDER !== 'termii') problems.push('production needs SMS_PROVIDER=termii');
       if (env.EMAIL_PROVIDER !== 'resend') problems.push('production needs EMAIL_PROVIDER=resend');
     }
-    if (googleSet === 2) {
+    if (env.ENABLE_GOOGLE_AUTH && googleSet === 2) {
       const redirect = env.GOOGLE_REDIRECT_URI || `${env.APP_ORIGIN}/api/auth/google/callback`;
       if (!redirect.startsWith('https://')) problems.push('Google sign-in needs an https redirect URI (set GOOGLE_REDIRECT_URI or an https APP_ORIGIN)');
       if (deployEnv === 'production' && !env.GOOGLE_REDIRECT_URI) problems.push('production needs GOOGLE_REDIRECT_URI set explicitly to the URI registered with Google');
@@ -184,7 +191,7 @@ export function loadConfig(overrides: Partial<Record<keyof z.infer<typeof Env>, 
     push: pushSet === 3 ? { publicKey: env.WEB_PUSH_VAPID_PUBLIC_KEY, privateKey: env.WEB_PUSH_VAPID_PRIVATE_KEY, subject: env.WEB_PUSH_SUBJECT } : null,
     // OTP codes are returned in API responses only when SMS is not really sent: local development, or a staging beta that asked for it.
     exposeDevCodes: (!isProd && env.SMS_PROVIDER === 'log') || (deployEnv === 'staging' && env.STAGING_SHOW_CODES),
-    googleEnabled: googleSet === 2 || env.GOOGLE_PROVIDER === 'fake',
+    googleEnabled: env.ENABLE_GOOGLE_AUTH,
     // Same rule for email codes: returned in responses only when no email is really sent.
     exposeEmailCodes: (!isProd && env.EMAIL_PROVIDER === 'log') || (deployEnv === 'staging' && env.STAGING_SHOW_CODES && env.EMAIL_PROVIDER === 'log'),
   };

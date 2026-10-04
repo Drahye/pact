@@ -37,7 +37,7 @@ export const googleRedirectUri = (config: Pick<Config, 'GOOGLE_REDIRECT_URI' | '
 export const FAKE_GOOGLE_COOKIE = 'pact_fake_google';
 function createFakeGoogle(config: Config): GoogleClient {
   return {
-    enabled: true,
+    enabled: config.googleEnabled,
     authorizeUrl: ({ state }) => `${config.APP_ORIGIN}/api/auth/google/fake?state=${encodeURIComponent(state)}`,
     exchange: async ({ code }) => {
       const claims = JSON.parse(Buffer.from(code.replace(/^fake\./, ''), 'base64url').toString('utf8')) as Partial<GoogleClaims>;
@@ -49,7 +49,7 @@ function createFakeGoogle(config: Config): GoogleClient {
 
 export function createGoogle(config: Config): GoogleClient {
   if (config.GOOGLE_PROVIDER === 'fake') return createFakeGoogle(config);
-  const enabled = !!config.GOOGLE_CLIENT_ID;
+  const enabled = config.googleEnabled && !!config.GOOGLE_CLIENT_ID;
   const redirectUri = googleRedirectUri(config);
   const jwks = createRemoteJWKSet(JWKS_URL);
   return {

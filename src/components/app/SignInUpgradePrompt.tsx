@@ -51,14 +51,14 @@ export function SignInUpgradePrompt() {
   return (
     <section className="upgrade" aria-labelledby="upgrade-h">
       <h2 id="upgrade-h" className="upgrade__title">Make signing in easier</h2>
-      <p className="upgrade__body">Add an email or connect Google, so you’re not tied to one phone number.</p>
+      <p className="upgrade__body">{config?.auth?.google ? 'Add an email or connect Google, so you’re not tied to one phone number.' : 'Add an email, so you’re not tied to one phone number.'}</p>
       <div className="upgrade__actions">
         {config?.auth?.google && (
           <Button size="sm" onClick={google} loading={startGoogle.isPending}>
             Connect Google
           </Button>
         )}
-        <Button size="sm" variant="secondary" to="/app/profile/account">
+        <Button size="sm" variant={config?.auth?.google ? 'secondary' : 'primary'} to="/app/profile/account">
           Add email
         </Button>
         <button type="button" className="link upgrade__later" onClick={hide}>

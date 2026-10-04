@@ -91,7 +91,7 @@ describe('Google sign-in flow', () => {
   };
 
   before(async () => {
-    t = await setup({ google: fake });
+    t = await setup({ google: fake, env: { ENABLE_GOOGLE_AUTH: 'true', GOOGLE_PROVIDER: 'fake' } });
   });
   after(async () => t.close());
 
@@ -196,7 +196,7 @@ describe('Google sign-in flow', () => {
   });
 
   it('is unavailable when Google is not configured', async () => {
-    const off = await setup({ google: { ...fake, enabled: false } });
+    const off = await setup({ google: { ...fake, enabled: false }, env: { ENABLE_GOOGLE_AUTH: 'true', GOOGLE_PROVIDER: 'fake' } });
     const r = await off.app.inject({ method: 'POST', url: '/api/auth/google/start', headers: { 'content-type': 'application/json' }, payload: '{}' });
     assert.equal(r.statusCode, 503);
     await off.close();

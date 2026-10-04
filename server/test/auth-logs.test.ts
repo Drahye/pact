@@ -17,7 +17,7 @@ describe('sign-in secrets stay out of the log', () => {
     exchange: async (): Promise<GoogleClaims> => ({ sub: 'log-sub', email: 'log@example.com', emailVerified: true, firstName: 'Lo', lastName: 'Gg' }),
   };
   before(async () => {
-    t = await setup({ logStream: { write: (l) => void lines.push(l) }, google: fake, env: { LOG_LEVEL: 'info' }, email: { send: async () => undefined }, sms: { send: async () => undefined } });
+    t = await setup({ logStream: { write: (l) => void lines.push(l) }, google: fake, env: { LOG_LEVEL: 'info', ENABLE_GOOGLE_AUTH: 'true', GOOGLE_PROVIDER: 'fake' }, email: { send: async () => undefined }, sms: { send: async () => undefined } });
   });
   after(async () => t.close());
 

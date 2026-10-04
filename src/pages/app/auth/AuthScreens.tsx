@@ -1,16 +1,15 @@
 import { FlaskConical, Phone, ShieldCheck } from 'lucide-react';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../../api/auth';
-import { ApiError } from '../../../api/client';
-import { PinPad } from '../../../components/app/PinPad';
+import { api, ApiError } from '../../../api/client';
 import { Notice } from '../../../components/app/States';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { TopBar } from '../../../components/ui/TopBar';
 import { deviceMemory } from '../../../lib/drafts';
 import { Screen } from '../Screen';
-import { clearFlow, readFlow, writeFlow } from './flow';
+import { clearFlow, readFlow, safeAppPath, setReturnTo, writeFlow } from './flow';
 import './auth.css';
 
 const toLocal = (raw: string) => raw.replace(/\D/g, '').replace(/^234/, '').replace(/^0/, '').slice(0, 10);
@@ -48,7 +47,7 @@ export function PhoneScreen() {
 
   return (
     <Screen
-      topBar={<TopBar backTo="/app" />}
+      topBar={<TopBar backTo="/app/auth/welcome" />}
       footer={
         <>
           <Button type="submit" form="phone-form" fullWidth loading={busy} disabled={!digits}>
@@ -255,101 +254,92 @@ export function CodeScreen() {
   );
 }
 
-/* 3. Name (new accounts) ----------------------------------------------------- */
+/* 3. Name (new accounts, whichever way they signed in) ------------------------ */
 export function ProfileSetupScreen() {
+  const { signup } = useAuth();
   const navigate = useNavigate();
+  const [params] = useSearchParams();
   const flow = readFlow();
+  const fromGoogle = params.get('via') === 'google';
   const [first, setFirst] = useState(flow.firstName ?? '');
   const [last, setLast] = useState(flow.lastName ?? '');
   const [referral, setReferral] = useState(flow.referralCode ?? '');
   const [touched, setTouched] = useState(false);
-  if (!flow.needsProfile) return <Navigate to="/app/auth/phone" replace />;
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string>();
+  const proceed = !!flow.needsProfile || fromGoogle;
+
+  // Back from Google: the name step is next, and the destination chosen before leaving still applies.
+  useEffect(() => {
+    if (!fromGoogle) return;
+    writeFlow({ needsProfile: true, via: 'google' });
+    setReturnTo(safeAppPath(params.get('to')) ?? undefined);
+  }, [fromGoogle, params]);
+
+  // A name Google (or nothing) can suggest. The credential itself stays in an httpOnly cookie the page cannot read.
+  useEffect(() => {
+    if (!proceed || flow.firstName) return;
+    void api<{ suggested?: { firstName: string; lastName: string } }>('POST', '/auth/signup/pending', {})
+      .then((r) => {
+        setFirst((v) => v || r.suggested?.firstName || '');
+        setLast((v) => v || r.suggested?.lastName || '');
+      })
+      .catch((err: ApiError) => {
+        if (err.code === 'signup_expired') {
+          clearFlow();
+          navigate('/app/auth/welcome', { replace: true });
+        }
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [proceed]);
+
+  if (!proceed) return <Navigate to="/app/auth/welcome" replace />;
 
   const errors = {
     first: first.trim() ? undefined : 'Enter your first name.',
     last: last.trim() ? undefined : 'Enter your last name.',
   };
-  const submit = (e: FormEvent) => {
+  const submit = async (e: FormEvent) => {
     e.preventDefault();
     setTouched(true);
     if (errors.first || errors.last) return;
-    writeFlow({ firstName: first.trim(), lastName: last.trim(), referralCode: referral.trim() || undefined });
-    navigate('/app/auth/pin');
-  };
-
-  return (
-    <Screen
-      topBar={<TopBar backTo="/app/auth/phone" />}
-      footer={
-        <Button type="submit" form="profile-form" fullWidth>
-          Continue
-        </Button>
-      }
-      className="auth"
-    >
-      <h1 className="large-title">Nice to meet you</h1>
-      <p className="screen-lede">Use the name on your bank account so withdrawals go through.</p>
-      <form id="profile-form" className="auth__form" onSubmit={submit} noValidate>
-        <Input label="First name" value={first} onChange={(e) => setFirst(e.target.value)} autoComplete="given-name" maxLength={40} error={touched ? errors.first : undefined} autoFocus />
-        <Input label="Last name" value={last} onChange={(e) => setLast(e.target.value)} autoComplete="family-name" maxLength={40} error={touched ? errors.last : undefined} />
-        <Input label="Invite code (optional)" value={referral} onChange={(e) => setReferral(e.target.value.toUpperCase())} autoComplete="off" maxLength={12} hint="If a friend gave you one." />
-      </form>
-    </Screen>
-  );
-}
-
-/* 4. Transaction PIN --------------------------------------------------------- */
-const WEAK = new Set(['0000', '1111', '2222', '3333', '4444', '5555', '6666', '7777', '8888', '9999', '1234', '4321', '0123', '9876']);
-
-export function PinSetupScreen() {
-  const { signup } = useAuth();
-  const navigate = useNavigate();
-  const flow = readFlow();
-  const [first, setFirst] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [errorKey, setErrorKey] = useState(0);
-  if (!flow.needsProfile || !flow.firstName) return <Navigate to="/app/auth/phone" replace />;
-
-  const onComplete = async (pin: string) => {
-    if (!first) {
-      if (WEAK.has(pin)) return 'That PIN is easy to guess. Try another.';
-      setFirst(pin);
-      setError(null);
-      return;
-    }
-    if (pin !== first) {
-      setFirst(null);
-      return 'Those didn’t match. Start again.';
-    }
     setBusy(true);
+    setError(undefined);
     try {
-      await signup({ firstName: flow.firstName!, lastName: flow.lastName!, pin, referralCode: flow.referralCode });
+      await signup({ firstName: first.trim(), lastName: last.trim(), referralCode: referral.trim() || undefined });
+      // The guest-only route guard sends them on to wherever they were headed.
       clearFlow();
     } catch (err) {
-      const e = err as ApiError;
-      if (e.code === 'signup_expired') {
+      const e2 = err as ApiError;
+      if (e2.code === 'signup_expired' || e2.code === 'already_registered') {
         clearFlow();
-        navigate('/app/auth/phone', { replace: true });
+        navigate('/app/auth/welcome', { replace: true });
         return;
       }
-      setFirst(null);
-      setError(e.message);
-      setErrorKey((k) => k + 1);
+      setError(e2.message);
     } finally {
       setBusy(false);
     }
   };
 
   return (
-    <Screen topBar={<TopBar backTo="/app/auth/profile" />} className="auth auth--pin">
-      <h1 className="large-title">{first ? 'Confirm your PIN' : 'Create a PIN'}</h1>
-      <p className="screen-lede">
-        {first ? 'Enter the same four digits again.' : 'You’ll use these four digits to approve every payment. Don’t share them with anyone.'}
-      </p>
-      <div className="auth__pin">
-        <PinPad onComplete={onComplete} busy={busy} error={error} errorKey={errorKey} resetKey={first ? 'confirm' : 'create'} label="New PIN" />
-      </div>
+    <Screen
+      topBar={<TopBar backTo="/app/auth/welcome" />}
+      footer={
+        <Button type="submit" form="profile-form" fullWidth loading={busy}>
+          Continue
+        </Button>
+      }
+      className="auth"
+    >
+      <h1 className="large-title">Nice to meet you</h1>
+      <p className="screen-lede">What should your people call you?</p>
+      <form id="profile-form" className="auth__form" onSubmit={submit} noValidate>
+        <Input label="First name" value={first} onChange={(e) => setFirst(e.target.value)} autoComplete="given-name" maxLength={40} error={touched ? errors.first : undefined} autoFocus />
+        <Input label="Last name" value={last} onChange={(e) => setLast(e.target.value)} autoComplete="family-name" maxLength={40} error={touched ? errors.last : undefined} />
+        <Input label="Invite code (optional)" value={referral} onChange={(e) => setReferral(e.target.value.toUpperCase())} autoComplete="off" maxLength={12} hint="If a friend gave you one." />
+        {error && <p className="field__error" role="alert">{error}</p>}
+      </form>
     </Screen>
   );
 }

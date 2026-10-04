@@ -1,7 +1,7 @@
 import { InstallPactPrompt, PwaInstallTracker } from './components/pwa/InstallPactPrompt';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MotionConfig } from 'framer-motion';
-import { lazy, Suspense, useEffect, type ReactNode } from 'react';
+import { lazy, Suspense, useEffect, useMemo, type ReactNode } from 'react';
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom';
 import { AuthProvider, useAuth } from './api/auth';
 import { ApiError } from './api/client';
@@ -10,7 +10,8 @@ import { ThemeProvider } from './theme/ThemeProvider';
 import { peekReturnTo } from './pages/app/auth/flow';
 import { ActivityScreen } from './pages/app/ActivityScreen';
 import { AppShell } from './pages/app/AppShell';
-import { CodeScreen, PhoneScreen, PinSetupScreen, ProfileSetupScreen } from './pages/app/auth/AuthScreens';
+import { CodeScreen, PhoneScreen, ProfileSetupScreen } from './pages/app/auth/AuthScreens';
+import { EmailCodeScreen, EmailScreen, GoogleReturnScreen } from './pages/app/auth/EmailScreens';
 import { HomeScreen } from './pages/app/HomeScreen';
 import { DemoPactScreen } from './features/demo/DemoPactScreen';
 import { JoinWithInviteScreen } from './features/onboarding/JoinWithInviteScreen';
@@ -56,9 +57,12 @@ function RequireAuth({ children }: { children: ReactNode }) {
     const id = idle ? idle(run) : window.setTimeout(run, 1500);
     return () => (idle ? undefined : window.clearTimeout(id));
   }, [status]);
+  // A stable object: a fresh one every render made a page that lingers while it animates away re-fire its redirect without end.
+  const from = location.pathname + location.search;
+  const state = useMemo(() => (signOutReason === 'explicit' ? undefined : { from }), [signOutReason, from]);
   if (status === 'loading') return <Loading full />;
-  // After choosing to sign out, the next person to sign in starts fresh on Home.
-  if (status === 'signedOut') return <Navigate to="/app" replace state={signOutReason === 'explicit' ? undefined : { from: location.pathname + location.search }} />;
+  // After choosing to sign out, the next person to sign in starts fresh on Home. Already there: nowhere to redirect to.
+  if (status === 'signedOut') return location.pathname === '/app' ? null : <Navigate to="/app" replace state={state} />;
   return <>{children}</>;
 }
 
@@ -102,6 +106,7 @@ const TopupStatusScreen = lazy(() => load_money().then((m) => ({ default: m.Topu
 const WalletScreen = lazy(() => load_money().then((m) => ({ default: m.WalletScreen })));
 const WithdrawScreen = lazy(() => load_money().then((m) => ({ default: m.WithdrawScreen })));
 const BankAccountsScreen = lazy(() => load_money().then((m) => ({ default: m.BankAccountsScreen })));
+const AccountScreen = lazy(() => load_money().then((m) => ({ default: m.AccountScreen })));
 const SecurityScreen = lazy(() => load_money().then((m) => ({ default: m.SecurityScreen })));
 const VerifyScreen = lazy(() => load_money().then((m) => ({ default: m.VerifyScreen })));
 
@@ -131,7 +136,10 @@ export function App() {
                 <Route path="auth/phone" element={<GuestOnly><PhoneScreen /></GuestOnly>} />
                 <Route path="auth/code" element={<GuestOnly><CodeScreen /></GuestOnly>} />
                 <Route path="auth/profile" element={<GuestOnly><ProfileSetupScreen /></GuestOnly>} />
-                <Route path="auth/pin" element={<GuestOnly><PinSetupScreen /></GuestOnly>} />
+                <Route path="auth/welcome" element={<GuestOnly><WelcomeScreen /></GuestOnly>} />
+                <Route path="auth/email" element={<GuestOnly><EmailScreen /></GuestOnly>} />
+                <Route path="auth/email-code" element={<GuestOnly><EmailCodeScreen /></GuestOnly>} />
+                <Route path="auth/google" element={<GuestOnly><GoogleReturnScreen /></GuestOnly>} />
                 <Route path="join/:code" element={<JoinScreen />} />
                 <Route path="c/:token" element={<CircleInviteScreen />} />
                 <Route path="ask/:token" element={<AskLinkRedirect />} />
@@ -166,6 +174,7 @@ export function App() {
                 <Route path="wallet/checkout/:ref" element={authed(<CheckoutScreen />)} />
                 <Route path="wallet/withdraw" element={authed(<WithdrawScreen />)} />
                 <Route path="profile/verify" element={authed(<VerifyScreen />)} />
+                <Route path="profile/account" element={authed(<AccountScreen />)} />
                 <Route path="profile/security" element={authed(<SecurityScreen />)} />
                 <Route path="profile/banks" element={authed(<BankAccountsScreen />)} />
               </Route>

@@ -60,7 +60,7 @@ export function SplitLinkScreen() {
   const open = view.status === 'open';
   const signIn = () => {
     setReturnTo(`/s/${token}`);
-    navigate('/app/auth/phone');
+    navigate('/app/auth/welcome');
   };
   const doSettle = async (settled: boolean) => {
     try {

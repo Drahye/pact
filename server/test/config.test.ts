@@ -12,12 +12,12 @@ const SECRETS = {
   DATABASE_URL: 'postgres://u:p@db:5432/pact',
   SANDBOX_WEBHOOK_SECRET: 'w'.repeat(32),
 };
-const prod = (extra: Record<string, string> = {}) => loadConfig({ NODE_ENV: 'production', SEED_DEMO: 'false', ...SECRETS, ...extra });
+const prod = (extra: Record<string, string> = {}) => loadConfig({ NODE_ENV: 'production', SEED_DEMO: 'false', EMAIL_PROVIDER: 'resend', RESEND_API_KEY: 're_x', ...SECRETS, ...extra });
 const refuses = (extra: Record<string, string>, pattern: RegExp) => assert.throws(() => prod(extra), pattern);
 
 describe('deployment guards', () => {
   it('accepts a correct production config', () => {
-    const c = prod({ DEPLOY_ENV: 'production', PAYMENTS_PROVIDER: 'paystack', PAYSTACK_SECRET_KEY: 'sk_live_abc', SMS_PROVIDER: 'termii', TERMII_API_KEY: 'k' });
+    const c = prod({ DEPLOY_ENV: 'production', PAYMENTS_PROVIDER: 'paystack', PAYSTACK_SECRET_KEY: 'sk_live_abc', SMS_PROVIDER: 'termii', TERMII_API_KEY: 'k', EMAIL_PROVIDER: 'resend', RESEND_API_KEY: 're_x' });
     assert.equal(c.deployEnv, 'production');
     assert.equal(c.exposeDevCodes, false);
   });
@@ -28,6 +28,21 @@ describe('deployment guards', () => {
     refuses({ PAYMENTS_PROVIDER: 'paystack', PAYSTACK_SECRET_KEY: 'sk_live_abc', SMS_PROVIDER: 'log' }, /SMS_PROVIDER=termii/);
     refuses({ PAYMENTS_PROVIDER: 'paystack', PAYSTACK_SECRET_KEY: 'sk_live_abc', SMS_PROVIDER: 'termii', PAYSTACK_BASE_URL: 'https://evil.example' }, /PAYSTACK_BASE_URL/);
     refuses({ PAYMENTS_PROVIDER: 'paystack', PAYSTACK_SECRET_KEY: 'sk_live_abc', SMS_PROVIDER: 'termii', STAGING_SHOW_CODES: 'true' }, /only for DEPLOY_ENV=staging/);
+  });
+
+  it('needs real email delivery in production and staging, and a whole Google config', () => {
+    const base = { DEPLOY_ENV: 'production', PAYMENTS_PROVIDER: 'paystack', PAYSTACK_SECRET_KEY: 'sk_live_abc', SMS_PROVIDER: 'termii' };
+    refuses({ ...base, EMAIL_PROVIDER: 'log' }, /EMAIL_PROVIDER=resend/);
+    refuses({ ...base, RESEND_API_KEY: '' }, /RESEND_API_KEY/);
+    refuses({ ...base, GOOGLE_CLIENT_ID: 'id' }, /both be set, or neither/);
+    refuses({ ...base, ENABLE_GOOGLE_AUTH: 'true', GOOGLE_CLIENT_ID: 'id', GOOGLE_CLIENT_SECRET: 's', APP_ORIGIN: 'https://pact.example' }, /explicitly/);
+    refuses({ ...base, ENABLE_GOOGLE_AUTH: 'true', GOOGLE_CLIENT_ID: 'id', GOOGLE_CLIENT_SECRET: 's', GOOGLE_REDIRECT_URI: 'http://pact.example/api/auth/google/callback' }, /https redirect/);
+    const creds = { GOOGLE_CLIENT_ID: 'id', GOOGLE_CLIENT_SECRET: 's', GOOGLE_REDIRECT_URI: 'https://pact.example/api/auth/google/callback' };
+    assert.equal(prod({ ...base, ...creds }).googleEnabled, false, 'credentials alone do not switch Google on: the flag does');
+    assert.equal(prod({ ...base, ...creds, ENABLE_GOOGLE_AUTH: 'true' }).googleEnabled, true);
+    assert.equal(prod(base).googleEnabled, false, 'off by default');
+    refuses({ ...base, ENABLE_GOOGLE_AUTH: 'true' }, /ENABLE_GOOGLE_AUTH needs GOOGLE_CLIENT_ID/);
+    refuses({ DEPLOY_ENV: 'staging', PAYMENTS_PROVIDER: 'sandbox', SMS_PROVIDER: 'termii', EMAIL_PROVIDER: 'log' }, /EMAIL_PROVIDER=resend, or STAGING_SHOW_CODES/);
   });
 
   it('never lets a live key run outside production', () => {

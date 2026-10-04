@@ -90,7 +90,7 @@ export function PlanLinkScreen() {
   const continueToSignIn = () => {
     setReturnTo(`/p/${token}`);
     setSheet(false);
-    navigate('/app/auth/phone');
+    navigate('/app/auth/welcome');
   };
   const doJoin = async () => {
     try {
@@ -134,7 +134,7 @@ export function PlanLinkScreen() {
     if (!signedIn) {
       write(key(token, 'join'), '1');
       setReturnTo(`/p/${token}`);
-      navigate('/app/auth/phone');
+      navigate('/app/auth/welcome');
       return;
     }
     void doJoin();
@@ -191,7 +191,7 @@ export function PlanLinkScreen() {
             </Button>
           </div>
         )}
-        {!signedIn && !saved && open && <p className="ask__hint">Tap an answer. We’ll ask for your number so the group knows it’s you.</p>}
+        {!signedIn && !saved && open && <p className="ask__hint">Tap an answer. We’ll ask you to sign in so the group knows it’s you.</p>}
         {reward && (
           <p className="ask__reward" role="status" aria-live="polite">
             {reward}
@@ -237,7 +237,7 @@ export function PlanLinkScreen() {
         open={sheet}
         onClose={() => setSheet(false)}
         title="Save your answer"
-        description="Enter your number so the group knows it’s you. We’ll bring you straight back here."
+        description="Sign in so the group knows it’s you. We’ll bring you straight back here."
         footer={
           <>
             <Button fullWidth onClick={continueToSignIn}>

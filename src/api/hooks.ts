@@ -333,8 +333,8 @@ export function useProfileActions() {
     changePin: useMutation({ mutationFn: (body: { currentPin: string; newPin: string }) => api('POST', '/me/pin', body) }),
     revokeSession: useMutation({ mutationFn: (id: string) => api('DELETE', `/me/sessions/${id}`), onSuccess: () => qc.invalidateQueries({ queryKey: keys.sessions }) }),
     revokeOthers: useMutation({ mutationFn: () => api('POST', '/me/sessions/revoke-others', {}), onSuccess: () => qc.invalidateQueries({ queryKey: keys.sessions }) }),
-    requestPinReset: useMutation({ mutationFn: () => api<{ expiresInSec: number; devCode?: string }>('POST', '/me/pin/reset/request', {}) }),
-    resetPin: useMutation({ mutationFn: (body: { code: string; newPin: string }) => api('POST', '/me/pin/reset', body), onSuccess: () => qc.invalidateQueries({ queryKey: keys.sessions }) }),
+    requestPinReset: useMutation({ mutationFn: (via?: 'phone' | 'email') => api<{ via: 'phone' | 'email'; sentTo: string; expiresInSec: number; devCode?: string }>('POST', '/me/pin/reset/request', via ? { via } : {}) }),
+    resetPin: useMutation({ mutationFn: (body: { code: string; newPin: string; via?: 'phone' | 'email' }) => api('POST', '/me/pin/reset', body), onSuccess: () => qc.invalidateQueries({ queryKey: keys.sessions }) }),
     closeAccount: useMutation({ mutationFn: (pin: string) => api('POST', '/me/close', { pin }) }),
   };
 }

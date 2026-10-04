@@ -7,6 +7,8 @@ import { AppError, badRequest, notFound } from '../lib/errors.js';
 import { formatNgn } from '../lib/money.js';
 import { lagosDayStart } from '../lib/time.js';
 import { assertNoResetHold, getUser, verifyPin } from './auth.js';
+import { assertPhoneVerified } from './account.js';
+import { userIdentities } from './identities.js';
 import { post, systemAccountId, walletAccountId } from './ledger.js';
 import { applyDirectPayment, assertCanPayInto } from './pacts.js';
 import { audit, enqueue, notify } from './platform.js';
@@ -129,13 +131,14 @@ export async function initTopup(ctx: Ctx, userId: string, amount: number, channe
     });
   }
 
+  const verifiedEmail = (await userIdentities(ctx.db, userId)).find((i) => i.provider === 'email' || (i.provider === 'google' && i.email))?.email ?? null;
   const reference = ref('TOP');
   const fee = topupFee(amount, channel);
   const { checkoutUrl } = await ctx.provider.initializeCheckout({
     reference,
     amount: amount + fee,
     channel,
-    customer: { id: userId, phone: user.phone, name: `${user.first_name} ${user.last_name}` },
+    customer: { id: userId, phone: user.phone, name: `${user.first_name} ${user.last_name}`, ...(verifiedEmail ? { email: verifiedEmail } : {}) },
     callbackUrl: `${ctx.config.APP_ORIGIN}/app/wallet/topup/${reference}`,
   });
   const r = await ctx.db.query<TopupRow>(
@@ -284,6 +287,7 @@ export async function listBankAccounts(ctx: Ctx, userId: string): Promise<BankAc
 }
 
 export async function addBankAccount(ctx: Ctx, userId: string, input: { bankCode: string; accountNumber: string; pin: string }, meta: ReqMeta) {
+  await assertPhoneVerified(ctx, userId);
   await verifyPin(ctx, userId, input.pin, meta);
   const user = await getUser(ctx.db, userId);
   assertNoResetHold(ctx, user);
@@ -348,6 +352,7 @@ async function toWithdrawal(q: Queryable, w: WithdrawalRow): Promise<WithdrawalD
 }
 
 export async function withdraw(ctx: Ctx, userId: string, input: { amount: number; bankAccountId: string; pin: string }, meta: ReqMeta): Promise<WithdrawalDTO> {
+  await assertPhoneVerified(ctx, userId);
   await verifyPin(ctx, userId, input.pin, meta);
   const user = await getUser(ctx.db, userId);
   assertNoResetHold(ctx, user);

@@ -98,7 +98,7 @@ export function AskLinkScreen() {
     recordAskStep(token, 'auth_started');
     setReturnTo(`/a/${token}`);
     setSheet(false);
-    navigate('/app/auth/phone');
+    navigate('/app/auth/welcome');
   };
 
   const doJoin = async () => {
@@ -154,7 +154,7 @@ export function AskLinkScreen() {
       write(key(token, 'join'), '1');
       setReturnTo(`/a/${token}`);
       recordAskStep(token, 'auth_started');
-      navigate('/app/auth/phone');
+      navigate('/app/auth/welcome');
       return;
     }
     void doJoin();
@@ -178,7 +178,7 @@ export function AskLinkScreen() {
               </Button>
             </div>
           )}
-          {!signedIn && !saved && ask.status === 'open' && <p className="ask__hint">Tap an answer. We’ll ask for your number so the group knows it’s you.</p>}
+          {!signedIn && !saved && ask.status === 'open' && <p className="ask__hint">Tap an answer. We’ll ask you to sign in so the group knows it’s you.</p>}
         </AskView>
 
         {joined ? (
@@ -208,7 +208,7 @@ export function AskLinkScreen() {
         open={sheet}
         onClose={() => setSheet(false)}
         title="Save your vote"
-        description="Enter your number so the group knows it’s you. We’ll bring you straight back here."
+        description="Sign in so the group knows it’s you. We’ll bring you straight back here."
         footer={
           <>
             <Button fullWidth onClick={continueToSignIn}>

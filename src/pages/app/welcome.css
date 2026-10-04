@@ -50,3 +50,66 @@
 .welcome .screen__footer {
   padding-top: var(--space-6);
 }
+
+/* The sign-in front door */
+.welcome--signin .screen__content {
+  display: flex;
+  flex-direction: column;
+}
+
+.signin {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--space-6);
+  padding-bottom: var(--space-8);
+}
+
+.signin__title {
+  font-size: 2.25rem;
+  line-height: 1.1;
+  letter-spacing: -0.04em;
+  font-weight: var(--weight-semibold);
+  text-wrap: balance;
+}
+
+.signin__actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.signin__error {
+  text-align: center;
+}
+
+.signin__or {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  color: var(--color-text-tertiary);
+  font-size: var(--text-sm);
+}
+
+.signin__or::before,
+.signin__or::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--color-border);
+}
+
+.signin__phone,
+.signin__invite {
+  text-align: center;
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+}
+
+.signin__phone a {
+  color: var(--color-text);
+  font-weight: var(--weight-semibold);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}

@@ -32,13 +32,25 @@ export const participations = ['money', 'task', 'both', 'later'] as const;
 
 export const OtpRequestBody = z.object({ phone });
 export const OtpVerifyBody = z.object({ phone, code: z.string().regex(/^\d{6}$/), device: text(0, 80).optional() });
-export const PinResetBody = z.object({ code: z.string().regex(/^\d{6}$/), newPin: pin });
+export const PinResetBody = z.object({ code: z.string().regex(/^\d{6}$/), newPin: pin, via: z.enum(['phone', 'email']).optional() });
+export const PinResetRequestBody = z.object({ via: z.enum(['phone', 'email']).optional() });
+export const SetPinBody = z.object({ pin });
+export const EmailLinkVerifyBody = z.object({ email: z.string().trim().min(3).max(254), code: z.string().regex(/^\d{6}$/), pin: pin.optional() });
+export const PhoneLinkRequestBody = z.object({ phone });
+export const PhoneLinkVerifyBody = z.object({ phone, code: z.string().regex(/^\d{6}$/) });
+export const UnlinkBody = z.object({ pin: pin.optional() });
+export const GoogleLinkBody = z.object({ returnTo: z.string().max(300).optional() });
+/** Closing an account asks for the PIN; someone who never needed one confirms in words instead. */
+export const CloseAccountBody = z.object({ pin: pin.optional(), confirm: z.string().max(40).optional() });
+export const EmailRequestBody = z.object({ email: z.string().trim().min(3).max(254) });
+export const EmailVerifyBody = z.object({ email: z.string().trim().min(3).max(254), code: z.string().regex(/^\d{6}$/), device: text(0, 80).optional() });
 export const SignupBody = z.object({
   /** Native clients send the token they were given. The web keeps it in an httpOnly cookie and sends none. */
   signupToken: z.string().min(10).optional(),
   firstName: name,
   lastName: name,
-  pin,
+  /** Optional: PACT asks for a PIN the first time a sensitive action needs one, not at sign-up. Native clients that still send one are honoured. */
+  pin: pin.optional(),
   referralCode: z.string().trim().regex(/^[A-Za-z0-9]{0,12}$/).optional(),
 });
 export const RefreshBody = z.object({ refreshToken: z.string().min(20).optional() });
@@ -554,12 +566,22 @@ export interface CircleInvitePreviewDTO {
 }
 
 export interface MeDTO extends PersonDTO {
-  phone: string;
+  phone: string | null;
   kycTier: KycTier;
   bvnLast4: string | null;
   hasPin: boolean;
   referralCode: string;
   createdAt: string;
+}
+
+/** How an account is reached, for Profile. Never provider subjects or ids. */
+export interface AccountDTO {
+  email: { address: string } | null;
+  google: { connected: boolean; email: string | null };
+  phone: { number: string } | null;
+  hasPin: boolean;
+  /** How many ways in the account has. The last one cannot be removed. */
+  signInMethods: number;
 }
 
 export interface AuthTokensDTO {
@@ -572,7 +594,7 @@ export interface AuthTokensDTO {
 
 export type OtpVerifyDTO =
   | ({ status: 'signed_in' } & AuthTokensDTO)
-  | { status: 'needs_profile'; signupToken?: string; phone: string };
+  | { status: 'needs_profile'; signupToken?: string; phone?: string; email?: string; suggested?: { firstName: string; lastName: string } };
 
 export interface WalletDTO {
   balance: number;

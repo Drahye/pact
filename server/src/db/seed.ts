@@ -123,6 +123,7 @@ export async function seedDemo(ctx: Ctx) {
         [demoPhone(i), p.first, p.last, p.color, p.tint, null, pinHash, p.tier, p.tier > 1 ? '4821' : null, randomCode(7), at(2000)],
       );
       ids[p.key] = r.rows[0].id;
+      await q.query(`INSERT INTO user_identities (user_id, provider, provider_subject, phone, verified_at) VALUES ($1, 'phone', $2, $2, $3)`, [ids[p.key], demoPhone(i), at(2000)]);
       wallets[p.key] = await createAccount(q, 'user_wallet', ids[p.key]);
     }
 

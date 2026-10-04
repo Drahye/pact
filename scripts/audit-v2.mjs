@@ -416,16 +416,15 @@ await withPage('Anthony', `/app/plans/new?circle=${boys.id}`, async (page) => {
 
 /* ---------------------------------------------------------------- Auth return (real sign-up through the UI) */
 async function signUpUi(page, phone, first, last) {
+  // Share links now land on the front door (Google, email, phone): take the phone route, as before.
+  await page.getByText(/Make things happen with your people|What’s your number/).first().waitFor();
+  if (await page.getByRole('link', { name: 'Sign in with phone' }).count()) await page.getByRole('link', { name: 'Sign in with phone' }).click();
   await page.getByLabel('Mobile number').waitFor();
   await signInUi(page, phone);
   await page.getByLabel('First name').fill(first);
   await page.getByLabel('Last name').fill(last);
+  // No PIN at sign-up any more: the account is ready after the name.
   await page.getByRole('button', { name: 'Continue' }).click();
-  for (const step of [1, 2]) {
-    await page.getByText(step === 1 ? 'Create a PIN' : 'Confirm your PIN').waitFor();
-    for (const d of '2580') await page.getByRole('button', { name: d, exact: true }).last().click();
-    await page.waitForTimeout(400);
-  }
 }
 async function authReturn(flow, startPath, expectPath, act, verify) {
   current = `auth-return-${flow}`;

@@ -81,7 +81,7 @@ export function CircleInviteScreen() {
         /* ignore */
       }
       setReturnTo(`/app/c/${token}`);
-      navigate('/app/auth/phone');
+      navigate('/app/auth/welcome');
       return;
     }
     void doJoin();

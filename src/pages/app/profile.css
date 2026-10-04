@@ -141,3 +141,27 @@
   font-size: var(--text-sm);
   color: var(--color-text-tertiary);
 }
+
+/* Account and sign-in */
+.acct__ok {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--color-accent-text);
+}
+
+.acct__ok svg {
+  width: 14px;
+  height: 14px;
+}
+
+.acct__row {
+  align-items: center;
+}
+
+.acct__fine {
+  margin-top: var(--space-3);
+  font-size: var(--text-caption);
+  line-height: var(--leading-caption);
+  color: var(--color-text-tertiary);
+}

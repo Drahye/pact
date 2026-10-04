@@ -62,6 +62,28 @@ const Env = z.object({
   TERMII_API_KEY: z.string().default(''),
   TERMII_SENDER_ID: z.string().default('PACT'),
 
+  /** Email delivery for sign-in codes. `log` prints them to the server log (development only). Resend is the production target. */
+  EMAIL_PROVIDER: z.enum(['log', 'resend']).default('log'),
+  RESEND_API_KEY: z.string().default(''),
+  EMAIL_FROM: z.string().default('PACT <login@pact.example>'),
+
+  /**
+   * Google sign-in (OAuth 2.0 / OIDC). Off unless GOOGLE_CLIENT_ID is set; all of ID, secret and redirect then have to be valid.
+   * GOOGLE_REDIRECT_URI defaults to APP_ORIGIN + /api/auth/google/callback. Set it explicitly in production so it is exactly the URI
+   * registered with Google rather than derived.
+   */
+  GOOGLE_CLIENT_ID: z.string().default(''),
+  GOOGLE_CLIENT_SECRET: z.string().default(''),
+  GOOGLE_REDIRECT_URI: z.string().default(''),
+  /** `fake` is a local stand-in for browser tests only (no real Google): refused whenever the app runs in production mode. */
+  GOOGLE_PROVIDER: z.enum(['live', 'fake']).default('live'),
+  /**
+   * The switch for Google sign-in. Off by default and off for the beta: email is the open way in, phone the fallback. While it is off
+   * Google is not offered in any screen and its routes refuse to start; the code, identities and tests stay in place.
+   * Turning it on needs GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET (or GOOGLE_PROVIDER=fake for local tests).
+   */
+  ENABLE_GOOGLE_AUTH: bool(false),
+
   /** Run the background job worker inside the API process. Set false and run `npm run worker` to scale separately. */
   RUN_WORKER: bool(true),
   /** Serve the built web app from ./dist (single-container deploys). */
@@ -91,6 +113,8 @@ export type Config = z.infer<typeof Env> & {
   isProd: boolean;
   isTest: boolean;
   exposeDevCodes: boolean;
+  exposeEmailCodes: boolean;
+  googleEnabled: boolean;
   deployEnv: 'development' | 'staging' | 'production';
   /** Present only when all three VAPID settings are valid. */
   push: { publicKey: string; privateKey: string; subject: string } | null;
@@ -121,6 +145,12 @@ export function loadConfig(overrides: Partial<Record<keyof z.infer<typeof Env>, 
   if (env.WEB_PUSH_SUBJECT && !/^(mailto:[^\s@]+@[^\s@]+|https:\/\/\S+)$/.test(env.WEB_PUSH_SUBJECT)) problems.push('WEB_PUSH_SUBJECT must be mailto:you@example.com or an https URL');
   if (env.STAGING_SHOW_CODES && deployEnv !== 'staging') problems.push('STAGING_SHOW_CODES is only for DEPLOY_ENV=staging');
 
+  const googleSet = [env.GOOGLE_CLIENT_ID, env.GOOGLE_CLIENT_SECRET].filter(Boolean).length;
+  if (googleSet === 1) problems.push('GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET must both be set, or neither');
+  if (env.GOOGLE_REDIRECT_URI && !/^https?:\/\/[^\s#]+$/.test(env.GOOGLE_REDIRECT_URI)) problems.push('GOOGLE_REDIRECT_URI must be an absolute http(s) URL');
+  if (env.ENABLE_GOOGLE_AUTH && googleSet !== 2 && env.GOOGLE_PROVIDER !== 'fake') problems.push('ENABLE_GOOGLE_AUTH needs GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET');
+  if (env.GOOGLE_PROVIDER === 'fake' && isProd) problems.push('GOOGLE_PROVIDER=fake is for local browser tests only');
+  if (env.EMAIL_PROVIDER === 'resend' && !env.RESEND_API_KEY) problems.push('EMAIL_PROVIDER=resend needs RESEND_API_KEY');
   if (isProd) {
     if (env.JWT_SECRET.startsWith('dev-only')) problems.push('JWT_SECRET must be set');
     if (env.HASH_SECRET.startsWith('dev-only')) problems.push('HASH_SECRET must be set');
@@ -132,10 +162,17 @@ export function loadConfig(overrides: Partial<Record<keyof z.infer<typeof Env>, 
       if (!key.startsWith('sk_live_')) problems.push('production needs a live Paystack key (sk_live_)');
       if (env.PAYSTACK_BASE_URL !== 'https://api.paystack.co') problems.push('PAYSTACK_BASE_URL must be https://api.paystack.co in production');
       if (env.SMS_PROVIDER !== 'termii') problems.push('production needs SMS_PROVIDER=termii');
+      if (env.EMAIL_PROVIDER !== 'resend') problems.push('production needs EMAIL_PROVIDER=resend');
+    }
+    if (env.ENABLE_GOOGLE_AUTH && googleSet === 2) {
+      const redirect = env.GOOGLE_REDIRECT_URI || `${env.APP_ORIGIN}/api/auth/google/callback`;
+      if (!redirect.startsWith('https://')) problems.push('Google sign-in needs an https redirect URI (set GOOGLE_REDIRECT_URI or an https APP_ORIGIN)');
+      if (deployEnv === 'production' && !env.GOOGLE_REDIRECT_URI) problems.push('production needs GOOGLE_REDIRECT_URI set explicitly to the URI registered with Google');
     }
     if (deployEnv === 'staging') {
       // Staging never moves real money: sandbox, or Paystack in test mode.
       if (env.PAYMENTS_PROVIDER === 'paystack' && !key.startsWith('sk_test_')) problems.push('staging with Paystack needs a test key (sk_test_)');
+      if (env.EMAIL_PROVIDER === 'log' && !env.STAGING_SHOW_CODES) problems.push('staging needs EMAIL_PROVIDER=resend, or STAGING_SHOW_CODES=true for a closed test with test data only');
       if (env.SMS_PROVIDER === 'log' && !env.STAGING_SHOW_CODES) problems.push('staging needs SMS_PROVIDER=termii, or STAGING_SHOW_CODES=true for a closed test with test data only');
     }
     if (problems.length) throw new Error(`Refusing to start in production:\n- ${problems.join('\n- ')}`);
@@ -154,5 +191,8 @@ export function loadConfig(overrides: Partial<Record<keyof z.infer<typeof Env>, 
     push: pushSet === 3 ? { publicKey: env.WEB_PUSH_VAPID_PUBLIC_KEY, privateKey: env.WEB_PUSH_VAPID_PRIVATE_KEY, subject: env.WEB_PUSH_SUBJECT } : null,
     // OTP codes are returned in API responses only when SMS is not really sent: local development, or a staging beta that asked for it.
     exposeDevCodes: (!isProd && env.SMS_PROVIDER === 'log') || (deployEnv === 'staging' && env.STAGING_SHOW_CODES),
+    googleEnabled: env.ENABLE_GOOGLE_AUTH,
+    // Same rule for email codes: returned in responses only when no email is really sent.
+    exposeEmailCodes: (!isProd && env.EMAIL_PROVIDER === 'log') || (deployEnv === 'staging' && env.STAGING_SHOW_CODES && env.EMAIL_PROVIDER === 'log'),
   };
 }

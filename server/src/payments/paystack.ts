@@ -36,8 +36,8 @@ export function createPaystackProvider(config: Config): PaymentProvider {
           reference,
           amount,
           currency: 'NGN',
-          // Paystack requires an email; customers sign up with a phone number.
-          email: `${customer.id}@customers.pact.invalid`,
+          // Paystack requires an email: the person's verified one when there is one, a placeholder otherwise. It is never PACT's identity.
+          email: customer.email ?? `${customer.id}@customers.pact.invalid`,
           channels: channel === 'card' ? ['card'] : ['bank_transfer'],
           callback_url: callbackUrl,
           metadata: { user_id: customer.id, custom_fields: [{ display_name: 'Customer', variable_name: 'name', value: customer.name }] },

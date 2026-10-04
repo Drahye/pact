@@ -4,6 +4,7 @@ import type { Db } from './db/index.js';
 import type { PaymentProvider } from './payments/provider.js';
 import type { EmailSender } from './payments/email.js';
 import type { GoogleClient } from './payments/google.js';
+import type { StytchClient } from './payments/stytch.js';
 import type { SmsSender } from './payments/sms.js';
 import type { PushSender } from './modules/push.js';
 
@@ -15,6 +16,7 @@ export interface Ctx {
   sms: SmsSender;
   email: EmailSender;
   google: GoogleClient;
+  stytch: StytchClient;
   /** Browser Web Push. Null when VAPID keys are not configured: push is then simply unavailable. */
   push: PushSender | null;
   log: FastifyBaseLogger;

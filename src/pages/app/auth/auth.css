@@ -135,8 +135,23 @@
   box-shadow: inset 0 0 0 2px var(--color-danger);
 }
 
+/* A correct code: the boxes settle to green for a beat before the next screen. */
+.code-field__box.is-success {
+  background: var(--mint-100);
+  box-shadow: inset 0 0 0 2px var(--green-500);
+  color: var(--tone-mint-fg);
+}
+
+.code-field__box {
+  transition: box-shadow var(--motion-state) var(--ease-soft), background-color var(--motion-state) var(--ease-soft), color var(--motion-state) var(--ease-soft);
+}
+
 .auth__error {
   margin-top: var(--space-3);
+}
+
+.auth__email {
+  overflow-wrap: anywhere;
 }
 
 .auth .notice {

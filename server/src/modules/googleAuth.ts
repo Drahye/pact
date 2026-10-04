@@ -6,7 +6,7 @@ import { AppError } from '../lib/errors.js';
 import { safeReturnPath } from '../lib/returnPath.js';
 import { track } from '../lib/events.js';
 import { mintSignupToken, signInUser } from './auth.js';
-import { addIdentity, findIdentity, normalizeEmail } from './identities.js';
+import { addIdentity, findEmailOwner, findIdentity, normalizeEmail } from './identities.js';
 import { audit } from './platform.js';
 
 /**
@@ -90,7 +90,7 @@ export async function finishGoogle(ctx: Ctx, input: { state: string | undefined;
   }
   // 2. A verified email that already belongs to an account's verified email identity: the same person, so link rather than duplicate.
   if (email) {
-    const byEmail = await findIdentity(ctx.db, 'email', email);
+    const byEmail = await findEmailOwner(ctx.db, email);
     if (byEmail) {
       await addIdentity(ctx.db, byEmail.user_id, 'google', claims.sub, extra);
       await audit(ctx.db, { actorId: byEmail.user_id, action: 'google_identity_linked', ip: meta.ip, metadata: { via: 'verified_email' } });

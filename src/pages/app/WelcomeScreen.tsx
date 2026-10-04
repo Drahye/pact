@@ -1,12 +1,13 @@
-import { FlaskConical, Link2, Mail } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { FlaskConical, Link2 } from 'lucide-react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../api/auth';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { PactLogo } from '../../components/brand/PactLogo';
 import { Modal } from '../../components/ui/Modal';
-import { pendingReturnTo, setReturnTo } from './auth/flow';
+import { ApiError } from '../../api/client';
+import { pendingReturnTo, readFlow, setReturnTo, writeFlow } from './auth/flow';
 import { Screen } from './Screen';
 import './welcome.css';
 
@@ -30,7 +31,7 @@ const GoogleMark = () => (
  * Nothing here talks about wallets or money.
  */
 export function WelcomeScreen() {
-  const { config, startGoogle } = useAuth();
+  const { config, startStytchGoogle, requestEmail } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [params] = useSearchParams();
@@ -38,7 +39,10 @@ export function WelcomeScreen() {
   const [link, setLink] = useState('');
   const [error, setError] = useState<string>();
   const [googleBusy, setGoogleBusy] = useState(false);
-  const googleOn = config?.auth?.google ?? false;
+  const [email, setEmail] = useState(() => readFlow().email ?? '');
+  const [emailError, setEmailError] = useState<string>();
+  const [emailBusy, setEmailBusy] = useState(false);
+  const googleOn = config?.auth?.stytchGoogle ?? false;
   const [googleError, setGoogleError] = useState(params.get('error') === 'google');
 
   // Came here from a protected screen: go back there after signing in.
@@ -53,12 +57,31 @@ export function WelcomeScreen() {
     navigate(`/app/join/${code}`);
   };
 
+  /** Email first: the address is asked for right here, the code goes to it, and the next screen takes the code. */
+  const sendCode = async (e: FormEvent) => {
+    e.preventDefault();
+    const value = email.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return setEmailError('Enter a valid email address.');
+    setEmailBusy(true);
+    setEmailError(undefined);
+    try {
+      const r = await requestEmail(value);
+      writeFlow({ email: value, maskedEmail: r.email, via: 'email', needsProfile: false });
+      navigate('/app/auth/email-code', { state: { devCode: r.devCode } });
+    } catch (err) {
+      setEmailError((err as ApiError).message);
+    } finally {
+      setEmailBusy(false);
+    }
+  };
+
   const google = async () => {
     setGoogleBusy(true);
     setGoogleError(false);
     try {
-      const { url } = await startGoogle(pendingReturnTo() ?? undefined);
+      const { url } = await startStytchGoogle(pendingReturnTo() ?? undefined);
       window.location.assign(url);
+      // Stay disabled while the browser leaves; a failed start re-enables below.
     } catch {
       setGoogleError(true);
       setGoogleBusy(false);
@@ -77,24 +100,44 @@ export function WelcomeScreen() {
             <FlaskConical aria-hidden /> Sandbox beta: no real money moves
           </span>
         )}
-        <div className="signin__actions">
-          {googleOn && (
+        {googleOn && (
+          <div className="signin__actions">
             <Button fullWidth size="lg" loading={googleBusy} iconLeft={<GoogleMark />} onClick={google}>
               Continue with Google
             </Button>
-          )}
-          {googleOn && googleError && (
-            <p className="field__error signin__error" role="alert">
-              We couldn’t sign you in with Google. Try again.
-            </p>
-          )}
-          <Button fullWidth size="lg" variant={googleOn ? 'secondary' : 'primary'} iconLeft={<Mail />} to="/app/auth/email">
+            {googleError && (
+              <p className="field__error signin__error" role="alert">
+                We couldn’t sign you in with Google. Try again.
+              </p>
+            )}
+            <div className="signin__or" role="separator" aria-label="or">
+              <span>or</span>
+            </div>
+          </div>
+        )}
+        <form className="signin__form" onSubmit={sendCode} noValidate>
+          <Input
+            label="Email address"
+            type="email"
+            name="email"
+            inputMode="email"
+            autoComplete="email"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+            enterKeyHint="send"
+            placeholder="you@example.com"
+            value={email}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              setEmailError(undefined);
+            }}
+            error={emailError}
+          />
+          <Button type="submit" fullWidth size="lg" loading={emailBusy} disabled={!email.trim()}>
             Continue with email
           </Button>
-        </div>
-        <div className="signin__or" role="separator" aria-label="or">
-          <span>or</span>
-        </div>
+        </form>
         <p className="signin__phone">
           Already use PACT with your phone? <Link to="/app/auth/phone">Sign in with phone</Link>
         </p>

@@ -11,7 +11,7 @@ import { peekReturnTo } from './pages/app/auth/flow';
 import { ActivityScreen } from './pages/app/ActivityScreen';
 import { AppShell } from './pages/app/AppShell';
 import { CodeScreen, PhoneScreen, ProfileSetupScreen } from './pages/app/auth/AuthScreens';
-import { EmailCodeScreen, EmailScreen, GoogleReturnScreen } from './pages/app/auth/EmailScreens';
+import { EmailCodeScreen, EmailScreen, AuthenticateScreen, GoogleReturnScreen } from './pages/app/auth/EmailScreens';
 import { HomeScreen } from './pages/app/HomeScreen';
 import { DemoPactScreen } from './features/demo/DemoPactScreen';
 import { JoinWithInviteScreen } from './features/onboarding/JoinWithInviteScreen';
@@ -124,6 +124,7 @@ export function App() {
             <InstallPactPrompt />
             <Routes>
               <Route path="/" element={<LandingPage />} />
+              <Route path="/authenticate" element={<AuthenticateScreen />} />
               <Route path="/download" element={<DownloadPage />} />
               <Route path="/styleguide" element={<StyleGuidePage />} />
               <Route path="/dev/templates" element={<TemplatesPreview />} />

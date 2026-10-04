@@ -131,7 +131,7 @@ export async function initTopup(ctx: Ctx, userId: string, amount: number, channe
     });
   }
 
-  const verifiedEmail = (await userIdentities(ctx.db, userId)).find((i) => i.provider === 'email' || (i.provider === 'google' && i.email))?.email ?? null;
+  const verifiedEmail = (await userIdentities(ctx.db, userId)).find((i) => !!i.email)?.email ?? null;
   const reference = ref('TOP');
   const fee = topupFee(amount, channel);
   const { checkoutUrl } = await ctx.provider.initializeCheckout({

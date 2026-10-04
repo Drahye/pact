@@ -15,7 +15,7 @@ describe('Google sign-in is off by default', () => {
 
   it('does not advertise Google to the app, and keeps email on', async () => {
     const cfg = (await t.call('GET', '/config')).body;
-    assert.deepEqual(cfg.auth, { google: false, email: true });
+    assert.deepEqual(cfg.auth, { google: false, stytchGoogle: false, email: true });
   });
 
   it('refuses to start, to link, and to finish a Google sign-in', async () => {

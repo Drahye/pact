@@ -7,6 +7,7 @@ import { createPaystackProvider } from './payments/paystack.js';
 import { createSandboxProvider } from './payments/sandbox.js';
 import { createEmail } from './payments/email.js';
 import { createGoogle } from './payments/google.js';
+import { createStytch } from './payments/stytch.js';
 import { createSms } from './payments/sms.js';
 import { createPushSender } from './modules/push.js';
 
@@ -18,7 +19,7 @@ async function main() {
   // The API applies migrations; the worker only needs the runtime credential.
   if (!config.MIGRATION_DATABASE_URL) await migrate(db);
   const provider = config.PAYMENTS_PROVIDER === 'paystack' ? createPaystackProvider(config) : createSandboxProvider(config);
-  const stop = startWorker({ config, db, provider, sms: createSms(config, log), email: createEmail(config, log), google: createGoogle(config), push: createPushSender(config), log, now: () => new Date() }, 500);
+  const stop = startWorker({ config, db, provider, sms: createSms(config, log), email: createEmail(config, log), google: createGoogle(config), stytch: createStytch(config), push: createPushSender(config), log, now: () => new Date() }, 500);
   log.info('PACT worker running');
   const shutdown = async () => {
     stop();

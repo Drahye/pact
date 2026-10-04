@@ -113,3 +113,8 @@
   text-decoration: underline;
   text-underline-offset: 3px;
 }
+
+.signin__form {
+  display: grid;
+  gap: var(--space-4);
+}

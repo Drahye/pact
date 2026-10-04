@@ -181,6 +181,37 @@
   --duration-slow: 450ms;
   --duration-slower: 800ms;
 
+  /* Motion scale. Every transition on a screen picks one of these, never a number of its own.
+     micro: presses and hover. state: something changed (selection, count, status). nav: moving between places.
+     sheet: a sheet rising. celebrate: a finished thing being acknowledged. Springs are for objects, eases for opacity and text. */
+  --motion-micro: 140ms;
+  --motion-state: 220ms;
+  --motion-nav: 320ms;
+  --motion-sheet: 380ms;
+  --motion-celebrate: 550ms;
+  --ease-soft: var(--ease-out);
+  --ease-press: cubic-bezier(0.3, 1.45, 0.5, 1);   /* a small overshoot on release: the CSS stand-in for a press spring */
+
+  /* ---- Radius families: control, tile, object, sheet ----------------------- */
+  --r-control: var(--radius-sm);     /* chips, inputs, small buttons */
+  --r-tile: var(--radius-lg);        /* icon tiles, compact tiles, rows */
+  --r-object: var(--radius-xl);      /* a Circle, Ask, Plan, Split, Pact or recap */
+  --r-sheet: var(--radius-2xl);      /* bottom sheets */
+
+  /* ---- Surfaces: base, quiet, interactive, focused -------------------------
+     base:        the paper the app sits on.
+     quiet:       soft context. Grouped, inactive or summary information. A whisper of tint, no edge.
+     interactive: an object you can act on. Hairline, a small ambient shadow, a lit top edge.
+     focused:     chosen, active or high priority. Stronger contrast and a ring, not louder colour. */
+  --surface-base: var(--color-bg);
+  --surface-quiet: color-mix(in srgb, var(--color-text) 3.5%, var(--color-bg));
+  --surface-interactive: var(--color-surface);
+  --surface-focused: var(--color-surface);
+  --line-quiet: color-mix(in srgb, var(--color-text) 8%, transparent);
+  --lit-edge: inset 0 1px 0 rgba(255, 255, 255, 0.75);
+  --elev-interactive: var(--lit-edge), 0 0 0 1px var(--color-border), 0 1px 2px rgba(15, 23, 19, 0.05), 0 10px 20px -14px rgba(15, 23, 19, 0.2);
+  --elev-focused: var(--lit-edge), 0 0 0 1.5px var(--color-text), 0 1px 2px rgba(15, 23, 19, 0.08), 0 16px 28px -16px rgba(15, 23, 19, 0.34);
+
   /* ---- Layout ------------------------------------------------------------ */
   --container-max: 1280px;
   --gutter: 16px;
@@ -278,6 +309,13 @@
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.32), 0 4px 12px -6px rgba(0, 0, 0, 0.4);
   --shadow-md: 0 1px 2px rgba(0, 0, 0, 0.32), 0 14px 28px -18px rgba(0, 0, 0, 0.55);
   --shadow-lg: 0 2px 4px rgba(0, 0, 0, 0.3), 0 28px 56px -30px rgba(0, 0, 0, 0.7);
+
+  /* Surfaces on a warm dark base: tonal steps up, a faint lit edge instead of a drop shadow */
+  --surface-quiet: color-mix(in srgb, var(--color-text) 3.5%, var(--color-bg));
+  --line-quiet: color-mix(in srgb, var(--color-text) 9%, transparent);
+  --lit-edge: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  --elev-interactive: var(--lit-edge), 0 0 0 1px var(--color-border), 0 1px 2px rgba(0, 0, 0, 0.35), 0 10px 20px -14px rgba(0, 0, 0, 0.6);
+  --elev-focused: var(--lit-edge), 0 0 0 1.5px var(--color-text), 0 1px 2px rgba(0, 0, 0, 0.4), 0 16px 28px -16px rgba(0, 0, 0, 0.7);
 }
 
 @media (min-width: 768px) {
@@ -298,5 +336,10 @@
     --duration-base: 0ms;
     --duration-slow: 0ms;
     --duration-slower: 0ms;
+    --motion-micro: 0ms;
+    --motion-state: 0ms;
+    --motion-nav: 0ms;
+    --motion-sheet: 0ms;
+    --motion-celebrate: 0ms;
   }
 }

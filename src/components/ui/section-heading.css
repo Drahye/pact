@@ -31,10 +31,22 @@
   color: var(--color-text);
 }
 
+.section-heading__action:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+  border-radius: var(--r-control);
+}
+
 /* app ---------------------------------------------------------------- */
 .section-heading--app .section-heading__title {
-  font-size: var(--text-title);
-  line-height: var(--leading-title);
+  font-size: var(--text-lg);
+  line-height: var(--leading-lg);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-snug);
+}
+
+.section-heading--app {
+  margin-bottom: var(--space-1);
 }
 
 /* site --------------------------------------------------------------- */

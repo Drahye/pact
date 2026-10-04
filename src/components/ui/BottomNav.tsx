@@ -27,7 +27,7 @@ export function BottomNav() {
       <NavLink key={t.to} to={t.to} className={() => `tabbar__item ${active ? 'is-active' : ''}`} aria-current={active ? 'page' : undefined}>
         {() => (
           <>
-            {active && <motion.span layoutId="tab-active" className="tabbar__active" transition={spring.snappy} />}
+            {active && <motion.span layoutId="tab-active" className="tabbar__active" transition={spring.soft} />}
             <span className="tabbar__icon" aria-hidden>
               {t.icon}
             </span>
@@ -41,9 +41,18 @@ export function BottomNav() {
     <nav className="tabbar" aria-label="Primary">
       <div className="tabbar__pill">
         {left.map(renderTab)}
-        <button type="button" className="tabbar__create" aria-label="Create" aria-haspopup="dialog" onClick={() => create.open({ from: 'nav' })}>
+        <motion.button
+          type="button"
+          className={`tabbar__create ${create.isOpen ? 'is-open' : ''}`}
+          aria-label="Create"
+          aria-haspopup="dialog"
+          aria-expanded={create.isOpen}
+          onClick={() => create.open({ from: 'nav' })}
+          whileTap={{ scale: 0.92 }}
+          transition={spring.press}
+        >
           <Plus aria-hidden />
-        </button>
+        </motion.button>
         {right.map(renderTab)}
       </div>
     </nav>

@@ -11,15 +11,27 @@
   text-align: center;
   user-select: none;
   transition:
-    background-color var(--duration-fast) var(--ease-out),
-    border-color var(--duration-fast) var(--ease-out),
-    color var(--duration-fast) var(--ease-out),
-    transform var(--duration-fast) var(--ease-out),
-    opacity var(--duration-fast) var(--ease-out);
+    background-color var(--motion-micro) var(--ease-soft),
+    border-color var(--motion-micro) var(--ease-soft),
+    color var(--motion-micro) var(--ease-soft),
+    box-shadow var(--motion-state) var(--ease-soft),
+    transform var(--motion-micro) var(--ease-press),
+    opacity var(--motion-micro) var(--ease-soft);
 }
 
-.btn:active:not(:disabled) {
-  transform: scale(0.975);
+/* Every major button gives under the finger and springs back. */
+.btn:active:not(:disabled):not(.is-loading) {
+  transform: scale(0.972);
+}
+
+.btn.is-loading {
+  cursor: progress;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn:active:not(:disabled):not(.is-loading) {
+    transform: none;
+  }
 }
 
 .btn:focus-visible {
@@ -38,7 +50,7 @@
   justify-content: center;
   min-width: 0;
   gap: var(--space-2);
-  transition: opacity var(--duration-fast) var(--ease-out);
+  transition: opacity var(--motion-state) var(--ease-soft);
 }
 
 .btn__icon {

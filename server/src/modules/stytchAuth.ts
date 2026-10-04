@@ -1,8 +1,13 @@
+import { createHash } from 'node:crypto';
+import type { OtpVerifyDTO } from '../../../shared/contracts.js';
 import type { Ctx, ReqMeta } from '../context.js';
+import { decrypt, encrypt, keyedHash, randomToken } from '../lib/crypto.js';
 import { badRequest, AppError, tooMany } from '../lib/errors.js';
+import { safeReturnPath } from '../lib/returnPath.js';
 import { STYTCH_CODE_TTL_MS, StytchError } from '../payments/stytch.js';
 import type { EmailOtpPurpose } from './emailAuth.js';
-import { maskEmail } from './identities.js';
+import { mintSignupToken, signInUser } from './auth.js';
+import { addIdentity, findEmailOwner, findIdentity, maskEmail, normalizeEmail } from './identities.js';
 import { audit } from './platform.js';
 
 /**
@@ -92,4 +97,81 @@ export async function verifyStytchCode(ctx: Ctx, email: string, code: string, pu
   const spent = await ctx.db.query('UPDATE stytch_email_challenges SET consumed_at = now() WHERE id = $1 AND consumed_at IS NULL', [row.id]);
   if (!spent.rowCount) throw badRequest('otp_expired', 'That code has already been used. Request a new one.');
   return { stytchUserId: verified.userId };
+}
+
+/* --------------------------------------------------------------------------
+   Google through Stytch OAuth
+   -------------------------------------------------------------------------- */
+
+/**
+ * The browser leaves for Google through Stytch and comes back to PACT's own /authenticate page with a one-time token. Three things keep that
+ * return honest: the token is checked server to server, it is bound to a PKCE verifier only this browser's cookie can unlock, and where the
+ * person goes next comes from state PACT stored before leaving, never from the return URL.
+ */
+export const STYTCH_OAUTH_COOKIE = 'pact_so';
+const OAUTH_TTL_MIN = 10;
+const stateHash = (ctx: Ctx, state: string) => keyedHash(ctx.config.HASH_SECRET, `stytch-oauth:${state}`);
+
+export const stytchRedirectUrl = (ctx: Ctx) => `${ctx.config.APP_ORIGIN}/authenticate`;
+
+export async function startStytchOAuth(ctx: Ctx, returnTo: string | null | undefined) {
+  if (!ctx.config.stytchGoogleEnabled || !ctx.stytch.enabled) throw new AppError(503, 'google_unavailable', 'Google sign-in isn’t available right now.');
+  const state = randomToken(24);
+  const verifier = randomToken(32);
+  await ctx.db.query(
+    `INSERT INTO oauth_states (state_hash, nonce, verifier_enc, mode, return_to, expires_at) VALUES ($1, 'stytch', $2, 'signin', $3, now() + make_interval(mins => $4))`,
+    [stateHash(ctx, state), encrypt(ctx.config.DATA_ENCRYPTION_KEY, verifier), safeReturnPath(returnTo), OAUTH_TTL_MIN],
+  );
+  const codeChallenge = createHash('sha256').update(verifier).digest('base64url');
+  return { state, url: ctx.stytch.oauthStartUrl({ redirectUrl: stytchRedirectUrl(ctx), codeChallenge }) };
+}
+
+export type StytchOAuthOutcome =
+  | { kind: 'signed_in'; out: Extract<OtpVerifyDTO, { status: 'signed_in' }>; returnTo: string | null }
+  | { kind: 'needs_profile'; signupToken: string; email: string; returnTo: string | null };
+
+/** Validates the returned token and resolves the person. Anything wrong is one generic error: no provider detail, never the token. */
+export async function finishStytchOAuth(ctx: Ctx, input: { token: string; cookieState: string | undefined }, meta: ReqMeta): Promise<StytchOAuthOutcome> {
+  const failed = () => new AppError(400, 'oauth_failed', 'We couldn’t sign you in with Google. Try again.');
+  if (!ctx.config.stytchGoogleEnabled || !input.cookieState) throw failed();
+  const row = await ctx.db.tx(async (q) => {
+    const r = await q.query<{ verifier_enc: string; return_to: string | null }>(
+      `UPDATE oauth_states SET consumed_at = now() WHERE state_hash = $1 AND nonce = 'stytch' AND consumed_at IS NULL AND expires_at > now() RETURNING verifier_enc, return_to`,
+      [stateHash(ctx, input.cookieState!)],
+    );
+    return r.rows[0] ?? null;
+  });
+  if (!row) throw failed(); // not started by this browser, expired, or already used
+  let proof;
+  try {
+    proof = await ctx.stytch.authenticateOAuth(input.token, decrypt(ctx.config.DATA_ENCRYPTION_KEY, row.verifier_enc));
+  } catch (err) {
+    const kind = err instanceof StytchError ? err.kind : 'error';
+    ctx.log.warn({ kind }, 'stytch oauth failed');
+    await audit(ctx.db, { action: 'auth.google_failed', ip: meta.ip, metadata: { via: 'stytch', kind } });
+    if (kind === 'unavailable') throw unavailable();
+    throw failed();
+  }
+  const returnTo = row.return_to;
+  // 1. The Stytch user is the identity (the same one an email code resolves to). 2. A verified address someone already holds. 3. A new person.
+  const known = await findIdentity(ctx.db, 'stytch', proof.userId);
+  const email = proof.verifiedEmails.map(normalizeEmail).find((e): e is string => !!e) ?? null;
+  const signedIn = async (userId: string) => {
+    const out = await signInUser(ctx, userId, 'google', undefined, meta);
+    if (out.status !== 'signed_in') throw failed();
+    return { kind: 'signed_in' as const, out, returnTo };
+  };
+  if (known) {
+    if (email && known.email !== email) await ctx.db.query('UPDATE user_identities SET email = $2, updated_at = now() WHERE id = $1', [known.id, email]);
+    return signedIn(known.user_id);
+  }
+  if (!email) throw failed(); // nothing verified to match or create on
+  const owner = await findEmailOwner(ctx.db, email);
+  if (owner) {
+    await addIdentity(ctx.db, owner.user_id, 'stytch', proof.userId, { email });
+    await audit(ctx.db, { actorId: owner.user_id, action: 'email_identity_linked', ip: meta.ip, metadata: { via: 'stytch_oauth_verified_email' } });
+    return signedIn(owner.user_id);
+  }
+  const signupToken = await mintSignupToken(ctx, { provider: 'stytch', subject: proof.userId, email, ...(proof.firstName ? { firstName: proof.firstName } : {}), ...(proof.lastName ? { lastName: proof.lastName } : {}) });
+  return { kind: 'needs_profile', signupToken, email, returnTo };
 }

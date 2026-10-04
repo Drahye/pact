@@ -45,6 +45,18 @@ New accounts of any kind ask only for a name (Google pre-fills it). The signup c
 - Signed-in linking and PIN reset by email use the same path. Phone sign-in, the PIN model and the share-link returns are unchanged.
 - Resend is no longer needed for sign-in (production no longer demands `EMAIL_PROVIDER=resend` when this is on).
 
+## Beta rollout: Google through Stytch OAuth
+
+The front door offers Continue with Google (Stytch's default Google provider, not our Google Cloud client), then email, then phone as the fallback. Shown when `/config` reports `auth.stytchGoogle` (Stytch email auth on, with `STYTCH_PROJECT_ID`, `STYTCH_SECRET` and `STYTCH_PUBLIC_TOKEN` set).
+
+- Start: `POST /api/auth/stytch/google/start {returnTo?}` stores a state row (PKCE verifier encrypted, the safe return path), sets a 10 minute httpOnly cookie `pact_so`, and returns Stytch's `/v1/public/oauth/google/start` URL (public token, `code_challenge`, login and signup redirect both `APP_ORIGIN/authenticate`). The browser navigates there.
+- Return: Stytch redirects to the SPA route `/authenticate?stytch_token_type=oauth&token=...`. The page removes the token from the address bar and posts it to `POST /api/auth/stytch/google/finish`.
+- Validation: the cookie finds and spends the state row (one try per start), then the server calls Stytch `POST /v1/oauth/authenticate` with the token and the PKCE verifier. No Stytch session is requested. Any failure is one generic `oauth_failed` (503 when Stytch is down); nothing from Stytch is shown or logged.
+- Resolution, same as email codes: known `stytch` identity (the Stytch user id) signs in; else whoever holds a Stytch-verified address gets the identity attached; else a name screen, then a new user. An address Stytch has not verified never matches or creates anything.
+- Return path: the stored value (`/a/`, `/p/`, `/s/`, `/app/...`) comes back in the finish response; the callback URL never decides it.
+- Local: Stytch's registered local redirect is `http://localhost:3000/authenticate`, so run with `APP_ORIGIN=http://localhost:3000` and the web dev server on port 3000 (`PORT=3000`). Production: `APP_ORIGIN=https://pact-qaar.onrender.com`.
+- The legacy Google Cloud flow (`ENABLE_GOOGLE_AUTH`, `/auth/google/*`) is unchanged and unused by the UI.
+
 ## Beta rollout: Google is off
 
 `ENABLE_GOOGLE_AUTH=false` (the default). While off: the front door offers email first and phone as the fallback; the Account screen shows no Google row; `/config` reports `auth.google: false`; `/auth/google/start`, the link route and the callback refuse. The OIDC code, identities, account matching and tests are untouched. Re-enable with `ENABLE_GOOGLE_AUTH=true` plus `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` and an explicit `GOOGLE_REDIRECT_URI`.

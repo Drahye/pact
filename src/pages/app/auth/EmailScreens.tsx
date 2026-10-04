@@ -227,3 +227,42 @@ export function GoogleReturnScreen() {
 
   return <Loading full />;
 }
+
+/* Back from Google through Stytch (/authenticate) -------------------------- */
+/**
+ * Stytch sends the browser here with a one-time token in the address. It is read once, removed from the address bar, and handed to the
+ * server, which is the only thing that decides whether it proves anything. The destination comes back from the server, not from the URL.
+ */
+export function AuthenticateScreen() {
+  const { finishStytchGoogle } = useAuth();
+  const navigate = useNavigate();
+  const done = useRef(false);
+
+  useEffect(() => {
+    if (done.current) return;
+    done.current = true;
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token');
+    const type = params.get('stytch_token_type');
+    window.history.replaceState(null, '', '/authenticate');
+    const fail = () => navigate('/app/auth/welcome?error=google', { replace: true });
+    if (!token || (type && type !== 'oauth')) {
+      fail();
+      return;
+    }
+    finishStytchGoogle(token)
+      .then((r) => {
+        setReturnTo(safeAppPath(r.returnTo) ?? undefined);
+        if (r.status === 'needs_profile') {
+          writeFlow({ needsProfile: true, via: 'google' });
+          navigate('/app/auth/profile?via=google', { replace: true });
+        } else {
+          // The session is set; go straight to where the person was headed, not to Home.
+          navigate(safeAppPath(r.returnTo) ?? '/app/home', { replace: true });
+        }
+      })
+      .catch(fail);
+  }, [finishStytchGoogle, navigate]);
+
+  return <Loading full />;
+}

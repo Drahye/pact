@@ -84,7 +84,7 @@ const Env = z.object({
   EMAIL_AUTH_PROVIDER: z.enum(['native', 'stytch']).default('native'),
   STYTCH_PROJECT_ID: z.string().default(''),
   STYTCH_SECRET: z.string().default(''),
-  /** Not used by the server flow and never sent to the browser: PACT calls Stytch from the backend only. Kept so the variable can sit in the environment. */
+  /** The public token only builds the Google OAuth start URL (it is designed to be public). The secret is never sent anywhere but Stytch's API. */
   STYTCH_PUBLIC_TOKEN: z.string().default(''),
   /** Tests and local stand-ins only. Refused in production mode. */
   STYTCH_BASE_URL: z.string().default(''),
@@ -126,6 +126,8 @@ export type Config = z.infer<typeof Env> & {
   exposeDevCodes: boolean;
   exposeEmailCodes: boolean;
   googleEnabled: boolean;
+  /** Google sign-in through Stytch OAuth: Stytch email auth is on and the public token is set. Independent of the legacy Google Cloud flag above. */
+  stytchGoogleEnabled: boolean;
   deployEnv: 'development' | 'staging' | 'production';
   /** Present only when all three VAPID settings are valid. */
   push: { publicKey: string; privateKey: string; subject: string } | null;
@@ -205,6 +207,7 @@ export function loadConfig(overrides: Partial<Record<keyof z.infer<typeof Env>, 
     // OTP codes are returned in API responses only when SMS is not really sent: local development, or a staging beta that asked for it.
     exposeDevCodes: (!isProd && env.SMS_PROVIDER === 'log') || (deployEnv === 'staging' && env.STAGING_SHOW_CODES),
     googleEnabled: env.ENABLE_GOOGLE_AUTH,
+    stytchGoogleEnabled: env.EMAIL_AUTH_PROVIDER === 'stytch' && !!env.STYTCH_PUBLIC_TOKEN && !!env.STYTCH_PROJECT_ID && !!env.STYTCH_SECRET,
     // Same rule for email codes: returned in responses only when no email is really sent.
     // Stytch really emails its codes, so none is ever returned in a response.
     exposeEmailCodes: env.EMAIL_AUTH_PROVIDER === 'native' && ((!isProd && env.EMAIL_PROVIDER === 'log') || (deployEnv === 'staging' && env.STAGING_SHOW_CODES && env.EMAIL_PROVIDER === 'log')),

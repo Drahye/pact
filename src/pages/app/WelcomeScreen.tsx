@@ -31,7 +31,7 @@ const GoogleMark = () => (
  * Nothing here talks about wallets or money.
  */
 export function WelcomeScreen() {
-  const { config, startGoogle, requestEmail } = useAuth();
+  const { config, startStytchGoogle, requestEmail } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [params] = useSearchParams();
@@ -42,7 +42,7 @@ export function WelcomeScreen() {
   const [email, setEmail] = useState(() => readFlow().email ?? '');
   const [emailError, setEmailError] = useState<string>();
   const [emailBusy, setEmailBusy] = useState(false);
-  const googleOn = config?.auth?.google ?? false;
+  const googleOn = config?.auth?.stytchGoogle ?? false;
   const [googleError, setGoogleError] = useState(params.get('error') === 'google');
 
   // Came here from a protected screen: go back there after signing in.
@@ -79,8 +79,9 @@ export function WelcomeScreen() {
     setGoogleBusy(true);
     setGoogleError(false);
     try {
-      const { url } = await startGoogle(pendingReturnTo() ?? undefined);
+      const { url } = await startStytchGoogle(pendingReturnTo() ?? undefined);
       window.location.assign(url);
+      // Stay disabled while the browser leaves; a failed start re-enables below.
     } catch {
       setGoogleError(true);
       setGoogleBusy(false);
@@ -134,7 +135,7 @@ export function WelcomeScreen() {
             error={emailError}
           />
           <Button type="submit" fullWidth size="lg" loading={emailBusy} disabled={!email.trim()}>
-            Continue
+            Continue with email
           </Button>
         </form>
         <p className="signin__phone">

@@ -1,5 +1,7 @@
 /** Email sign-in through Stytch: Stytch proves the address; PACT resolves the person, owns the account and issues the session. */
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import { createServer, type IncomingMessage } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { after, before, describe, it } from 'node:test';
@@ -17,6 +19,9 @@ function fakeStytch() {
   const spent = new Set<string>();
   const state = { down: false, sendCalls: 0 };
   let n = 0;
+  const userFor = (email: string) => `user-test-${Buffer.from(email).toString('hex').slice(0, 24)}`;
+  // Google through Stytch: a token is minted per (start, email), bound to the PKCE challenge of the start, and works once.
+  const oauth = new Map<string, { email: string; challenge: string; verified: boolean; spent: boolean }>();
   const client: StytchClient = {
     enabled: true,
     async sendEmailCode(email) {
@@ -27,6 +32,16 @@ function fakeStytch() {
       sends.push({ email, methodId, code });
       return { methodId, userId: `user-test-${Buffer.from(email).toString('hex').slice(0, 24)}` };
     },
+    oauthStartUrl({ redirectUrl, codeChallenge }) {
+      return `https://stytch.fake/v1/public/oauth/google/start?redirect=${encodeURIComponent(redirectUrl)}&code_challenge=${codeChallenge}`;
+    },
+    async authenticateOAuth(token, verifier) {
+      const o = oauth.get(token);
+      if (state.down) throw new StytchError('unavailable');
+      if (!o || o.spent || createHash('sha256').update(verifier).digest('base64url') !== o.challenge) throw new StytchError('invalid_code');
+      o.spent = true;
+      return { userId: userFor(o.email), verifiedEmails: o.verified ? [o.email] : [], firstName: 'Gail', lastName: 'Goo' };
+    },
     async verifyEmailCode(methodId, code) {
       const s = sends.find((x) => x.methodId === methodId);
       if (!s || spent.has(methodId) || s.code !== code) throw new StytchError('invalid_code');
@@ -34,7 +49,13 @@ function fakeStytch() {
       return { userId: `user-test-${Buffer.from(s.email).toString('hex').slice(0, 24)}` };
     },
   };
-  return { client, sends, state, lastCode: (email: string) => [...sends].reverse().find((s) => s.email === email)!.code };
+  /** What Stytch would put on the redirect after Google, for the start whose URL this is. */
+  const googleToken = (startUrl: string, email: string, verified = true) => {
+    const token = `oauth-token-${oauth.size + 1}-${'x'.repeat(24)}`;
+    oauth.set(token, { email, challenge: new URL(startUrl).searchParams.get('code_challenge')!, verified, spent: false });
+    return token;
+  };
+  return { client, googleToken, sends, state, lastCode: (email: string) => [...sends].reverse().find((s) => s.email === email)!.code };
 }
 
 describe('email sign-in through Stytch', () => {
@@ -181,7 +202,7 @@ describe('email sign-in through Stytch', () => {
   });
 
   it('keeps Google hidden', async () => {
-    assert.deepEqual((await t.call('GET', '/config')).body.auth, { google: false, email: true });
+    assert.deepEqual((await t.call('GET', '/config')).body.auth, { google: false, stytchGoogle: false, email: true });
     assert.equal((await t.call('POST', '/auth/google/start', undefined, {})).status, 503);
   });
 
@@ -292,5 +313,252 @@ describe('the Stytch client against a real HTTP server', () => {
     const prod = { NODE_ENV: 'production', SEED_DEMO: 'false', JWT_SECRET: 'j'.repeat(40), HASH_SECRET: 'h'.repeat(40), DATA_ENCRYPTION_KEY: Buffer.alloc(32, 7).toString('base64'), DATABASE_URL: 'postgres://u:p@db:5432/pact', SANDBOX_WEBHOOK_SECRET: 'w'.repeat(32), DEPLOY_ENV: 'production', PAYMENTS_PROVIDER: 'paystack', PAYSTACK_SECRET_KEY: 'sk_live_abc', SMS_PROVIDER: 'termii', TERMII_API_KEY: 'k', EMAIL_AUTH_PROVIDER: 'stytch', STYTCH_PROJECT_ID: 'project-live-x', STYTCH_SECRET: 's' };
     assert.equal(loadConfig(prod).EMAIL_AUTH_PROVIDER, 'stytch', 'production runs on Stytch without Resend');
     assert.throws(() => loadConfig({ ...prod, STYTCH_BASE_URL: 'http://localhost:1' }), /local tests only/);
+  });
+});
+
+describe('Google through Stytch OAuth', () => {
+  let t: T;
+  const stytch = fakeStytch();
+  const post = (url: string, body: unknown, remoteAddress: string, headers: Record<string, string> = {}) =>
+    t.app.inject({ method: 'POST', url: `/api${url}`, remoteAddress, headers: { 'content-type': 'application/json', 'x-pact-client': 'web', ...headers }, payload: JSON.stringify(body) });
+  const json = (r: { body: string }) => JSON.parse(r.body);
+  let n = 20;
+  /** One full browser journey: start (cookie + URL), Google, back on /authenticate with a token, finish. */
+  const google = async (email: string, opts: { returnTo?: string; verified?: boolean; token?: string; cookie?: string } = {}) => {
+    const remoteAddress = `10.8.${++n}.1`;
+    const start = await post('/auth/stytch/google/start', opts.returnTo ? { returnTo: opts.returnTo } : {}, remoteAddress);
+    assert.equal(start.statusCode, 200, start.body);
+    const url: string = json(start).url;
+    const cookie = start.cookies.find((c) => c.name === 'pact_so')!;
+    const token = opts.token ?? stytch.googleToken(url, email, opts.verified ?? true);
+    const fin = await post('/auth/stytch/google/finish', { token }, remoteAddress, { cookie: `pact_so=${opts.cookie ?? cookie.value}` });
+    return { start, url, fin, body: json(fin), cookie };
+  };
+  const cookieOf = (r: { cookies: { name: string; value: string }[] }, name: string) => r.cookies.find((c) => c.name === name)?.value;
+  const nameUp = async (r: { fin: { cookies: { name: string; value: string }[] } }, first = 'Gail') => {
+    const su = cookieOf(r.fin, 'pact_su')!;
+    const s = await post('/auth/signup', { firstName: first, lastName: 'Goo' }, '10.8.99.1', { cookie: `pact_su=${su}` });
+    assert.equal(s.statusCode, 200, s.body);
+    return json(s);
+  };
+  const userCount = async () => (await t.db.query<{ n: number }>('SELECT COUNT(*)::int AS n FROM users')).rows[0].n;
+  const identities = async (userId: string) => (await t.db.query<{ provider: string; provider_subject: string }>(`SELECT provider, provider_subject FROM user_identities WHERE user_id = $1 ORDER BY provider`, [userId])).rows;
+  const emailIn = async (email: string) => {
+    const remoteAddress = `10.8.${++n}.2`;
+    await post('/auth/email/request', { email }, remoteAddress);
+    const r = await post('/auth/email/verify', { email, code: stytch.lastCode(email) }, remoteAddress);
+    return { ...json(r), su: cookieOf(r, 'pact_su') };
+  };
+
+  before(async () => {
+    t = await setup({ stytch: stytch.client, env: { EMAIL_AUTH_PROVIDER: 'stytch', STYTCH_PROJECT_ID: 'project-test-x', STYTCH_SECRET: 'secret-test-x', STYTCH_PUBLIC_TOKEN: 'public-token-test-x' } });
+  });
+  after(async () => t.close());
+
+  it('is offered through Stytch, and the legacy Google Cloud flag stays off', async () => {
+    const c = json(await t.app.inject({ method: 'GET', url: '/api/config' }));
+    assert.equal(c.auth.stytchGoogle, true);
+    assert.equal(c.auth.google, false);
+    const legacy = await post('/auth/google/start', {}, '10.8.1.1');
+    assert.equal(legacy.statusCode, 503, 'the old Google Cloud route is not wired');
+  });
+
+  it('start sends the browser through Stytch to /authenticate, with PKCE and a short-lived httpOnly cookie, and no secret', async () => {
+    const start = await post('/auth/stytch/google/start', {}, '10.8.2.1');
+    const url = new URL(json(start).url);
+    assert.equal(url.hostname, 'stytch.fake');
+    assert.equal(url.searchParams.get('redirect'), `${t.ctx.config.APP_ORIGIN}/authenticate`);
+    assert.ok(url.searchParams.get('code_challenge'));
+    assert.ok(!start.body.includes('secret-test-x'));
+    const c = start.cookies.find((x) => x.name === 'pact_so')!;
+    assert.equal(c.httpOnly, true);
+    assert.equal(c.path, '/api/auth/stytch');
+  });
+
+  it('a new Google user: needs a name, then a PACT user with one Stytch identity and a normal session', async () => {
+    const before = await userCount();
+    const r = await google('gnew@example.com');
+    assert.equal(r.body.status, 'needs_profile');
+    assert.equal(r.body.signupToken, undefined, 'the continuation stays in an httpOnly cookie');
+    assert.equal(await userCount(), before, 'nothing created until a name is given');
+    const out = await nameUp(r, 'Gina');
+    assert.equal(await userCount(), before + 1);
+    assert.ok(out.accessToken);
+    const ids = await identities(out.user.id);
+    assert.deepEqual(ids.map((i) => i.provider), ['stytch']);
+    assert.ok(ids[0].provider_subject.startsWith('user-test-'), 'keyed by the Stytch user id');
+    assert.equal((await t.call('GET', '/me', out.accessToken)).status, 200);
+  });
+
+  it('a returning Google user resolves the same account', async () => {
+    const first = await nameUp(await google('gback@example.com'));
+    const before = await userCount();
+    const again = await google('gback@example.com');
+    assert.equal(again.body.status, 'signed_in');
+    assert.equal(again.body.user.id, first.user.id);
+    assert.equal(await userCount(), before);
+  });
+
+  it('email code then Google with the same Stytch user does not duplicate the account', async () => {
+    const v = await emailIn('both1@example.com');
+    const su = await post('/auth/signup', { firstName: 'Bo', lastName: 'Th' }, '10.8.98.1', { cookie: `pact_su=${v.su}` });
+    const user = json(su).user;
+    const before = await userCount();
+    const g = await google('both1@example.com');
+    assert.equal(g.body.status, 'signed_in');
+    assert.equal(g.body.user.id, user.id);
+    assert.equal(await userCount(), before);
+    assert.equal((await identities(user.id)).length, 1, 'one Stytch user, one identity');
+  });
+
+  it('Google then email code does not duplicate the account', async () => {
+    const out = await nameUp(await google('both2@example.com'));
+    const before = await userCount();
+    const back = await emailIn('both2@example.com');
+    assert.equal(back.status, 'signed_in');
+    assert.equal(back.user.id, out.user.id);
+    assert.equal(await userCount(), before);
+  });
+
+  it('a verified address already on an account gets the Stytch identity attached when the Stytch user is new', async () => {
+    const owner = await t.signIn('08039002001', { firstName: 'Own', lastName: 'Er', pin: '2468' });
+    await addIdentity(t.db, owner.user.id, 'email', 'gowner@example.com', { email: 'gowner@example.com' });
+    const before = await userCount();
+    const g = await google('gowner@example.com');
+    assert.equal(g.body.status, 'signed_in');
+    assert.equal(g.body.user.id, owner.user.id);
+    assert.equal(await userCount(), before);
+    assert.deepEqual((await identities(owner.user.id)).map((i) => i.provider), ['email', 'phone', 'stytch']);
+  });
+
+  it('an address Stytch has not verified never matches or creates anything', async () => {
+    const before = await userCount();
+    const g = await google('unverified@example.com', { verified: false });
+    assert.equal(g.fin.statusCode, 400);
+    assert.equal(g.body.error.code, 'oauth_failed');
+    assert.equal(await userCount(), before);
+  });
+
+  it('an invalid, forged, replayed or foreign-browser token fails safely with one generic error', async () => {
+    const before = await userCount();
+    const bad = await google('x@example.com', { token: 'not-a-real-token-at-all' });
+    assert.equal(bad.fin.statusCode, 400);
+    assert.equal(bad.body.error.code, 'oauth_failed');
+    assert.ok(!/stytch|token|verifier/i.test(bad.body.error.message));
+    assert.equal(bad.fin.cookies.find((c) => c.name === 'pact_su'), undefined);
+    assert.equal(bad.fin.cookies.find((c) => c.name === 'pact_rt'), undefined);
+
+    // A token minted for another start (another PKCE challenge) is useless with this browser's verifier.
+    const other = await post('/auth/stytch/google/start', {}, '10.8.50.1');
+    const foreign = stytch.googleToken(json(other).url, 'y@example.com');
+    assert.equal((await google('y@example.com', { token: foreign })).fin.statusCode, 400);
+
+    // No cookie: a callback this browser did not start.
+    const start = await post('/auth/stytch/google/start', {}, '10.8.51.1');
+    const tok = stytch.googleToken(json(start).url, 'z@example.com');
+    assert.equal((await post('/auth/stytch/google/finish', { token: tok }, '10.8.51.1')).statusCode, 400);
+
+    // Replay: the state is spent after one finish, even if the token were reused.
+    const ok = await google('replay@example.com');
+    assert.equal(ok.body.status, 'needs_profile');
+    const replay = await post('/auth/stytch/google/finish', { token: 'anything-long-enough' }, '10.8.52.1', { cookie: `pact_so=${ok.cookie.value}` });
+    assert.equal(replay.statusCode, 400);
+    assert.equal(await userCount(), before);
+  });
+
+  it('says so without detail when Stytch is down', async () => {
+    const start = await post('/auth/stytch/google/start', {}, '10.8.60.1');
+    const tok = stytch.googleToken(json(start).url, 'down@example.com');
+    stytch.state.down = true;
+    const r = await post('/auth/stytch/google/finish', { token: tok }, '10.8.60.1', { cookie: `pact_so=${start.cookies.find((c) => c.name === 'pact_so')!.value}` });
+    stytch.state.down = false;
+    assert.equal(r.statusCode, 503);
+  });
+
+  it('returns to the shared item for every safe path, and drops anything else', async () => {
+    const ids = ['A'.repeat(22), 'b'.repeat(22), 'C'.repeat(22)];
+    const paths = [`/a/${ids[0]}`, `/p/${ids[1]}`, `/s/${ids[2]}`, `/app/c/${ids[0]}`, '/app/pacts'];
+    for (const p of paths) {
+      const g = await google('gret@example.com', { returnTo: p });
+      assert.equal(g.body.returnTo, p, p);
+      if (g.body.status === 'needs_profile') await nameUp(g);
+    }
+    for (const bad of ['https://evil.example/x', '//evil.example', '/app/auth/welcome', '/\\evil', 'javascript:alert(1)']) {
+      const g = await google('gret@example.com', { returnTo: bad });
+      assert.equal(g.body.returnTo, null, bad);
+    }
+  });
+
+  it('the front door and /authenticate use the Stytch flow, never the old Google Cloud one', () => {
+    const welcome = readFileSync('src/pages/app/WelcomeScreen.tsx', 'utf8');
+    assert.match(welcome, /startStytchGoogle/);
+    assert.doesNotMatch(welcome, /startGoogle\b/);
+    assert.match(welcome, /Continue with Google/);
+    assert.match(welcome, /Continue with email/);
+    assert.match(welcome, /Sign in with phone/);
+    assert.match(readFileSync('src/App.tsx', 'utf8'), /path="\/authenticate"/);
+    assert.doesNotMatch(readFileSync('src/pages/app/auth/EmailScreens.tsx', 'utf8').split('AuthenticateScreen')[1] ?? '', /auth\/google\/start/);
+  });
+
+  it('keeps phone sign-in working beside it', async () => {
+    const u = await t.signIn('08039002002', { firstName: 'Fon', lastName: 'Eman', pin: '2468' });
+    const again = await t.signIn('08039002002');
+    assert.equal(again.user.id, u.user.id);
+  });
+
+  it('never logs a token, a state or the secret', async () => {
+    const lines: string[] = [];
+    const t2 = await setup({ stytch: stytch.client, logStream: { write: (l) => void lines.push(l) }, env: { EMAIL_AUTH_PROVIDER: 'stytch', STYTCH_PROJECT_ID: 'project-test-x', STYTCH_SECRET: 'secret-test-x', STYTCH_PUBLIC_TOKEN: 'public-token-test-x' } });
+    try {
+      const start = await t2.app.inject({ method: 'POST', url: '/api/auth/stytch/google/start', remoteAddress: '10.8.70.1', headers: { 'content-type': 'application/json', 'x-pact-client': 'web' }, payload: '{}' });
+      const tok = stytch.googleToken(JSON.parse(start.body).url, 'log@example.com');
+      await t2.app.inject({ method: 'POST', url: '/api/auth/stytch/google/finish', remoteAddress: '10.8.70.1', headers: { 'content-type': 'application/json', 'x-pact-client': 'web', cookie: `pact_so=${start.cookies[0].value}` }, payload: JSON.stringify({ token: tok }) });
+      const all = lines.join('');
+      assert.ok(!all.includes(tok) && !all.includes(start.cookies[0].value) && !all.includes('secret-test-x'));
+    } finally {
+      await t2.close();
+    }
+  });
+});
+
+describe('the Stytch OAuth client', () => {
+  const seen: { path: string; body: Record<string, unknown> }[] = [];
+  let mode: 'ok' | 'bad' = 'ok';
+  let base = '';
+  let server: ReturnType<typeof createServer>;
+  const read = (req: IncomingMessage) => new Promise<string>((res) => { let s = ''; req.on('data', (c) => (s += c)); req.on('end', () => res(s)); });
+  before(async () => {
+    server = createServer(async (req, res) => {
+      seen.push({ path: req.url ?? '', body: JSON.parse((await read(req)) || '{}') });
+      const send = (status: number, o: unknown) => (res.writeHead(status, { 'content-type': 'application/json' }), res.end(JSON.stringify(o)));
+      if (mode === 'bad') return send(400, { error_type: 'oauth_token_not_found', error_message: 'secret detail' });
+      send(200, { user_id: 'user-test-g', session_token: 'ignored', provider_values: { access_token: 'ignored' }, user: { emails: [{ email: 'g@example.com', verified: true }, { email: 'o@example.com', verified: false }], name: { first_name: 'Gi', last_name: 'Go' } } });
+    }).listen(0);
+    base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+  });
+  after(() => void server.close());
+  const client = () => createStytch(loadConfig({ NODE_ENV: 'test', EMAIL_AUTH_PROVIDER: 'stytch', STYTCH_PROJECT_ID: 'project-test-abc', STYTCH_SECRET: 'secret-test-abc', STYTCH_PUBLIC_TOKEN: 'public-test-abc', APP_ORIGIN: 'http://localhost:3000', STYTCH_BASE_URL: base }));
+
+  it('builds the Stytch Google start URL from the public token only, with both redirects on /authenticate', () => {
+    const u = new URL(client().oauthStartUrl({ redirectUrl: 'http://localhost:3000/authenticate', codeChallenge: 'chal' }));
+    assert.equal(u.pathname, '/v1/public/oauth/google/start');
+    assert.equal(u.searchParams.get('public_token'), 'public-test-abc');
+    assert.equal(u.searchParams.get('login_redirect_url'), 'http://localhost:3000/authenticate');
+    assert.equal(u.searchParams.get('signup_redirect_url'), 'http://localhost:3000/authenticate');
+    assert.equal(u.searchParams.get('code_challenge'), 'chal');
+    assert.ok(!u.href.includes('secret-test-abc'));
+  });
+
+  it('authenticates the token with the PKCE verifier and keeps only the user id, verified addresses and name', async () => {
+    mode = 'ok';
+    const r = await client().authenticateOAuth('tok', 'ver');
+    assert.deepEqual(r, { userId: 'user-test-g', verifiedEmails: ['g@example.com'], firstName: 'Gi', lastName: 'Go' });
+    assert.equal(seen.at(-1)!.path, '/v1/oauth/authenticate');
+    assert.deepEqual(seen.at(-1)!.body, { token: 'tok', code_verifier: 'ver' });
+  });
+
+  it('maps a rejected token to a coarse reason with no provider text', async () => {
+    mode = 'bad';
+    await assert.rejects(() => client().authenticateOAuth('tok', 'ver'), (e: unknown) => e instanceof StytchError && e.kind === 'invalid_code' && !/secret/.test(String(e.message)));
   });
 });

@@ -21,6 +21,7 @@ import * as auth from './modules/auth.js';
 import * as account from './modules/account.js';
 import * as asks from './modules/asks.js';
 import * as googleAuth from './modules/googleAuth.js';
+import { finishStytchOAuth, startStytchOAuth, STYTCH_OAUTH_COOKIE } from './modules/stytchAuth.js';
 import * as circles from './modules/circles.js';
 import * as conversation from './modules/conversation.js';
 import { reconcile } from './modules/ledger.js';
@@ -96,7 +97,7 @@ export async function buildApp({ config, db, provider, sms, email, google, stytc
           level: config.LOG_LEVEL,
           // Never log credentials, codes, PINs or account numbers.
           redact: {
-            paths: ['req.headers.authorization', 'req.headers.cookie', 'res.headers["set-cookie"]', '*.pin', '*.currentPin', '*.newPin', '*.accountNumber', '*.bvn', '*.refreshToken', '*.signupToken', '*.code', '*.devCode', '*.state', '*.id_token', '*.access_token'],
+            paths: ['req.headers.authorization', 'req.headers.cookie', 'res.headers["set-cookie"]', '*.pin', '*.currentPin', '*.newPin', '*.accountNumber', '*.bvn', '*.refreshToken', '*.signupToken', '*.code', '*.devCode', '*.state', '*.id_token', '*.access_token', '*.token'],
             censor: '[redacted]',
           },
           // Capability links carry a secret in the path; the request log never keeps it.
@@ -290,7 +291,7 @@ export async function buildApp({ config, db, provider, sms, email, google, stytc
         deployEnv: config.deployEnv,
         exposeDevCodes: config.exposeDevCodes,
         push: pushPublicConfig(config),
-        auth: { google: config.googleEnabled, email: true },
+        auth: { google: config.googleEnabled, stytchGoogle: config.stytchGoogleEnabled, email: true },
       }));
 
       /* ---------- auth */
@@ -348,6 +349,34 @@ export async function buildApp({ config, db, provider, sms, email, google, stytc
         }
         if (outcome.kind === 'linked') return reply.redirect(`${config.APP_ORIGIN}/app/profile/account?linked=google`);
         return reply.redirect(`${config.APP_ORIGIN}${outcome.reason === 'conflict' ? '/app/profile/account?google=conflict' : '/app/auth/welcome?error=google'}`);
+      });
+
+      /* ---------- Google through Stytch OAuth: the beta's Google door. The browser returns to the SPA's /authenticate page, which posts the token here. */
+      const STYTCH_OAUTH_COOKIE_PATH = '/api/auth/stytch';
+      api.post('/auth/stytch/google/start', strict(10), async (req, reply) => {
+        const body = parse(z.object({ returnTo: z.string().max(300).optional() }), req.body);
+        const m = meta(req);
+        const started = await startStytchOAuth(ctx, body.returnTo);
+        await track(ctx.db, config, 'auth_method_selected', { actor: visitorId(config, m.ip, m.userAgent, ctx.now().toISOString().slice(0, 10)), key: `ams:${randomUUID()}`, props: { provider: 'google' } });
+        // Lax and short-lived: it only has to survive the round trip to Google and back to this same browser.
+        reply.setCookie(STYTCH_OAUTH_COOKIE, started.state, { httpOnly: true, secure: config.isProd, sameSite: 'lax', path: STYTCH_OAUTH_COOKIE_PATH, maxAge: 600 });
+        reply.header('Cache-Control', 'no-store');
+        return { url: started.url };
+      });
+      api.post('/auth/stytch/google/finish', strict(10), async (req, reply) => {
+        const body = parse(z.object({ token: z.string().min(8).max(500), device: z.string().max(80).optional() }), req.body);
+        const origin = req.headers.origin;
+        if (origin && !origins.has(origin)) throw unauthorized('Sign in to continue.');
+        reply.header('Cache-Control', 'no-store');
+        let outcome;
+        try {
+          outcome = await finishStytchOAuth(ctx, { token: body.token, cookieState: req.cookies[STYTCH_OAUTH_COOKIE] }, meta(req));
+        } finally {
+          // One try per start, whatever happened.
+          reply.clearCookie(STYTCH_OAUTH_COOKIE, { path: STYTCH_OAUTH_COOKIE_PATH });
+        }
+        const out: OtpVerifyDTO = outcome.kind === 'signed_in' ? outcome.out : { status: 'needs_profile', signupToken: outcome.signupToken, email: outcome.email };
+        return { ...(finishVerify(req, reply, out) as object), returnTo: outcome.returnTo };
       });
 
       if (config.GOOGLE_PROVIDER === 'fake' && config.ENABLE_GOOGLE_AUTH && !config.isProd) {

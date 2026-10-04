@@ -17,7 +17,7 @@ export interface ServerConfig {
   /** Browser push: whether the server can send it, and the public key a browser subscribes with. */
   push?: { enabled: boolean; publicKey: string | null };
   /** Which sign-in methods this server offers. Google appears only when it is configured. */
-  auth?: { google: boolean; email: boolean };
+  auth?: { google: boolean; stytchGoogle?: boolean; email: boolean };
 }
 
 interface AuthValue {
@@ -30,6 +30,10 @@ interface AuthValue {
   verifyEmail: (email: string, code: string) => Promise<OtpVerifyDTO>;
   /** Starts Google sign-in; the browser is then sent to the returned address. */
   startGoogle: (returnTo?: string) => Promise<{ url: string }>;
+  /** Starts Google sign-in through Stytch; the browser is then sent to the returned address. */
+  startStytchGoogle: (returnTo?: string) => Promise<{ url: string }>;
+  /** Back on /authenticate: the server checks the one-time token and either signs in (returnTo is the trusted destination) or asks for a name. */
+  finishStytchGoogle: (token: string) => Promise<{ status: OtpVerifyDTO['status']; returnTo: string | null }>;
   /** After Google sends the browser back: collect the session the server just set up. */
   completeRedirectSignIn: () => Promise<boolean>;
   signup: (input: { firstName: string; lastName: string; pin?: string; referralCode?: string }) => Promise<void>;
@@ -151,6 +155,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return out;
       },
       startGoogle: (returnTo) => api('POST', '/auth/google/start', returnTo ? { returnTo } : {}),
+      startStytchGoogle: (returnTo) => api('POST', '/auth/stytch/google/start', returnTo ? { returnTo } : {}),
+      finishStytchGoogle: async (token) => {
+        const out = await api<OtpVerifyDTO & { returnTo: string | null }>('POST', '/auth/stytch/google/finish', { token, device: deviceName() });
+        if (out.status === 'signed_in') accept(out);
+        return { status: out.status, returnTo: out.returnTo ?? null };
+      },
       completeRedirectSignIn: async () => {
         const t = await refreshSession();
         if (t && t !== 'offline') {

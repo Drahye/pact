@@ -77,7 +77,8 @@ export function HomeScreen() {
       }
     >
       <LargeTitle className="home__header" eyebrow={formatDate(isoDay(new Date()), { weekday: 'long', month: 'long', day: 'numeric' })}>
-        {greeting()}, {user?.firstName}
+        <span className="home__hi">{greeting()},</span>
+        <span className="home__name">{user?.firstName}</span>
       </LargeTitle>
 
       <PushPrompt hasPact={mine.length > 0} />
@@ -124,7 +125,7 @@ export function HomeScreen() {
       ) : (
         <>
           {h.state === 'finished_only' && <MakeHappenSection heading="You’ve made things happen before." />}
-          <NeedsYouSection items={h.needsYou} total={h.needsYouTotal} />
+          <NeedsYouSection items={h.needsYou} total={h.needsYouTotal} circles={h.circles} />
           {h.state === 'finished_only' && <MadeItHappenSection items={h.recaps} />}
           {h.circles.length > 0 ? (
             <CirclesShelf circles={h.circles} />

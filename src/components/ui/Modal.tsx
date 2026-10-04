@@ -2,7 +2,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { X } from 'lucide-react';
 import { useEffect, useId, useRef, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { ease } from '../../tokens/tokens';
+import { ease, motion as speed, spring } from '../../tokens/tokens';
 import { IconButton } from './IconButton';
 import { useOverlayRoot } from './overlay';
 import './modal.css';
@@ -74,7 +74,7 @@ export function Modal({ open, onClose, title, description, children, footer }: P
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: reduce ? 0 : 0.2 }}
+            transition={{ duration: reduce ? 0 : speed.state }}
           />
           <motion.div
             ref={panel}
@@ -84,10 +84,12 @@ export function Modal({ open, onClose, title, description, children, footer }: P
             aria-labelledby={titleId}
             aria-describedby={description ? descId : undefined}
             tabIndex={-1}
-            initial={reduce ? { opacity: 0 } : { y: '100%' }}
-            animate={reduce ? { opacity: 1 } : { y: 0 }}
-            exit={reduce ? { opacity: 0 } : { y: '100%' }}
-            transition={{ duration: reduce ? 0 : 0.42, ease: ease.out }}
+            // Rises with a soft spring from the bottom edge, where the create button sits; leaves quickly with an ease.
+            initial={reduce ? { opacity: 0 } : { y: '100%', scale: 0.985 }}
+            animate={reduce ? { opacity: 1 } : { y: 0, scale: 1 }}
+            exit={reduce ? { opacity: 0 } : { y: '100%', transition: { duration: speed.state, ease: ease.inOut } }}
+            transition={reduce ? { duration: 0 } : spring.sheet}
+            style={{ transformOrigin: '50% 100%' }}
           >
             <span className="modal__handle" aria-hidden />
             <header className="modal__header">

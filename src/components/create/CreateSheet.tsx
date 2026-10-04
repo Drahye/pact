@@ -13,7 +13,7 @@ interface OpenOptions {
   circleId?: string;
 }
 
-const Ctx = createContext<{ open: (o: OpenOptions) => void }>({ open: () => undefined });
+const Ctx = createContext<{ open: (o: OpenOptions) => void; isOpen: boolean }>({ open: () => undefined, isOpen: false });
 
 /** Opens the "What do you want to do?" sheet from anywhere: the bottom nav, a Circle, Home. */
 export const useCreateSheet = () => useContext(Ctx);
@@ -31,7 +31,7 @@ export function CreateSheetProvider({ children }: { children: ReactNode }) {
     },
     [status],
   );
-  const value = useMemo(() => ({ open }), [open]);
+  const value = useMemo(() => ({ open, isOpen: state !== null }), [open, state]);
   const close = () => setState(null);
 
   const startAsk = () => {
@@ -78,7 +78,7 @@ function Option({ icon, tint, title, body, onClick }: { icon: ReactNode; tint: s
   return (
     <li>
       <button type="button" className={`create-sheet__option ${live ? '' : 'is-soon'}`} onClick={onClick} aria-disabled={!live || undefined}>
-        <span className={`create-sheet__icon tint--${tint}`} aria-hidden>
+        <span className={`icon-tile create-sheet__icon tint--${tint}`} aria-hidden>
           {icon}
         </span>
         <span className="create-sheet__text">

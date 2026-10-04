@@ -71,7 +71,8 @@
   bottom: 0;
   z-index: 5;
   padding: var(--space-3) var(--space-4) calc(var(--space-3) + max(env(safe-area-inset-bottom), 14px));
-  background: linear-gradient(180deg, color-mix(in srgb, var(--color-bg) 0%, transparent) 0%, var(--color-bg) 40%);
+  /* Content dissolves into the bar's edge instead of being cut by it. */
+  background: linear-gradient(180deg, color-mix(in srgb, var(--color-bg) 0%, transparent) 0%, color-mix(in srgb, var(--color-bg) 88%, transparent) 55%);
   pointer-events: none;
 }
 
@@ -82,9 +83,18 @@
   gap: 4px;
   padding: 6px;
   border-radius: var(--radius-full);
-  background: var(--color-surface);
-  box-shadow: inset 0 0 0 1px var(--color-border), var(--shadow-md);
+  /* Lightly frosted: the page shows through a little. Only this one surface blurs. */
+  background: color-mix(in srgb, var(--color-surface) 90%, transparent);
+  -webkit-backdrop-filter: blur(16px) saturate(1.25);
+  backdrop-filter: blur(16px) saturate(1.25);
+  box-shadow: var(--lit-edge), 0 0 0 1px var(--line-quiet), 0 14px 30px -16px rgba(15, 23, 19, 0.35);
   pointer-events: auto;
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .tabbar__pill {
+    background: var(--color-surface);
+  }
 }
 
 .tabbar__item {
@@ -97,31 +107,64 @@
   min-height: 52px;
   border-radius: var(--radius-full);
   color: var(--color-text-tertiary);
-  transition: color var(--duration-fast) var(--ease-out);
+  transition: color var(--motion-micro) var(--ease-soft);
+}
+
+/* Tactile: the icon gives a little under the finger. */
+.tabbar__icon {
+  transition: transform var(--motion-micro) var(--ease-press);
+}
+
+.tabbar__item:active .tabbar__icon {
+  transform: scale(0.88);
 }
 
 /* The create button: the one round, coloured thing in the bar. Always the same place, always the same name. */
 .tabbar__create {
   display: grid;
   place-items: center;
-  width: 52px;
-  height: 52px;
+  width: 54px;
+  height: 54px;
   margin: 0 var(--space-1);
+  border: 0;
   border-radius: var(--radius-full);
-  background: var(--color-accent, var(--green-500));
+  /* Elevated mint: lit from above, a small coloured shadow underneath. */
+  background: linear-gradient(180deg, #55e29f 0%, var(--green-500) 55%, var(--green-600) 100%);
   color: var(--ink-900);
-  box-shadow: 0 4px 12px color-mix(in srgb, var(--color-accent, var(--green-500)) 40%, transparent);
-  transition: transform var(--duration-fast) var(--ease-out);
-}
-
-.tabbar__create:active {
-  transform: scale(0.94);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55), inset 0 -2px 4px rgba(19, 122, 74, 0.25), 0 6px 14px -4px color-mix(in srgb, var(--green-500) 65%, transparent), 0 1px 2px rgba(15, 23, 19, 0.2);
+  transition: box-shadow var(--motion-state) var(--ease-soft);
 }
 
 .tabbar__create svg {
   width: 26px;
   height: 26px;
   stroke-width: 2.6;
+  transition: transform var(--motion-sheet) var(--ease-press);
+}
+
+/* The sheet is open: the plus turns into a close, and the button settles back, as if it were holding the sheet up. */
+.tabbar__create.is-open svg {
+  transform: rotate(135deg);
+}
+
+.tabbar__create.is-open {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4), inset 0 -1px 2px rgba(19, 122, 74, 0.2), 0 2px 6px -2px color-mix(in srgb, var(--green-500) 50%, transparent);
+}
+
+.tabbar__create:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tabbar__icon,
+  .tabbar__create svg {
+    transition: none;
+  }
+
+  .tabbar__item:active .tabbar__icon {
+    transform: none;
+  }
 }
 
 @media (max-width: 359px) {

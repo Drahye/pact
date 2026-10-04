@@ -2,8 +2,31 @@
   padding: var(--space-2) 0 var(--space-6);
 }
 
+.home__header {
+  padding-bottom: var(--space-5);
+}
+
+/* Editorial greeting: the hello is quiet, the name carries it. Calm, not a dashboard title. */
 .home__header .large-title {
+  display: grid;
+  gap: 0;
   margin-top: 2px;
+  font-size: var(--text-h3);
+  line-height: 1.12;
+}
+
+.home__hi {
+  color: var(--color-text-secondary);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-snug);
+}
+
+.home__name {
+  overflow-wrap: anywhere;
+  font-size: 2rem;
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-tight);
 }
 
 .home__me {

@@ -9,6 +9,15 @@ export const ease = {
   inOut: [0.65, 0, 0.35, 1] as const,
 };
 
+/** The motion scale (seconds), mirroring --motion-* in tokens.css. */
+export const motion = {
+  micro: 0.14,
+  state: 0.22,
+  nav: 0.32,
+  sheet: 0.38,
+  celebrate: 0.55,
+} as const;
+
 export const duration = {
   fast: 0.15,
   base: 0.25,
@@ -18,12 +27,20 @@ export const duration = {
 };
 
 export const spring = {
+  /** Cards settling, lists reordering. */
+  soft: { type: 'spring', stiffness: 300, damping: 32, mass: 0.9 } as const,
+  /** A press and its release. */
+  press: { type: 'spring', stiffness: 520, damping: 30 } as const,
+  /** A sheet rising from its control. */
+  sheet: { type: 'spring', stiffness: 360, damping: 36, mass: 0.95 } as const,
   gentle: { type: 'spring', stiffness: 260, damping: 30 } as const,
   snappy: { type: 'spring', stiffness: 420, damping: 32 } as const,
   pop: { type: 'spring', stiffness: 500, damping: 22 } as const,
 };
 
 export const transition = {
+  micro: { duration: motion.micro, ease: ease.out },
+  state: { duration: motion.state, ease: ease.out },
   base: { duration: duration.base, ease: ease.out },
   slow: { duration: duration.slow, ease: ease.out },
   progress: { duration: duration.slower, ease: ease.out },

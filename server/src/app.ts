@@ -43,6 +43,7 @@ import type { PaymentProvider } from './payments/provider.js';
 import { createSandboxProvider } from './payments/sandbox.js';
 import { createEmail, type EmailSender } from './payments/email.js';
 import { createGoogle, type GoogleClient } from './payments/google.js';
+import { createStytch, type StytchClient } from './payments/stytch.js';
 import { createSms, type SmsSender } from './payments/sms.js';
 import { createPushSender, pushPublicConfig, removeSubscription, saveSubscription, type PushSender } from './modules/push.js';
 
@@ -80,13 +81,14 @@ export interface BuildOptions {
   sms?: SmsSender;
   email?: EmailSender;
   google?: GoogleClient;
+  stytch?: StytchClient;
   push?: PushSender | null;
   now?: () => Date;
   /** Tests: capture log output. */
   logStream?: { write: (line: string) => void };
 }
 
-export async function buildApp({ config, db, provider, sms, email, google, push, now = () => new Date(), logStream }: BuildOptions) {
+export async function buildApp({ config, db, provider, sms, email, google, stytch, push, now = () => new Date(), logStream }: BuildOptions) {
   const app = Fastify({
     logger: config.isTest && !logStream
       ? false
@@ -113,6 +115,7 @@ export async function buildApp({ config, db, provider, sms, email, google, push,
     sms: sms ?? createSms(config, app.log),
     email: email ?? createEmail(config, app.log),
     google: google ?? createGoogle(config),
+    stytch: stytch ?? createStytch(config),
     push: push === undefined ? createPushSender(config) : push,
     log: app.log,
     now,

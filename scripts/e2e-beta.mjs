@@ -26,7 +26,7 @@ try {
   await page.goto(`${BASE}/app/auth/welcome`, { waitUntil: 'load' });
   await page.getByText('Make things happen with your people.').waitFor();
   await page.screenshot({ path: `${out}/01-welcome.png` });
-  ok('email is the primary action', (await page.getByRole('link', { name: 'Continue with email' }).count()) === 1);
+  ok('email is the primary action: an email field and Continue right on the front door', (await page.getByLabel('Email address').count()) === 1 && (await page.getByRole('button', { name: 'Continue' }).count()) >= 1);
   ok('no Google button', (await page.getByRole('button', { name: /google/i }).count()) === 0 && (await page.locator('svg path[fill="#4285F4"]').count()) === 0);
   ok('phone sign-in is offered as the fallback', (await page.getByText('Already use PACT with your phone?').count()) === 1 && (await page.getByRole('link', { name: 'Sign in with phone' }).count()) === 1);
   await noGoogle('front door');
@@ -38,10 +38,9 @@ try {
 
   // Email OTP: new person -> name -> in, no phone, no PIN
   await page.goto(`${BASE}/app/auth/welcome`);
-  await page.getByRole('link', { name: 'Continue with email' }).click();
-  await page.getByLabel('Email').fill(`beta.${stamp}@example.com`);
+  await page.getByLabel('Email address').fill(`beta.${stamp}@example.com`);
   await page.getByRole('button', { name: 'Continue' }).click();
-  await page.getByText('Check your inbox').waitFor();
+  await page.getByText('Check your email').waitFor();
   await noGoogle('email code screen');
   await page.getByRole('button', { name: 'Fill it in' }).click();
   await page.getByLabel('First name').waitFor();

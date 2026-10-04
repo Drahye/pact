@@ -78,6 +78,17 @@ const Env = z.object({
   /** `fake` is a local stand-in for browser tests only (no real Google): refused whenever the app runs in production mode. */
   GOOGLE_PROVIDER: z.enum(['live', 'fake']).default('live'),
   /**
+   * Who sends and checks sign-in email codes. `native` is PACT's own (the EmailSender below). `stytch` is the beta: Stytch emails the
+   * code and proves the address; PACT still owns accounts, sessions and permissions. Needs STYTCH_PROJECT_ID and STYTCH_SECRET.
+   */
+  EMAIL_AUTH_PROVIDER: z.enum(['native', 'stytch']).default('native'),
+  STYTCH_PROJECT_ID: z.string().default(''),
+  STYTCH_SECRET: z.string().default(''),
+  /** Not used by the server flow and never sent to the browser: PACT calls Stytch from the backend only. Kept so the variable can sit in the environment. */
+  STYTCH_PUBLIC_TOKEN: z.string().default(''),
+  /** Tests and local stand-ins only. Refused in production mode. */
+  STYTCH_BASE_URL: z.string().default(''),
+  /**
    * The switch for Google sign-in. Off by default and off for the beta: email is the open way in, phone the fallback. While it is off
    * Google is not offered in any screen and its routes refuse to start; the code, identities and tests stay in place.
    * Turning it on needs GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET (or GOOGLE_PROVIDER=fake for local tests).
@@ -150,6 +161,8 @@ export function loadConfig(overrides: Partial<Record<keyof z.infer<typeof Env>, 
   if (env.GOOGLE_REDIRECT_URI && !/^https?:\/\/[^\s#]+$/.test(env.GOOGLE_REDIRECT_URI)) problems.push('GOOGLE_REDIRECT_URI must be an absolute http(s) URL');
   if (env.ENABLE_GOOGLE_AUTH && googleSet !== 2 && env.GOOGLE_PROVIDER !== 'fake') problems.push('ENABLE_GOOGLE_AUTH needs GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET');
   if (env.GOOGLE_PROVIDER === 'fake' && isProd) problems.push('GOOGLE_PROVIDER=fake is for local browser tests only');
+  if (env.EMAIL_AUTH_PROVIDER === 'stytch' && (!env.STYTCH_PROJECT_ID || !env.STYTCH_SECRET)) problems.push('EMAIL_AUTH_PROVIDER=stytch needs STYTCH_PROJECT_ID and STYTCH_SECRET');
+  if (env.STYTCH_BASE_URL && isProd) problems.push('STYTCH_BASE_URL is for local tests only');
   if (env.EMAIL_PROVIDER === 'resend' && !env.RESEND_API_KEY) problems.push('EMAIL_PROVIDER=resend needs RESEND_API_KEY');
   if (isProd) {
     if (env.JWT_SECRET.startsWith('dev-only')) problems.push('JWT_SECRET must be set');
@@ -162,7 +175,7 @@ export function loadConfig(overrides: Partial<Record<keyof z.infer<typeof Env>, 
       if (!key.startsWith('sk_live_')) problems.push('production needs a live Paystack key (sk_live_)');
       if (env.PAYSTACK_BASE_URL !== 'https://api.paystack.co') problems.push('PAYSTACK_BASE_URL must be https://api.paystack.co in production');
       if (env.SMS_PROVIDER !== 'termii') problems.push('production needs SMS_PROVIDER=termii');
-      if (env.EMAIL_PROVIDER !== 'resend') problems.push('production needs EMAIL_PROVIDER=resend');
+      if (env.EMAIL_AUTH_PROVIDER === 'native' && env.EMAIL_PROVIDER !== 'resend') problems.push('production needs EMAIL_PROVIDER=resend (or EMAIL_AUTH_PROVIDER=stytch)');
     }
     if (env.ENABLE_GOOGLE_AUTH && googleSet === 2) {
       const redirect = env.GOOGLE_REDIRECT_URI || `${env.APP_ORIGIN}/api/auth/google/callback`;
@@ -172,7 +185,7 @@ export function loadConfig(overrides: Partial<Record<keyof z.infer<typeof Env>, 
     if (deployEnv === 'staging') {
       // Staging never moves real money: sandbox, or Paystack in test mode.
       if (env.PAYMENTS_PROVIDER === 'paystack' && !key.startsWith('sk_test_')) problems.push('staging with Paystack needs a test key (sk_test_)');
-      if (env.EMAIL_PROVIDER === 'log' && !env.STAGING_SHOW_CODES) problems.push('staging needs EMAIL_PROVIDER=resend, or STAGING_SHOW_CODES=true for a closed test with test data only');
+      if (env.EMAIL_AUTH_PROVIDER === 'native' && env.EMAIL_PROVIDER === 'log' && !env.STAGING_SHOW_CODES) problems.push('staging needs EMAIL_PROVIDER=resend, or STAGING_SHOW_CODES=true for a closed test with test data only');
       if (env.SMS_PROVIDER === 'log' && !env.STAGING_SHOW_CODES) problems.push('staging needs SMS_PROVIDER=termii, or STAGING_SHOW_CODES=true for a closed test with test data only');
     }
     if (problems.length) throw new Error(`Refusing to start in production:\n- ${problems.join('\n- ')}`);
@@ -193,6 +206,7 @@ export function loadConfig(overrides: Partial<Record<keyof z.infer<typeof Env>, 
     exposeDevCodes: (!isProd && env.SMS_PROVIDER === 'log') || (deployEnv === 'staging' && env.STAGING_SHOW_CODES),
     googleEnabled: env.ENABLE_GOOGLE_AUTH,
     // Same rule for email codes: returned in responses only when no email is really sent.
-    exposeEmailCodes: (!isProd && env.EMAIL_PROVIDER === 'log') || (deployEnv === 'staging' && env.STAGING_SHOW_CODES && env.EMAIL_PROVIDER === 'log'),
+    // Stytch really emails its codes, so none is ever returned in a response.
+    exposeEmailCodes: env.EMAIL_AUTH_PROVIDER === 'native' && ((!isProd && env.EMAIL_PROVIDER === 'log') || (deployEnv === 'staging' && env.STAGING_SHOW_CODES && env.EMAIL_PROVIDER === 'log')),
   };
 }

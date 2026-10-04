@@ -5,7 +5,10 @@ import { AppError } from '../lib/errors.js';
  * Ways to sign in. One user, any number of verified identities (at most one of each kind per account is surfaced in the UI).
  * Service-only table: nothing here is reachable from a person-scoped request, and raw provider subjects never reach a client.
  */
-export type Provider = 'google' | 'email' | 'phone';
+export type Provider = 'google' | 'email' | 'phone' | 'stytch';
+
+/** The identity that carries a person's email: PACT's own, or Stytch's. Both mean "this address was proved". */
+export const isEmailIdentity = (i: { provider: Provider }) => i.provider === 'email' || i.provider === 'stytch';
 
 export interface IdentityRow {
   id: string;
@@ -55,4 +58,10 @@ export async function addIdentity(q: Queryable, userId: string, provider: Provid
   const existing = await findIdentity(q, provider, subject);
   if (existing?.user_id === userId) return; // already theirs: linking twice is fine
   throw new AppError(409, 'identity_taken', 'This sign-in method is already connected to another PACT account.');
+}
+
+/** Whoever already holds a verified address, whichever way it was proved (email, Stytch or Google). Never matched on names or phones. */
+export async function findEmailOwner(q: Queryable, email: string): Promise<IdentityRow | null> {
+  const r = await q.query<IdentityRow>(`SELECT * FROM user_identities WHERE email = $1 AND provider IN ('stytch', 'email', 'google') ORDER BY created_at LIMIT 1`, [email]);
+  return r.rows[0] ?? null;
 }

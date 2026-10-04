@@ -7,8 +7,10 @@ import { hashSecret, keyedHash, randomCode, randomDigits, randomToken, safeEqual
 import { AppError, badRequest, tooMany, unauthorized } from '../lib/errors.js';
 import { maskPhone, normalizeNgPhone } from '../lib/phone.js';
 import { consumeEmailOtp, EMAIL_OTP_TTL_MS, issueEmailOtp } from './emailAuth.js';
+import { STYTCH_CODE_TTL_MS } from '../payments/stytch.js';
+import { sendStytchCode, verifyStytchCode } from './stytchAuth.js';
 import { track } from '../lib/events.js';
-import { addIdentity, findIdentity, maskEmail, normalizeEmail, userIdentities } from './identities.js';
+import { addIdentity, findEmailOwner, findIdentity, maskEmail, normalizeEmail, userIdentities } from './identities.js';
 import { createAccount } from './ledger.js';
 import { audit, notify } from './platform.js';
 
@@ -263,7 +265,7 @@ export async function verifyOtp(ctx: Ctx, rawPhone: string, code: string, device
  * It is never stored in page storage and never logged.
  */
 export interface SignupClaim {
-  provider: 'phone' | 'email' | 'google';
+  provider: 'phone' | 'email' | 'google' | 'stytch';
   subject: string;
   phone?: string;
   email?: string;
@@ -287,7 +289,7 @@ async function readSignupToken(ctx: Ctx, token: string): Promise<SignupClaim> {
     if (payload.purpose !== 'signup') throw new Error('bad token');
     // Tokens minted before identities carried only a phone.
     if (typeof payload.provider !== 'string' && typeof payload.phone === 'string') return { provider: 'phone', subject: payload.phone, phone: payload.phone };
-    if (!['phone', 'email', 'google'].includes(String(payload.provider)) || typeof payload.subject !== 'string') throw new Error('bad token');
+    if (!['phone', 'email', 'google', 'stytch'].includes(String(payload.provider)) || typeof payload.subject !== 'string') throw new Error('bad token');
     return payload as unknown as SignupClaim;
   } catch {
     throw badRequest('signup_expired', 'Your sign-in expired. Start again.');
@@ -330,6 +332,8 @@ export async function signup(
     // The identity may have been used since the code was verified (a second tab, a retry): the continuation is then spent.
     if (await findIdentity(q, claim.provider, claim.subject)) throw badRequest('already_registered', 'This sign-in already has an account. Sign in instead.');
     if (claim.phone && (await q.query('SELECT 1 FROM users WHERE phone = $1', [claim.phone])).rowCount) throw badRequest('already_registered', 'This number already has an account. Sign in instead.');
+    // The address may have been taken since the code was checked (another tab, another door): one address, one account.
+    if (claim.email && (await findEmailOwner(q, claim.email))) throw badRequest('already_registered', 'This email already has an account. Sign in instead.');
 
     const referrer = input.referralCode
       ? (await q.query<{ id: string }>('SELECT id FROM users WHERE referral_code = $1', [input.referralCode.toUpperCase()])).rows[0]
@@ -347,7 +351,7 @@ export async function signup(
     // Phone invites are claimed only by someone who has verified that exact number, which a phone sign-up just did.
     if (claim.provider === 'phone' && claim.phone) await claimPhoneInvites(q, userId, claim.phone);
     await audit(q, { actorId: userId, action: 'auth.sign_up', ip: meta.ip, metadata: { referred: !!referrer, provider: claim.provider } });
-    await track(q, ctx.config, 'auth_completed', { userId, props: { provider: claim.provider, is_new: true } }, true);
+    await track(q, ctx.config, 'auth_completed', { userId, props: { provider: claim.provider === 'stytch' ? 'email' : claim.provider, is_new: true } }, true);
     return createSession(ctx, q, userId, input.device, meta);
   });
 }
@@ -427,16 +431,19 @@ async function pickChannel(ctx: Ctx, userId: string, via?: RecoveryChannel) {
 
 export async function requestPinReset(ctx: Ctx, userId: string, meta: ReqMeta, via?: RecoveryChannel) {
   const { channel, address } = await pickChannel(ctx, userId, via);
-  const code = channel === 'phone' ? await issueOtp(ctx, address, 'pin_reset', meta) : await issueEmailOtp(ctx, address, 'pin_reset', meta, userId);
+  const viaStytch = channel === 'email' && ctx.config.EMAIL_AUTH_PROVIDER === 'stytch';
+  if (viaStytch) await sendStytchCode(ctx, address, 'pin_reset', meta, userId);
+  const code = viaStytch ? '' : channel === 'phone' ? await issueOtp(ctx, address, 'pin_reset', meta) : await issueEmailOtp(ctx, address, 'pin_reset', meta, userId);
   await audit(ctx.db, { actorId: userId, action: 'pin.reset_requested', ip: meta.ip, metadata: { via: channel } });
   const expose = channel === 'phone' ? ctx.config.exposeDevCodes : ctx.config.exposeEmailCodes;
-  return { via: channel, sentTo: channel === 'phone' ? maskPhone(address) : maskEmail(address), expiresInSec: (channel === 'phone' ? OTP_TTL_MS : EMAIL_OTP_TTL_MS) / 1000, ...(expose ? { devCode: code } : {}) };
+  return { via: channel, sentTo: channel === 'phone' ? maskPhone(address) : maskEmail(address), expiresInSec: (channel === 'phone' ? OTP_TTL_MS : viaStytch ? STYTCH_CODE_TTL_MS : EMAIL_OTP_TTL_MS) / 1000, ...(expose && code ? { devCode: code } : {}) };
 }
 
 export async function resetPin(ctx: Ctx, userId: string, sessionId: string, code: string, newPin: string, meta: ReqMeta, via?: RecoveryChannel) {
   assertStrongPin(newPin);
   const { channel, address } = await pickChannel(ctx, userId, via);
   if (channel === 'phone') await consumeOtp(ctx, address, code, 'pin_reset', meta);
+  else if (ctx.config.EMAIL_AUTH_PROVIDER === 'stytch') await verifyStytchCode(ctx, address, code, 'pin_reset', meta, userId);
   else await consumeEmailOtp(ctx, address, code, 'pin_reset', meta, userId);
   await ctx.db.tx(async (q) => {
     await q.query(
@@ -479,6 +486,10 @@ export async function requestEmailLogin(ctx: Ctx, rawEmail: string, meta: ReqMet
   const email = normalizeEmail(rawEmail);
   if (!email) throw badRequest('invalid_email', 'Enter a valid email address.');
   // The same answer and the same email whether or not this address has an account.
+  if (ctx.config.EMAIL_AUTH_PROVIDER === 'stytch') {
+    await sendStytchCode(ctx, email, 'login', meta);
+    return { email: maskEmail(email), expiresInSec: STYTCH_CODE_TTL_MS / 1000 };
+  }
   const code = await issueEmailOtp(ctx, email, 'login', meta);
   return { email: maskEmail(email), expiresInSec: EMAIL_OTP_TTL_MS / 1000, ...(ctx.config.exposeEmailCodes ? { devCode: code } : {}) };
 }
@@ -486,6 +497,7 @@ export async function requestEmailLogin(ctx: Ctx, rawEmail: string, meta: ReqMet
 export async function verifyEmailLogin(ctx: Ctx, rawEmail: string, code: string, device: string | undefined, meta: ReqMeta): Promise<OtpVerifyDTO> {
   const email = normalizeEmail(rawEmail);
   if (!email) throw badRequest('invalid_email', 'Enter a valid email address.');
+  if (ctx.config.EMAIL_AUTH_PROVIDER === 'stytch') return resolveStytchLogin(ctx, email, code, device, meta);
   await consumeEmailOtp(ctx, email, code, 'login', meta);
   const known = await findIdentity(ctx.db, 'email', email);
   if (known) return signInUser(ctx, known.user_id, 'email', device, meta);
@@ -498,6 +510,24 @@ export async function verifyEmailLogin(ctx: Ctx, rawEmail: string, code: string,
     return signInUser(ctx, viaGoogle.user_id, 'email', device, meta);
   }
   return { status: 'needs_profile', signupToken: await mintSignupToken(ctx, { provider: 'email', subject: email, email }), email };
+}
+
+/**
+ * Stytch proved the mailbox; now decide whose it is. In order: this Stytch user is already someone's; otherwise whoever already holds
+ * this verified address gets the Stytch identity attached (no second account); otherwise a new person, after a name. Never by name or phone.
+ */
+async function resolveStytchLogin(ctx: Ctx, email: string, code: string, device: string | undefined, meta: ReqMeta): Promise<OtpVerifyDTO> {
+  const { stytchUserId } = await verifyStytchCode(ctx, email, code, 'login', meta);
+  const known = await findIdentity(ctx.db, 'stytch', stytchUserId);
+  if (known) return signInUser(ctx, known.user_id, 'email', device, meta);
+  const owner = await findEmailOwner(ctx.db, email);
+  if (owner) {
+    // Linking twice (two tabs) is harmless: the pair is unique, and the owner is the same either way.
+    await addIdentity(ctx.db, owner.user_id, 'stytch', stytchUserId, { email });
+    await audit(ctx.db, { actorId: owner.user_id, action: 'email_identity_linked', ip: meta.ip, metadata: { via: 'stytch_verified_email' } });
+    return signInUser(ctx, owner.user_id, 'email', device, meta);
+  }
+  return { status: 'needs_profile', signupToken: await mintSignupToken(ctx, { provider: 'stytch', subject: stytchUserId, email }), email };
 }
 
 /** Starts a session for an existing account, whichever identity proved it. */

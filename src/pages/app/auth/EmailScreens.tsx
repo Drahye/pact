@@ -84,6 +84,7 @@ export function EmailCodeScreen() {
   const [busy, setBusy] = useState(false);
   const [resendIn, setResendIn] = useState(30);
   const [expired, setExpired] = useState(false);
+  const [success, setSuccess] = useState(false);
   const [devCode, setDevCode] = useState((location.state as { devCode?: string } | null)?.devCode);
   const input = useRef<HTMLInputElement>(null);
 
@@ -100,10 +101,12 @@ export function EmailCodeScreen() {
     setError(undefined);
     try {
       const out = await verifyEmail(flow.email!, value);
+      setSuccess(true);
       if (out.status === 'signed_in') clearFlow();
       else {
         writeFlow({ needsProfile: true, via: 'email' });
-        navigate('/app/auth/profile');
+        // A beat for the boxes to settle green, then the name step.
+        window.setTimeout(() => navigate('/app/auth/profile'), 380);
       }
     } catch (err) {
       const e = err as ApiError;
@@ -136,10 +139,18 @@ export function EmailCodeScreen() {
   };
 
   return (
-    <Screen topBar={<TopBar backTo="/app/auth/email" />} className="auth">
-      <h1 className="large-title">Check your inbox</h1>
+    <Screen
+      topBar={<TopBar backTo="/app/auth/welcome" />}
+      footer={
+        <Button fullWidth loading={busy} disabled={code.length !== 6 || success} onClick={() => void verify(code)}>
+          Verify
+        </Button>
+      }
+      className="auth"
+    >
+      <h1 className="large-title">Check your email</h1>
       <p className="screen-lede">
-        We sent a 6-digit code to <strong>{flow.maskedEmail ?? 'your email'}</strong>. It expires in 10 minutes.
+        We sent a code to <strong className="auth__email">{flow.email}</strong>. It expires in 10 minutes.
       </p>
 
       <label className="code-field" htmlFor="email-otp">
@@ -155,19 +166,20 @@ export function EmailCodeScreen() {
           value={code}
           onChange={(e) => onChange(e.target.value)}
           maxLength={6}
-          disabled={busy}
+          disabled={busy || success}
           autoFocus
           aria-invalid={!!error || undefined}
+          aria-describedby={error ? 'email-otp-error' : undefined}
         />
         <span className="code-field__boxes" aria-hidden>
           {Array.from({ length: 6 }, (_, i) => (
-            <span key={i} className={`code-field__box num ${i === code.length && !busy ? 'is-active' : ''} ${error ? 'is-error' : ''}`}>
+            <span key={i} className={`code-field__box num ${i === code.length && !busy && !success ? 'is-active' : ''} ${error ? 'is-error' : ''} ${success ? 'is-success' : ''}`}>
               {code[i] ?? ''}
             </span>
           ))}
         </span>
       </label>
-      {error && <p className="field__error auth__error" role="alert">{error}</p>}
+      {error && <p className="field__error auth__error" id="email-otp-error" role="alert">{error}</p>}
 
       {devCode && config?.exposeDevCodes && (
         <Notice tone="sun" icon={<FlaskConical />}>
@@ -186,7 +198,7 @@ export function EmailCodeScreen() {
             Send a new code
           </Button>
         )}
-        <Button variant="ghost" size="sm" to="/app/auth/email" onClick={() => clearFlow()}>
+        <Button variant="ghost" size="sm" to="/app/auth/welcome">
           Change email
         </Button>
       </div>

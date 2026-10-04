@@ -125,11 +125,10 @@ try {
     await page.getByRole('radio', { name: 'I’m in' }).first().click().catch(async () => page.getByRole('button', { name: 'I’m in' }).first().click());
     await page.getByText('Save your answer').waitFor();
     await tap(page, 'Continue');
-    await page.getByRole('link', { name: 'Continue with email' }).click();
-    await page.getByLabel('Email').fill(`ema.${stamp}@example.com`);
-    await tap(page, 'Continue');
-    await page.getByText('Check your inbox').waitFor();
-    await page.getByText('We sent a 6-digit code to').waitFor();
+    await page.getByLabel('Email address').fill(`ema.${stamp}@example.com`);
+    await page.locator('form').getByRole('button', { name: 'Continue' }).click();
+    await page.getByText('Check your email').waitFor();
+    await page.getByText('We sent a code to').waitFor();
     await shot(page, 'email-code');
     await tap(page, 'Fill it in');
     await page.getByLabel('First name').waitFor();

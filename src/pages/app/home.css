@@ -14,15 +14,16 @@
 .home__hi {
   color: var(--color-text-secondary);
   font-size: var(--text-lg);
-  font-weight: var(--weight-medium);
+  font-weight: var(--weight-regular);
   letter-spacing: var(--tracking-snug);
 }
 
 .home__name {
   overflow-wrap: anywhere;
-  font-size: 1.875rem;
-  font-weight: var(--weight-semibold);
-  letter-spacing: var(--tracking-tight);
+  font-size: var(--t-page-size);
+  font-weight: var(--t-page-weight);
+  line-height: 1.04;
+  letter-spacing: var(--t-page-tracking);
 }
 
 .home__me {

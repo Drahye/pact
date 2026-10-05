@@ -22,6 +22,7 @@ import { useToast } from '../../../components/ui/Toast';
 import { getUser } from '../../../data/users';
 import { budgetText, dateRange } from '../../../lib/planDates';
 import { sharePlan } from '../../../lib/planShare';
+import { peopleLine } from '../../../lib/peopleLine';
 import { startPactPath } from '../../../lib/startPactPath';
 import { Screen } from '../Screen';
 import '../../../components/plan/plan.css';
@@ -32,6 +33,17 @@ type Sheet = null | 'menu' | 'edit' | 'link' | 'pact' | 'cancel' | 'reset' | 'su
 const attLabel: Record<Attendance, string> = { in: 'In', maybe: 'Maybe', out: 'Can’t' };
 
 /** "Sarah is in", "Daniel changed to Maybe", "Tobi completed “Pick hotel”". Plain words; no chat. */
+/** Who is in, said the way a friend would: "You, Maya and 2 others are in · Tolu maybe". */
+function peopleText(rsvps: PlanDTO['rsvps'], selfId?: string | null) {
+  const ids = (s: string) => rsvps.filter((r) => r.status === s).map((r) => r.userId);
+  const going = ids('in');
+  const maybe = ids('maybe');
+  const parts: string[] = [];
+  if (going.length) parts.push(`${peopleLine(going, selfId)} ${going.length === 1 && going[0] !== selfId ? 'is' : 'are'} in`);
+  if (maybe.length) parts.push(`${peopleLine(maybe, selfId)} maybe`);
+  return parts.join(' · ');
+}
+
 function activityText(a: PlanDTO['activity'][number], who: string, me: boolean) {
   const be = me ? 'are' : 'is';
   switch (a.kind) {
@@ -193,6 +205,7 @@ export function PlanScreen() {
           endDate={p.endDate}
           location={p.location}
           goingIds={p.rsvps.filter((r) => r.status === 'in').map((r) => r.userId)}
+          peopleText={peopleText(p.rsvps, user?.id)}
           going={p.counts.in}
           maybe={p.counts.maybe}
           status={p.pactId ? 'Became a Pact' : statusLabel[p.status]}

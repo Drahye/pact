@@ -203,6 +203,7 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
       topBar={
         <TopBar
           backTo="/app/home"
+          tone="transparent"
           title={pact.title}
           trailing={
             stage !== 'invited' && active ? (
@@ -214,7 +215,7 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
           }
         />
       }
-      className="detail"
+      className={`detail od-washed tint--${categoryMeta[pact.category].tint}`}
     >
       <section className={`od-pact__hero tint--${categoryMeta[pact.category].tint}`} aria-labelledby="pact-title">
         <p className="od-pact__kicker">
@@ -225,12 +226,12 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
           {pact.title}
         </h1>
         {pact.note && <p className="detail__note">“{pact.note}”</p>}
-      <div className="detail__ring">
+      <div className="detail__ring" data-state={pact.status === 'funded' || s.percent >= 100 ? 'funded' : s.raised > 0 ? 'progressing' : 'started'}>
         <SegmentedRing
           shares={sharesOf(pact)}
           target={pact.target}
-          size={228}
-          stroke={20}
+          size={248}
+          stroke={22}
           selected={selected}
           onSelect={setSelected}
           delay={0.15}

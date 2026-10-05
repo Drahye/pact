@@ -69,6 +69,10 @@ export function createStytch(config: Config): StytchClient {
       return { methodId: r.email_id, userId: r.user_id };
     },
     oauthStartUrl({ redirectUrl, codeChallenge }) {
+      // Stytch matches this byte for byte against its dashboard Redirect URLs, so a relative or odd value is a bug, not something to send.
+      let cb: URL;
+      try { cb = new URL(redirectUrl); } catch { throw new Error('oauthStartUrl needs an absolute redirect URL'); }
+      if (!/^https?:$/.test(cb.protocol) || cb.pathname !== '/authenticate' || cb.search || cb.hash || redirectUrl !== cb.href) throw new Error('oauthStartUrl redirect must be an origin plus /authenticate');
       const q = new URLSearchParams({ public_token: config.STYTCH_PUBLIC_TOKEN, login_redirect_url: redirectUrl, signup_redirect_url: redirectUrl, code_challenge: codeChallenge });
       return `${baseUrl(config)}/v1/public/oauth/google/start?${q}`;
     },

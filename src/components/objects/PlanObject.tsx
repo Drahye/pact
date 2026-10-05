@@ -45,6 +45,7 @@ export function PlanObject({
   status,
   history,
   decisions,
+  peopleText,
 }: {
   title: string;
   date?: string | null;
@@ -78,6 +79,8 @@ export function PlanObject({
   history?: boolean;
   /** Page only: questions still open on this plan, each a way into the Ask. `mine` is true once you have answered. */
   decisions?: { id: string; question: string; leading?: string; to: string; mine?: boolean }[];
+  /** Page only: who is in, as a sentence ("You, Maya and 2 others are in"), in place of the count. */
+  peopleText?: string;
 }) {
   const id = useId();
   const when = date ? new Date(`${date}T12:00:00`) : null;
@@ -105,7 +108,6 @@ export function PlanObject({
             {done ? <DoneMark className="ox-kicker__done" /> : <StatusIndicator tone={history ? 'quiet' : 'live'} />}
             <span>{done ? 'It happened' : status ?? 'Plan'}</span>
             {circleName && <span className="ox-kicker__where">· {circleName}</span>}
-            {heading && countdown && <span className="ox-plan__until">{countdown}</span>}
           </p>
           <Title id={`${id}-t`} className={`ox-plan__title ${heading ? 't-page' : 't-object'}`}>
             {title}
@@ -113,10 +115,27 @@ export function PlanObject({
           {meta.length > 0 && (
             <p className="ox-plan__meta t-support">
               {range && <span>{range}</span>}
-              {location && (
-                <span>
-                  <MapPin aria-hidden /> {location}
-                </span>
+              {location &&
+                (heading ? (
+                  <a className="ox-plan__where" href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location)}`} target="_blank" rel="noopener noreferrer" aria-label={`${location}. Open in Maps`}>
+                    <MapPin aria-hidden /> {location}
+                    <ChevronRight aria-hidden />
+                  </a>
+                ) : (
+                  <span>
+                    <MapPin aria-hidden /> {location}
+                  </span>
+                ))}
+            </p>
+          )}
+          {heading && countdown && (
+            <p className="ox-plan__countdown">
+              {until !== null && until > 1 ? (
+                <>
+                  <b className="num">{until}</b> <span>{until === 1 ? 'day' : 'days'} to go</span>
+                </>
+              ) : (
+                <b>{countdown}</b>
               )}
             </p>
           )}
@@ -126,7 +145,7 @@ export function PlanObject({
 
       <p className="ox-plan__going">
         {goingIds.length > 0 && <AvatarStack userIds={goingIds} total={going} size={heading ? 'md' : 'sm'} max={heading ? 5 : 4} />}
-        <span className="t-support">{going ? `${going} in${maybe ? ` · ${maybe} maybe` : ''}` : maybe ? `${maybe} maybe` : heading ? 'No one has RSVP’d yet.' : 'No answers yet'}</span>
+        <span className={heading && peopleText ? 'ox-plan__people' : 't-support'}>{heading && peopleText ? peopleText : going ? `${going} in${maybe ? ` · ${maybe} maybe` : ''}` : maybe ? `${maybe} maybe` : heading ? 'No one has RSVP’d yet.' : 'No answers yet'}</span>
       </p>
 
       {linkedAsk && density !== 'compact' && (

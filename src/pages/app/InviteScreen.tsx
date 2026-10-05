@@ -22,7 +22,9 @@ import './invite.css';
 
 export function InviteScreen() {
   const { id = '' } = useParams();
-  const { user } = useAuth();
+  const { user, config } = useAuth();
+  // Inviting a number that is not on PACT sends a text. With texts switched off (the beta) the way in is the link, so the field is not offered.
+  const phoneInvites = !!config?.auth?.phone;
   const q = usePact(id);
   const cmd = usePactCommand(id);
   const toast = useToast();
@@ -145,6 +147,7 @@ export function InviteScreen() {
         </li>
       </ul>
 
+      {phoneInvites && (
       <div className="invite__phone">
         <Input
           label="Or invite by phone number"
@@ -167,6 +170,7 @@ export function InviteScreen() {
           Invite
         </Button>
       </div>
+      )}
 
       <section className="invite__joined" aria-live="polite">
         <div className="invite__joined-head">

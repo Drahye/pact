@@ -8,6 +8,7 @@ import { after, before, describe, it } from 'node:test';
 import { loadConfig } from '../src/config.js';
 import { addDays, lagosToday } from '../src/lib/time.js';
 import { addIdentity } from '../src/modules/identities.js';
+import { stytchRedirectUrl } from '../src/modules/stytchAuth.js';
 import { createStytch, StytchError, type StytchClient } from '../src/payments/stytch.js';
 import { setup } from './helpers.js';
 
@@ -375,6 +376,35 @@ describe('Google through Stytch OAuth', () => {
     assert.equal(c.path, '/api/auth/stytch');
   });
 
+  it('the OAuth callback is APP_ORIGIN + /authenticate whatever returnTo says; the destination is stored separately', async () => {
+    const callback = `${t.ctx.config.APP_ORIGIN}/authenticate`;
+    const token = 'a'.repeat(24);
+    const cases: [string, string | null][] = [
+      ['/app/home', '/app/home'],
+      [`/a/${token}`, `/a/${token}`],
+      [`/p/${token}`, `/p/${token}`],
+      [`/s/${token}`, `/s/${token}`],
+      [`/app/c/${token}`, `/app/c/${token}`],
+      ['https://evil.example/steal', null],
+      ['//evil.example', null],
+      ['/authenticate', null],
+      ['/', null],
+    ];
+    for (const [returnTo, stored] of cases) {
+      const start = await post('/auth/stytch/google/start', { returnTo }, `10.8.${++n}.3`);
+      assert.equal(start.statusCode, 200, start.body);
+      assert.equal(new URL(json(start).url).searchParams.get('redirect'), callback, `callback unchanged for ${returnTo}`);
+      if (stored) assert.ok(!json(start).url.includes(encodeURIComponent(returnTo)), 'returnTo is never in the URL');
+      const row = (await t.db.query<{ return_to: string | null }>(`SELECT return_to FROM oauth_states ORDER BY created_at DESC LIMIT 1`)).rows[0];
+      assert.equal(row.return_to, stored, `stored destination for ${returnTo}`);
+    }
+  });
+
+  it('external returnTo never comes back out of finish', async () => {
+    const r = await google('gext@example.com', { returnTo: 'https://evil.example/steal' });
+    assert.equal(r.body.returnTo, null);
+  });
+
   it('a new Google user: needs a name, then a PACT user with one Stytch identity and a normal session', async () => {
     const before = await userCount();
     const r = await google('gnew@example.com');
@@ -550,6 +580,20 @@ describe('the Stytch OAuth client', () => {
     assert.equal(u.searchParams.get('signup_redirect_url'), 'http://localhost:3000/authenticate');
     assert.equal(u.searchParams.get('code_challenge'), 'chal');
     assert.ok(!u.href.includes('secret-test-abc'));
+  });
+
+  it('callback URL: production/staging, localhost, trailing slash and path in APP_ORIGIN, and a relative URL refused', () => {
+    const cb = (APP_ORIGIN: string) => stytchRedirectUrl({ config: loadConfig({ NODE_ENV: 'test', APP_ORIGIN }) } as never);
+    assert.equal(cb('https://pact-qaar.onrender.com'), 'https://pact-qaar.onrender.com/authenticate');
+    assert.equal(cb('https://pact-qaar.onrender.com/'), 'https://pact-qaar.onrender.com/authenticate');
+    assert.equal(cb('https://pact-qaar.onrender.com/app'), 'https://pact-qaar.onrender.com/authenticate');
+    assert.equal(cb('http://localhost:3000'), 'http://localhost:3000/authenticate');
+    const u = new URL(client().oauthStartUrl({ redirectUrl: cb('https://pact-qaar.onrender.com'), codeChallenge: 'c' }));
+    assert.equal(u.searchParams.get('login_redirect_url'), 'https://pact-qaar.onrender.com/authenticate');
+    assert.equal(u.searchParams.get('signup_redirect_url'), 'https://pact-qaar.onrender.com/authenticate');
+    for (const bad of ['/', '/app', '/authenticate', 'https://pact-qaar.onrender.com/', 'https://pact-qaar.onrender.com/app/home', 'https://x.example/authenticate?next=/app', 'javascript:alert(1)']) {
+      assert.throws(() => client().oauthStartUrl({ redirectUrl: bad, codeChallenge: 'c' }), /redirect/, bad);
+    }
   });
 
   it('authenticates the token with the PKCE verifier and keeps only the user id, verified addresses and name', async () => {

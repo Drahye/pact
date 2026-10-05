@@ -7,7 +7,8 @@ import { trackHome } from '../../api/home';
 import { formatDate } from '../../lib/format';
 import { dateRange } from '../../lib/planDates';
 import { transition } from '../../tokens/tokens';
-import { ActivityRow, AnimatedCount, CircleTile, CompletionState, ComingUpRow } from '../objects';
+import { peopleLine } from '../../lib/peopleLine';
+import { ActivityRow, AnimatedCount, AvatarStack, CircleTile, CompletionState, ComingUpRow } from '../objects';
 import { SectionHeading } from '../ui/SectionHeading';
 import { NeedItem, needsShape } from './NeedsObjects';
 import './home-v2.css';
@@ -111,6 +112,37 @@ const whenLabel = (date: string) => {
   return d < 7 ? at.toLocaleDateString('en-US', { weekday: 'long' }) : at.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 };
 
+/**
+ * One calm line under the greeting: how much is waiting, and what is next. A sentence, not a dashboard. Counts come from what Home
+ * already holds, so it never disagrees with the list below it.
+ */
+export function HomePulse({ total, next, recent = [], selfId }: { total: number; next?: ComingUpItem; recent?: RecentItem[]; selfId?: string }) {
+  const waiting = total === 0 ? 'Nothing is waiting on you.' : total === 1 ? 'One thing needs you.' : `${total} things need you.`;
+  const when = next ? whenLabel(next.date) : null;
+  // Who has been doing things today: the people, not the events. Never you.
+  const startOfDay = new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate()).getTime();
+  const active = [...new Set(recent.filter((r) => r.actorId && r.actorId !== selfId && new Date(r.at).getTime() >= startOfDay).map((r) => r.actorId as string))];
+  return (
+    <div className="hv3-pulse-wrap">
+    <p className="hv3-pulse">
+      <strong className={total ? 'is-live' : undefined}>{waiting}</strong>
+      {next && when && (
+        <span>
+          {' '}
+          Next up: {next.title}, {when === 'Today' || when === 'Tomorrow' ? when.toLowerCase() : when}.
+        </span>
+      )}
+    </p>
+    {active.length > 0 && (
+      <p className="hv3-active">
+        <AvatarStack userIds={active} total={active.length} size="sm" max={4} ring="bg" />
+        <span>{peopleLine(active, null, { names: 2 })} {active.length === 1 ? 'is' : 'are'} active today</span>
+      </p>
+    )}
+    </div>
+  );
+}
+
 /** An agenda: when on the left, what and how it is going on the right. One ruled list, no boxes. */
 export function ComingUpSection({ items }: { items: ComingUpItem[] }) {
   if (!items.length) return null;
@@ -124,6 +156,7 @@ export function ComingUpSection({ items }: { items: ComingUpItem[] }) {
             <li key={`${x.kind}-${x.id}`}>
               <ComingUpRow
                 when={when}
+                date={x.date}
                 today={when === 'Today'}
                 title={x.title}
                 emoji={x.emoji}
@@ -209,7 +242,7 @@ export function MadeItHappenSection({ items, title = 'Made it happen' }: { items
                 announce={false}
                 lead={r.emoji}
                 title={r.title}
-                line={`We made it happen · ${r.people} ${r.people === 1 ? 'person' : 'people'} · ${formatDate(r.completedAt, { month: 'short', day: 'numeric' })}`}
+                line={`${r.people} ${r.people === 1 ? 'person' : 'people'} · ${formatDate(r.completedAt, { month: 'short', day: 'numeric' })}`}
                 tint={r.kind === 'split' ? 'lilac' : 'mint'}
               />
               <ChevronRight className="hv3-made__go" aria-hidden />

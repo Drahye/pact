@@ -7,3 +7,7 @@
 .t-support { font-size: var(--t-support-size); line-height: var(--t-support-line); font-weight: var(--t-support-weight); color: var(--color-text-secondary); }
 .t-label { font-size: var(--t-label-size); line-height: var(--t-label-line); font-weight: var(--t-label-weight); letter-spacing: var(--t-label-tracking); text-transform: uppercase; }
 .t-meta { font-size: var(--t-meta-size); line-height: var(--t-meta-line); font-weight: var(--t-meta-weight); color: var(--color-text-tertiary); font-variant-numeric: tabular-nums; }
+
+/* Numbers that are the point: a date, an amount, a progress figure. Their own treatment, never a title style, and they do not wrap. */
+.t-numeric { font-size: var(--t-display-size); line-height: var(--t-display-line); font-weight: var(--t-display-weight); letter-spacing: var(--t-display-tracking); white-space: nowrap; font-variant-numeric: lining-nums; }
+.t-numeric--md { font-size: clamp(1.75rem, 8vw, 2.25rem); line-height: 1; letter-spacing: -0.04em; }

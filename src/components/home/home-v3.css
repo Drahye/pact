@@ -54,7 +54,18 @@
 /* Made it happen: completion rows, each a link to its recap. */
 .hv3-made {
   display: grid;
-  gap: var(--space-2);
+  gap: 0;
+}
+
+.hv3-made > li + li {
+  border-top: var(--border-quiet);
+}
+
+/* Finished things are rows of history on the page, not cards: the tick says it, the hairline separates. */
+.hv3-made .done--row {
+  padding: var(--space-3) 0;
+  border-radius: 0;
+  background: none;
 }
 
 .hv3-made__item {
@@ -109,4 +120,77 @@
   .hv3-made__item:active {
     transform: none;
   }
+}
+
+/* The pulse: one sentence under the greeting. */
+.hv3-pulse-wrap {
+  display: grid;
+  gap: var(--space-3);
+  margin: calc(var(--space-2) * -1) 0 var(--space-8);
+}
+
+.hv3-pulse {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--t-body-size);
+  line-height: 1.45;
+}
+
+.hv3-pulse strong {
+  color: var(--color-text);
+  font-weight: var(--weight-semibold);
+}
+
+.hv3-pulse strong.is-live::before {
+  content: '';
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 8px;
+  border-radius: 50%;
+  background: var(--green-500);
+  vertical-align: 1px;
+}
+
+/* Needs you: the first thing is the one to do, and it keeps its colour and lift. Everything after it is not a card: it sits on the page,
+   separated by a hairline and space, with the same inline answer (RSVP, vote) it always had. Its action is a quiet pill, so the screen
+   has one solid action, not ten. */
+.hv3-needs {
+  gap: 0;
+}
+
+.hv3-needs > li:first-child {
+  padding-bottom: var(--space-5);
+}
+
+.hv3-needs > li:first-child :is(.ox-ask, .ox-plan, .ox-split, .ox-pact) {
+  box-shadow: var(--ring-quiet), 0 18px 30px -20px color-mix(in srgb, var(--tint-solid) 75%, transparent);
+}
+
+.hv3-needs > li:not(:first-child) {
+  padding-block: var(--space-4);
+  border-top: var(--border-quiet);
+}
+
+.hv3-needs > li:not(:first-child) :is(.ox-ask, .ox-plan, .ox-split, .ox-pact) {
+  padding: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+}
+
+.hv3-needs > li:not(:first-child) .act--solid {
+  background: color-mix(in srgb, var(--tint-solid, var(--ink-300)) 18%, var(--color-surface));
+  color: var(--tint-fg, var(--color-text));
+}
+
+/* Who is around: faces first, one quiet line. */
+.hv3-active {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--t-support-size);
+  line-height: 1.35;
 }

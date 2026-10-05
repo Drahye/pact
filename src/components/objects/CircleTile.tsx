@@ -56,7 +56,7 @@ export function CircleTile({
   children?: ReactNode;
   /** header: the Circle's own page. Full width, the name is the page's h1, the faces are larger, and `children` (actions) sit under the signal. */
   density?: 'tile' | 'header';
-  /** Header only: "5 people", under the name. */
+  /** Header only: who is in it as a sentence ("You, Maya and 3 others"), under the name. */
   meta?: string;
 }) {
   const pulse = usePulseOnce(!!live);
@@ -72,7 +72,7 @@ export function CircleTile({
           {meta && <p className="ox-circle__meta t-support">{meta}</p>}
         </div>
         <div className="ox-circle__row">
-          <AvatarStack userIds={peopleIds} total={total} size="md" max={6} className="ox-circle__people" enter />
+          <AvatarStack userIds={peopleIds} total={total} size="md" max={5} className="ox-circle__people" enter />
           {children}
         </div>
         {signal && (

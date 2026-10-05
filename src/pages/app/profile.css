@@ -110,9 +110,7 @@
   align-items: center;
   gap: var(--space-4);
   margin-top: var(--space-2);
-  padding: var(--space-5);
-  border-radius: var(--shape-circle);
-  background: linear-gradient(160deg, color-mix(in srgb, var(--tint-solid) 26%, var(--color-surface)), color-mix(in srgb, var(--tint-solid) 9%, var(--color-surface)));
+  padding: var(--space-2) 0 var(--space-2);
 }
 
 .me__id {
@@ -120,37 +118,35 @@
 }
 
 .me__name {
-  font-size: 1.75rem;
-  line-height: 1.1;
-  letter-spacing: var(--tracking-tight);
+  font-size: var(--t-page-size);
+  font-weight: var(--t-page-weight);
+  line-height: 1.06;
+  letter-spacing: var(--t-page-tracking);
   overflow-wrap: anywhere;
 }
-.me__stats{
+
+/* The one sentence that says what this person's time on PACT has been. The numbers are inside it, not on cards. */
+.me__story {
   grid-column: 1 / -1;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.me__stats {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: var(--space-2);
-}
-
-.me__stats dd {
-  margin: 0;
-  font-size: 1.125rem;
-  font-weight: var(--weight-semibold);
-  letter-spacing: var(--tracking-snug);
-}
-
-.me__stats dt {
+  margin: var(--space-2) 0 0;
   color: var(--color-text-secondary);
-  font-size: var(--text-caption);
-  line-height: 1.2;
+  font-size: 1.1875rem;
+  line-height: 1.4;
+  letter-spacing: -0.015em;
+  text-wrap: pretty;
 }
 
-/* Me: who you are, and how you are verified. */
+.me__story b {
+  color: var(--color-text);
+  font-weight: var(--t-display-weight);
+  letter-spacing: -0.03em;
+}
+
+.me__given-inline {
+  white-space: nowrap;
+}
+
+/* Me: who you are and who you do things with. */
 .me__settings {
   display: grid;
   place-items: center;
@@ -162,8 +158,7 @@
   color: var(--color-text);
 }
 
-.me__settings:focus-visible,
-.me__verify:focus-visible {
+.me__settings:focus-visible {
   outline: 3px solid var(--color-focus);
   outline-offset: 2px;
 }
@@ -188,59 +183,47 @@
   height: 15px;
 }
 
-.me__ids {
-  grid-column: 1 / -1;
-  display: grid;
-  gap: 8px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.me__ids li {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  min-height: 28px;
+.me__since {
+  margin: 4px 0 0;
+  color: var(--color-text-secondary);
   font-size: var(--t-support-size);
 }
 
-.me__ids svg {
-  flex: none;
-  width: 16px;
-  height: 16px;
-  color: var(--color-text-secondary);
+.me__people {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
 }
 
-.me__ids-text {
+.me__people p,
+.me__people-empty {
+  margin: 0;
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  color: var(--color-text-secondary);
+  font-size: var(--t-body-size);
+  line-height: 1.4;
+  overflow-wrap: anywhere;
 }
 
-.me__ok {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  margin-left: auto;
-  color: var(--tone-mint-fg);
-  font-weight: var(--weight-semibold);
-  white-space: nowrap;
-}
-
-.me__ok svg {
-  color: inherit;
-}
-
-.me__verify {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-  margin: -8px 0 -8px auto;
+.me__people p strong {
   color: var(--color-text);
   font-weight: var(--weight-semibold);
-  text-decoration: underline;
-  text-underline-offset: 3px;
+}
+
+.me__people-empty {
+  grid-column: 1 / -1;
+}
+
+.me__given {
+  grid-column: 1 / -1;
+  margin: calc(var(--space-1) * -1) 0 0;
+  color: var(--color-text-secondary);
+  font-size: var(--t-support-size);
+}
+
+.me__given b {
+  color: var(--color-text);
+  font-weight: var(--weight-semibold);
   white-space: nowrap;
 }

@@ -337,61 +337,56 @@ button.budget__row:hover {
 
 /* Next step: one action, led by hierarchy rather than colour -------------------- */
 .nextstep {
-  position: relative;
-  margin-top: var(--space-5);
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--space-2);
-  padding: var(--space-5) var(--space-5) var(--space-5) var(--space-6);
-  border-radius: 8px var(--radius-2xl) var(--radius-2xl) 8px;
-  background: linear-gradient(100deg, color-mix(in srgb, var(--green-500) 16%, var(--color-surface)), color-mix(in srgb, var(--green-500) 5%, var(--color-surface)));
-}
-
-/* The one thing to do next carries a rail, like a task you said yes to. */
-.nextstep::before {
-  content: '';
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 4px;
-  border-radius: 8px 0 0 8px;
-  background: var(--green-500);
+  display: grid;
+  justify-items: start;
+  gap: var(--space-1);
+  margin-top: var(--space-6);
+  padding-top: var(--space-5);
+  border-top: var(--border-quiet);
 }
 
 .nextstep__label {
-  font-size: var(--text-caption);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--tone-mint-fg, var(--color-accent-text));
+  font-size: var(--t-meta-size);
   font-weight: var(--weight-semibold);
-  letter-spacing: var(--tracking-wide);
-  text-transform: uppercase;
-  color: var(--color-text-tertiary);
+}
+
+.nextstep__label::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--green-500);
 }
 
 .nextstep__title {
-  font-size: var(--text-lg);
-  line-height: var(--leading-lg);
-  font-weight: var(--weight-semibold);
-  letter-spacing: var(--tracking-snug);
+  font-size: var(--t-object-size);
+  line-height: var(--t-object-line);
+  font-weight: var(--t-object-weight);
+  letter-spacing: var(--t-object-tracking);
 }
 
 .nextstep__body {
-  font-size: var(--text-sm);
-  line-height: var(--leading-sm);
+  font-size: var(--t-support-size);
+  line-height: var(--t-support-line);
   color: var(--color-text-secondary);
 }
 
 .nextstep .btn {
   margin-top: var(--space-3);
-  border-radius: 14px;
-  background: var(--color-selected);
-  color: var(--color-on-selected);
+  background: color-mix(in srgb, var(--green-500) 20%, var(--color-surface));
+  color: var(--color-accent-text);
+  box-shadow: none;
 }
 
 /* Getting there: the organiser's checkpoint ---------------------------------------- */
 .progress {
-  margin-top: var(--space-4);
-  padding: var(--space-4) var(--space-5);
-  border-radius: var(--radius-xl);
-  background: var(--color-bg-sunken);
+  margin-top: var(--space-6);
+  padding: var(--space-5) 0 0;
+  border-top: var(--border-quiet);
 }
 
 .progress__title {

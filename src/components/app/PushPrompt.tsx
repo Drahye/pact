@@ -8,16 +8,20 @@ import './push-prompt.css';
 import './strip.css';
 
 /**
- * Offered once someone is part of a Pact and has something to be told about. The browser's own permission
- * question appears only after "Turn on notifications"; "Not now" is remembered and the card does not come back.
+ * Offered once someone is part of a Pact and has something to be told about, and only when the browser has not been asked yet. The browser's own
+ * permission question appears only after "Turn on notifications"; "Not now" is remembered and the card does not come back. Never shown when
+ * notifications work, and never again to someone who blocked them (Settings explains that quietly). If notifications are allowed but a working
+ * subscription could not be made, it says so once, with a way to try again.
  */
 export function PushPrompt({ hasPact }: { hasPact: boolean }) {
   const { state, busy, enable } = usePush();
   const [hidden, setHidden] = useState(promptDismissed);
+  const [failedHidden, setFailedHidden] = useState(false);
   const toast = useToast();
-  if (!hasPact || hidden || state !== 'off') return null;
+  if (!hasPact || (state !== 'off' && state !== 'error') || (state === 'off' && hidden) || (state === 'error' && failedHidden)) return null;
 
   const later = () => {
+    if (state === 'error') return setFailedHidden(true); // a problem is not "not now" forever: it is asked again next visit
     dismissPrompt();
     setHidden(true);
   };
@@ -28,6 +32,8 @@ export function PushPrompt({ hasPact }: { hasPact: boolean }) {
       later();
     } else if (next === 'on') {
       toast('Notifications are on');
+    } else if (next === 'error') {
+      toast('Couldn’t turn notifications on. Try again in a moment.', 'neutral');
     } else {
       later();
     }
@@ -40,12 +46,12 @@ export function PushPrompt({ hasPact }: { hasPact: boolean }) {
       </span>
       <div className="strip__text">
         <h2 id="push-prompt-title" className="strip__title">
-          Know when your people need you.
+          {state === 'error' ? 'Notifications need another try.' : 'Know when your people need you.'}
         </h2>
-        <p>Updates even when PACT isn’t open.</p>
+        <p>{state === 'error' ? 'They’re allowed, but this device didn’t finish setting up.' : 'Updates even when PACT isn’t open.'}</p>
       </div>
       <button type="button" className="act act--solid" aria-label="Turn on notifications" onClick={turnOn} disabled={busy}>
-        {busy ? 'Turning on' : 'Turn on'}
+        {busy ? 'Turning on' : state === 'error' ? 'Try again' : 'Turn on'}
       </button>
       <IconButton label="Not now" variant="ghost" icon={<X />} onClick={later} disabled={busy} />
     </section>

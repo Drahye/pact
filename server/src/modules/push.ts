@@ -77,6 +77,16 @@ export async function saveSubscription(ctx: Ctx, userId: string, input: { endpoi
   });
 }
 
+/**
+ * Whether the server holds this browser's subscription for this person: `active` (will be sent to), `disabled` (the push service said it is
+ * gone, so the browser must make a new one), or `none` (never saved, removed, or held by someone else: the caller cannot tell which, by design).
+ */
+export async function subscriptionStatus(ctx: Ctx, userId: string, endpoint: string): Promise<'active' | 'disabled' | 'none'> {
+  const r = await ctx.db.query<{ disabled_at: string | null }>('SELECT disabled_at FROM push_subscriptions WHERE user_id = $1 AND endpoint = $2', [userId, endpoint]);
+  if (!r.rows.length) return 'none';
+  return r.rows[0].disabled_at ? 'disabled' : 'active';
+}
+
 /** Turning notifications off, or signing out of this browser. Only ever touches the caller's own subscription. */
 export async function removeSubscription(ctx: Ctx, userId: string, endpoint: string) {
   await ctx.db.query('DELETE FROM push_subscriptions WHERE user_id = $1 AND endpoint = $2', [userId, endpoint]);

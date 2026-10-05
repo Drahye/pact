@@ -46,7 +46,7 @@ import { createEmail, type EmailSender } from './payments/email.js';
 import { createGoogle, type GoogleClient } from './payments/google.js';
 import { createStytch, type StytchClient } from './payments/stytch.js';
 import { createSms, type SmsSender } from './payments/sms.js';
-import { createPushSender, pushPublicConfig, removeSubscription, saveSubscription, type PushSender } from './modules/push.js';
+import { createPushSender, pushPublicConfig, removeSubscription, saveSubscription, subscriptionStatus, type PushSender } from './modules/push.js';
 
 /**
  * HTML revalidates on every visit, so a deploy reaches people immediately; Vite's content-hashed
@@ -872,6 +872,8 @@ export async function buildApp({ config, db, provider, sms, email, google, stytc
           await saveSubscription(ctx, req.userId, parse(SubscribeBody, req.body));
           return { ok: true };
         });
+        // Asked by this browser about its own subscription (a POST so the endpoint never sits in a URL or a log). It answers only for the caller.
+        priv.post('/push/status', strict(60), async (req) => ({ status: await subscriptionStatus(ctx, req.userId, parse(z.object({ endpoint: z.string().max(1000) }), req.body).endpoint) }));
         priv.post('/push/unsubscribe', strict(30), async (req) => {
           await removeSubscription(ctx, req.userId, parse(z.object({ endpoint: z.string().max(1000) }), req.body).endpoint);
           return { ok: true };

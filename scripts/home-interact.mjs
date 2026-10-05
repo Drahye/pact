@@ -34,28 +34,53 @@ async function signIn(page) {
   const before = Number((await heading.innerText()).replace(/\D/g, ''));
   check('Needs you shows a count', before >= 4, `(${before})`);
 
-  // Inline RSVP
-  const card = page.locator('.hv2-need', { hasText: 'Ghana in December' });
-  await card.getByRole('button', { name: /RSVP/ }).click();
-  await page.waitForTimeout(450);
-  check('RSVP expands the card with In / Maybe / Can’t', (await card.getByRole('radio').count()) === 3);
-  check('the expanded control is announced as expanded', (await card.getByRole('button', { name: /RSVP/ }).getAttribute('aria-expanded')) === 'true');
+  // First screen (390 x 844): personal, social, something may need me
+  const needsTop = (await heading.boundingBox()).y;
+  check('Needs you begins early on the first screen', needsTop < 300, `(${Math.round(needsTop)}px from the top)`);
+  const orderOk = await page.evaluate(() => { const ids = ['needs-you-h', 'hv2-circles-h', 'hv2-soon-h', 'hv2-recent-h', 'hv2-recap-h'].map((id) => document.getElementById(id)).filter(Boolean); return ids.every((el, i) => i === 0 || (ids[i - 1].compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING)); });
+  check('sections run Needs you, Circles, Coming up, Recent, Made it happen', orderOk);
+  const prompt = await page.locator('.strip').first().boundingBox();
+  check('prompts sit below what needs you, not above it', !prompt || prompt.y > needsTop);
+  check('no old card families are left on Home', (await page.locator('.nd-plan, .nd-ask, .nd-split, .nd-pact, .hv3-task, .hv3-object, .hv3-circle, .hv2-need').count()) === 0);
+  check('each kind of thing is its own object', (await page.locator('.ox-plan, .ox-ask, .ox-split, .ox-pact').count()) >= 3);
+
+  // Inline RSVP: the pill moves, the card holds a beat, then leaves
+  const card = page.locator('.ox-plan', { hasText: 'Ghana in December' });
+  check('the RSVP is right there, no extra tap', (await card.getByRole('radio').count()) === 3);
   await page.screenshot({ path: `${out}/rsvp-open.png` });
   await card.getByRole('radio', { name: 'I’m in' }).click();
-  await card.locator('.hv2-rsvp__done').waitFor({ timeout: 8000 });
-  check('a confirmation appears with the check', (await card.locator('.hv2-check').count()) === 1);
+  await page.waitForTimeout(450);
+  check('the answer is selected at once and the pill follows', (await card.getByRole('radio', { name: 'I’m in' }).getAttribute('aria-checked')) === 'true' && (await card.locator('.ox-rsvp__pill').count()) === 1);
   await page.screenshot({ path: `${out}/rsvp-done.png` });
   await page.waitForTimeout(2200);
   const after = Number((await heading.innerText()).replace(/\D/g, ''));
-  check(`the card resolves and the count goes from ${before} to ${before - 1}`, after === before - 1 && (await page.locator('.hv2-need', { hasText: 'Ghana in December' }).count()) === 0, `(count ${after})`);
+  check(`the card resolves and the count goes from ${before} to ${before - 1}`, after === before - 1 && (await page.locator('.ox-plan', { hasText: 'Ghana in December' }).count()) === 0, `(count ${after})`);
 
-  // Keyboard: tab reaches the primary action and Enter activates it
-  await page.locator('.hv2-need').first().locator('a.hv2-need__main').focus();
+  const more = page.getByRole('button', { name: /Show \d+ more/ });
+  if (await more.count()) await more.click();
+  await page.waitForTimeout(400);
+
+  // Inline vote on an Ask: counted at once, the card holds a beat, then leaves
+  const ask = page.locator('.ox-ask', { hasText: 'Which date works?' });
+  const before20 = Number((await ask.getByRole('radio', { name: /Dec 20/ }).locator('.ox-opt__n').innerText()).trim());
+  await ask.getByRole('radio', { name: /Dec 18/ }).click();
+  await page.waitForTimeout(450);
+  check('the vote is selected immediately', (await ask.getByRole('radio', { name: /Dec 18/ }).getAttribute('aria-checked')) === 'true');
+  check('the card says it was counted', /Counted/.test(await ask.innerText()));
+  check('the other options stay unchanged', Number((await ask.getByRole('radio', { name: /Dec 20/ }).locator('.ox-opt__n').innerText()).trim()) === before20);
+  await page.screenshot({ path: `${out}/ask-counted.png` });
+  await page.waitForTimeout(2200);
+  check('the answered Ask leaves Needs you after a beat', (await page.locator('.ox-ask', { hasText: 'Which date works?' }).count()) === 0);
+
+  // Keyboard: the object's own control is reachable and shows a focus ring
+  await page.locator('.ox-plan').first().locator('a.ox-plan__top').focus();
   await page.keyboard.press('Tab');
   const focusedClass = await page.evaluate(() => document.activeElement?.className ?? '');
-  check('keyboard focus reaches a card’s action', /hv2-cta/.test(focusedClass), `(${focusedClass})`);
+  check('keyboard focus reaches an object’s control', /ox-rsvp__btn|act/.test(focusedClass), `(${focusedClass})`);
   const outline = await page.evaluate(() => getComputedStyle(document.activeElement).outlineStyle);
-  check('the focused action shows a visible focus ring', outline !== 'none');
+  check('the focused control shows a visible focus ring', outline !== 'none');
+  const headings = await page.evaluate(() => [...document.querySelectorAll('.screen__content h1, .screen__content h2')].map((h) => h.tagName + ':' + h.textContent.trim().slice(0, 20)));
+  check('one h1, then a heading per section', headings.filter((h) => h.startsWith('H1')).length === 1 && headings.filter((h) => h.startsWith('H2')).length >= 4, JSON.stringify(headings));
 
   // Create button + sheet
   const create = page.getByRole('button', { name: 'Create' });
@@ -85,18 +110,15 @@ async function signIn(page) {
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' });
   const page = await ctx.newPage();
   await signIn(page);
-  const card = page.locator('.hv2-need', { hasText: 'Which date works?' });
-  const t0 = Date.now();
-  await page.getByRole('button', { name: 'Create' }).click();
+    await page.getByRole('button', { name: 'Create' }).click();
   await page.getByRole('dialog').waitFor();
   const animated = await page.evaluate(() => [...document.querySelectorAll('.create-sheet li')].some((li) => getComputedStyle(li).animationName !== 'none'));
   check('reduced motion: the sheet options do not animate', !animated);
   await page.keyboard.press('Escape');
-  const live = page.locator('.hv2-circle.is-live').first();
+  const live = page.locator('.ox-circle.is-live').first();
   const pulse = await live.evaluate((el) => getComputedStyle(el).animationName);
   check('reduced motion: no pulse on live Circles', pulse === 'none' || pulse === '');
   check('reduced motion: presses do not scale', (await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--motion-micro').trim())) === '0ms');
-  void card; void t0;
   await ctx.close();
 }
 

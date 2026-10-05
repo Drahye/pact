@@ -3,12 +3,9 @@
    Colours live in tokens.css; this file is only for edges, native controls
    and surfaces that sit on a dark page and need a hairline to separate.
    ========================================================================== */
-
-/* Fixed-dark cards read as raised tiles on a dark page: give them an edge. */
-:root[data-theme='dark'] .featured-pact,
 :root[data-theme='dark'] .checkout__card,
 :root[data-theme='dark'] .hold,
-:root[data-theme='dark'] .btn--inverse {
+:root[data-theme='dark'] .btn--inverse{
   box-shadow: inset 0 0 0 1px var(--color-border-strong);
 }
 

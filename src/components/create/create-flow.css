@@ -1,0 +1,149 @@
+/* The shared frame for creating an Ask, a Plan, a Split: a kind badge, a progress track, one step at a time. */
+.cf__meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding-top: var(--space-1);
+}
+
+.cf__kind {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--tint-fg);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+}
+
+.cf__icon {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 9px 9px 9px 4px;
+  background: var(--tint-bg);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tint-solid) 30%, transparent);
+}
+
+.cf__icon svg {
+  width: 15px;
+  height: 15px;
+}
+
+.cf__steps {
+  display: inline-flex;
+}
+
+.cf__dots {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cf__dots i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--tint-solid) 24%, transparent);
+  transition: width var(--motion-state) var(--ease-out), background-color var(--motion-state) var(--ease-soft);
+}
+
+.cf__dots i.is-past {
+  background: color-mix(in srgb, var(--tint-solid) 70%, transparent);
+}
+
+.cf__dots i.is-now {
+  width: 22px;
+  border-radius: 4px;
+  background: var(--tint-solid);
+}
+
+/* The thing was made: the screen settles into its completion while the new object opens. */
+.cf-done {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--tint-solid) 14%, var(--color-bg));
+}
+
+.cf-done--frame {
+  position: absolute;
+}
+
+.cf__heading {
+  margin-top: var(--space-2);
+  text-wrap: balance;
+}
+
+.cf__sub {
+  margin: 0;
+  color: var(--color-text-secondary);
+}
+
+.cf__context {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: fit-content;
+  margin: 0;
+  padding: 4px 12px 4px 4px;
+  border-radius: 14px 14px 14px 5px;
+  background: color-mix(in srgb, var(--tint-solid) 12%, var(--surface-base));
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+}
+
+/* Ways to answer, side by side. */
+.cf__pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.cf__label {
+  margin: var(--space-2) 0 0;
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+}
+
+/* A little more, if you want it: closed until asked for. */
+.cf__more > summary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  color: var(--color-text-secondary);
+  font-weight: var(--weight-semibold);
+  cursor: pointer;
+  list-style: none;
+}
+
+.cf__more > summary::-webkit-details-marker {
+  display: none;
+}
+
+.cf__more > summary::before {
+  content: '+';
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--tint-solid) 16%, transparent);
+  color: var(--tint-fg);
+  transition: transform var(--motion-state) var(--ease-soft);
+}
+
+.cf__more[open] > summary::before {
+  transform: rotate(45deg);
+}
+
+.cf__more > div {
+  display: grid;
+  gap: var(--space-3);
+  padding-top: var(--space-2);
+}

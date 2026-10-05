@@ -4,24 +4,6 @@
   padding-bottom: var(--space-6);
 }
 
-.ask__circle {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  min-width: 0;
-  color: var(--color-text-secondary);
-  font-size: var(--text-sm);
-  font-weight: var(--weight-medium);
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-}
-
-.ask__circle span:last-child {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .ask__title {
   overflow-wrap: anywhere;
 }
@@ -70,178 +52,9 @@
 .ask__option:disabled {
   cursor: default;
 }
-
-/* The bar sits behind the label and grows to the share of the leading option. */
-.ask__bar {
-  position: absolute;
-  inset: 0 auto 0 0;
-  background: color-mix(in srgb, var(--green-500) 24%, transparent);
-  transition: width 0.45s var(--ease-out);
-}
-
-.ask__option-row {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  min-height: 60px;
-  padding: var(--space-2) var(--space-4);
-}
-
-.ask__check {
-  display: grid;
-  place-items: center;
-  flex: none;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  box-shadow: inset 0 0 0 2px var(--color-border-hover);
-}
-
-.is-mine .ask__check {
-  background: var(--color-text);
-  color: var(--color-bg);
-  box-shadow: none;
-}
-
-.ask__check svg {
-  width: 14px;
-  height: 14px;
-}
-
-.ask__label {
-  flex: 1;
-  min-width: 0;
-  overflow-wrap: anywhere;
-  font-weight: var(--weight-semibold);
-}
-
-.ask__stack {
-  display: inline-flex;
-  flex: none;
-}
-
-.ask__stack .avatar + .avatar {
-  margin-left: -5px;
-}
-
-.ask__count {
-  flex: none;
-  min-width: 1.5ch;
-  font-weight: var(--weight-bold);
-  text-align: right;
-}
-
-.ask__att {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--space-2);
-  margin-top: var(--space-2);
-}
-
-.ask__att-btn {
-  min-height: 56px;
-  padding: 0 var(--space-2);
-  border-radius: var(--radius-full);
-  background: var(--color-surface);
-  box-shadow: inset 0 0 0 1px var(--color-border);
-  font-weight: var(--weight-semibold);
-  transition: background var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
-}
-
-.ask__att-btn:disabled {
-  opacity: 0.6;
-}
-
-.ask__att-btn--in.is-mine {
-  background: var(--green-500);
-  box-shadow: none;
-  color: var(--ink-900);
-}
-
-.ask__att-btn--maybe.is-mine {
-  background: var(--sun-400);
-  box-shadow: none;
-  color: var(--ink-900);
-}
-
-.ask__att-btn--out.is-mine {
-  background: var(--color-text);
-  box-shadow: none;
-  color: var(--color-bg);
-}
-
-.ask__roster,
-.ask__feed {
-  display: grid;
-  gap: var(--space-3);
-  margin: var(--space-3) 0 0;
-  padding: 0;
-  list-style: none;
-}
-
-.ask__roster li,
-.ask__feed li {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  min-width: 0;
-}
-
-.ask__roster li.is-waiting {
-  opacity: 0.7;
-}
-
-.ask__roster-name,
-.ask__feed-text {
-  flex: 1;
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-
-.ask__roster-name {
-  font-weight: var(--weight-medium);
-}
-
-.ask__pill {
-  flex: none;
-  padding: 2px var(--space-3);
-  border-radius: var(--radius-full);
-  background: var(--color-surface);
-  box-shadow: inset 0 0 0 1px var(--color-border);
-  font-size: var(--text-sm);
-  font-weight: var(--weight-medium);
-}
-
-.ask__pill--in {
-  background: var(--mint-100);
-  color: var(--tone-mint-fg);
-  box-shadow: none;
-}
-
-.ask__pill--maybe {
-  background: var(--sun-100);
-  color: var(--tone-sun-fg);
-  box-shadow: none;
-}
-
-.ask__summary {
-  margin-top: var(--space-2);
-}
-
-.ask__people,
-.ask__hint,
-.ask__when {
+.ask__hint{
   color: var(--color-text-secondary);
   font-size: var(--text-sm);
-}
-
-.ask__feed {
-  margin-top: var(--space-4);
-}
-
-.ask__feed li {
-  animation: ask-in 0.3s var(--ease-out) both;
 }
 
 @keyframes ask-in {
@@ -251,87 +64,11 @@
   }
 }
 
-.ask__when {
-  flex: none;
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .ask__bar {
-    transition: none;
-  }
-
-  .ask__feed li {
-    animation: none;
-  }
 
   .ask__option:not(:disabled):active {
     transform: none;
   }
-}
-
-/* A question in a list */
-.ask-card {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  min-width: 0;
-  padding: var(--space-4);
-  border-radius: var(--radius-xl);
-  background: var(--color-surface);
-  box-shadow: inset 0 0 0 1px var(--color-border);
-}
-
-.ask-card.is-waiting {
-  box-shadow: inset 0 0 0 2px var(--green-500);
-}
-
-.ask-card__text {
-  display: grid;
-  flex: 1;
-  min-width: 0;
-}
-
-.ask-card__circle {
-  overflow: hidden;
-  color: var(--color-text-secondary);
-  font-size: var(--text-sm);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.ask-card__title {
-  overflow: hidden;
-  font-weight: var(--weight-semibold);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.ask-card__meta {
-  color: var(--color-text-secondary);
-  font-size: var(--text-sm);
-}
-
-.ask-card__action {
-  display: inline-flex;
-  align-items: center;
-  flex: none;
-  gap: 2px;
-  min-height: 44px;
-  padding: 0 var(--space-2) 0 var(--space-3);
-  border-radius: var(--radius-full);
-  font-size: var(--text-sm);
-  font-weight: var(--weight-semibold);
-  color: var(--color-text-secondary);
-}
-
-.ask-card__action.is-primary {
-  background: var(--green-500);
-  color: var(--ink-900);
-}
-
-.ask-card__action svg {
-  width: 16px;
-  height: 16px;
 }
 
 /* Create an Ask */
@@ -348,17 +85,14 @@
 }
 
 .ca__chip {
+  display: inline-flex;
+  align-items: center;
   min-height: 44px;
   padding: 0 var(--space-4);
   border-radius: var(--radius-full);
   background: var(--color-surface);
   box-shadow: inset 0 0 0 1px var(--color-border);
   font-weight: var(--weight-medium);
-}
-
-.ca__types {
-  display: grid;
-  gap: var(--space-3);
 }
 
 .ca__type {
@@ -401,19 +135,6 @@
   flex: 1;
 }
 
-.ca__live {
-  display: grid;
-  gap: var(--space-3);
-  padding: var(--space-4);
-  border-radius: var(--radius-xl);
-  background: var(--mint-100);
-}
-
-.ca__live p {
-  color: var(--tone-mint-fg);
-  font-weight: var(--weight-semibold);
-}
-
 /* Quick starts in an empty Circle */
 .quick {
   display: grid;
@@ -425,45 +146,10 @@
   box-shadow: inset 0 0 0 1px var(--color-border);
 }
 
-.quick__title {
-  font-size: var(--text-h5, 1.125rem);
-  font-weight: var(--weight-semibold);
-}
-
-.ask__reward {
-  margin-top: var(--space-1);
-  font-size: var(--text-lg, 1.125rem);
-  font-weight: var(--weight-bold);
-  animation: ask-in 0.35s var(--ease-out) both;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .ask__reward {
-    animation: none;
-  }
-}
-
 /* The shared-link page: a social object, not an app screen */
 .al {
   display: grid;
   gap: var(--space-4);
-}
-
-.al__join {
-  display: grid;
-  gap: var(--space-3);
-  padding: var(--space-5);
-  border-radius: var(--radius-xl);
-  background: var(--mint-100);
-  color: var(--tone-mint-fg);
-}
-
-.al__join strong {
-  font-size: var(--text-lg, 1.125rem);
-}
-
-.al__join p {
-  color: inherit;
 }
 
 .al__retry {
@@ -474,20 +160,43 @@
   background: var(--coral-100);
 }
 
-.proto--framed .al__brand {
-  margin-top: 50px; /* clear the fake phone's status bar */
+/* ==========================================================================
+   Ask, second pass: the question dominates, the answers are physical.
+   ========================================================================== */
+.ask__title {
+  font-size: clamp(2rem, 9vw, 2.5rem);
+  line-height: 1.06;
+  letter-spacing: -0.04em;
+  text-wrap: balance;
 }
 
-.al__brand {
-  display: flex;
+.ask__status {
+  display: inline-flex;
   align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-3) var(--space-5);
-  font-weight: var(--weight-bold);
-  letter-spacing: 0.06em;
+  gap: 8px;
+  color: var(--tint-fg, var(--color-text-secondary));
+  font-weight: var(--weight-semibold);
 }
 
-.al__brand svg {
-  width: 28px;
-  height: 28px;
+.ask__options {
+  gap: 10px;
+  margin-top: var(--space-3);
+}
+
+.ask__option {
+  min-height: 64px;
+  border-radius: var(--shape-ask);
+  background: var(--color-surface);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tint-solid, var(--ink-300)) 22%, var(--color-border));
+  transition: transform var(--motion-micro) var(--ease-press), box-shadow var(--motion-state) var(--ease-soft), background-color var(--motion-state) var(--ease-soft), filter var(--motion-micro) var(--ease-soft);
+}
+
+.ask__option:not(:disabled):active {
+  transform: scale(var(--press-scale));
+  filter: brightness(var(--press-dim));
+}
+
+.ask__option.is-mine {
+  background: color-mix(in srgb, var(--tint-solid, var(--green-500)) 8%, var(--color-surface));
+  box-shadow: inset 0 0 0 2px var(--color-text);
 }

@@ -9,6 +9,7 @@ import { PinSheet } from '../../../components/app/PinSheet';
 import { RowListSkeleton } from '../../../components/app/Skeleton';
 import { Button } from '../../../components/ui/Button';
 import { Modal } from '../../../components/ui/Modal';
+import { LargeTitle } from '../../../components/ui/LargeTitle';
 import { TopBar } from '../../../components/ui/TopBar';
 import { useToast } from '../../../components/ui/Toast';
 import { formatRelative } from '../../../lib/format';
@@ -69,15 +70,16 @@ export function SecurityScreen() {
   const others = sessions.data?.filter((s) => !s.current) ?? [];
 
   return (
-    <Screen topBar={<TopBar backTo="/app/profile" title="PIN and devices" />}>
-      <p className="menu-label">Transaction PIN</p>
+    <Screen topBar={<TopBar backTo="/app/profile" title="PIN and devices" collapse />}>
+      <LargeTitle>PIN and devices</LargeTitle>
+      <p className="menu-label">PIN</p>
       <div className="menu">
         {user && !user.hasPin ? (
           <button type="button" className="menu__row" onClick={() => setSetupOpen(true)}>
             <span className="menu__icon tint--mint"><KeyRound /></span>
             <span className="menu__text">
-              <span className="menu__title">Set up your PIN</span>
-              <span className="menu__sub">Asked for when you move money or change something sensitive</span>
+              <span className="menu__title">Create a PIN</span>
+              <span className="menu__sub">Create a PIN when you need to approve a sensitive action. You don’t need one to use PACT with your people.</span>
             </span>
           </button>
         ) : (
@@ -93,7 +95,7 @@ export function SecurityScreen() {
               <span className="menu__icon tint--sun"><LifeBuoy /></span>
               <span className="menu__text">
                 <span className="menu__title">Forgot your PIN?</span>
-                <span className="menu__sub">Reset it with a code sent to your verified phone or email</span>
+                <span className="menu__sub">Reset it with a code sent to your verified email or phone. Withdrawals pause for 24 hours after a reset.</span>
               </span>
             </button>
           </>

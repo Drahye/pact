@@ -1,9 +1,10 @@
 import { BellRing } from 'lucide-react';
 import { usePush } from '../../lib/usePush';
+import { SettingsGroup } from '../settings/Settings';
 import { useToast } from '../ui/Toast';
 import './push-prompt.css';
 
-/** Profile → Notifications: one switch for this device. Hidden entirely when the server has push turned off. */
+/** Settings → Notifications: one switch for this device. Hidden entirely when the server has push turned off. */
 export function PushSetting() {
   const { state, busy, enable, disable } = usePush();
   const toast = useToast();
@@ -13,10 +14,10 @@ export function PushSetting() {
   const blocked = state === 'blocked';
   const unsupported = state === 'unsupported';
   const hint = unsupported
-    ? 'This browser can’t show notifications from PACT.'
+    ? 'This browser can’t show notifications from PACT, so everything stays here in the app.'
     : blocked
-      ? 'Blocked in your browser. Allow notifications for PACT in its site settings, then come back.'
-      : 'Payment approvals, goals reached, tasks due and organiser updates, even when PACT isn’t open.';
+      ? 'This browser is set to block notifications for PACT. Whenever you like, allow them in the browser’s site settings and come back.'
+      : 'Plans and replies, money and settlements, Pact progress. Even when PACT isn’t open.';
 
   const toggle = async () => {
     if (on) {
@@ -30,15 +31,14 @@ export function PushSetting() {
   };
 
   return (
-    <>
-    <p className="menu-label">Notifications</p>
+    <SettingsGroup id="st-notify" title="Notifications" plain>
     <div className="push-setting">
       <span className="push-setting__icon" aria-hidden>
         <BellRing />
       </span>
       <div className="push-setting__text">
         <span id="push-setting-label" className="push-setting__title">
-          Notifications on this device
+          Notify me on this device
         </span>
         <span id="push-setting-hint" className="push-setting__hint">
           {hint}
@@ -58,6 +58,6 @@ export function PushSetting() {
         <span className="visually-hidden">{on ? 'On' : 'Off'}</span>
       </button>
     </div>
-    </>
+    </SettingsGroup>
   );
 }

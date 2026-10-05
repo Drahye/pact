@@ -127,7 +127,10 @@ function StatusBar() {
 export function AppShell() {
   const location = useLocation();
   const outlet = useOutlet();
-  const framed = useMediaQuery('(min-width: 600px)');
+  // A shared link is a page for whoever received it, not the demo workspace: no phone frame, no demo panel, one centred column.
+  const shared = /^\/(a|p|s|r)\//.test(location.pathname) || location.pathname.startsWith('/app/c/');
+  const wide = useMediaQuery('(min-width: 600px)');
+  const framed = wide && !shared;
   const [overlayRoot, setOverlayRoot] = useState<HTMLElement | null>(null);
   const direction = useTransitionDirection(location.pathname);
 
@@ -160,7 +163,7 @@ export function AppShell() {
 
   return (
     <ToastProviderWithRoot root={framed ? overlayRoot : null}>
-      <div className={`proto ${framed ? 'proto--framed' : 'proto--native'}`}>
+      <div className={`proto ${framed ? 'proto--framed' : 'proto--native'} ${shared ? 'proto--share' : ''}`}>
         <a href="#app-main" className="skip-link">
           Skip to app
         </a>

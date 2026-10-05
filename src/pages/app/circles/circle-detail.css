@@ -1,0 +1,142 @@
+/* Circle, on its own page: people first (the header is its faces), what is happening now, what is coming, what just happened,
+   and only at the bottom the things you manage. */
+.od-circle {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-6);
+  padding-block: var(--space-2) var(--space-7);
+}
+
+.od-circle > .screen-section {
+  margin: 0;
+}
+
+.od-circle__stack,
+.od-ruled,
+.od-people {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.od-circle__stack {
+  gap: var(--space-3);
+}
+
+.od-ruled > li + li {
+  border-top: var(--border-quiet);
+}
+
+.od-circle__more {
+  justify-self: start;
+  margin-top: var(--space-3);
+}
+
+.od-circle__invite {
+  justify-self: start;
+}
+
+.od-circle__start {
+  display: grid;
+  gap: var(--space-3);
+  justify-items: start;
+}
+
+.od-circle__all {
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-text-secondary);
+  font: inherit;
+  font-size: var(--t-support-size);
+  font-weight: var(--weight-semibold);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.od-circle__all:focus-visible,
+.od-people__remove:focus-visible,
+.od-circle__settings-btn:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+  border-radius: 10px;
+}
+
+/* People */
+.od-people > li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 60px;
+}
+
+.od-people > li + li {
+  border-top: var(--border-quiet);
+}
+
+.od-people__name {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  font-weight: var(--weight-semibold);
+}
+
+.od-people__role {
+  color: var(--color-text-tertiary);
+  font-size: var(--t-meta-size);
+  font-weight: var(--weight-medium);
+}
+
+.od-people__remove {
+  min-height: 44px;
+  padding: 0 var(--space-2);
+  border: 0;
+  background: none;
+  color: var(--color-text-secondary);
+  font: inherit;
+  font-size: var(--t-support-size);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+/* Settings: last, and quiet. */
+.od-circle__settings-btn {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: 60px;
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: 16px;
+  background: var(--surface-quiet);
+  color: var(--color-text);
+  font: inherit;
+  font-weight: var(--weight-semibold);
+  text-align: left;
+  cursor: pointer;
+}
+
+.od-circle__settings-btn svg {
+  width: 20px;
+  height: 20px;
+  color: var(--color-text-secondary);
+}
+
+.od-circle__settings-btn small {
+  display: block;
+  color: var(--color-text-tertiary);
+  font-size: var(--t-meta-size);
+  font-weight: var(--weight-medium);
+}
+
+@media (min-width: 768px) {
+  .od-circle {
+    max-width: 640px;
+  }
+}

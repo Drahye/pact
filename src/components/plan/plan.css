@@ -1,127 +1,8 @@
-.plan-head {
-  display: grid;
-  gap: var(--space-2);
-}
 
-.plan-head__title {
-  overflow-wrap: anywhere;
-}
-
-.plan-head__where {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2) var(--space-4);
-  color: var(--color-text-secondary);
-}
-
-.plan-head__where span {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-
-.plan-head__where svg {
-  flex: none;
-  width: 18px;
-  height: 18px;
-}
-
-.plan-pill {
-  width: fit-content;
-  padding: 2px var(--space-3);
-  border-radius: var(--radius-full);
-  background: var(--color-surface);
-  box-shadow: inset 0 0 0 1px var(--color-border);
-  font-size: var(--text-sm);
-  font-weight: var(--weight-semibold);
-}
-
-.plan-pill--confirmed {
-  background: var(--mint-100);
-  color: var(--tone-mint-fg);
-  box-shadow: none;
-}
-
-.plan-pill--done {
-  background: var(--sky-50);
-  color: var(--tone-sky-fg);
-  box-shadow: none;
-}
-
-.plan-pill--cancelled {
-  background: var(--coral-100);
-  color: var(--tone-coral-fg);
-  box-shadow: none;
-}
-
-.plan-card {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  min-width: 0;
-  padding: var(--space-4);
-  border-radius: var(--radius-xl);
-  background: var(--color-surface);
-  box-shadow: inset 0 0 0 1px var(--color-border);
-}
-
-.plan-card.is-waiting {
-  box-shadow: inset 0 0 0 2px var(--green-500);
-}
-
-.plan-card__text {
-  display: grid;
-  flex: 1;
-  min-width: 0;
-}
-
-.plan-card__title {
-  overflow: hidden;
-  font-size: var(--text-lg, 1.125rem);
-  font-weight: var(--weight-bold);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.plan-card__when {
-  color: var(--color-text-secondary);
-}
-
-.plan-card__meta {
-  color: var(--color-text-secondary);
-  font-size: var(--text-sm);
-}
-
-/* Recap: momentum at a glance */
-.plan-recap {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.plan-recap li {
-  padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-full);
-  background: var(--color-surface);
-  box-shadow: inset 0 0 0 1px var(--color-border);
-  font-size: var(--text-sm);
-  font-weight: var(--weight-semibold);
-}
 
 .plan-section {
   display: grid;
   gap: var(--space-3);
-}
-
-.plan-section__row {
-  display: flex;
-  gap: var(--space-2);
-  flex-wrap: wrap;
 }
 
 .plan-tasks {
@@ -211,29 +92,11 @@
 
 .plan-add > :first-child {
   flex: 1;
+  min-width: 0;
 }
 
-.plan-pact {
-  display: grid;
-  gap: var(--space-3);
-  padding: var(--space-5);
-  border-radius: var(--radius-xl);
-  background: var(--color-surface);
-  box-shadow: inset 0 0 0 1px var(--color-border);
-}
-
-.plan-pact.is-done {
-  background: var(--mint-100);
-  box-shadow: none;
-  color: var(--tone-mint-fg);
-}
-
-.plan-pact strong {
-  font-size: var(--text-lg, 1.125rem);
-}
-
-.plan-pact p {
-  color: inherit;
+.plan-add .btn {
+  flex: none;
 }
 
 .plan-people {
@@ -260,61 +123,59 @@
   gap: var(--space-4);
 }
 
-.plan-stats {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-}
-
-.plan-stats span {
-  padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-full);
-  background: var(--color-surface);
-  box-shadow: inset 0 0 0 1px var(--color-border);
-  font-weight: var(--weight-semibold);
-}
-
-.plan-stats span.is-in {
-  background: var(--mint-100);
-  color: var(--tone-mint-fg);
-  box-shadow: none;
-}
-
 .plan-sheet {
   display: grid;
   gap: var(--space-3);
-}
-
-.plan-section__title {
-  font-size: var(--text-h5, 1.25rem);
-  font-weight: var(--weight-bold);
-}
-
-.plan-head__going {
-  margin: 0;
-  color: var(--color-text);
-  font-weight: var(--weight-semibold);
-}
-
-.plan-head__status {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-2) var(--space-3);
-  margin: 0;
-  color: var(--color-text-secondary);
-  font-size: var(--text-sm);
-}
-
-.plan-group__label {
-  margin: var(--space-3) 0 var(--space-1);
-  color: var(--color-text-secondary);
-  font-size: var(--text-sm);
-  font-weight: var(--weight-semibold);
 }
 
 .plan-note {
   margin: 0;
   color: var(--color-text-secondary);
   font-size: var(--text-sm);
+}
+
+/* Tasks: a list on the page, not a stack of cards. */
+.plan-tasks {
+  gap: 0;
+}
+
+.plan-task {
+  min-height: 60px;
+  padding: var(--space-2) 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.plan-task + .plan-task {
+  border-top: 1px solid var(--line-quiet);
+}
+
+.plan-task__box span {
+  border-radius: 9px;
+  transition: background-color var(--motion-state) var(--ease-soft), box-shadow var(--motion-state) var(--ease-soft), transform var(--motion-micro) var(--ease-press);
+}
+
+.plan-task__box:active span {
+  transform: scale(var(--press-scale-small));
+}
+
+.plan-task.is-done .plan-task__box span {
+  background: var(--green-500);
+  color: var(--ink-900);
+}
+
+.plan-section,
+.plan-section > * {
+  min-width: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .plan-task__box:active span {
+    transform: none;
+  }
+}
+
+.plan-section {
+  grid-template-columns: minmax(0, 1fr);
 }

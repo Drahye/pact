@@ -1,7 +1,4 @@
-.detail__head {
-  display: flex;
-  justify-content: center;
-}
+
 
 .detail__ring {
   display: flex;
@@ -68,58 +65,6 @@
 .detail__ring-hint {
   font-size: var(--text-caption);
   color: var(--color-text-tertiary);
-}
-
-.detail__stats {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--space-2);
-  margin-top: var(--space-6);
-}
-
-.detail__stats li {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  container-type: inline-size;
-  gap: 2px;
-  padding: var(--space-3);
-  border-radius: var(--radius-lg);
-  background: var(--tint-bg);
-  color: var(--tint-fg);
-  font-size: var(--text-caption);
-  font-weight: var(--weight-medium);
-}
-
-.detail__stats svg {
-  width: 18px;
-  height: 18px;
-  margin-bottom: var(--space-2);
-}
-
-.detail__stats li > span {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  column-gap: 4px;
-}
-
-/* The figure sizes to its tile, so "₦22.8m" never pushes a tile wider than its share. */
-.detail__stats strong {
-  font-size: clamp(15px, calc(100cqw / (var(--chars, 3) * 0.62)), var(--text-title));
-  line-height: 1.2;
-  font-weight: var(--weight-bold);
-  letter-spacing: -0.03em;
-  color: var(--color-text);
-}
-
-.detail__stats span {
-  color: var(--color-text);
-}
-
-.detail__stats small {
-  overflow-wrap: anywhere;
-  font-size: var(--text-caption);
 }
 
 /* member rail: swipe sideways, tap to single someone out in the ring */

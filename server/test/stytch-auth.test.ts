@@ -489,13 +489,16 @@ describe('Google through Stytch OAuth', () => {
     }
   });
 
-  it('the front door and /authenticate use the Stytch flow, never the old Google Cloud one', () => {
-    const welcome = readFileSync('src/pages/app/WelcomeScreen.tsx', 'utf8');
-    assert.match(welcome, /startStytchGoogle/);
-    assert.doesNotMatch(welcome, /startGoogle\b/);
-    assert.match(welcome, /Continue with Google/);
-    assert.match(welcome, /Continue with email/);
-    assert.match(welcome, /Sign in with phone/);
+  it('the way in and /authenticate use the Stytch flow, never the old Google Cloud one', () => {
+    const entry = readFileSync('src/pages/app/auth/AuthEntryScreen.tsx', 'utf8');
+    assert.match(entry, /startStytchGoogle/);
+    assert.doesNotMatch(entry, /startGoogle\b/);
+    assert.match(entry, /Continue with Google/);
+    assert.match(entry, /Continue with email/);
+    assert.match(entry, /Sign in with phone/);
+    const intro = readFileSync('src/pages/app/WelcomeScreen.tsx', 'utf8');
+    assert.match(intro, /Get started/);
+    assert.doesNotMatch(intro, /type="email"/, 'no form on the first screen');
     assert.match(readFileSync('src/App.tsx', 'utf8'), /path="\/authenticate"/);
     assert.doesNotMatch(readFileSync('src/pages/app/auth/EmailScreens.tsx', 'utf8').split('AuthenticateScreen')[1] ?? '', /auth\/google\/start/);
   });

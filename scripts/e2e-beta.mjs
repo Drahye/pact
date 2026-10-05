@@ -23,8 +23,8 @@ try {
   const cfg = await (await fetch(`${BASE}/api/config`)).json();
   ok('the server reports Google off and email on', cfg.auth?.google === false && cfg.auth?.email === true);
 
-  await page.goto(`${BASE}/app/auth/welcome`, { waitUntil: 'load' });
-  await page.getByText('Make things happen with your people.').waitFor();
+  await page.goto(`${BASE}/app/auth/start`, { waitUntil: 'load' });
+  await page.getByRole('heading', { level: 1, name: /Let’s get you in|Welcome back|You’re almost in|Almost there/ }).waitFor();
   await page.screenshot({ path: `${out}/01-welcome.png` });
   ok('email is the primary action: an email field and Continue right on the front door', (await page.getByLabel('Email address').count()) === 1 && (await page.getByRole('button', { name: 'Continue' }).count()) >= 1);
   ok('no Google button', (await page.getByRole('button', { name: /google/i }).count()) === 0 && (await page.locator('svg path[fill="#4285F4"]').count()) === 0);
@@ -32,12 +32,12 @@ try {
   await noGoogle('front door');
 
   // a stale Google error in the URL does not surface a Google message
-  await page.goto(`${BASE}/app/auth/welcome?error=google`, { waitUntil: 'load' });
-  await page.getByText('Make things happen with your people.').waitFor();
+  await page.goto(`${BASE}/app/auth/start?error=google`, { waitUntil: 'load' });
+  await page.getByRole('heading', { level: 1, name: /Let’s get you in|Welcome back|You’re almost in|Almost there/ }).waitFor();
   await noGoogle('front door with a stale ?error=google');
 
   // Email OTP: new person -> name -> in, no phone, no PIN
-  await page.goto(`${BASE}/app/auth/welcome`);
+  await page.goto(`${BASE}/app/auth/start`);
   await page.getByLabel('Email address').fill(`beta.${stamp}@example.com`);
   await page.getByRole('button', { name: 'Continue' }).click();
   await page.getByText('Check your email').waitFor();
@@ -71,7 +71,7 @@ try {
   // Phone fallback still works: a fresh person signs up by phone
   const ctx2 = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const p2 = await ctx2.newPage();
-  await p2.goto(`${BASE}/app/auth/welcome`);
+  await p2.goto(`${BASE}/app/auth/start`);
   await p2.getByRole('link', { name: 'Sign in with phone' }).click();
   await p2.getByLabel('Mobile number').fill(`81${stamp}`.slice(0, 10));
   await p2.getByRole('button', { name: 'Send code' }).click();
@@ -85,7 +85,7 @@ try {
   }
   await p2.locator('.home__header').waitFor({ timeout: 10000 });
   await p2.getByText('Make signing in easier').waitFor({ timeout: 8000 });
-  const prompt = await p2.locator('.upgrade').innerText();
+  const prompt = await p2.locator('section[aria-labelledby="upgrade-h"]').innerText();
   ok('phone user sees the upgrade nudge, with email only', /Add an email/.test(prompt) && !/google/i.test(prompt));
   await p2.screenshot({ path: `${out}/03-phone-user-home.png` });
   await ctx2.close();

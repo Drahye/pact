@@ -57,7 +57,7 @@ describe('shared Split and Recap link metadata', () => {
     assert.equal(r.statusCode, 200);
     assert.equal(r.headers['x-robots-tag'], 'noindex, nofollow');
     assert.match(r.body, /og:title" content="Dinner at Yellow Chilli"/);
-    assert.match(r.body, /og:description" content="We made it happen\."/);
+    assert.match(r.body, /og:description" content="All settled\."/);
     assert.ok(!/62,?500|Ana|Ben/.test(r.body), 'no amount or name');
     const wrong = (await t.app.inject({ method: 'GET', url: `/r/${'z'.repeat(43)}` })).body;
     assert.match(wrong, /no longer available/);

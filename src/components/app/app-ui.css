@@ -303,11 +303,6 @@
   text-align: center;
 }
 
-.state--loading {
-  flex: 1;
-  justify-content: center;
-}
-
 .state__spinner {
   width: 28px;
   height: 28px;
@@ -428,13 +423,6 @@
   height: 34px;
 }
 
-.skeleton--card {
-  display: block;
-  width: 100%;
-  height: 132px;
-  border-radius: var(--radius-xl);
-}
-
 @keyframes shimmer {
   to { background-position: -200% 0; }
 }
@@ -451,14 +439,20 @@
 .menu {
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-  border-radius: var(--radius-xl);
-  background: var(--color-surface);
-  box-shadow: inset 0 0 0 1px var(--color-border);
 }
 
 .menu > * + * {
-  border-top: var(--border-hairline);
+  position: relative;
+}
+
+/* A hairline between rows that does not follow the rows' rounded corners. */
+.menu > * + *::before {
+  content: '';
+  position: absolute;
+  inset: 0 var(--space-1) auto;
+  height: 1px;
+  background: var(--line-quiet);
+  pointer-events: none;
 }
 
 .menu__row {
@@ -467,14 +461,15 @@
   gap: var(--space-3);
   width: 100%;
   min-height: 60px;
-  padding: var(--space-3) var(--space-4);
+  padding: var(--space-3) var(--space-1);
+  border-radius: 14px;
   text-align: left;
   transition: background-color var(--duration-fast) var(--ease-out);
 }
 
 a.menu__row:hover,
 button.menu__row:hover {
-  background: var(--color-surface-raised);
+  background: var(--surface-quiet);
 }
 
 .menu__row:focus-visible {

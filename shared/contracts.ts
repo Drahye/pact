@@ -217,6 +217,13 @@ export const LinkAskBody = z.object({ askId: z.string().uuid() });
 export type NeedsYouType = 'ask' | 'attendance' | 'plan_rsvp' | 'plan_task' | 'split_debt' | 'split_collect' | 'pact_contribution' | 'pact_task' | 'pact_approval';
 export type HomeObject = 'ask' | 'plan' | 'split' | 'pact';
 
+/** What each kind of Needs You object shows about itself, so Home can draw it as the thing it is. Money here is in naira, ready to display. */
+export type NeedsDetail =
+  | { kind: 'ask'; type: 'choice' | 'attendance'; options: { id: string; label: string; votes: number }[]; answered: number; of: number; closesAt: string | null }
+  | { kind: 'plan'; date: string | null; endDate: string | null; location: string | null; going: number; maybe: number; goingIds: string[] }
+  | { kind: 'split'; owe: boolean; amount: number; payerId: string; payerName: string; settled: number; shares: number }
+  | { kind: 'pact'; raised: number; target: number; percent: number; deadline: string };
+
 /** One thing the viewer can act on now. Several actions on the same object are one card. */
 export interface NeedsYouItem {
   id: string;
@@ -236,6 +243,7 @@ export interface NeedsYouItem {
   /** Higher first. Deterministic: see server/src/modules/home.ts. */
   priority: number;
   dueAt?: string;
+  detail?: NeedsDetail;
 }
 
 export interface HomeCircleDTO {
@@ -557,12 +565,15 @@ export interface CircleDTO extends CircleSummaryDTO {
 }
 
 export interface CircleInvitePreviewDTO {
-  circleId: string;
   name: string;
   emoji: string;
   tint: CircleTint;
   memberCount: number;
   inviter: { firstName: string; color: string; photoUrl: string | null };
+  /** A few members as faces: first name, colour and photo. Never an id. */
+  members: { firstName: string; color: string; tint: string; photoUrl: string | null }[];
+  /** What is going on in the Circle, as counts only. */
+  now: { asks: number; plans: number; splits: number };
 }
 
 export interface MeDTO extends PersonDTO {

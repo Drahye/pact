@@ -158,7 +158,8 @@ async function build(ctx: Ctx, q: Queryable, rows: PlanRow[], viewerId: string |
   });
 }
 
-const planIds = (d: PlanDTO) => [d.createdBy, ...d.rsvps.map((r) => r.userId), ...d.waiting, ...d.activity.map((a) => a.userId), ...d.tasks.flatMap((t) => [t.createdBy, ...(t.assigneeId ? [t.assigneeId] : [])])];
+/** Every id on a plan that a link visitor must not be given as it is: people, and the plan, its Circle and its Pact. */
+const planIds = (d: PlanDTO) => [d.createdBy, d.id, d.circleId, ...(d.pactId ? [d.pactId] : []), ...d.rsvps.map((r) => r.userId), ...d.waiting, ...d.activity.map((a) => a.userId), ...d.tasks.flatMap((t) => [t.createdBy, ...(t.assigneeId ? [t.assigneeId] : [])])];
 
 const summary = (d: PlanDTO): PlanSummaryDTO => ({
   id: d.id,

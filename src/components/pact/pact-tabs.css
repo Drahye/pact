@@ -115,11 +115,6 @@
   /* Cards far off screen are not laid out until they are near: long lists stay responsive. */
 }
 
-.pacts-panel .pact-card {
-  content-visibility: auto;
-  contain-intrinsic-size: auto 190px;
-}
-
 .pacts-notice {
   margin-top: var(--space-3);
 }

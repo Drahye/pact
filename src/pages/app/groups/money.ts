@@ -7,4 +7,5 @@ export { WithdrawScreen } from '../wallet/WithdrawScreen';
 export { BankAccountsScreen } from '../profile/BankAccountsScreen';
 export { AccountScreen } from '../profile/AccountScreen';
 export { SecurityScreen } from '../profile/SecurityScreen';
+export { SettingsScreen } from '../profile/SettingsScreen';
 export { VerifyScreen } from '../profile/VerifyScreen';

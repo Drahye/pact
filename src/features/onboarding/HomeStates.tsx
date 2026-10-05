@@ -1,6 +1,6 @@
 import { ArrowRight, Check, RotateCcw } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { PactCard } from '../../components/pact/PactCard';
+import { PactListItem } from '../../components/pact/PactListItem';
 import { Button } from '../../components/ui/Button';
 import { SectionHeading } from '../../components/ui/SectionHeading';
 import type { Pact } from '../../data/types';
@@ -21,7 +21,7 @@ const STEPS = [
  * Home for someone with nothing started yet. Never a blank page: the two things to do, proof of how others use PACT (clearly
  * labelled samples), and a short reminder of how it works. Education lives here only until they have a Pact of their own.
  */
-export function HomeFirstTime({ compact }: { compact?: boolean } = {}) {
+export function HomeFirstTime({ compact, brief }: { compact?: boolean; brief?: boolean } = {}) {
   return (
     <div className="hs">
       {!compact && (
@@ -45,12 +45,13 @@ export function HomeFirstTime({ compact }: { compact?: boolean } = {}) {
         <SectionHeading id="hs-proof" title="See how people use PACT" />
         <p className="hs__sample">Sample Pacts, to show what’s possible. Not real customers.</p>
         <div className="list-stack">
-          {DEMO_ORDER.map((id) => (
+          {DEMO_ORDER.slice(0, brief ? 1 : DEMO_ORDER.length).map((id) => (
             <DemoPactCard key={id} demo={DEMOS[id]} from="home" />
           ))}
         </div>
       </section>
 
+      {!brief && (
       <section className="screen-section" aria-labelledby="hs-how">
         <SectionHeading id="hs-how" title="How PACT works" />
         <ol className="hs__steps">
@@ -70,6 +71,7 @@ export function HomeFirstTime({ compact }: { compact?: boolean } = {}) {
           Watch the quick intro <ArrowRight aria-hidden />
         </Link>
       </section>
+      )}
     </div>
   );
 }
@@ -116,7 +118,7 @@ export function HomeRepeat({ finished }: { finished: Pact[] }) {
           <SectionHeading id="hs-done" title="Your completed Pacts" />
           <div className="list-stack">
             {finished.slice(0, 3).map((p) => (
-              <PactCard key={p.id} pact={p} to={`/app/pact/${p.id}`} />
+              <PactListItem key={p.id} pact={p} to={`/app/pact/${p.id}`} />
             ))}
           </div>
           <p className="hs__proud">

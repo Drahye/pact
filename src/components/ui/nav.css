@@ -132,7 +132,12 @@
   background: linear-gradient(180deg, #55e29f 0%, var(--green-500) 55%, var(--green-600) 100%);
   color: var(--ink-900);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55), inset 0 -2px 4px rgba(19, 122, 74, 0.25), 0 6px 14px -4px color-mix(in srgb, var(--green-500) 65%, transparent), 0 1px 2px rgba(15, 23, 19, 0.2);
-  transition: box-shadow var(--motion-state) var(--ease-soft);
+  transition: box-shadow var(--motion-state) var(--ease-soft), transform var(--motion-micro) var(--ease-press);
+}
+
+/* Pressed, the button compresses; the sheet then opens out of this same shape. */
+.tabbar__create:active {
+  transform: scale(0.88);
 }
 
 .tabbar__create svg {
@@ -160,6 +165,10 @@
   .tabbar__icon,
   .tabbar__create svg {
     transition: none;
+  }
+
+  .tabbar__create:active {
+    transform: none;
   }
 
   .tabbar__item:active .tabbar__icon {

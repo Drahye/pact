@@ -1,9 +1,9 @@
+import { CompletionState, EmptyState, OBJECT_KINDS, StatusIndicator } from '../../components/objects';
 import { Check, Plus, Share } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { CategoryChip, CategoryIcon } from '../../components/pact/category';
-import { FeaturedPactCard } from '../../components/pact/FeaturedPactCard';
-import { PactCard } from '../../components/pact/PactCard';
+import { PactListItem } from '../../components/pact/PactListItem';
 import { SegmentedBar } from '../../components/pact/SegmentedBar';
 import { SegmentedRing } from '../../components/pact/SegmentedRing';
 import { PhoneFrame } from '../../components/site/PhoneFrame';
@@ -96,7 +96,7 @@ export const guidePages = {
   foundations: { title: 'Foundations: variables', sections: ['logo', 'colour', 'type', 'space', 'shape', 'motion'] },
   actions: { title: 'Components: buttons and inputs', sections: ['buttons', 'inputs'] },
   progress: { title: 'Components: progress and people', sections: ['progress', 'people'] },
-  surfaces: { title: 'Components: cards, feed and navigation', sections: ['cards', 'navigation'] },
+  surfaces: { title: 'Components: cards, feed and navigation', sections: ['cards', 'objects', 'navigation'] },
   feedback: { title: 'Components: feedback and marketing', sections: ['feedback', 'marketing'] },
 } as const;
 
@@ -112,6 +112,7 @@ const nav = [
   ['progress', 'Progress'],
   ['people', 'People'],
   ['cards', 'Cards & feed'],
+  ['objects', 'Living objects'],
   ['navigation', 'Navigation'],
   ['feedback', 'Feedback'],
   ['marketing', 'Marketing'],
@@ -432,14 +433,9 @@ export function StyleGuidePage() {
 
         <Section id="cards" title="Cards & feed" lede="White cards on the warm background; one ink surface per view marks what matters most.">
           <div className="sg-specs">
-            <Spec name="Featured Pact card (ink)">
+            <Spec name="Pact in a list (the Pact object, compact)">
               <div style={{ maxWidth: 360 }}>
-                <FeaturedPactCard pact={sarah} to="#cards" />
-              </div>
-            </Spec>
-            <Spec name="Pact card">
-              <div style={{ maxWidth: 360 }}>
-                <PactCard pact={trip} to="#cards" />
+                <PactListItem pact={trip} to="#cards" />
               </div>
             </Spec>
             <Spec name="Activity item · contribution / join / created / completed" wide>
@@ -449,6 +445,35 @@ export function StyleGuidePage() {
                 <ActivityItem activity={act('created', 'abraham')} meta="Sep 2" />
                 <ActivityItem activity={act('completed', 'sarah')} meta="Just now" />
               </div>
+            </Spec>
+          </div>
+        </Section>
+
+        <Section id="objects" title="Living objects" lede="Each kind of thing has its own weight, tint and silhouette. Shapes come from --shape-* tokens; status, empty and completion share one language.">
+          <div className="sg-specs">
+            <Spec name="Kinds · icon, tint, silhouette" wide>
+              <div className="sg-row" style={{ gap: 12, flexWrap: 'wrap' }}>
+                {(['circle', 'ask', 'plan', 'split', 'pact'] as const).map((k) => (
+                  <span key={k} className={`tint--${OBJECT_KINDS[k].tint}`} style={{ display: 'grid', gap: 6, justifyItems: 'center', padding: 14, minWidth: 96, background: 'var(--tint-bg)', color: 'var(--tint-fg)', borderRadius: `var(--shape-${k})`, fontWeight: 600 }}>
+                    {OBJECT_KINDS[k].icon}
+                    {OBJECT_KINDS[k].noun}
+                  </span>
+                ))}
+              </div>
+            </Spec>
+            <Spec name="Status indicator">
+              <div className="sg-col tint--sky">
+                <StatusIndicator tone="live" label="Live" />
+                <StatusIndicator tone="waiting" label="Waiting on 2" />
+                <StatusIndicator tone="attention" label="Closes today" />
+                <StatusIndicator tone="done" label="Settled" />
+              </div>
+            </Spec>
+            <Spec name="Empty state">
+              <EmptyState kind="circle" title="Start with the people you already plan with." body="A Circle keeps your group, its plans and its questions in one place." compact />
+            </Spec>
+            <Spec name="Completion state">
+              <CompletionState title="We made it happen." line="Mum’s 60th · 6 people" peopleIds={['abraham', 'maya', 'david']} size="sm" />
             </Spec>
           </div>
         </Section>

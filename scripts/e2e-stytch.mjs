@@ -57,12 +57,12 @@ const newPage = async () => {
 };
 /** The front door -> email -> the code Stytch "sent" (read from the stand-in, as an inbox would be) -> verify. */
 const emailIn = async (page, email, first) => {
-  await page.getByText('Make things happen with your people.').waitFor();
-  const noGoogle = !/google/i.test(await page.locator('body').innerText());
+  await page.getByRole('heading', { level: 1, name: /Let’s get you in|Welcome back|You’re almost in|Almost there/ }).waitFor();
+  const noGoogle = (await page.getByRole('button', { name: /Continue with Google/ }).count()) === 0;
   if (!noGoogle) throw new Error('Google appears on the front door');
   await shot(page, 'front-door');
   await page.getByLabel('Email address').fill(email);
-  await page.locator('form').getByRole('button', { name: 'Continue' }).click();
+  await page.getByRole('button', { name: 'Continue with email' }).click();
   await page.getByText('Check your email').waitFor();
   await page.getByText(email).first().waitFor();
   if (await page.getByText(/Fill it in|Sandbox/).count()) throw new Error('a code was offered on screen: Stytch emails it');
@@ -89,7 +89,7 @@ try {
     const check = noHome(page, 'Ask');
     await page.goto(`${BASE}/a/${ask.shareToken}`, { waitUntil: 'load' });
     await page.getByRole('radio', { name: 'I’m in' }).click();
-    await page.getByText('Save your vote').waitFor();
+    await page.getByRole('dialog').getByText('You’re almost in.').waitFor();
     await page.getByRole('button', { name: 'Continue' }).first().click();
     await emailIn(page, `ask.${stamp}@example.com`, 'Ada');
     await page.waitForURL(new RegExp(`/a/${ask.shareToken}$`), { timeout: 15000 });
@@ -103,7 +103,7 @@ try {
     const check = noHome(page, 'Plan');
     await page.goto(`${BASE}/p/${plan.shareToken}`, { waitUntil: 'load' });
     await page.getByRole('radio', { name: 'I’m in' }).first().click().catch(async () => page.getByRole('button', { name: 'I’m in' }).first().click());
-    await page.getByText('Save your answer').waitFor();
+    await page.getByRole('dialog').getByText('You’re almost in.').waitFor();
     await page.getByRole('button', { name: 'Continue' }).first().click();
     await emailIn(page, `plan.${stamp}@example.com`, 'Pia');
     await page.waitForURL(new RegExp(`/p/${plan.shareToken}$`), { timeout: 15000 });
@@ -128,7 +128,7 @@ try {
     const page = await newPage();
     const check = noHome(page, 'Circle');
     await page.goto(`${BASE}/app/c/${invite}`, { waitUntil: 'load' });
-    await page.getByRole('button', { name: 'Join Circle' }).click();
+    await page.getByRole('button', { name: /^Join / }).click();
     await emailIn(page, `circle.${stamp}@example.com`, 'Cia');
     await page.waitForURL(new RegExp(`/app/circles/${circle.id}$`), { timeout: 20000 });
     await waitFor(async () => (await call('GET', `/circles/${circle.id}`, tok)).data.memberCount >= 3, 'the new person to be in the Circle');
@@ -139,9 +139,9 @@ try {
   // Wrong code is a plain message, never Stytch's
   {
     const page = await newPage();
-    await page.goto(`${BASE}/app/auth/welcome`, { waitUntil: 'load' });
+    await page.goto(`${BASE}/app/auth/start`, { waitUntil: 'load' });
     await page.getByLabel('Email address').fill(`bad.${stamp}@example.com`);
-    await page.locator('form').getByRole('button', { name: 'Continue' }).click();
+    await page.getByRole('button', { name: 'Continue with email' }).click();
     await page.getByText('Check your email').waitFor();
     await page.getByLabel('6-digit code').fill('000000');
     await page.getByRole('alert').waitFor();

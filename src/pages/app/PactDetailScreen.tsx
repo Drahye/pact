@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { BellRing, CalendarDays, CheckCheck, Megaphone, ChevronRight, Divide, Ellipsis, LogOut, RotateCcw, Scale, Share, ShieldCheck, Store, Target, UserPlus, Users, XCircle } from 'lucide-react';
+import { BellRing, CheckCheck, Megaphone, ChevronRight, Divide, Ellipsis, LogOut, RotateCcw, Scale, Share, ShieldCheck, Store, UserPlus, XCircle } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../api/auth';
@@ -8,7 +8,7 @@ import { usePactAction, usePactCommand, usePactPlan } from '../../api/hooks';
 import { PinSheet } from '../../components/app/PinSheet';
 import { Notice } from '../../components/app/States';
 import { AnimatedNumber } from '../../components/pact/AnimatedNumber';
-import { CategoryChip } from '../../components/pact/category';
+import { CategoryChip, categoryMeta } from '../../components/pact/category';
 import { AttentionCard, BudgetList, NextStep, OrganizerProgress, TaskList } from '../../components/pact/Plan';
 import { useFitText } from '../../lib/useFitText';
 import { SegmentedRing } from '../../components/pact/SegmentedRing';
@@ -37,6 +37,8 @@ import { MyPledge, pledgeLabel } from './detail/Pledges';
 import { AddTaskSheet, BudgetLineSheet, ParticipationSheet, SplitSheet, TaskSheet } from './detail/Sheets';
 import { Screen } from './Screen';
 import './detail.css';
+import './object-detail.css';
+import './pact-detail.css';
 
 /** Lets the ring's centre size its amount to the number of characters it has to fit. */
 const chars = (text: string) => ({ ['--chars' as string]: text.length });
@@ -214,34 +216,15 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
       }
       className="detail"
     >
-      <div className="detail__head">
-        <CategoryChip category={pact.category} suffix={`by ${organizer}`} />
-      </div>
-
-      {stage === 'invited' && (
-        <div className="detail__invite">
-          <p>
-            <strong>{getUser(pact.organizerId).name}</strong> invited you. How do you want to show up?
-          </p>
-          <div className="detail__invite-actions">
-            <Button size="md" variant="secondary" onClick={() => run(() => cmd.leave.mutateAsync().then(() => navigate('/app/home')), 'Invite declined')}>
-              Not this time
-            </Button>
-            <Button size="md" onClick={() => run(async () => { await cmd.accept.mutateAsync(); setParticipationOpen(true); }, `You joined ${pact.title}`)} loading={cmd.accept.isPending}>
-              Join
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {stage === 'closed' && (
-        <Notice tone="neutral" icon={<RotateCcw />}>
-          {pact.status === 'cancelled' ? 'The organiser closed this Pact.' : 'The goal wasn’t reached by the deadline.'} What was left went back to where it came from: wallets for members, bank accounts for guests.
-        </Notice>
-      )}
-
-      {pact.note && <p className="detail__note">“{pact.note}”</p>}
-
+      <section className={`od-pact__hero tint--${categoryMeta[pact.category].tint}`} aria-labelledby="pact-title">
+        <p className="od-pact__kicker">
+          <CategoryChip category={pact.category} suffix={`by ${organizer}`} />
+          {!executing && active && <span className="od-pact__due num">{s.daysLeft === 0 ? 'Due today' : `${s.daysLeft} ${s.daysLeft === 1 ? 'day' : 'days'} left`}</span>}
+        </p>
+        <h1 id="pact-title" className="od-pact__title t-page">
+          {pact.title}
+        </h1>
+        {pact.note && <p className="detail__note">“{pact.note}”</p>}
       <div className="detail__ring">
         <SegmentedRing
           shares={sharesOf(pact)}
@@ -291,6 +274,18 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
         {s.raised > 0 && <p className="detail__ring-hint">{picked ? 'Tap the centre to see the total' : 'Tap a colour or a name to see who gave it'}</p>}
       </div>
 
+        {!executing && (
+          <p className="od-pact__facts num">
+            <span>
+              <b>{joined.length}</b> {joined.length === 1 ? 'person' : 'people'}
+              {invited.length + (pact.pendingPhoneInvites ?? 0) ? ` · ${invited.length + (pact.pendingPhoneInvites ?? 0)} invited` : ''}
+            </span>
+            <span>
+              <b>{formatNairaCompact(s.remaining)}</b> to go
+            </span>
+            <span>by {formatDate(pact.deadline, { month: 'short', day: 'numeric' })}</span>
+          </p>
+        )}
       {actions && (
         <div className="detail__actions" ref={actionsRef}>
           {actions.primary}
@@ -298,30 +293,28 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
         </div>
       )}
 
-      {!executing && (
-      <ul className="detail__stats">
-        <li className="tint--sun" style={chars(String(s.daysLeft))}>
-          <CalendarDays aria-hidden />
-          <span>
-            <strong className="num">{s.daysLeft}</strong> days left
-          </span>
-          <small>{formatDate(pact.deadline, { month: 'short', day: 'numeric' })}</small>
-        </li>
-        <li className="tint--sky" style={chars(String(joined.length))}>
-          <Users aria-hidden />
-          <span>
-            <strong className="num">{joined.length}</strong> people
-          </span>
-          <small>{invited.length + (pact.pendingPhoneInvites ?? 0) ? `${invited.length + (pact.pendingPhoneInvites ?? 0)} invited` : 'all in'}</small>
-        </li>
-        <li className="tint--mint" style={chars(formatNairaCompact(s.remaining))}>
-          <Target aria-hidden />
-          <span>
-            <strong className="num">{formatNairaCompact(s.remaining)}</strong>
-          </span>
-          <small>to go</small>
-        </li>
-      </ul>
+      </section>
+
+      {stage === 'invited' && (
+        <div className="detail__invite">
+          <p>
+            <strong>{getUser(pact.organizerId).name}</strong> invited you. How do you want to show up?
+          </p>
+          <div className="detail__invite-actions">
+            <Button size="md" variant="secondary" onClick={() => run(() => cmd.leave.mutateAsync().then(() => navigate('/app/home')), 'Invite declined')}>
+              Not this time
+            </Button>
+            <Button size="md" onClick={() => run(async () => { await cmd.accept.mutateAsync(); setParticipationOpen(true); }, `You joined ${pact.title}`)} loading={cmd.accept.isPending}>
+              Join
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {stage === 'closed' && (
+        <Notice tone="neutral" icon={<RotateCcw />}>
+          {pact.status === 'cancelled' ? 'The organiser closed this Pact.' : 'The goal wasn’t reached by the deadline.'} What was left went back to where it came from: wallets for members, bank accounts for guests.
+        </Notice>
       )}
 
       {executing && <ExecutionSection pact={pact} meId={me} onPay={openPay} onComplete={() => setCompleteOpen(true)} nextKind={next?.action?.kind === 'pay' || next?.action?.kind === 'complete' ? next.action.kind : null} />}
@@ -330,6 +323,20 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
       <PinnedCard pact={pact} meId={me} onOpen={(a) => setThreadId(a.id)} />
       {!next && stage === 'almost' && !orders && <p className="detail__almost">We’re almost there. {formatNaira(s.remaining)} left.</p>}
       {checkpoints.length > 0 && <OrganizerProgress rows={checkpoints} onInvite={() => navigate(`${base}/invite`)} />}
+      {(tasks.length > 0 || (active && stage !== 'invited')) && (
+        <section className="screen-section" aria-labelledby="pact-tasks">
+          <SectionHeading id="pact-tasks" title="Who’s handling what" description={tasks.length ? `${tasks.filter((t) => t.status === 'done').length} of ${tasks.length} done` : undefined} />
+          {tasks.length > 0 && (
+            <span className="od-pact__progress" role="img" aria-label={`${tasks.filter((t) => t.status === 'done').length} of ${tasks.length} done`}>
+              {tasks.map((t) => (
+                <i key={t.id} className={t.status === 'done' ? 'is-on' : t.status === 'in_progress' ? 'is-part' : ''} />
+              ))}
+            </span>
+          )}
+          <TaskList pact={pact} tasks={tasks} meId={me} onOpen={(t) => (stage === 'invited' ? undefined : setTask(t))} onAdd={active && stage !== 'invited' ? () => setAddTaskOpen(true) : undefined} />
+        </section>
+      )}
+
       <ApprovalCards pact={pact} meId={me} onOpen={setPayout} />
       {stage === 'past-deadline' && (
         <Notice tone="sun" icon={<Scale />}>
@@ -379,13 +386,6 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
         </>
       )}
       {(canPayVendors(pact) || (pact.payouts ?? []).some((p) => p.kind === 'vendor')) && <PaidFromPact pact={pact} meId={me} onPay={() => openPay(null)} onOpen={setPayout} hidePayCta={executing} />}
-
-      {(tasks.length > 0 || (active && stage !== 'invited')) && (
-        <section className="screen-section" aria-labelledby="pact-tasks">
-          <SectionHeading id="pact-tasks" title={`Tasks${tasks.length ? ` · ${tasks.filter((t) => t.status === 'done').length}/${tasks.length} done` : ''}`} />
-          <TaskList pact={pact} tasks={tasks} meId={me} onOpen={(t) => (stage === 'invited' ? undefined : setTask(t))} onAdd={active && stage !== 'invited' ? () => setAddTaskOpen(true) : undefined} />
-        </section>
-      )}
 
       <section className="screen-section" aria-labelledby="pact-group">
         <SectionHeading id="pact-group" title="Your group" />

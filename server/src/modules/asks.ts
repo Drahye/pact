@@ -251,14 +251,26 @@ async function loadByToken(q: Queryable, token: string): Promise<AskRow> {
 const fromOf = (req: ReqMeta): 'whatsapp' | 'share' | 'unknown' => (!req.userAgent ? 'unknown' : /WhatsApp/i.test(req.userAgent) ? 'whatsapp' : 'share');
 type AuthState = 'signed_in' | 'signed_out';
 
+/**
+ * Someone who is not in the Circle sees how the group landed (the counts, and their own answer) and who asked, but never who voted for
+ * what: no named votes, no activity naming people, nobody listed as waiting. Members keep all of it.
+ */
+function unnamed(b: { dto: AskDTO; peopleIds: string[] }) {
+  b.dto.responders = [];
+  b.dto.activity = [];
+  b.dto.waiting = [];
+  b.peopleIds = [b.dto.createdBy];
+}
+
 /** What a link is for. Public: shown before anyone signs in. Counts and first names, nothing more. */
 export async function previewLink(ctx: Ctx, token: string, req: ReqMeta, authState: AuthState = 'signed_out') {
   const a = await loadByToken(ctx.db, token);
   const [b] = await build(ctx, ctx.db, [a], null, () => false, true);
+  unnamed(b);
   const day = ctx.now().toISOString().slice(0, 10);
   const who = visitorId(ctx.config, req.ip, req.userAgent, day);
   await track(ctx.db, ctx.config, 'ask_shared_link_opened', { actor: who, askId: a.id, key: `aov:${who}:${a.id}:${authState}`, props: { type: a.type, auth_state: authState, from: fromOf(req), state: b.dto.status } });
-  return aliasPeople(ctx, token, null, { data: b.dto, people: await minimalPeople(ctx.db, b.peopleIds) }, [b.dto.createdBy, ...b.dto.responders.map((r) => r.userId), ...b.dto.waiting, ...b.dto.activity.map((x) => x.userId)]);
+  return aliasPeople(ctx, token, null, { data: b.dto, people: await minimalPeople(ctx.db, b.peopleIds) }, [b.dto.createdBy, b.dto.id, b.dto.circleId, ...(b.dto.planId ? [b.dto.planId] : []), ...b.dto.responders.map((r) => r.userId), ...b.dto.waiting, ...b.dto.activity.map((x) => x.userId)]);
 }
 
 /** The visitor tapped an answer. Anonymous and coarse: one event per visitor pseudonym per Ask. */
@@ -297,6 +309,7 @@ export async function myLinkState(ctx: Ctx, userId: string, token: string) {
   const a = await loadByToken(ctx.db, token);
   const member = await isMember(ctx.db, a.circle_id, userId);
   const [b] = await build(ctx, ctx.db, [a], userId, () => member, true);
+  if (!member) unnamed(b);
   const live = !member && !!(await ctx.db.query(`SELECT 1 FROM circle_invites WHERE circle_id = $1 AND revoked_at IS NULL AND (expires_at IS NULL OR expires_at > now())`, [a.circle_id])).rowCount;
   const out = { data: { ask: b.dto, canJoinCircle: live }, people: await minimalPeople(ctx.db, b.peopleIds) };
   return member ? out : aliasPeople(ctx, token, userId, out, [b.dto.createdBy, ...b.dto.responders.map((r) => r.userId), ...b.dto.waiting, ...b.dto.activity.map((x) => x.userId)]);

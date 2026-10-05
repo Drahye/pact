@@ -1,27 +1,37 @@
 import { InstallPactPrompt, PwaInstallTracker } from './components/pwa/InstallPactPrompt';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MotionConfig } from 'framer-motion';
-import { lazy, Suspense, useEffect, useMemo, type ReactNode } from 'react';
-import { BrowserRouter, Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom';
+import { lazy, Suspense, useEffect, useMemo, useRef, type ReactNode } from 'react';
+import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { AuthProvider, useAuth } from './api/auth';
 import { ApiError } from './api/client';
 import { Loading } from './components/app/States';
 import { ThemeProvider } from './theme/ThemeProvider';
-import { peekReturnTo } from './pages/app/auth/flow';
+import { takeReturnTo } from './pages/app/auth/flow';
 import { ActivityScreen } from './pages/app/ActivityScreen';
 import { AppShell } from './pages/app/AppShell';
 import { CodeScreen, PhoneScreen, ProfileSetupScreen } from './pages/app/auth/AuthScreens';
+import { AuthEntryScreen } from './pages/app/auth/AuthEntryScreen';
 import { EmailCodeScreen, EmailScreen, AuthenticateScreen, GoogleReturnScreen } from './pages/app/auth/EmailScreens';
 import { HomeScreen } from './pages/app/HomeScreen';
-import { DemoPactScreen } from './features/demo/DemoPactScreen';
-import { JoinWithInviteScreen } from './features/onboarding/JoinWithInviteScreen';
-import { OnboardingScreen } from './features/onboarding/OnboardingScreen';
-import { NotificationDetailScreen } from './pages/app/NotificationDetailScreen';
-import { NotificationsScreen } from './pages/app/NotificationsScreen';
-import { PactsScreen } from './pages/app/PactsScreen';
-import { ProfileScreen } from './pages/app/ProfileScreen';
-import { CirclesScreen } from './pages/app/circles/CirclesScreen';
 import { WelcomeScreen } from './pages/app/WelcomeScreen';
+// Everything but Home loads on first use; for a signed-in person the idle prefetch below has fetched it before the first tap.
+const load_DemoPactScreen = () => import('./features/demo/DemoPactScreen');
+const DemoPactScreen = lazy(() => load_DemoPactScreen().then((m) => ({ default: m.DemoPactScreen })));
+const load_JoinWithInviteScreen = () => import('./features/onboarding/JoinWithInviteScreen');
+const JoinWithInviteScreen = lazy(() => load_JoinWithInviteScreen().then((m) => ({ default: m.JoinWithInviteScreen })));
+const load_OnboardingScreen = () => import('./features/onboarding/OnboardingScreen');
+const OnboardingScreen = lazy(() => load_OnboardingScreen().then((m) => ({ default: m.OnboardingScreen })));
+const load_NotificationDetailScreen = () => import('./pages/app/NotificationDetailScreen');
+const NotificationDetailScreen = lazy(() => load_NotificationDetailScreen().then((m) => ({ default: m.NotificationDetailScreen })));
+const load_NotificationsScreen = () => import('./pages/app/NotificationsScreen');
+const NotificationsScreen = lazy(() => load_NotificationsScreen().then((m) => ({ default: m.NotificationsScreen })));
+const load_PactsScreen = () => import('./pages/app/PactsScreen');
+const PactsScreen = lazy(() => load_PactsScreen().then((m) => ({ default: m.PactsScreen })));
+const load_ProfileScreen = () => import('./pages/app/ProfileScreen');
+const ProfileScreen = lazy(() => load_ProfileScreen().then((m) => ({ default: m.ProfileScreen })));
+const load_CirclesScreen = () => import('./pages/app/circles/CirclesScreen');
+const CirclesScreen = lazy(() => load_CirclesScreen().then((m) => ({ default: m.CirclesScreen })));
 // The marketing pages (GSAP, scroll choreography) and the style guide load on demand,
 // so people opening the app don't download them, and vice versa.
 const AskLinkScreen = lazy(() => import('./pages/app/asks/AskLinkScreen').then((m) => ({ default: m.AskLinkScreen })));
@@ -31,6 +41,8 @@ const PlanLinkScreen = lazy(() => import('./pages/app/plans/PlanLinkScreen').the
 const LandingPage = lazy(() => import('./pages/site/LandingPage').then((m) => ({ default: m.LandingPage })));
 const DownloadPage = lazy(() => import('./pages/download/DownloadPage').then((m) => ({ default: m.DownloadPage })));
 const StyleGuidePage = lazy(() => import('./pages/styleguide/StyleGuidePage').then((m) => ({ default: m.StyleGuidePage })));
+// Development only: in a production build this is a constant `null`, so the gallery's code is not emitted at all.
+const ObjectGallery = import.meta.env.DEV ? lazy(() => import('./pages/dev/ObjectGallery').then((m) => ({ default: m.ObjectGallery }))) : null;
 const TemplatesPreview = lazy(() => import('./pages/dev/TemplatesPreview').then((m) => ({ default: m.TemplatesPreview })));
 const LegalPage = lazy(() => import('./pages/legal/LegalPage').then((m) => ({ default: m.LegalPage })));
 
@@ -53,7 +65,7 @@ function RequireAuth({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (status !== 'signedIn') return;
     const idle = (window as unknown as { requestIdleCallback?: (cb: () => void) => number }).requestIdleCallback;
-    const run = () => void Promise.all([load_pact(), load_social()]).catch(() => undefined);
+    const run = () => void Promise.all([load_pact(), load_social(), load_PactsScreen(), load_ProfileScreen(), load_CirclesScreen(), load_NotificationsScreen()]).catch(() => undefined);
     const id = idle ? idle(run) : window.setTimeout(run, 1500);
     return () => (idle ? undefined : window.clearTimeout(id));
   }, [status]);
@@ -69,8 +81,16 @@ function RequireAuth({ children }: { children: ReactNode }) {
 /** Signed-in people skip Welcome and the sign-in steps. */
 function GuestOnly({ children }: { children: ReactNode }) {
   const { status } = useAuth();
-  if (status === 'loading') return <Loading full />;
-  if (status === 'signedIn') return <Navigate to={peekReturnTo()} replace />;
+  const navigate = useNavigate();
+  const sent = useRef(false);
+  // Sent on once, to where they were headed (a shared page, a Circle they asked to join). A page that lingers while it animates away must
+  // not send them there again later: that is what pulled someone back to the invite after they had already joined.
+  useEffect(() => {
+    if (status !== 'signedIn' || sent.current) return;
+    sent.current = true;
+    navigate(takeReturnTo(), { replace: true });
+  }, [status, navigate]);
+  if (status === 'loading' || status === 'signedIn') return <Loading full />;
   return <>{children}</>;
 }
 
@@ -108,6 +128,7 @@ const WithdrawScreen = lazy(() => load_money().then((m) => ({ default: m.Withdra
 const BankAccountsScreen = lazy(() => load_money().then((m) => ({ default: m.BankAccountsScreen })));
 const AccountScreen = lazy(() => load_money().then((m) => ({ default: m.AccountScreen })));
 const SecurityScreen = lazy(() => load_money().then((m) => ({ default: m.SecurityScreen })));
+const SettingsScreen = lazy(() => load_money().then((m) => ({ default: m.SettingsScreen })));
 const VerifyScreen = lazy(() => load_money().then((m) => ({ default: m.VerifyScreen })));
 
 const authed = (el: ReactNode) => <RequireAuth>{el}</RequireAuth>;
@@ -128,6 +149,8 @@ export function App() {
               <Route path="/download" element={<DownloadPage />} />
               <Route path="/styleguide" element={<StyleGuidePage />} />
               <Route path="/dev/templates" element={<TemplatesPreview />} />
+              {/* The primitives gallery is for review: it exists in development builds only and nothing links to it. */}
+              {ObjectGallery && <Route path="/dev/objects" element={<ObjectGallery />} />}
               <Route path="/terms" element={<LegalPage doc="terms" />} />
               <Route path="/privacy" element={<LegalPage doc="privacy" />} />
               <Route path="/refunds" element={<LegalPage doc="refunds" />} />
@@ -138,6 +161,8 @@ export function App() {
                 <Route path="auth/code" element={<GuestOnly><CodeScreen /></GuestOnly>} />
                 <Route path="auth/profile" element={<GuestOnly><ProfileSetupScreen /></GuestOnly>} />
                 <Route path="auth/welcome" element={<GuestOnly><WelcomeScreen /></GuestOnly>} />
+                <Route path="auth/start" element={<GuestOnly><AuthEntryScreen mode="start" /></GuestOnly>} />
+                <Route path="auth/signin" element={<GuestOnly><AuthEntryScreen mode="signin" /></GuestOnly>} />
                 <Route path="auth/email" element={<GuestOnly><EmailScreen /></GuestOnly>} />
                 <Route path="auth/email-code" element={<GuestOnly><EmailCodeScreen /></GuestOnly>} />
                 <Route path="auth/google" element={<GuestOnly><GoogleReturnScreen /></GuestOnly>} />
@@ -176,6 +201,7 @@ export function App() {
                 <Route path="wallet/withdraw" element={authed(<WithdrawScreen />)} />
                 <Route path="profile/verify" element={authed(<VerifyScreen />)} />
                 <Route path="profile/account" element={authed(<AccountScreen />)} />
+                <Route path="profile/settings" element={authed(<SettingsScreen />)} />
                 <Route path="profile/security" element={authed(<SecurityScreen />)} />
                 <Route path="profile/banks" element={authed(<BankAccountsScreen />)} />
               </Route>

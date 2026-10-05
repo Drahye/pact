@@ -9,9 +9,9 @@ import { introSeen } from '../../features/onboarding/store';
 import { SignInUpgradePrompt } from '../../components/app/SignInUpgradePrompt';
 import { PushPrompt } from '../../components/app/PushPrompt';
 import { ErrorState, Notice } from '../../components/app/States';
-import { PactListSkeleton } from '../../components/app/Skeleton';
-import { CirclesShelf, ComingUpSection, MadeItHappenSection, MakeHappenSection, NeedsYouSection, RecentSection } from '../../components/home/HomeBits';
-import { PactCard } from '../../components/pact/PactCard';
+import { CirclesShelf, ComingUpSection, MadeItHappenSection, NeedsYouSection, RecentSection } from '../../components/home/HomeBits';
+import { HomeSkeleton } from '../../components/home/HomeSkeleton';
+import { HomeStart } from '../../components/home/HomeStart';
 import { Avatar } from '../../components/ui/Avatar';
 import { BottomNav } from '../../components/ui/BottomNav';
 import '../../components/ui/button.css';
@@ -36,7 +36,6 @@ export function HomeScreen() {
   const all = pacts.data ?? [];
   const invites = all.filter((p) => p.viewer?.status === 'invited');
   const mine = all.filter((p) => p.viewer?.status === 'joined');
-  const running = mine.filter((p) => p.status === 'open' || p.status === 'funded').slice(0, 3);
   const unread = notes.data?.unread ?? 0;
   const h = home.data;
   const firstTime = pacts.isSuccess && !mine.length && !invites.length && h?.state === 'new';
@@ -54,6 +53,13 @@ export function HomeScreen() {
   if (firstTime && user && !introSeen(user.id)) return <Navigate to="/app/onboarding" replace />;
 
   const stale = home.isError && !!h;
+  // Two quiet prompts, never above what needs you: notifications first, then the better way to sign in.
+  const prompts = (
+    <>
+      <PushPrompt hasPact={mine.length > 0} />
+      <SignInUpgradePrompt />
+    </>
+  );
   return (
     <Screen
       tabBar={<BottomNav />}
@@ -82,9 +88,6 @@ export function HomeScreen() {
         <span className="home__name">{user?.firstName}</span>
       </LargeTitle>
 
-      <PushPrompt hasPact={mine.length > 0} />
-      <SignInUpgradePrompt />
-
       {stale && (
         <Notice tone="neutral">
           {typeof navigator !== 'undefined' && navigator.onLine === false ? 'You’re offline. This may be out of date.' : 'Couldn’t refresh. This may be out of date.'}
@@ -103,60 +106,38 @@ export function HomeScreen() {
       )}
 
       {home.isLoading && !h ? (
-        <div className="screen-section list-stack">
-          <PactListSkeleton label="Loading your Home" />
-        </div>
+        <HomeSkeleton />
       ) : !h ? (
         <ErrorState onRetry={() => home.refetch()} />
       ) : firstTime ? (
         <>
-          <MakeHappenSection heading="What do you want to make happen?" />
-          <section className="screen-section" aria-labelledby="home-circles">
-            <Link to="/app/circles/new" className="home-circles__cta">
-              <span className="icon-btn icon-btn--surface" aria-hidden>
-                <Plus />
-              </span>
-              <span>
-                <strong id="home-circles">Your people</strong>
-                <span>Create a Circle for the groups you regularly do things with.</span>
-              </span>
-            </Link>
-          </section>
-          <HomeFirstTime compact />
+          <HomeStart variant="new" />
+          {prompts}
+          <HomeFirstTime compact brief />
         </>
       ) : (
         <>
-          {h.state === 'finished_only' && <MakeHappenSection heading="You’ve made things happen before." />}
-          <NeedsYouSection items={h.needsYou} total={h.needsYouTotal} circles={h.circles} />
-          {h.state === 'finished_only' && <MadeItHappenSection items={h.recaps} />}
+          {h.state === 'finished_only' && <HomeStart variant="again" />}
+          <NeedsYouSection items={h.needsYou} total={h.needsYouTotal} circles={h.circles} caughtUp={h.state === 'active'} />
+          {prompts}
           {h.circles.length > 0 ? (
             <CirclesShelf circles={h.circles} />
           ) : (
-            <section className="screen-section" aria-labelledby="home-circles">
-              <Link to="/app/circles/new" className="home-circles__cta">
+            <section className="screen-section" aria-label="Circles">
+              <Link to="/app/circles/new" className="hm-circle-cta">
                 <span className="icon-btn icon-btn--surface" aria-hidden>
                   <Plus />
                 </span>
                 <span>
-                  <strong id="home-circles">Your people, in one place</strong>
-                  <span>Create a Circle for the groups you regularly do things with.</span>
+                  <strong>Start a Circle</strong>
+                  <span>Your people, in one place.</span>
                 </span>
               </Link>
             </section>
           )}
           <ComingUpSection items={h.comingUp} />
-          {running.length > 0 && (
-            <section className="screen-section" aria-labelledby="your-pacts">
-              <SectionHeading id="your-pacts" title="Your Pacts" action={mine.length > 1 ? { label: 'See all', to: '/app/pacts' } : undefined} />
-              <div className="list-stack">
-                {running.map((p) => (
-                  <PactCard key={p.id} pact={p} to={`/app/pact/${p.id}`} />
-                ))}
-              </div>
-            </section>
-          )}
           <RecentSection items={h.recent} />
-          {h.state !== 'finished_only' && <MadeItHappenSection items={h.recaps} />}
+          <MadeItHappenSection items={h.recaps} />
         </>
       )}
     </Screen>

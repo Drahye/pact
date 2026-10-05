@@ -337,14 +337,25 @@ button.budget__row:hover {
 
 /* Next step: one action, led by hierarchy rather than colour -------------------- */
 .nextstep {
+  position: relative;
   margin-top: var(--space-5);
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   gap: var(--space-2);
-  padding: var(--space-5);
-  border-radius: var(--radius-xl);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border-strong);
+  padding: var(--space-5) var(--space-5) var(--space-5) var(--space-6);
+  border-radius: 8px var(--radius-2xl) var(--radius-2xl) 8px;
+  background: linear-gradient(100deg, color-mix(in srgb, var(--green-500) 16%, var(--color-surface)), color-mix(in srgb, var(--green-500) 5%, var(--color-surface)));
+}
+
+/* The one thing to do next carries a rail, like a task you said yes to. */
+.nextstep::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  border-radius: 8px 0 0 8px;
+  background: var(--green-500);
 }
 
 .nextstep__label {
@@ -370,13 +381,9 @@ button.budget__row:hover {
 
 .nextstep .btn {
   margin-top: var(--space-3);
-}
-
-.nextstep-more {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  margin-top: var(--space-2);
+  border-radius: 14px;
+  background: var(--color-selected);
+  color: var(--color-on-selected);
 }
 
 /* Getting there: the organiser's checkpoint ---------------------------------------- */

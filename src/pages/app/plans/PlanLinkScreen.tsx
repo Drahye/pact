@@ -5,20 +5,19 @@ import type { Attendance, PlanDTO } from '../../../../shared/contracts';
 import { useAuth } from '../../../api/auth';
 import { ApiError } from '../../../api/client';
 import { useJoinCircleFromPlan, usePlanLink, usePlanLinkMine, useRsvpViaLink } from '../../../api/plans';
-import { PactDetailSkeleton } from '../../../components/app/Skeleton';
-import { ErrorState } from '../../../components/app/States';
-import { PlanHeading, RsvpButtons } from '../../../components/plan/PlanBits';
-import { PactLogo } from '../../../components/brand/PactLogo';
-import { Avatar } from '../../../components/ui/Avatar';
+import { PlanSkeleton } from '../../../components/app/DetailSkeletons';
+import { statusLabel } from '../../../components/plan/PlanBits';
+import { PlanObject, ShareHeader } from '../../../components/objects';
+import { HandoffSheet, useBeginSignIn, type HandoffInput } from '../../../components/share/HandoffSheet';
+import { ShareJoin, SharedBrand, SharedFooter, SharedUnavailable } from '../../../components/share/Shared';
 import { Button } from '../../../components/ui/Button';
-import { Modal } from '../../../components/ui/Modal';
 import { useToast } from '../../../components/ui/Toast';
 import { getUser } from '../../../data/users';
-import { goingText } from '../../../lib/planDates';
 import { sharePlan } from '../../../lib/planShare';
-import { setReturnTo } from '../auth/flow';
 import { Screen } from '../Screen';
 import '../../../components/plan/plan.css';
+import '../../../components/ask/ask.css';
+import '../object-detail.css';
 
 const key = (token: string, what: 'rsvp' | 'join') => `pact.plan.${what}.${token.slice(0, 12)}`;
 const read = (k: string) => {
@@ -43,7 +42,7 @@ const write = (k: string, v: string | null) => {
  */
 export function PlanLinkScreen() {
   const { token = '' } = useParams();
-  const { status, user } = useAuth();
+  const { status } = useAuth();
   const navigate = useNavigate();
   const toast = useToast();
   const signedIn = status === 'signedIn';
@@ -54,7 +53,6 @@ export function PlanLinkScreen() {
   const [pending, setPending] = useState<Attendance | null>(() => (read(key(token, 'rsvp')) as Attendance | null) ?? null);
   const [failed, setFailed] = useState(false);
   const [sheet, setSheet] = useState(false);
-  const [changing, setChanging] = useState(false);
   const [joined, setJoined] = useState<{ id: string; name: string } | null>(null);
   const resumed = useRef(false);
 
@@ -70,7 +68,6 @@ export function PlanLinkScreen() {
       await rsvp.mutateAsync({ status: a, afterAuth });
       write(key(token, 'rsvp'), null);
       setPending(null);
-      setChanging(false);
     } catch (e) {
       const err = e as ApiError;
       if (err.status === 409 || err.status === 410 || err.status === 404) {
@@ -87,10 +84,18 @@ export function PlanLinkScreen() {
     write(key(token, 'rsvp'), a);
     setSheet(true);
   };
+  const begin = useBeginSignIn();
+  const handoff = (action: HandoffInput['action']): HandoffInput => ({
+    kind: 'plan',
+    path: `/p/${token}`,
+    title: plan?.title ?? 'A plan',
+    from: plan ? getUser(plan.createdBy).name : undefined,
+    action,
+    choice: action === 'rsvp' && pending ? { in: 'I’m in', maybe: 'Maybe', out: 'Can’t' }[pending] : undefined,
+  });
   const continueToSignIn = () => {
-    setReturnTo(`/p/${token}`);
     setSheet(false);
-    navigate('/app/auth/welcome');
+    begin(handoff('rsvp'));
   };
   const doJoin = async () => {
     try {
@@ -117,13 +122,14 @@ export function PlanLinkScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [signedIn, mine.data]);
 
-  if (pub.isLoading || status === 'loading') return <Screen topBar={<Brand />}><PactDetailSkeleton label="Loading plan" /></Screen>;
+  if (pub.isLoading || status === 'loading') return <Screen className="share tint--sun"><div className="plan-link"><SharedBrand /><PlanSkeleton /></div></Screen>;
   if (!plan) {
-    const err = pub.error as ApiError | undefined;
-    const message = err?.status === 410 ? 'This link is no longer active.' : err?.status === 404 ? 'This plan is no longer available.' : undefined;
     return (
-      <Screen topBar={<Brand />}>
-        <ErrorState message={message} onRetry={message ? undefined : () => pub.refetch()} />
+      <Screen className="share tint--sun">
+        <div className="plan-link">
+          <SharedBrand />
+          <SharedUnavailable kind="plan" error={pub.error} onRetry={() => pub.refetch()} />
+        </div>
       </Screen>
     );
   }
@@ -133,8 +139,7 @@ export function PlanLinkScreen() {
   const onJoin = () => {
     if (!signedIn) {
       write(key(token, 'join'), '1');
-      setReturnTo(`/p/${token}`);
-      navigate('/app/auth/welcome');
+      begin(handoff('join'));
       return;
     }
     void doJoin();
@@ -144,43 +149,48 @@ export function PlanLinkScreen() {
     if (r === 'copied') toast('Link copied');
     else if (r === 'failed') toast('Couldn’t share. Try again.', 'neutral');
   };
-  const circleName = `${plan.circle.name} ${plan.circle.emoji}`;
   const going = plan.rsvps.filter((r) => r.status === 'in');
-  const reward = !plan.mine || !live ? null : plan.mine === 'in' ? `You’re in 🎉 ${plan.counts.in} ${plan.counts.in === 1 ? 'person is' : 'people are'} going.` : plan.mine === 'maybe' ? 'You’re a maybe. You can change it any time' : 'Maybe next time. You can change it any time';
+  const shown = plan.mine ?? (saved ? null : pending);
+  const said = shown === 'in' ? `You’re in. ${plan.counts.in + (saved ? 0 : 1)} ${plan.counts.in + (saved ? 0 : 1) === 1 ? 'person is' : 'people are'} going.` : shown === 'maybe' ? 'You’re a maybe. You can change it any time.' : shown === 'out' ? 'Maybe next time. You can change it any time.' : null;
+  const note = plan.pactId
+    ? 'This plan is a Pact now, so the group is making it happen there.'
+    : plan.status === 'done'
+      ? 'This plan wrapped up. It happened.'
+      : plan.status === 'cancelled'
+        ? 'This plan was called off.'
+        : !open
+          ? saved ? 'RSVPs are closed. Your answer is saved.' : 'RSVPs are closed.'
+          : null;
 
   return (
-    <Screen topBar={<Brand />}>
+    <Screen className="share tint--sun">
       <div className="plan-link">
-        <PlanHeading plan={plan} />
-        <p className="plan-stats" aria-label="Who is coming">
-          <span className="is-in">{plan.counts.in === 1 ? '1 person is in' : `${plan.counts.in} people are in`}</span>
-          {plan.counts.maybe > 0 && <span>{plan.counts.maybe} maybe</span>}
-        </p>
-        {open ? (
-          <section className="plan-section" aria-labelledby="rsvp-h">
-            {saved && !changing ? (
-              <>
-                <h2 id="rsvp-h" className="plan-section__title">
-                  {plan.mine === 'in' ? 'You’re in ✓' : plan.mine === 'maybe' ? 'You’re a maybe' : 'You can’t make it'}
-                </h2>
-                <div className="plan-section__row">
-                  <Button variant="ghost" onClick={() => setChanging(true)}>
-                    Change response
-                  </Button>
-                </div>
-              </>
-            ) : (
-              <>
-                <h2 id="rsvp-h" className="plan-section__title">
-                  Are you coming?
-                </h2>
-                <RsvpButtons value={plan.mine} pending={saved ? null : pending} disabled={rsvp.isPending} onPick={pick} />
-              </>
-            )}
-          </section>
-        ) : (
-          <p className="plan-note">
-            {plan.status === 'done' ? 'This plan happened.' : plan.status === 'cancelled' ? 'This plan was cancelled.' : saved ? 'RSVPs are closed. Your answer is saved.' : 'RSVPs are closed.'}
+        <ShareHeader kind="plan" byId={plan.createdBy} byName={getUser(plan.createdBy).name} verb="is planning something" circleName={plan.circle.name} />
+        <PlanObject
+          heading
+          title={plan.title}
+          date={plan.date}
+          endDate={plan.endDate}
+          location={plan.location}
+          goingIds={going.map((r) => r.userId)}
+          going={plan.counts.in}
+          maybe={plan.counts.maybe}
+          status={plan.pactId ? 'Became a Pact' : statusLabel[plan.status]}
+          history={!!plan.pactId}
+          done={plan.status === 'done' && !plan.pactId}
+          rsvp={shown}
+          onRsvp={open && !plan.pactId ? pick : undefined}
+          disabled={rsvp.isPending}
+        />
+        {open && !plan.pactId && !signedIn && !saved && <p className="od-note">Tap an answer. We’ll ask you to verify your email so the group knows it’s you.</p>}
+        {said && open && (
+          <p className="plan-link__said" role="status" aria-live="polite">
+            {said}
+          </p>
+        )}
+        {note && (
+          <p className="od-note" role="status">
+            {note}
           </p>
         )}
         {failed && pending && (
@@ -191,77 +201,22 @@ export function PlanLinkScreen() {
             </Button>
           </div>
         )}
-        {!signedIn && !saved && open && <p className="ask__hint">Tap an answer. We’ll ask you to sign in so the group knows it’s you.</p>}
-        {reward && (
-          <p className="ask__reward" role="status" aria-live="polite">
-            {reward}
-          </p>
-        )}
-        {going.length > 0 && (
-          <ul className="plan-people" aria-label="Who’s in">
-            {going.map((r) => (
-              <li key={r.userId}>
-                <Avatar userId={r.userId} size="sm" label={false} />
-                <span className="ask__roster-name">{r.userId === user?.id ? 'You' : getUser(r.userId).name}</span>
-                <span className="ask__pill ask__pill--in">In</span>
-              </li>
-            ))}
-          </ul>
-        )}
-        <p className="ask__people">{goingText(plan.counts)}</p>
 
-        {joined ? (
-          <div className="al__join" role="status">
-            <strong>You’re in 🎉</strong>
-            <p>You’re now part of {circleName}.</p>
-            <Button onClick={() => navigate(`/app/circles/${joined.id}`)}>Open {plan.circle.name}</Button>
-          </div>
-        ) : showJoin ? (
-          <div className="al__join">
-            <strong>Stay in the loop with {circleName}</strong>
-            <p>Joining is optional. You can answer plans without being in the Circle.</p>
-            <Button loading={join.isPending} onClick={onJoin}>
-              Join {plan.circle.name}
-            </Button>
-          </div>
-        ) : null}
+        {(joined || showJoin) && (
+          <ShareJoin circle={plan.circle.name} tint={plan.circle.tint} joined={!!joined} loading={join.isPending} onJoin={onJoin} onOpen={() => joined && navigate(`/app/circles/${joined.id}`)} why="Joining is optional. You can answer plans without being in the Circle." />
+        )}
 
         {(saved || joined || !live) && (
           <Button variant="secondary" iconLeft={<Share2 />} onClick={share}>
             Share with someone
           </Button>
         )}
+        <SharedFooter />
       </div>
 
-      <Modal
-        open={sheet}
-        onClose={() => setSheet(false)}
-        title="Save your answer"
-        description="Sign in so the group knows it’s you. We’ll bring you straight back here."
-        footer={
-          <>
-            <Button fullWidth onClick={continueToSignIn}>
-              Continue
-            </Button>
-            <Button fullWidth variant="ghost" onClick={() => setSheet(false)}>
-              Not now
-            </Button>
-          </>
-        }
-      >
-        <span />
-      </Modal>
+      <HandoffSheet open={sheet} onClose={() => setSheet(false)} onContinue={continueToSignIn} h={handoff('rsvp')} />
     </Screen>
   );
 }
 
-function Brand() {
-  return (
-    <div className="al__brand" aria-hidden>
-      <PactLogo size="sm" />
-    </div>
-  );
-}
-
-/** The one place the plan page stands in for the app. */
 export default PlanLinkScreen;

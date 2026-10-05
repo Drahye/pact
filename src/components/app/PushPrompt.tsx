@@ -1,10 +1,11 @@
-import { BellRing } from 'lucide-react';
+import { BellRing, X } from 'lucide-react';
 import { useState } from 'react';
 import { dismissPrompt, promptDismissed } from '../../lib/push';
 import { usePush } from '../../lib/usePush';
-import { Button } from '../ui/Button';
+import { IconButton } from '../ui/IconButton';
 import { useToast } from '../ui/Toast';
 import './push-prompt.css';
+import './strip.css';
 
 /**
  * Offered once someone is part of a Pact and has something to be told about. The browser's own permission
@@ -33,24 +34,20 @@ export function PushPrompt({ hasPact }: { hasPact: boolean }) {
   };
 
   return (
-    <section className="push-prompt" aria-labelledby="push-prompt-title">
-      <span className="push-prompt__icon" aria-hidden>
+    <section className="strip" aria-labelledby="push-prompt-title">
+      <span className="strip__icon" aria-hidden>
         <BellRing />
       </span>
-      <div className="push-prompt__text">
-        <h2 id="push-prompt-title" className="push-prompt__title">
-          Stay in the loop
+      <div className="strip__text">
+        <h2 id="push-prompt-title" className="strip__title">
+          Know when your people need you.
         </h2>
-        <p>Get important updates when your group needs you, even when PACT isn’t open.</p>
+        <p>Updates even when PACT isn’t open.</p>
       </div>
-      <div className="push-prompt__actions">
-        <Button size="md" onClick={turnOn} loading={busy}>
-          Turn on notifications
-        </Button>
-        <Button size="md" variant="ghost" onClick={later} disabled={busy}>
-          Not now
-        </Button>
-      </div>
+      <button type="button" className="act act--solid" aria-label="Turn on notifications" onClick={turnOn} disabled={busy}>
+        {busy ? 'Turning on' : 'Turn on'}
+      </button>
+      <IconButton label="Not now" variant="ghost" icon={<X />} onClick={later} disabled={busy} />
     </section>
   );
 }

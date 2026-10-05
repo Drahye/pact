@@ -1,0 +1,61 @@
+/* A prompt that waits quietly: one slim row, a clear benefit, one action, and a way to dismiss it for good. Never louder than what needs you. */
+.strip {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--space-3);
+  margin: var(--space-5) 0 0;
+  padding: 10px 6px 10px 12px;
+  border-radius: 16px 16px 16px 5px;
+  background: var(--surface-quiet);
+  box-shadow: var(--ring-quiet);
+}
+
+.strip__icon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px 12px 12px 4px;
+  background: var(--mint-100);
+  color: var(--tone-mint-fg);
+}
+
+.strip__icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.strip__text {
+  display: grid;
+  min-width: 0;
+}
+
+.strip__title {
+  font-size: 0.9375rem;
+  font-weight: var(--weight-semibold);
+  line-height: 1.25;
+}
+
+.strip__text p {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--t-meta-size);
+  line-height: 1.3;
+}
+
+@media (max-width: 420px) {
+  .strip {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .strip > .icon-btn {
+    grid-column: 3;
+    grid-row: 1;
+  }
+
+  .strip > .act {
+    grid-column: 2;
+    justify-self: start;
+  }
+}

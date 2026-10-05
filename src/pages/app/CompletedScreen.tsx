@@ -163,6 +163,9 @@ export function CompletedScreen({ pact, activity = [] }: { pact: Pact; activity?
             </motion.li>
           ))}
         </ul>
+        <Button variant="secondary" size="md" to={`/app/recap/pact/${pact.id}`} className="completed__recap">
+          View recap
+        </Button>
       </section>
 
       <section className="completed__summary" aria-labelledby="came-together">

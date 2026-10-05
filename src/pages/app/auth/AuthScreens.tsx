@@ -8,6 +8,7 @@ import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { TopBar } from '../../../components/ui/TopBar';
 import { deviceMemory } from '../../../lib/drafts';
+import { OTPInput } from '../../../components/objects';
 import { Screen } from '../Screen';
 import { clearFlow, readFlow, safeAppPath, setReturnTo, writeFlow } from './flow';
 import './auth.css';
@@ -47,7 +48,7 @@ export function PhoneScreen() {
 
   return (
     <Screen
-      topBar={<TopBar backTo="/app/auth/welcome" />}
+      topBar={<TopBar backTo="/app/auth/start" />}
       footer={
         <>
           <Button type="submit" form="phone-form" fullWidth loading={busy} disabled={!digits}>
@@ -205,31 +206,7 @@ export function CodeScreen() {
         Sent to <strong className="num">{flow.displayPhone}</strong>. It expires in 5 minutes.
       </p>
 
-      <label className="code-field" htmlFor="otp">
-        <span className="visually-hidden">6-digit code</span>
-        <input
-          ref={input}
-          id="otp"
-          className="code-field__input"
-          name="otp"
-          inputMode="numeric"
-          autoComplete="one-time-code"
-          enterKeyHint="done"
-          value={code}
-          onChange={(e) => onChange(e.target.value)}
-          maxLength={6}
-          disabled={busy}
-          autoFocus
-          aria-invalid={!!error || undefined}
-        />
-        <span className="code-field__boxes" aria-hidden>
-          {Array.from({ length: 6 }, (_, i) => (
-            <span key={i} className={`code-field__box num ${i === code.length && !busy ? 'is-active' : ''} ${error ? 'is-error' : ''}`}>
-              {code[i] ?? ''}
-            </span>
-          ))}
-        </span>
-      </label>
+      <OTPInput ref={input} id="otp" value={code} onChange={onChange} busy={busy} error={!!error} />
       {error && <p className="field__error auth__error">{error}</p>}
 
       {devCode && config?.exposeDevCodes && (
@@ -324,7 +301,7 @@ export function ProfileSetupScreen() {
 
   return (
     <Screen
-      topBar={<TopBar backTo="/app/auth/welcome" />}
+      topBar={<TopBar backTo="/app/auth/start" />}
       footer={
         <Button type="submit" form="profile-form" fullWidth loading={busy}>
           Continue

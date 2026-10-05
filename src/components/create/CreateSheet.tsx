@@ -1,16 +1,18 @@
-import { CalendarClock, Handshake, MessagesSquare, Receipt } from 'lucide-react';
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
+import { useOverlayRoot } from '../ui/overlay';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../api/auth';
 import { trackClient } from '../../api/circles';
 import { useStartPactPath } from '../../lib/startPact';
-import { Modal } from '../ui/Modal';
-import './create-sheet.css';
+import { CreateSheetShell } from './CreateSheetShell';
 
 interface OpenOptions {
   from: 'nav' | 'circle' | 'home';
   /** When opened inside a Circle, what gets started belongs to it. */
   circleId?: string;
+  /** Where it was opened from: the sheet grows out of this rectangle and settles back into it. */
+  origin?: DOMRect;
 }
 
 const Ctx = createContext<{ open: (o: OpenOptions) => void; isOpen: boolean }>({ open: () => undefined, isOpen: false });
@@ -23,6 +25,10 @@ export function CreateSheetProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<OpenOptions | null>(null);
   const { status } = useAuth();
   const navigate = useNavigate();
+  const root = useOverlayRoot();
+  const [flood, setFlood] = useState(false);
+  const timers = useRef<number[]>([]);
+  useEffect(() => () => timers.current.forEach((t) => window.clearTimeout(t)), []);
 
   const open = useCallback(
     (o: OpenOptions) => {
@@ -33,60 +39,37 @@ export function CreateSheetProvider({ children }: { children: ReactNode }) {
   );
   const value = useMemo(() => ({ open, isOpen: state !== null }), [open, state]);
   const close = () => setState(null);
-
-  const startAsk = () => {
-    const circle = state?.circleId;
+  const go = (path: string) => {
     close();
-    navigate(circle ? `/app/asks/new?circle=${circle}` : '/app/asks/new');
+    navigate(path);
   };
-
-  const startPlan = () => {
-    const circle = state?.circleId;
-    close();
-    navigate(circle ? `/app/plans/new?circle=${circle}` : '/app/plans/new');
+  /** Starting a Pact is the heavy one: the sheet floods with the Pact's green, the form arrives out of it, and the green lifts. */
+  const goPact = (path: string) => {
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return go(path);
+    setFlood(true);
+    timers.current.push(
+      window.setTimeout(() => go(path), 260),
+      window.setTimeout(() => setFlood(false), 760),
+    );
   };
-
-  const startSplit = () => {
-    const circle = state?.circleId;
-    close();
-    navigate(circle ? `/app/splits/new?circle=${circle}` : '/app/splits/new');
-  };
-
-  const startPact = () => {
-    const circle = state?.circleId;
-    close();
-    navigate(startPath({ circleId: circle }));
-  };
+  const circle = state?.circleId;
+  const q = circle ? `?circle=${circle}` : '';
 
   return (
     <Ctx.Provider value={value}>
       {children}
-      <Modal open={state !== null} onClose={close} title="What do you want to do?">
-        <ul className="create-sheet" aria-label="Things you can start">
-          <Option icon={<MessagesSquare />} tint="sky" title="Ask the group" body="Make a quick decision." onClick={startAsk} />
-          <Option icon={<CalendarClock />} tint="sun" title="Make a plan" body="Something you’re thinking of doing together." onClick={startPlan} />
-          <Option icon={<Receipt />} tint="lilac" title="Split an expense" body="Work out who owes what." onClick={startSplit} />
-          <Option icon={<Handshake />} tint="mint" title="Start a Pact" body="Everyone is ready to commit." onClick={startPact} />
-        </ul>
-      </Modal>
+      <CreateSheetShell
+        open={state !== null}
+        origin={state?.origin}
+        onClose={close}
+        choices={[
+          { kind: 'ask', title: 'Ask', body: 'Get a quick decision', onSelect: () => go(`/app/asks/new${q}`) },
+          { kind: 'plan', title: 'Plan', body: 'Figure out when and what', onSelect: () => go(`/app/plans/new${q}`) },
+          { kind: 'split', title: 'Split', body: 'Sort out who owes what', onSelect: () => go(`/app/splits/new${q}`) },
+          { kind: 'pact', title: 'Pact', body: 'Commit to making it happen', onSelect: () => goPact(startPath({ circleId: circle })) },
+        ]}
+      />
+      {flood && root && createPortal(<div className={`csheet-flood ${root !== document.body ? 'csheet-flood--frame' : ''}`} aria-hidden />, root)}
     </Ctx.Provider>
-  );
-}
-
-function Option({ icon, tint, title, body, onClick }: { icon: ReactNode; tint: string; title: string; body: string; onClick?: () => void }) {
-  const live = !!onClick;
-  return (
-    <li>
-      <button type="button" className={`create-sheet__option ${live ? '' : 'is-soon'}`} onClick={onClick} aria-disabled={!live || undefined}>
-        <span className={`icon-tile create-sheet__icon tint--${tint}`} aria-hidden>
-          {icon}
-        </span>
-        <span className="create-sheet__text">
-          <span className="create-sheet__title">{title}</span>
-          <span className="create-sheet__body">{body}</span>
-        </span>
-        {!live && <span className="create-sheet__soon">Coming next</span>}
-      </button>
-    </li>
   );
 }

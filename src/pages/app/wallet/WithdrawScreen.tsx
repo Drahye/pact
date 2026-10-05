@@ -7,6 +7,7 @@ import { newIdempotencyKey } from '../../../api/client';
 import { useBankAccounts, useWallet, useWithdraw, useWithdrawal } from '../../../api/hooks';
 import { PhoneRequired } from '../../../components/app/PhoneRequired';
 import { PinSheet } from '../../../components/app/PinSheet';
+import { SandboxNote } from '../../../components/app/SandboxNote';
 import { Notice } from '../../../components/app/States';
 import { RowListSkeleton } from '../../../components/app/Skeleton';
 import { AmountInput } from '../../../components/ui/AmountInput';
@@ -165,6 +166,7 @@ export function WithdrawScreen() {
           </div>
         </div>
       )}
+      <SandboxNote />
       {problem && <Notice tone="danger">{problem}</Notice>}
 
       <AddBankSheet open={addOpen} onClose={() => setAddOpen(false)} onAdded={(a) => setChosen(a.id)} />

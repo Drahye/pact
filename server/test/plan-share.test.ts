@@ -53,7 +53,7 @@ describe('shared Plan link metadata', () => {
     const html = r.body;
     assert.match(html, /og:title" content="Ghana in December · The Boys 🍻"/);
     assert.match(html, /og:description" content="[A-Z][a-z]{2} \d{1,2}[–-][^"]*· Accra\. 1 person is in\. Are you coming\?"/);
-    assert.match(html, /og:image" content="https:\/\/pact\.example\/brand\/og-ask\.png"/);
+    assert.match(html, /og:image" content="https:\/\/pact\.example\/brand\/og-plan\.png"/);
     assert.match(html, /rel="canonical" href="https:\/\/pact\.example\/p\/[A-Za-z0-9_-]{43}"/);
     assert.match(html, /name="robots" content="noindex,nofollow"/);
     assert.match(html, /<div id="root">/);

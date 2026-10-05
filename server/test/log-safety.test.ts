@@ -28,6 +28,7 @@ describe('request logs never keep a capability token', () => {
       [`/r/${FAKE}`, '/r/[REDACTED]'],
       [`/app/c/${FAKE}`, '/app/c/[REDACTED]'],
       [`/app/ask/${FAKE}`, '/app/ask/[REDACTED]'],
+      [`/authenticate?stytch_token_type=oauth&token=${FAKE}`, '/authenticate?[REDACTED]'],
       ['/api/home', '/api/home'],
       ['/api/circles/abc/plans', '/api/circles/abc/plans'],
       ['/app/home', '/app/home'],

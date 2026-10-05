@@ -37,7 +37,14 @@ describe('static serving cache headers', () => {
   const get = (url: string) => app.inject({ method: 'GET', url });
   const noStore = 'no-cache, no-store, must-revalidate';
 
-  for (const url of ['/', '/index.html', '/app', '/app/pact/abc', '/assets/missing-AbCd1234.js']) {
+  it('a build file that no longer exists is a real 404, never the HTML shell', async () => {
+    const res = await get('/assets/missing-AbCd1234.js');
+    assert.equal(res.statusCode, 404);
+    assert.doesNotMatch(res.body, /shell/);
+    assert.equal(res.headers['cache-control'], 'no-store');
+  });
+
+  for (const url of ['/', '/index.html', '/app', '/app/pact/abc']) {
     it(`${url} serves the HTML shell and always revalidates`, async () => {
       const res = await get(url);
       assert.equal(res.statusCode, 200);

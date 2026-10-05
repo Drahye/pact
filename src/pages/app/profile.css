@@ -1,69 +1,4 @@
-.profile__head {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-8) 0 var(--space-6);
-  text-align: center;
-}
 
-.profile__phone {
-  color: var(--color-text-tertiary);
-}
-
-.profile__stats {
-  display: flex;
-  gap: var(--space-5);
-  margin-top: var(--space-2);
-  font-size: var(--text-sm);
-  color: var(--color-text-secondary);
-}
-
-.profile__stats strong {
-  color: var(--color-text);
-  font-weight: var(--weight-semibold);
-}
-
-.profile__tier {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-4);
-  border-radius: var(--radius-xl);
-  background: var(--sun-100);
-}
-
-.profile__tier.is-verified {
-  background: var(--color-accent-soft);
-}
-
-.profile__tier > svg {
-  flex-shrink: 0;
-  width: 22px;
-  height: 22px;
-}
-
-.profile__tier > svg:first-child {
-  color: var(--tone-sun-fg);
-}
-
-.profile__tier.is-verified > svg:first-child {
-  color: var(--color-accent-text);
-}
-
-.profile__tier > span {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  font-size: var(--text-sm);
-  color: var(--color-text-secondary);
-}
-
-.profile__tier strong {
-  font-size: var(--text-body);
-  font-weight: var(--weight-semibold);
-  color: var(--color-text);
-}
 
 /* tiers comparison */
 .tiers {
@@ -164,4 +99,148 @@
   font-size: var(--text-caption);
   line-height: var(--leading-caption);
   color: var(--color-text-tertiary);
+}
+
+/* ==========================================================================
+   Me: who you are to your people first. What you have proven, what you have done, then the settings.
+   ========================================================================== */
+.me {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-4);
+  margin-top: var(--space-2);
+  padding: var(--space-5);
+  border-radius: var(--shape-circle);
+  background: linear-gradient(160deg, color-mix(in srgb, var(--tint-solid) 26%, var(--color-surface)), color-mix(in srgb, var(--tint-solid) 9%, var(--color-surface)));
+}
+
+.me__id {
+  min-width: 0;
+}
+
+.me__name {
+  font-size: 1.75rem;
+  line-height: 1.1;
+  letter-spacing: var(--tracking-tight);
+  overflow-wrap: anywhere;
+}
+.me__stats{
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.me__stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.me__stats dd {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-snug);
+}
+
+.me__stats dt {
+  color: var(--color-text-secondary);
+  font-size: var(--text-caption);
+  line-height: 1.2;
+}
+
+/* Me: who you are, and how you are verified. */
+.me__settings {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--surface-interactive);
+  box-shadow: var(--ring-quiet);
+  color: var(--color-text);
+}
+
+.me__settings:focus-visible,
+.me__verify:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.me__settings svg {
+  width: 20px;
+  height: 20px;
+}
+
+.me__trust {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 0 0;
+  color: var(--tint-fg);
+  font-size: var(--t-support-size);
+  font-weight: var(--weight-semibold);
+}
+
+.me__trust svg {
+  width: 15px;
+  height: 15px;
+}
+
+.me__ids {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.me__ids li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 28px;
+  font-size: var(--t-support-size);
+}
+
+.me__ids svg {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  color: var(--color-text-secondary);
+}
+
+.me__ids-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.me__ok {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  color: var(--tone-mint-fg);
+  font-weight: var(--weight-semibold);
+  white-space: nowrap;
+}
+
+.me__ok svg {
+  color: inherit;
+}
+
+.me__verify {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin: -8px 0 -8px auto;
+  color: var(--color-text);
+  font-weight: var(--weight-semibold);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  white-space: nowrap;
 }

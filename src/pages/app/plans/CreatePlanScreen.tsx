@@ -4,20 +4,21 @@ import { useCircles } from '../../../api/circles';
 import { ApiError } from '../../../api/client';
 import { useCreatePlan } from '../../../api/plans';
 import { CircleBadge } from '../../../components/circle/CircleBadge';
+import { CirclePicker, DateField, planDates, StepHint } from '../../../components/create/fields';
+import { useFinish } from '../../../components/create/useFinish';
 import { QuickCircle } from '../../../components/circle/QuickCircle';
 import { AmountInput } from '../../../components/ui/AmountInput';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
-import { TopBar } from '../../../components/ui/TopBar';
 import { isoDay } from '../../../lib/dates';
 import { inferCategory } from '../../../lib/pact';
-import { Screen } from '../Screen';
+import { CreateShell } from '../../../components/create/CreateShell';
 import '../../../components/ask/ask.css';
 
-type Step = 'title' | 'when' | 'where' | 'budget' | 'circle';
+type Step = 'title' | 'when' | 'where' | 'circle';
 const EXAMPLES = ['Ghana in December', 'Dinner on Friday', 'Beach Day', 'Sarah’s birthday'];
 
-/** Quick on purpose: only the title is needed. When, where and a rough budget can wait. */
+/** What are we doing, when and where (all optional), and which Circle if it is not already clear. */
 export function CreatePlanScreen() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
@@ -37,12 +38,15 @@ export function CreatePlanScreen() {
   const chosen = circleId || (list.length === 1 ? list[0].id : '');
   const create = useCreatePlan(chosen);
   const needsCircleStep = !preCircle && (list.length !== 1 || madeCircle);
-  const steps = useMemo<Step[]>(() => (needsCircleStep ? ['title', 'when', 'where', 'budget', 'circle'] : ['title', 'when', 'where', 'budget']), [needsCircleStep]);
+  const steps = useMemo<Step[]>(() => (needsCircleStep ? ['title', 'when', 'where', 'circle'] : ['title', 'when', 'where']), [needsCircleStep]);
   const idx = Math.max(0, steps.indexOf(step));
   const last = idx === steps.length - 1;
-  const optional = step === 'when' || step === 'where' || step === 'budget';
+  const optional = step === 'when' || step === 'where';
+  const { done, finish } = useFinish();
+  const [titleSeen, setTitleSeen] = useState(false);
   const dateBad = !!endDate && (!date || endDate < date);
-  const valid = step === 'title' ? !!title.trim() : step === 'when' ? !dateBad : step === 'circle' ? !!chosen : true;
+  const valid = step === 'title' ? !!title.trim() : step === 'when' ? !dateBad : step === 'where' ? true : !!chosen;
+  const circleName = list.find((c) => c.id === chosen);
 
   const submit = async () => {
     if (!chosen) return;
@@ -56,7 +60,7 @@ export function CreatePlanScreen() {
         ...(location.trim() ? { location: location.trim() } : {}),
         ...(budget > 0 ? { roughBudget: Math.round(budget * 100) } : {}),
       });
-      navigate(`/app/plans/${r.data.id}`, { replace: true, state: { justCreated: true } });
+      finish({ title: 'Your plan is up', line: title.trim() }, `/app/plans/${r.data.id}`, { replace: true, state: { justCreated: true } });
     } catch (e) {
       setError((e as ApiError).message);
     }
@@ -64,25 +68,29 @@ export function CreatePlanScreen() {
   const next = () => (last ? void submit() : setStep(steps[idx + 1]));
   const skip = () => {
     if (step === 'when') (setDate(''), setEndDate(''));
-    if (step === 'where') setLocation('');
-    if (step === 'budget') setBudget(0);
-    next();
+    else (setLocation(''), setBudget(0));
+    if (last) void submit();
+    else setStep(steps[idx + 1]);
   };
-  const heading = { title: 'What are you planning?', when: 'When?', where: 'Where?', budget: 'Rough budget?', circle: 'Which Circle?' }[step];
-  const sub = {
-    title: 'Something you’re thinking of doing together.',
-    when: 'A day, or a few. You can change it later.',
-    where: 'A city, a venue, or “TBD”.',
-    budget: 'A ballpark so people know the size of it. Nobody pays anything yet.',
-    circle: 'Who is this plan for?',
-  }[step];
+  const heading = { title: 'What are you planning?', when: 'When?', where: 'Where?', circle: 'Who’s it for?' }[step];
+  const sub = { title: 'Something you’re thinking of doing together.', when: 'A day, or a few. Not sure yet? Skip it.', where: 'A place, or leave it open for now.', circle: 'Pick the Circle that’s in on it.' }[step];
 
   return (
-    <Screen
-      topBar={<TopBar leading="back" onBack={() => (idx === 0 ? navigate(-1) : setStep(steps[idx - 1]))} title={`Step ${idx + 1} of ${steps.length}`} />}
+    <CreateShell
+      kind="plan"
+      stepIndex={idx}
+      steps={steps.length}
+      stepKey={step}
+      onBack={() => setStep(steps[Math.max(0, idx - 1)])}
+      onLeave={() => navigate(-1)}
+      dirty={!!title.trim() || !!date || !!location.trim()}
+      done={done}
+      heading={heading}
+      sub={sub}
+      context={step !== 'title' && step !== 'circle' && circleName ? <><CircleBadge emoji={circleName.emoji} tint={circleName.tint} size="sm" /> {title.trim()} · {circleName.name}</> : undefined}
       footer={
         <>
-          <Button fullWidth onClick={next} disabled={!valid} loading={create.isPending}>
+          <Button fullWidth onClick={next} disabled={!valid || !!done} loading={create.isPending}>
             {last ? 'Create plan' : 'Next'}
           </Button>
           {optional && (
@@ -93,45 +101,40 @@ export function CreatePlanScreen() {
         </>
       }
     >
-      <div className="ca">
-        <h1 className="large-title">{heading}</h1>
-        <p style={{ color: 'var(--color-text-secondary)' }}>{sub}</p>
-
-        {step === 'title' && (
-          <>
-            <Input label="Plan name" value={title} maxLength={80} autoFocus autoComplete="off" placeholder="Ghana in December" enterKeyHint="next" onChange={(e) => setTitle(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && title.trim() && next()} />
-            <div className="ca__chips" aria-label="Ideas">
-              {EXAMPLES.map((x) => (
-                <button key={x} type="button" className="ca__chip" onClick={() => setTitle(x)}>
-                  {x}
-                </button>
-              ))}
+      {step === 'title' && (
+        <>
+          <Input label="Plan name" value={title} maxLength={80} autoFocus autoComplete="off" placeholder="Ghana in December" enterKeyHint="next" onChange={(e) => setTitle(e.target.value)} onBlur={() => setTitleSeen(true)} onKeyDown={(e) => e.key === 'Enter' && title.trim() && next()} />
+          <StepHint show={titleSeen && !title.trim()}>Name your plan to continue.</StepHint>
+          <div className="ca__chips" aria-label="Ideas">
+            {EXAMPLES.map((x) => (
+              <button key={x} type="button" className="ca__chip" onClick={() => setTitle(x)}>
+                {x}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+      {step === 'when' && (
+        <>
+          <DateField label="Starts" value={date} min={today} quick={planDates()} onChange={(v) => (setDate(v), endDate && v > endDate && setEndDate(''))} />
+          {date && <DateField label="Ends (optional)" value={endDate} min={date} onChange={setEndDate} error={dateBad ? 'The end needs to be on or after the start.' : undefined} />}
+        </>
+      )}
+      {step === 'where' && (
+        <>
+          <Input label="Where" value={location} maxLength={80} autoFocus autoComplete="off" placeholder="Accra, or TBD" enterKeyHint="next" onChange={(e) => setLocation(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && next()} />
+          <details className="cf__more">
+            <summary>Add a rough budget</summary>
+            <div>
+              <p className="cf__sub">A ballpark so people know the size of it. Nobody pays anything yet.</p>
+              <AmountInput label="Rough budget" value={budget} onChange={setBudget} size="xl" />
             </div>
-          </>
-        )}
-        {step === 'when' && (
-          <>
-            <Input label="Starts" type="date" min={today} value={date} onChange={(e) => (setDate(e.target.value), endDate && e.target.value > endDate && setEndDate(''))} />
-            <Input label="Ends (optional)" type="date" min={date || today} value={endDate} disabled={!date} onChange={(e) => setEndDate(e.target.value)} error={dateBad && date ? 'The end needs to be on or after the start.' : undefined} />
-          </>
-        )}
-        {step === 'where' && <Input label="Where" value={location} maxLength={80} autoFocus autoComplete="off" placeholder="Accra" onChange={(e) => setLocation(e.target.value)} />}
-        {step === 'budget' && <AmountInput label="Rough budget" value={budget} onChange={setBudget} size="xl" />}
-        {step === 'circle' &&
-          (list.length ? (
-            <div className="ca__opts" role="radiogroup" aria-label="Circle">
-              {list.map((c) => (
-                <button key={c.id} type="button" role="radio" aria-checked={chosen === c.id} className="ca__type" onClick={() => setCircleId(c.id)} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <CircleBadge emoji={c.emoji} tint={c.tint} size="sm" />
-                  <strong>{c.name}</strong>
-                </button>
-              ))}
-            </div>
-          ) : (
-            <QuickCircle onCreated={(id) => (setCircleId(id), setMadeCircle(true))} />
-          ))}
-        {error && <p className="field__error" role="alert">{error}</p>}
-      </div>
-    </Screen>
+          </details>
+        </>
+      )}
+      {step === 'circle' &&
+        (list.length ? <CirclePicker circles={list} value={chosen} onChange={setCircleId} /> : <QuickCircle onCreated={(id) => (setCircleId(id), setMadeCircle(true))} />)}
+      {error && <p className="field__error" role="alert">{error}</p>}
+    </CreateShell>
   );
 }

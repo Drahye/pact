@@ -14,7 +14,7 @@ import type { AuthTokensDTO, OtpVerifyDTO } from '../../shared/contracts.js';
 import type { Config } from './config.js';
 import type { Ctx, ReqMeta } from './context.js';
 import type { Db } from './db/index.js';
-import { askPreviewText, injectOg, planPreviewText, splitPreviewText, unavailablePreview } from './lib/og.js';
+import { askPreviewText, circlePreviewText, injectOg, planPreviewText, splitPreviewText, unavailablePreview } from './lib/og.js';
 import { postgresRateLimitStore, rateLimitKey } from './lib/rateLimitStore.js';
 import { AppError, badRequest, conflict, notFound, unauthorized } from './lib/errors.js';
 import * as auth from './modules/auth.js';
@@ -151,6 +151,8 @@ export async function buildApp({ config, db, provider, sms, email, google, stytc
     });
   }
 
+  // Never hide Google without saying why: it needs Stytch email auth and all three Stytch variables.
+  if (config.EMAIL_AUTH_PROVIDER === 'stytch' && !config.stytchGoogleEnabled) app.log.warn('Google sign-in is hidden: set STYTCH_PUBLIC_TOKEN (with STYTCH_PROJECT_ID and STYTCH_SECRET) to turn on Continue with Google');
   const origins = new Set([config.APP_ORIGIN, ...config.CORS_ORIGINS.split(',').map((o) => o.trim()).filter(Boolean)]);
   await app.register(cors, {
     origin: (origin, cb) => cb(null, !origin || origins.has(origin)),
@@ -834,6 +836,7 @@ export async function buildApp({ config, db, provider, sms, email, google, stytc
         priv.post<{ Params: { token: string } }>('/ask-links/:token/auth-completed', strict(30), async (req) => asks.authCompleted(ctx, req.userId, req.params.token));
         priv.post<{ Params: { token: string } }>('/ask-links/:token/reshared', strict(60), async (req) => asks.reshared(ctx, req.userId, req.params.token, parse(C.AskSharedBody, req.body).via));
         priv.post<{ Params: { token: string } }>('/ask-links/:token/join-circle', strict(20), async (req) => asks.joinCircleFromAsk(ctx, req.userId, req.params.token, meta(req)));
+        priv.get<{ Params: { token: string } }>('/circle-invites/:token/mine', strict(120), async (req) => circles.myInviteState(ctx, req.userId, req.params.token));
         priv.post<{ Params: { token: string } }>('/circle-invites/:token/join', strict(20), async (req) => circles.joinByToken(ctx, req.userId, req.params.token, meta(req)));
 
         priv.get('/activity', async (req) => pacts.feed(ctx, req.userId));
@@ -947,6 +950,9 @@ export async function buildApp({ config, db, provider, sms, email, google, stytc
     const indexHtml = readFileSync(resolve(dist, 'index.html'), 'utf8');
     app.setNotFoundHandler(async (req, reply) => {
       if (req.url.startsWith('/api/')) return reply.status(404).send({ error: { code: 'not_found', message: 'Not found.' } });
+      // A build file that no longer exists (a tab opened before a deploy asks for an old chunk) must be a real 404: answering with the
+      // page would hand the browser HTML where it expects script, and the app could not tell it should reload.
+      if (/^\/assets\//.test(req.url)) return reply.status(404).header('Cache-Control', 'no-store').type('text/plain').send('Not found');
       // A shared Ask link: the same page for everyone, with a real title, description and card for crawlers.
       const share = /^\/a\/([A-Za-z0-9_-]{32,64})\/?(?:\?.*)?$/.exec(req.url);
       if (share) {
@@ -969,7 +975,7 @@ export async function buildApp({ config, db, provider, sms, email, google, stytc
       const planShare = /^\/p\/([A-Za-z0-9_-]{32,64})\/?(?:\?.*)?$/.exec(req.url);
       if (planShare) {
         const origin = config.APP_ORIGIN.replace(/\/$/, '');
-        const image = `${origin}/brand/og-ask.png`;
+        const image = `${origin}/brand/og-plan.png`;
         const row = await db
           .query<{ title: string; status: string; date: string | null; end_date: string | null; location: string | null; name: string; emoji: string; n: number }>(
             `SELECT p.title, p.status, p.date::text AS date, p.end_date::text AS end_date, p.location, c.name, c.emoji,
@@ -988,7 +994,7 @@ export async function buildApp({ config, db, provider, sms, email, google, stytc
       const splitShare = /^\/s\/([A-Za-z0-9_-]{32,64})\/?(?:\?.*)?$/.exec(req.url);
       if (splitShare) {
         const origin = config.APP_ORIGIN.replace(/\/$/, '');
-        const image = `${origin}/brand/og-ask.png`;
+        const image = `${origin}/brand/og-split.png`;
         const row = await db.query<{ title: string }>('SELECT title FROM splits WHERE share_token = $1', [splitShare[1]]).catch(() => null);
         const meta = row?.rows[0]
           ? { ...splitPreviewText(row.rows[0].title), url: `${origin}/s/${splitShare[1]}`, image, noindex: true }
@@ -999,18 +1005,35 @@ export async function buildApp({ config, db, provider, sms, email, google, stytc
       const recapShare = /^\/r\/([A-Za-z0-9_-]{32,64})\/?(?:\?.*)?$/.exec(req.url);
       if (recapShare) {
         const origin = config.APP_ORIGIN.replace(/\/$/, '');
-        const image = `${origin}/brand/og-ask.png`;
+        const image = `${origin}/brand/og-recap.png`;
         const row = await db
-          .query<{ title: string }>(
-            `SELECT COALESCE(p.title, a.title, s.title) AS title FROM recap_links r
+          .query<{ title: string; kind: string }>(
+            `SELECT COALESCE(p.title, a.title, s.title) AS title, r.kind FROM recap_links r
                LEFT JOIN plans p ON r.kind = 'plan' AND p.id = r.object_id LEFT JOIN pacts a ON r.kind = 'pact' AND a.id = r.object_id LEFT JOIN splits s ON r.kind = 'split' AND s.id = r.object_id
               WHERE r.token = $1 AND r.revoked_at IS NULL`,
             [recapShare[1]],
           )
           .catch(() => null);
         const meta = row?.rows[0]
-          ? { title: row.rows[0].title, description: 'We made it happen.', url: `${origin}/r/${recapShare[1]}`, image, noindex: true }
+          ? { title: row.rows[0].title, description: row.rows[0].kind === 'split' ? 'All settled.' : row.rows[0].kind === 'plan' ? 'It happened.' : 'We made it happen.', url: `${origin}/r/${recapShare[1]}`, image, noindex: true }
           : { ...unavailablePreview, description: 'This recap is no longer available.', image };
+        return reply.header('Cache-Control', 'no-store').header('X-Robots-Tag', 'noindex, nofollow').type('text/html').send(injectOg(indexHtml, meta));
+      }
+      // A Circle invite: the Circle's name and emoji and how many are in. Never who is in it, who sent the invite, or what it is up to.
+      const circleInvite = /^\/app\/c\/([A-Za-z0-9_-]{32,64})\/?(?:\?.*)?$/.exec(req.url);
+      if (circleInvite) {
+        const origin = config.APP_ORIGIN.replace(/\/$/, '');
+        const image = `${origin}/brand/og-circle.png`;
+        const row = await db
+          .query<{ name: string; emoji: string; n: number; revoked_at: Date | null; expires_at: Date | null }>(
+            `SELECT c.name, c.emoji, i.revoked_at, i.expires_at, (SELECT COUNT(*)::int FROM circle_members m WHERE m.circle_id = c.id AND m.status = 'joined') AS n
+               FROM circle_invites i JOIN circles c ON c.id = i.circle_id WHERE i.token = $1`,
+            [circleInvite[1]],
+          )
+          .catch(() => null);
+        const r = row?.rows[0];
+        const live = r && !r.revoked_at && (!r.expires_at || r.expires_at > ctx.now());
+        const meta = live ? { ...circlePreviewText({ name: r.name, emoji: r.emoji, members: r.n }), url: `${origin}/app/c/${circleInvite[1]}`, image, noindex: true } : { ...unavailablePreview, description: 'This invite is no longer active.', image };
         return reply.header('Cache-Control', 'no-store').header('X-Robots-Tag', 'noindex, nofollow').type('text/html').send(injectOg(indexHtml, meta));
       }
       return reply.sendFile('index.html');

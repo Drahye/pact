@@ -5,9 +5,11 @@ import type { NotificationDTO } from '../../../shared/contracts';
 import { notificationLink } from '../../../shared/notificationLink';
 import { kindFor } from '../../components/communication/fromNotification';
 import { useMarkRead, useNotifications } from '../../api/hooks';
-import { Empty, ErrorState } from '../../components/app/States';
+import { ErrorState } from '../../components/app/States';
+import { CompletionState } from '../../components/objects';
 import { RowListSkeleton } from '../../components/app/Skeleton';
 import { IconButton } from '../../components/ui/IconButton';
+import { LargeTitle } from '../../components/ui/LargeTitle';
 import { TopBar } from '../../components/ui/TopBar';
 import { formatRelative } from '../../lib/format';
 import { Screen } from './Screen';
@@ -111,16 +113,18 @@ export function NotificationsScreen() {
         <TopBar
           backTo="/app/home"
           title="Notifications"
+          collapse
           trailing={unread ? <IconButton label="Mark all as read" icon={<CheckCheck />} onClick={() => markRead.mutate(undefined)} /> : undefined}
         />
       }
     >
+      <LargeTitle>Notifications</LargeTitle>
       {notes.isLoading ? (
         <RowListSkeleton trailing={false} label="Loading notifications" />
       ) : notes.error ? (
         <ErrorState onRetry={() => notes.refetch()} />
       ) : !items.length ? (
-        <Empty icon={<Bell />} title="You’re all caught up" body="Updates about your Pacts will show up here: invitations, goals reached, payments and things that need you." />
+        <CompletionState size="sm" title="You’re all caught up." line="Invitations, answers and things that need you will show up here." />
       ) : (
         <>
           <Section id="notes-new" title="New" items={fresh} onOpen={open} />

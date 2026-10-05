@@ -4,7 +4,7 @@ import { useLocation, useNavigate, useParams, useSearchParams } from 'react-rout
 import { useAuth } from '../../../api/auth';
 import { useAsk, useCloseAsk, useResetAskLink, useRespond } from '../../../api/asks';
 import { ApiError } from '../../../api/client';
-import { PactDetailSkeleton } from '../../../components/app/Skeleton';
+import { AskSkeleton } from '../../../components/app/DetailSkeletons';
 import { ErrorState, Notice } from '../../../components/app/States';
 import { AskView } from '../../../components/ask/AskView';
 import { Button } from '../../../components/ui/Button';
@@ -14,6 +14,7 @@ import { TopBar } from '../../../components/ui/TopBar';
 import { useToast } from '../../../components/ui/Toast';
 import { shareAsk } from '../../../lib/askShare';
 import { Screen } from '../Screen';
+import '../object-detail.css';
 
 type Sheet = null | 'menu' | 'close' | 'reset';
 
@@ -33,7 +34,7 @@ export function AskScreen() {
   const [sheet, setSheet] = useState<Sheet>(null);
   const justCreated = (location.state as { justCreated?: boolean } | null)?.justCreated === true;
 
-  if (ask.isLoading) return <Screen topBar={<TopBar backTo="/app/circles" />}><PactDetailSkeleton label="Loading question" /></Screen>;
+  if (ask.isLoading) return <Screen topBar={<TopBar backTo="/app/circles" />}><AskSkeleton /></Screen>;
   if (ask.error || !ask.data) {
     const gone = (ask.error as ApiError)?.status === 404;
     return (
@@ -84,7 +85,7 @@ export function AskScreen() {
       {justCreated && a.status === 'open' && (
         <Notice tone="accent">Your question is live. Share it so people can answer.</Notice>
       )}
-      <AskView ask={a} meId={user?.id} busy={respond.isPending} onPick={(x) => void act(() => respond.mutateAsync(x))} />
+      <AskView ask={a} meId={user?.id} busy={respond.isPending} onPick={(x) => act(() => respond.mutateAsync(x))} />
 
       <Modal open={sheet === 'menu'} onClose={() => setSheet(null)} title="This question">
         <div className="menu">

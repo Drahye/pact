@@ -1,4 +1,4 @@
-import type { CircleTint, ComingUpItem, HomeCircleDTO, HomeDTO, HomeObject, NeedsYouItem, NeedsYouType, PersonDTO, RecapCardDTO, RecapDTO, RecentItem } from '../../../shared/contracts.js';
+import type { CircleTint, ComingUpItem, NeedsDetail, HomeCircleDTO, HomeDTO, HomeObject, NeedsYouItem, NeedsYouType, PersonDTO, RecapCardDTO, RecapDTO, RecentItem } from '../../../shared/contracts.js';
 import type { Ctx, ReqMeta } from '../context.js';
 import type { Queryable } from '../db/index.js';
 import { randomToken } from '../lib/crypto.js';
@@ -152,7 +152,74 @@ async function needsYou(ctx: Ctx, userId: string, today: string) {
     parts.push({ key: `split:${n.splitId}`, objectType: 'split', sourceId: n.splitId, type: n.kind === 'owe' ? 'split_debt' : 'split_collect', title: n.title, circle: n.circle, sentence: `${n.text}.`, label: n.kind === 'owe' ? 'Owe' : 'Collect', actionLabel: n.kind === 'owe' ? 'View Split' : 'View', url: `/app/splits/${n.splitId}?from=home` });
   }
   const items = fold(parts, today);
-  return { items: items.slice(0, NEEDS_VISIBLE), total: items.length, askPeople: [] as PersonDTO[] };
+  const shown = items.slice(0, NEEDS_VISIBLE);
+  const people = await addDetail(ctx.db, userId, shown);
+  return { items: shown, total: items.length, askPeople: [] as PersonDTO[], people };
+}
+
+/** One batch of reads per kind of object, so every Needs You card can say how its thing is going. Returns the people it mentions. */
+async function addDetail(q: Queryable, userId: string, items: NeedsYouItem[]): Promise<string[]> {
+  const ids = (type: HomeObject) => [...new Set(items.filter((i) => i.objectType === type && UUID_RE.test(i.sourceId)).map((i) => i.sourceId))];
+  const [askIds, planIds, splitIds, pactIds] = [ids('ask'), ids('plan'), ids('split'), ids('pact')];
+  const detail = new Map<string, NeedsDetail>();
+  const people: string[] = [];
+  if (askIds.length) {
+    const [a, o] = await Promise.all([
+      q.query<{ id: string; type: 'choice' | 'attendance'; closes_at: Date | null; answered: number; of: number }>(
+        `SELECT a.id, a.type, a.closes_at, (SELECT COUNT(*)::int FROM ask_responses r WHERE r.ask_id = a.id) AS answered,
+                (SELECT COUNT(*)::int FROM circle_members cm WHERE cm.circle_id = a.circle_id AND cm.status = 'joined') AS of
+           FROM asks a WHERE a.id = ANY($1::uuid[])`,
+        [askIds],
+      ),
+      q.query<{ ask_id: string; id: string; label: string; votes: number }>(
+        `SELECT o.ask_id, o.id, o.label, COUNT(r.id)::int AS votes FROM ask_options o LEFT JOIN ask_responses r ON r.option_id = o.id WHERE o.ask_id = ANY($1::uuid[]) GROUP BY o.id ORDER BY o.position`,
+        [askIds],
+      ),
+    ]);
+    for (const x of a.rows) detail.set(`ask:${x.id}`, { kind: 'ask', type: x.type, options: o.rows.filter((r) => r.ask_id === x.id).map(({ id, label, votes }) => ({ id, label, votes })), answered: x.answered, of: x.of, closesAt: x.closes_at ? new Date(x.closes_at).toISOString() : null });
+  }
+  if (planIds.length) {
+    const [p, going] = await Promise.all([
+      q.query<{ id: string; date: string | null; end_date: string | null; location: string | null; n_in: number; n_maybe: number }>(
+        `SELECT p.id, p.date::text AS date, p.end_date::text AS end_date, p.location,
+                (SELECT COUNT(*)::int FROM plan_rsvps r WHERE r.plan_id = p.id AND r.status = 'in') AS n_in,
+                (SELECT COUNT(*)::int FROM plan_rsvps r WHERE r.plan_id = p.id AND r.status = 'maybe') AS n_maybe
+           FROM plans p WHERE p.id = ANY($1::uuid[])`,
+        [planIds],
+      ),
+      q.query<{ plan_id: string; user_id: string }>(`SELECT plan_id, user_id FROM plan_rsvps WHERE plan_id = ANY($1::uuid[]) AND status = 'in' ORDER BY updated_at`, [planIds]),
+    ]);
+    for (const x of p.rows) {
+      const goingIds = going.rows.filter((g) => g.plan_id === x.id).map((g) => g.user_id).slice(0, 4);
+      people.push(...goingIds);
+      detail.set(`plan:${x.id}`, { kind: 'plan', date: x.date, endDate: x.end_date, location: x.location, going: x.n_in, maybe: x.n_maybe, goingIds });
+    }
+  }
+  if (splitIds.length) {
+    const r = await q.query<{ id: string; paid_by: string; payer: string; mine: number | null; left: number; settled: number; shares: number }>(
+      `SELECT s.id, s.paid_by, u.first_name AS payer,
+              (SELECT x.amount::float8 FROM split_shares x WHERE x.split_id = s.id AND x.user_id = $2) AS mine,
+              COALESCE((SELECT SUM(x.amount)::float8 FROM split_shares x WHERE x.split_id = s.id AND x.status = 'owed' AND x.user_id <> s.paid_by), 0) AS left,
+              (SELECT COUNT(*)::int FROM split_shares x WHERE x.split_id = s.id AND x.status = 'settled') AS settled,
+              (SELECT COUNT(*)::int FROM split_shares x WHERE x.split_id = s.id) AS shares
+         FROM splits s JOIN users u ON u.id = s.paid_by WHERE s.id = ANY($1::uuid[])`,
+      [splitIds, userId],
+    );
+    for (const x of r.rows) {
+      const owe = items.find((i) => i.sourceId === x.id)?.type === 'split_debt';
+      people.push(x.paid_by);
+      detail.set(`split:${x.id}`, { kind: 'split', owe, amount: (owe ? (x.mine ?? 0) : x.left) / 100, payerId: x.paid_by, payerName: x.payer, settled: x.settled, shares: x.shares });
+    }
+  }
+  if (pactIds.length) {
+    const r = await q.query<{ id: string; raised: number; target: number; deadline: string }>(`SELECT id, raised_amount::float8 AS raised, target_amount::float8 AS target, deadline::text AS deadline FROM pacts WHERE id = ANY($1::uuid[])`, [pactIds]);
+    for (const x of r.rows) detail.set(`pact:${x.id}`, { kind: 'pact', raised: x.raised / 100, target: x.target / 100, percent: Math.min(100, Math.round((x.raised / Math.max(1, x.target)) * 100)), deadline: x.deadline });
+  }
+  for (const i of items) {
+    const d = detail.get(`${i.objectType}:${i.sourceId}`);
+    if (d) i.detail = d;
+  }
+  return people;
 }
 
 /* ---------------------------------------------------------------- Circles, Coming up, Recent, Recaps */
@@ -335,7 +402,7 @@ export async function getHome(ctx: Ctx, userId: string) {
   const [shelf, soon, rec, recapList] = await Promise.all([circlesShelf(ctx, userId, needs.items), comingUp(ctx.db, userId, today), recent(ctx.db, userId), recaps(ctx.db, userId)]);
   const state = await homeState(ctx.db, userId, recapList.length > 0);
   const data: HomeDTO = { state, needsYou: needs.items, needsYouTotal: needs.total, circles: shelf.list, comingUp: soon, recent: rec, recaps: recapList };
-  const ids = [...shelf.list.flatMap((c) => c.memberIds), ...rec.flatMap((r) => (r.actorId ? [r.actorId] : []))];
+  const ids = [...shelf.list.flatMap((c) => c.memberIds), ...rec.flatMap((r) => (r.actorId ? [r.actorId] : [])), ...needs.people];
   return { data, people: [...(await minimalPeople(ctx.db, ids)), ...shelf.people.filter((p) => ids.includes(p.id))] };
 }
 

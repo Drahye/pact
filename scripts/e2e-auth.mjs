@@ -98,10 +98,10 @@ try {
     const check = noHomeDetour(page, 'Ask via Google');
     await page.goto(`${BASE}/a/${ask.shareToken}`, { waitUntil: 'load' });
     await page.getByRole('radio', { name: 'I’m in' }).click();
-    await page.getByText('Save your vote').waitFor();
+    await page.getByRole('dialog').getByText('You’re almost in.').waitFor();
     await shot(page, 'ask-sign-in-sheet');
     await tap(page, 'Continue');
-    await page.getByText('Make things happen with your people.').waitFor();
+    await page.getByRole('heading', { level: 1, name: /Let’s get you in|Welcome back|You’re almost in|Almost there/ }).waitFor();
     await shot(page, 'welcome');
     await google(page);
     await page.getByLabel('First name').waitFor();
@@ -123,10 +123,10 @@ try {
     const check = noHomeDetour(page, 'Plan via email');
     await page.goto(`${BASE}/p/${plan.shareToken}`, { waitUntil: 'load' });
     await page.getByRole('radio', { name: 'I’m in' }).first().click().catch(async () => page.getByRole('button', { name: 'I’m in' }).first().click());
-    await page.getByText('Save your answer').waitFor();
+    await page.getByRole('dialog').getByText('You’re almost in.').waitFor();
     await tap(page, 'Continue');
     await page.getByLabel('Email address').fill(`ema.${stamp}@example.com`);
-    await page.locator('form').getByRole('button', { name: 'Continue' }).click();
+    await page.getByRole('button', { name: 'Continue with email' }).click();
     await page.getByText('Check your email').waitFor();
     await page.getByText('We sent a code to').waitFor();
     await shot(page, 'email-code');
@@ -173,7 +173,7 @@ try {
     await shot(page, 'account-google-connected');
     await page.goto(`${BASE}/app/profile`);
     await page.getByRole('button', { name: 'Sign out' }).click();
-    await page.getByText('Make things happen with your people.').waitFor();
+    await page.getByRole('heading', { level: 1, name: /Let’s get you in|Welcome back|You’re almost in|Almost there/ }).waitFor();
     await google(page);
     // Signing out on purpose forgets this device's "intro seen" flag, so a no-Pact account may see the intro again: skip it.
     await reachHome(page);
@@ -193,7 +193,7 @@ try {
     const invited = `090${stamp}`;
     await call('POST', '/pacts', tok, { title: 'Invite by phone', category: 'dinner', target: 20_000_00, deadline: day(14), invitePhones: [invited] });
     const page = await newPage({ sub: gsub, email: `ver.${stamp}@example.com`, firstName: 'Vera', lastName: 'Verify' });
-    await page.goto(`${BASE}/app/auth/welcome`, { waitUntil: 'load' });
+    await page.goto(`${BASE}/app/auth/start`, { waitUntil: 'load' });
     await google(page);
     await page.getByLabel('First name').waitFor();
     await tap(page, 'Continue');

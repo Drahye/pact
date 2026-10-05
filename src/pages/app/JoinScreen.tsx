@@ -57,7 +57,7 @@ export function JoinScreen() {
         /* ignore */
       }
       setReturnTo(`/app/join/${code}`);
-      navigate('/app/auth/welcome');
+      navigate('/app/auth/start');
       return;
     }
     try {

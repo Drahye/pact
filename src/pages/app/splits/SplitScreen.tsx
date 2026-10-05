@@ -5,24 +5,20 @@ import type { SplitDTO, SplitShareDTO } from '../../../../shared/contracts';
 import { useAuth } from '../../../api/auth';
 import { ApiError } from '../../../api/client';
 import { useCancelSplit, useHandOverSplit, useResetSplitLink, useSettleShare, useSplit } from '../../../api/splits';
-import { PactDetailSkeleton } from '../../../components/app/Skeleton';
+import { SplitSkeleton } from '../../../components/app/DetailSkeletons';
 import { ErrorState, Notice } from '../../../components/app/States';
-import { CircleBadge } from '../../../components/circle/CircleBadge';
-import { ShareStatus, progressText } from '../../../components/split/SplitBits';
-import { Avatar } from '../../../components/ui/Avatar';
+import { ActivityRow, CompletionState, SplitObject } from '../../../components/objects';
 import { Button } from '../../../components/ui/Button';
 import { IconButton } from '../../../components/ui/IconButton';
 import { HandOverSheet } from '../../../components/circle/HandOverSheet';
 import { Modal } from '../../../components/ui/Modal';
-import { SectionHeading } from '../../../components/ui/SectionHeading';
 import { TopBar } from '../../../components/ui/TopBar';
 import { useToast } from '../../../components/ui/Toast';
 import { getUser } from '../../../data/users';
 import { koboText } from '../../../lib/splitMoney';
 import { shareSplit } from '../../../lib/splitShare';
 import { Screen } from '../Screen';
-import '../../../components/ask/ask.css';
-import '../../../components/split/split.css';
+import '../object-detail.css';
 
 type Sheet = null | 'menu' | 'cancel' | 'reset' | 'hand' | { settle: SplitShareDTO } | { undo: SplitShareDTO };
 
@@ -63,7 +59,7 @@ export function SplitScreen() {
   const [sheet, setSheet] = useState<Sheet>(null);
   const justCreated = (location.state as { justCreated?: boolean } | null)?.justCreated === true;
 
-  if (split.isLoading) return <Screen topBar={<TopBar backTo="/app/circles" />}><PactDetailSkeleton label="Loading split" /></Screen>;
+  if (split.isLoading) return <Screen topBar={<TopBar backTo="/app/circles" />}><SplitSkeleton /></Screen>;
   if (split.error || !split.data) {
     const gone = (split.error as ApiError)?.status === 404;
     return (
@@ -109,78 +105,43 @@ export function SplitScreen() {
         />
       }
     >
-      <div className="plan-section" style={{ gap: 'var(--space-5)', paddingBottom: 'var(--space-6)' }}>
-        <header className="split-head">
-          <p className="ask__circle">
-            <CircleBadge emoji={s.circle.emoji} tint={s.circle.tint} size="sm" />
-            <span>{s.circle.name}</span>
-          </p>
-          <h1 className="large-title plan-head__title">{s.title}</h1>
-          <p className="split-head__total" aria-label={`Total ${koboText(s.total)}`}>
-            {koboText(s.total)}
-          </p>
-          <p className="split-head__meta">Paid by {name(s.paidBy)}</p>
-          {s.status === 'open' && (
-            <p className="plan-head__going" role="status">
-              {progressText(s)}
-              {s.unsettled > 0 && <span className="split-head__meta"> · {koboText(s.unsettled)} still unsettled</span>}
-            </p>
-          )}
-        </header>
-
+      <div className="od-split">
         {justCreated && s.status === 'open' && <Notice tone="accent">Your split is up. Share it so people can see their share.</Notice>}
         {s.status === 'settled' && (
-          <div className="split-done" role="status">
-            <strong>All settled ✓</strong>
-            <p>Everyone is square.</p>
-            <Button variant="secondary" to={`/app/recap/split/${s.id}`}>
-              View recap
-            </Button>
-          </div>
+          <CompletionState tint="lilac" size="sm" title="All settled." line="Everyone is square." peopleIds={s.shares.map((x) => x.userId)} action={<Button variant="secondary" size="md" to={`/app/recap/split/${s.id}`}>View recap</Button>} />
         )}
+        <SplitObject
+          heading
+          kobo
+          title={s.title}
+          total={s.total}
+          payerId={s.paidBy}
+          modeText={s.mode === 'equal' ? 'split equally' : 'custom amounts'}
+          viewerId={user?.id}
+          cancelled={cancelled}
+          shares={s.shares.map((x) => ({ userId: x.userId, amount: x.amount, status: x.isPayer || x.status === 'not_applicable' ? 'payer' : x.status, canChange: x.canChange }))}
+          onSettle={(uid) => setSheet({ settle: s.shares.find((x) => x.userId === uid)! })}
+          onUndo={(uid) => setSheet({ undo: s.shares.find((x) => x.userId === uid)! })}
+        />
         {cancelled && <Notice tone="neutral">This split was cancelled.</Notice>}
-
-        <section className="plan-section" aria-labelledby="people-h">
-          <SectionHeading id="people-h" title="People" />
-          <ul className="split-rows">
-            {s.shares.map((x) => (
-              <li key={x.userId} className="split-row">
-                <Avatar userId={x.userId} size="sm" label={false} />
-                <span className="split-row__who">
-                  <span className="split-row__name">{name(x.userId)}</span>
-                  <span className="split-row__amount">{koboText(x.amount)}</span>
-                </span>
-                <span className="split-row__side">
-                  <ShareStatus status={x.status} payer={x.isPayer} />
-                  {!x.isPayer && x.canChange && x.status === 'owed' && (
-                    <button type="button" className="split-row__act" aria-label={`Mark ${name(x.userId)}’s ${koboText(x.amount)} as settled`} onClick={() => setSheet({ settle: x })}>
-                      Mark settled
-                    </button>
-                  )}
-                  {!x.isPayer && x.canChange && x.status === 'settled' && (
-                    <button type="button" className="split-row__act" aria-label={`Mark ${name(x.userId)}’s ${koboText(x.amount)} as unsettled`} onClick={() => setSheet({ undo: x })}>
-                      Mark as unsettled
-                    </button>
-                  )}
-                </span>
-              </li>
-            ))}
-          </ul>
-          <p className="split-note">PACT only keeps the record. Settling happens outside PACT.</p>
-        </section>
+        <p className="od-note">PACT only keeps the record. Settling happens outside PACT.</p>
 
         {s.activity.length > 0 && (
-          <ul className="ask__feed" aria-label="Recent activity">
-            {s.activity.map((a, i) => (
-              <li key={`${a.kind}-${a.userId}-${a.at}-${i}`}>
-                <Avatar userId={a.userId} size="sm" label={false} />
-                <span className="ask__feed-text">{activityText(a, name)}</span>
-              </li>
-            ))}
-          </ul>
+          <section className="od-lately" aria-labelledby="split-lately">
+            <h2 id="split-lately" className="t-label">
+              Lately
+            </h2>
+            <ul>
+              {s.activity.map((a, i) => (
+                <li key={`${a.kind}-${a.userId}-${a.at}-${i}`}>
+                  <ActivityRow actorId={a.userId} kind="split" at={a.at} text={activityText(a, name)} />
+                </li>
+              ))}
+            </ul>
+          </section>
         )}
 
-        {!cancelled && (
+        {!cancelled && s.status === 'open' && (
           <Button variant="secondary" iconLeft={<Share2 />} onClick={share}>
             Share
           </Button>

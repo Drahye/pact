@@ -112,7 +112,9 @@ export const STYTCH_OAUTH_COOKIE = 'pact_so';
 const OAUTH_TTL_MIN = 10;
 const stateHash = (ctx: Ctx, state: string) => keyedHash(ctx.config.HASH_SECRET, `stytch-oauth:${state}`);
 
-export const stytchRedirectUrl = (ctx: Ctx) => `${ctx.config.APP_ORIGIN}/authenticate`;
+/** The one OAuth callback Stytch is configured with: always absolute, always APP_ORIGIN's origin + /authenticate. Never the returnTo, never a request value. */
+export const STYTCH_CALLBACK_PATH = '/authenticate';
+export const stytchRedirectUrl = (ctx: Ctx) => new URL(STYTCH_CALLBACK_PATH, new URL(ctx.config.APP_ORIGIN).origin).href;
 
 export async function startStytchOAuth(ctx: Ctx, returnTo: string | null | undefined) {
   if (!ctx.config.stytchGoogleEnabled || !ctx.stytch.enabled) throw new AppError(503, 'google_unavailable', 'Google sign-in isn’t available right now.');

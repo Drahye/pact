@@ -293,7 +293,7 @@ export async function buildApp({ config, db, provider, sms, email, google, stytc
         deployEnv: config.deployEnv,
         exposeDevCodes: config.exposeDevCodes,
         push: pushPublicConfig(config),
-        auth: { google: config.googleEnabled, stytchGoogle: config.stytchGoogleEnabled, email: true },
+        auth: { google: config.googleEnabled, stytchGoogle: config.stytchGoogleEnabled, email: true, phone: config.phoneAuthEnabled },
       }));
 
       /* ---------- auth */
@@ -303,12 +303,14 @@ export async function buildApp({ config, db, provider, sms, email, google, stytc
         return track(ctx.db, config, 'auth_method_selected', { actor: visitorId(config, m.ip, m.userAgent, ctx.now().toISOString().slice(0, 10)), key: `ams:${randomUUID()}`, props: { provider } });
       };
       api.post('/auth/otp/request', strict(5), async (req) => {
+        auth.assertPhoneAuth(ctx);
         const body = parse(C.OtpRequestBody, req.body);
         await methodSelected(req, 'phone');
         return auth.requestOtp(ctx, body.phone, meta(req));
       });
 
       api.post('/auth/otp/verify', strict(10), async (req, reply) => {
+        auth.assertPhoneAuth(ctx);
         const body = parse(C.OtpVerifyBody, req.body);
         return finishVerify(req, reply, await auth.verifyOtp(ctx, body.phone, body.code, body.device, meta(req)));
       });
@@ -531,8 +533,12 @@ export async function buildApp({ config, db, provider, sms, email, google, stytc
           const body = parse(C.EmailLinkVerifyBody, req.body);
           return account.verifyEmailLink(ctx, req.userId, body.email, body.code, body.pin, meta(req));
         });
-        priv.post('/me/identities/phone/request', strict(5, 15), async (req) => account.requestPhoneLink(ctx, req.userId, parse(C.PhoneLinkRequestBody, req.body).phone, meta(req)));
+        priv.post('/me/identities/phone/request', strict(5, 15), async (req) => {
+          auth.assertPhoneAuth(ctx);
+          return account.requestPhoneLink(ctx, req.userId, parse(C.PhoneLinkRequestBody, req.body).phone, meta(req));
+        });
         priv.post('/me/identities/phone/verify', strict(10, 15), async (req) => {
+          auth.assertPhoneAuth(ctx);
           const body = parse(C.PhoneLinkVerifyBody, req.body);
           return account.verifyPhoneLink(ctx, req.userId, body.phone, body.code, meta(req));
         });

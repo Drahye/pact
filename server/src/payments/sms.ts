@@ -6,6 +6,14 @@ export interface SmsSender {
 }
 
 export function createSms(config: Config, log: FastifyBaseLogger): SmsSender {
+  if (config.SMS_PROVIDER === 'disabled') {
+    // Nothing should reach here (phone auth is refused earlier); if something does, say so instead of pretending a text went out.
+    return {
+      async send() {
+        throw new Error('SMS is disabled (SMS_PROVIDER=disabled)');
+      },
+    };
+  }
   if (config.SMS_PROVIDER === 'termii') {
     return {
       async send(to, message) {

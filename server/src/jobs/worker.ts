@@ -43,6 +43,8 @@ const handlers: Record<string, Handler> = {
   // Browser Web Push, best-effort: sendPush never throws, so a failing push service can't make this job retry forever.
   'push.send': (ctx, p) => sendPush(ctx, p.userIds as string[], { body: String(p.body ?? ''), url: typeof p.url === 'string' ? p.url : null }),
   'sms.invite': async (ctx, p) => {
+    // Texts are switched off: the invite itself is kept, only the message is skipped (a thrown error would retry it forever).
+    if (!ctx.config.phoneAuthEnabled) return;
     await ctx.sms.send(String(p.phone), `${p.inviter} invited you to a Pact on PACT. Get the app to join: ${ctx.config.APP_ORIGIN}/download`);
   },
   'ops.alert': async (ctx, p) => {

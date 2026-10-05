@@ -57,8 +57,11 @@ const Env = z.object({
   /** Staging only: return SMS codes in API responses so a closed beta can run without an SMS sender. Test data only. */
   STAGING_SHOW_CODES: bool(false),
 
-  /** SMS delivery for OTPs. `log` prints codes to the server log (development only). */
-  SMS_PROVIDER: z.enum(['log', 'termii']).default('log'),
+  /**
+   * SMS delivery for OTPs. `log` prints codes to the server log (development only). `disabled` switches phone sign-in and phone
+   * verification off: no code is generated or sent, the endpoints answer "unavailable" and the app hides them. Nothing stored is touched.
+   */
+  SMS_PROVIDER: z.enum(['log', 'termii', 'disabled']).default('log'),
   TERMII_API_KEY: z.string().default(''),
   TERMII_SENDER_ID: z.string().default('PACT'),
 
@@ -125,6 +128,8 @@ export type Config = z.infer<typeof Env> & {
   isTest: boolean;
   exposeDevCodes: boolean;
   exposeEmailCodes: boolean;
+  /** Phone sign-in, phone verification and phone PIN resets. False when SMS_PROVIDER=disabled. */
+  phoneAuthEnabled: boolean;
   googleEnabled: boolean;
   /** Google sign-in through Stytch OAuth: Stytch email auth is on and the public token is set. Independent of the legacy Google Cloud flag above. */
   stytchGoogleEnabled: boolean;
@@ -205,6 +210,7 @@ export function loadConfig(overrides: Partial<Record<keyof z.infer<typeof Env>, 
     deployEnv,
     push: pushSet === 3 ? { publicKey: env.WEB_PUSH_VAPID_PUBLIC_KEY, privateKey: env.WEB_PUSH_VAPID_PRIVATE_KEY, subject: env.WEB_PUSH_SUBJECT } : null,
     // OTP codes are returned in API responses only when SMS is not really sent: local development, or a staging beta that asked for it.
+    phoneAuthEnabled: env.SMS_PROVIDER !== 'disabled',
     exposeDevCodes: (!isProd && env.SMS_PROVIDER === 'log') || (deployEnv === 'staging' && env.STAGING_SHOW_CODES),
     googleEnabled: env.ENABLE_GOOGLE_AUTH,
     stytchGoogleEnabled: env.EMAIL_AUTH_PROVIDER === 'stytch' && !!env.STYTCH_PUBLIC_TOKEN && !!env.STYTCH_PROJECT_ID && !!env.STYTCH_SECRET,

@@ -202,7 +202,7 @@ describe('email sign-in through Stytch', () => {
   });
 
   it('keeps Google hidden', async () => {
-    assert.deepEqual((await t.call('GET', '/config')).body.auth, { google: false, stytchGoogle: false, email: true });
+    assert.deepEqual((await t.call('GET', '/config')).body.auth, { google: false, stytchGoogle: false, email: true, phone: true });
     assert.equal((await t.call('POST', '/auth/google/start', undefined, {})).status, 503);
   });
 

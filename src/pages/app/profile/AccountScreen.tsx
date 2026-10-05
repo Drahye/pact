@@ -52,7 +52,7 @@ export function AccountScreen() {
       toast('Google connected');
       void account.refetch();
     }
-    if (params.get('verify') === 'phone') setSheet('phone');
+    if (params.get('verify') === 'phone' && config?.auth?.phone) setSheet('phone');
     if (params.get('google') === 'conflict') setNotice('This sign-in method is already connected to another PACT account. Sign in with it there, or use a different Google account.');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -111,7 +111,8 @@ export function AccountScreen() {
             ) : null}
           </div>
 
-          <p className="menu-label">Verification</p>
+          {(a.phone || config?.auth?.phone) && <p className="menu-label">Verification</p>}
+          {(a.phone || config?.auth?.phone) && (
           <div className="menu">
             <button type="button" className="menu__row" onClick={() => (a.phone ? setSheet({ disconnect: 'phone' }) : setSheet('phone'))} disabled={!!a.phone && a.signInMethods <= 1}>
               <span className={`menu__icon ${a.phone ? 'tint--mint' : 'tint--sun'}`}>{a.phone ? <ShieldCheck /> : <Phone />}</span>
@@ -130,6 +131,7 @@ export function AccountScreen() {
               <span className="menu__end">{a.phone ? <ChevronRight /> : 'Verify phone'}</span>
             </button>
           </div>
+          )}
           <p className="acct__fine">Everyday things like Circles, questions, plans and splits never need a verified phone.</p>
         </>
       )}

@@ -20,7 +20,8 @@ export function ResetPinSheet({ open, onClose }: { open: boolean; onClose: () =>
   const account = useAccount();
   const [via, setVia] = useState<'phone' | 'email'>();
   const [sentTo, setSentTo] = useState('');
-  const hasPhone = !!account.data?.phone;
+  // A number on the account only counts as a way to reset while the server can text it.
+  const hasPhone = !!account.data?.phone && !!config?.auth?.phone;
   const hasEmail = !!(account.data?.email || account.data?.google.email);
   const { requestPinReset, resetPin } = useProfileActions();
   const toast = useToast();

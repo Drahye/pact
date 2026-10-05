@@ -13,6 +13,8 @@ A hardened copy of production for real people and no real money. Same build and 
 | Bank accounts | Any 10 digits; the sandbox resolves the name from the profile | Real name resolution |
 | Demo data | Never seeded | Never seeded |
 
+`SMS_PROVIDER=disabled` runs the beta on email and Google only: phone sign-in, phone verification and phone PIN resets answer `feature_unavailable`, no code is generated or sent, and the app hides them. Stored phone numbers and identities are untouched; set the provider back to `termii` to turn phone on again. Production still requires `termii`.
+
 Guards (all in `server/src/config.ts`, covered by `server/test/config.test.ts`): a live Paystack key is refused anywhere but production; production refuses sandbox payments, test keys, a non-Paystack API host, and screen-shown codes; staging refuses live keys and requires either Termii or the explicit `STAGING_SHOW_CODES` flag; `NODE_ENV` and `DEPLOY_ENV` must agree; default secrets are refused. The web app shows a "Sandbox beta: no real money moves" tag on Welcome, and warns in the BVN and bank screens.
 
 ## What you need

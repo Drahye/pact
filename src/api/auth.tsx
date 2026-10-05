@@ -17,7 +17,7 @@ export interface ServerConfig {
   /** Browser push: whether the server can send it, and the public key a browser subscribes with. */
   push?: { enabled: boolean; publicKey: string | null };
   /** Which sign-in methods this server offers. Google appears only when it is configured. */
-  auth?: { google: boolean; stytchGoogle?: boolean; email: boolean };
+  auth?: { google: boolean; stytchGoogle?: boolean; email: boolean; /** False when the server runs with SMS_PROVIDER=disabled: no phone sign-in or phone verification. */ phone?: boolean };
 }
 
 interface AuthValue {

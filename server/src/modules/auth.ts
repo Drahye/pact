@@ -190,8 +190,14 @@ const otpHash = (ctx: Ctx, phone: string, code: string) => keyedHash(ctx.config.
 
 type OtpPurpose = 'login' | 'pin_reset' | 'link';
 
+/** Phone sign-in and verification are switched off (SMS_PROVIDER=disabled): a clean "unavailable", never a crash or a half-sent code. */
+export function assertPhoneAuth(ctx: Ctx) {
+  if (!ctx.config.phoneAuthEnabled) throw new AppError(503, 'feature_unavailable', 'Phone sign-in isn’t available yet. Use your email or Google instead.');
+}
+
 /** Sends a code bound to one purpose, so a sign-in code can never reset a PIN and vice versa. */
 export async function issueOtp(ctx: Ctx, phone: string, purpose: OtpPurpose, meta: ReqMeta) {
+  assertPhoneAuth(ctx);
   const recent = await ctx.db.query<{ by_phone: number; by_phone_ip: number; by_ip: number }>(
     `SELECT
        COUNT(*) FILTER (WHERE phone = $1 AND created_at > now() - make_interval(mins => $3))::int AS by_phone,
@@ -219,6 +225,7 @@ export async function issueOtp(ctx: Ctx, phone: string, purpose: OtpPurpose, met
 
 /** Checks a code. Failures are counted and audited; returns normally only on success. */
 export async function consumeOtp(ctx: Ctx, phone: string, code: string, purpose: OtpPurpose, meta: ReqMeta) {
+  assertPhoneAuth(ctx);
   const verified = await ctx.db.tx(async (q) => {
     const r = await q.query<{ id: string; code_hash: string; attempts: number }>(
       `SELECT id, code_hash, attempts FROM otp_challenges
@@ -417,7 +424,8 @@ export const PIN_RESET_HOLD_HOURS = 24;
 /** The verified ways to reach a person: a phone identity, and any identity that carries a verified email (email, or Google). */
 async function recoveryChannels(ctx: Ctx, userId: string) {
   const ids = await userIdentities(ctx.db, userId);
-  return { phone: ids.find((i) => i.provider === 'phone')?.phone ?? null, email: ids.find((i) => i.email)?.email ?? null };
+  // With phone auth off the number stays on the account but is not a way to prove who you are.
+  return { phone: ctx.config.phoneAuthEnabled ? (ids.find((i) => i.provider === 'phone')?.phone ?? null) : null, email: ids.find((i) => i.email)?.email ?? null };
 }
 
 export type RecoveryChannel = 'phone' | 'email';

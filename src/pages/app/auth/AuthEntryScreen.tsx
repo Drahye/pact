@@ -113,9 +113,11 @@ export function AuthEntryScreen({ mode }: { mode: 'start' | 'signin' }) {
         </form>
 
 
-        <p className="entry__phone">
-          Already use PACT with your phone? <Link to="/app/auth/phone">Sign in with phone</Link>
-        </p>
+        {config?.auth?.phone && (
+          <p className="entry__phone">
+            Already use PACT with your phone? <Link to="/app/auth/phone">Sign in with phone</Link>
+          </p>
+        )}
 
         <div className="entry__foot">
           {config?.deployEnv === 'staging' && (

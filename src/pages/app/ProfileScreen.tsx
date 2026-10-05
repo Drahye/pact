@@ -20,7 +20,8 @@ import './profile.css';
  * been part of, and what you have made happen. The machinery (sign-in, security, notifications, appearance) is one tap away in Settings.
  */
 export function ProfileScreen() {
-  const { user } = useAuth();
+  const { user, config } = useAuth();
+  const phoneOn = !!config?.auth?.phone;
   const pacts = usePacts();
   const account = useAccount();
   const home = useHome();
@@ -70,6 +71,7 @@ export function ProfileScreen() {
               </>
             )}
           </li>
+          {(phoneVerified || phoneOn) && (
           <li>
             <Smartphone aria-hidden />
             {phoneVerified ? (
@@ -88,6 +90,7 @@ export function ProfileScreen() {
               </>
             )}
           </li>
+          )}
         </ul>
         <dl className="me__stats">
           <div>

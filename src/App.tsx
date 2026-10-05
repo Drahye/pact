@@ -94,6 +94,14 @@ function GuestOnly({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
+/** Phone sign-in screens exist only while the server offers them (SMS_PROVIDER is not `disabled`). Anyone arriving on one goes to the front door. */
+function PhoneAuthOnly({ children }: { children: ReactNode }) {
+  const { config } = useAuth();
+  if (!config) return <Loading full />;
+  if (!config.auth?.phone) return <Navigate to="/app/auth/start" replace />;
+  return <>{children}</>;
+}
+
 /** The old address of a shared Ask. */
 function AskLinkRedirect() {
   const { token = '' } = useParams();
@@ -157,8 +165,8 @@ export function App() {
               <Route path="/cookies" element={<LegalPage doc="cookies" />} />
               <Route path="/app" element={<AppShell />}>
                 <Route index element={<GuestOnly><WelcomeScreen /></GuestOnly>} />
-                <Route path="auth/phone" element={<GuestOnly><PhoneScreen /></GuestOnly>} />
-                <Route path="auth/code" element={<GuestOnly><CodeScreen /></GuestOnly>} />
+                <Route path="auth/phone" element={<GuestOnly><PhoneAuthOnly><PhoneScreen /></PhoneAuthOnly></GuestOnly>} />
+                <Route path="auth/code" element={<GuestOnly><PhoneAuthOnly><CodeScreen /></PhoneAuthOnly></GuestOnly>} />
                 <Route path="auth/profile" element={<GuestOnly><ProfileSetupScreen /></GuestOnly>} />
                 <Route path="auth/welcome" element={<GuestOnly><WelcomeScreen /></GuestOnly>} />
                 <Route path="auth/start" element={<GuestOnly><AuthEntryScreen mode="start" /></GuestOnly>} />

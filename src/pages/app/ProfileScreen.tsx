@@ -1,38 +1,39 @@
-import { BadgeCheck, Handshake, Mail, Settings2, ShieldCheck, Smartphone, Wallet as WalletIcon } from 'lucide-react';
+import { Handshake, Settings2, ShieldCheck, Wallet as WalletIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useAccount } from '../../api/account';
 import { useAuth } from '../../api/auth';
 import { useHome } from '../../api/home';
 import { usePacts } from '../../api/hooks';
 import { CirclesShelf, MadeItHappenSection } from '../../components/home/HomeBits';
-import { EmptyState } from '../../components/objects';
+import { AvatarStack, EmptyState } from '../../components/objects';
 import { SettingsGroup, SettingsRow } from '../../components/settings/Settings';
+import { Bone } from '../../components/app/Skeleton';
 import { Avatar } from '../../components/ui/Avatar';
 import { BottomNav } from '../../components/ui/BottomNav';
 import { Button } from '../../components/ui/Button';
 import { TopBar } from '../../components/ui/TopBar';
-import { formatNaira, formatPhone } from '../../lib/format';
+import { formatNairaCompact } from '../../lib/format';
+import { peopleLine } from '../../lib/peopleLine';
 import { Screen } from './Screen';
 import './profile.css';
 
 /**
- * Me: about the person first. Who you are on PACT and how much it can trust you (a verified email, a verified phone), what you have
- * been part of, and what you have made happen. The machinery (sign-in, security, notifications, appearance) is one tap away in Settings.
+ * Me: your history with people. Who you are, who you do things with, and what you have made happen together. How you sign in, what is
+ * verified, security and appearance are one tap away in Settings: this page is not an account dashboard.
  */
 export function ProfileScreen() {
-  const { user, config } = useAuth();
-  const phoneOn = !!config?.auth?.phone;
+  const { user } = useAuth();
   const pacts = usePacts();
-  const account = useAccount();
   const home = useHome();
   if (!user) return null;
-  const a = account.data;
   const mine = (pacts.data ?? []).filter((p) => p.viewer?.status === 'joined');
   const given = mine.reduce((sum, p) => sum + (p.members.find((m) => m.userId === user.id)?.contributed ?? 0), 0);
   const circles = home.data?.circles ?? [];
   const recaps = home.data?.recaps ?? [];
-  const phone = a?.phone ? formatPhone(a.phone.number) : user.phone ? formatPhone(user.phone) : null;
-  const phoneVerified = !!a?.phone;
+  // Everyone who shares a Circle with you, once, whichever Circles they are in.
+  const people = [...new Set(circles.flatMap((c) => c.memberIds))].filter((id) => id !== user.id);
+  // Until Home's data is in, say nothing about people or Circles: a zero or "No Circles yet" would be wrong for a moment.
+  const loading = home.isLoading && !home.data;
+  const since = new Date(user.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
   return (
     <Screen
@@ -46,87 +47,74 @@ export function ProfileScreen() {
           <h1 className="me__name">
             {user.firstName} {user.lastName}
           </h1>
+          <p className="me__since">On PACT since {since}</p>
           {user.kycTier >= 2 && (
             <p className="me__trust">
               <ShieldCheck aria-hidden /> Identity verified
             </p>
           )}
         </div>
-        <ul className="me__ids" aria-label="How you’re verified">
-          <li>
-            <Mail aria-hidden />
-            {a?.email ? (
+        {loading ? (
+          <Bone w="100%" h={56} style={{ gridColumn: '1 / -1', borderRadius: 16 }} />
+        ) : people.length > 0 ? (
+          <div className="me__people">
+            <AvatarStack userIds={people} total={people.length} size="md" max={6} />
+            <p>
+              You do things with <strong>{peopleLine(people, null, { names: 2 })}</strong>.
+            </p>
+          </div>
+        ) : (
+          <p className="me__people-empty">Your people will show up here once you start a Circle.</p>
+        )}
+        {!loading && recaps.length + circles.length > 0 && (
+          <p className="me__story">
+            {recaps.length > 0 ? (
               <>
-                <span className="me__ids-text">{a.email.address}</span>
-                <span className="me__ok">
-                  <BadgeCheck aria-hidden /> Verified
-                </span>
+                You’ve made <b className="num">{recaps.length}</b> {recaps.length === 1 ? 'thing' : 'things'} happen
+                {people.length > 0 && (
+                  <>
+                    {' '}
+                    with <b className="num">{people.length}</b> {people.length === 1 ? 'person' : 'people'}
+                  </>
+                )}
+                .
               </>
             ) : (
               <>
-                <span className="me__ids-text">No email yet</span>
-                <Link to="/app/profile/account" className="me__verify">
-                  Add your email
-                </Link>
+                You’re in <b className="num">{circles.length}</b> {circles.length === 1 ? 'Circle' : 'Circles'}. Nothing has made it all the way yet.
               </>
             )}
-          </li>
-          {(phoneVerified || phoneOn) && (
-          <li>
-            <Smartphone aria-hidden />
-            {phoneVerified ? (
+            {given > 0 && (
               <>
-                <span className="me__ids-text num">{phone}</span>
-                <span className="me__ok">
-                  <BadgeCheck aria-hidden /> Verified
+                {' '}
+                <span className="me__given-inline">
+                  <b className="num">{formatNairaCompact(given)}</b> put in together.
                 </span>
               </>
-            ) : (
-              <>
-                <span className="me__ids-text">Phone not verified</span>
-                <Link to="/app/profile/account?verify=phone" className="me__verify">
-                  Verify your phone
-                </Link>
-              </>
             )}
-          </li>
-          )}
-        </ul>
-        <dl className="me__stats">
-          <div>
-            <dd className="num">{circles.length}</dd>
-            <dt>{circles.length === 1 ? 'Circle' : 'Circles'}</dt>
-          </div>
-          <div>
-            <dd className="num">{mine.length}</dd>
-            <dt>{mine.length === 1 ? 'Pact' : 'Pacts'}</dt>
-          </div>
-          <div>
-            <dd className="num">{recaps.length}</dd>
-            <dt>Made it happen</dt>
-          </div>
-          <div>
-            <dd className="num">{formatNaira(given)}</dd>
-            <dt>contributed</dt>
-          </div>
-        </dl>
+          </p>
+        )}
       </header>
 
-      {circles.length > 0 ? (
-        <CirclesShelf circles={circles} />
-      ) : (
-        <section className="screen-section">
-          <EmptyState kind="circle" compact title="No Circles yet." body="Start with the people you already make plans with." action={<Button variant="secondary" to="/app/circles/new">Start a Circle</Button>} />
-        </section>
-      )}
-      {recaps.length > 0 ? (
-        <MadeItHappenSection items={recaps} />
+      {loading ? null : recaps.length > 0 ? (
+        <MadeItHappenSection items={recaps} title="What you made happen" />
       ) : (
         <section className="screen-section">
           <EmptyState kind="pact" compact title="Nothing made it all the way yet." body="When a Pact, plan or split finishes, it lands here." />
         </section>
       )}
 
+      {loading ? (
+        <section className="screen-section" aria-label="Loading">
+          <Bone w="100%" h={168} style={{ borderRadius: 34 }} />
+        </section>
+      ) : circles.length > 0 ? (
+        <CirclesShelf circles={circles} />
+      ) : (
+        <section className="screen-section">
+          <EmptyState kind="circle" compact title="No Circles yet." body="Start with the people you already make plans with." action={<Button variant="secondary" to="/app/circles/new">Start a Circle</Button>} />
+        </section>
+      )}
       <SettingsGroup id="me-yours" title="Yours">
         <SettingsRow to="/app/pacts" icon={<Handshake />} tint="mint" title="Your Pacts" sub={mine.length ? `${mine.length} ${mine.length === 1 ? 'Pact' : 'Pacts'}, running and finished` : 'Everything you’re part of'} />
         <SettingsRow to="/app/wallet" icon={<WalletIcon />} tint="sun" title="Wallet" sub="Balance, top up and withdraw" />

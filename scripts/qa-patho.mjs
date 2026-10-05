@@ -42,7 +42,7 @@ const measure = () => {
   if (docW > vw + 1) bad.push(`page scrolls sideways (${docW} > ${vw})`);
   for (const el of document.querySelectorAll('body *')) {
     const cs = getComputedStyle(el);
-    if (cs.display === 'none' || cs.visibility === 'hidden' || el.closest('[aria-hidden=true], .sr-only, .skip, [hidden]')) continue;
+    if (cs.display === 'none' || cs.visibility === 'hidden' || el.closest('[aria-hidden=true], .sr-only, .visually-hidden, .skip, [hidden]')) continue;
     const r = el.getBoundingClientRect();
     if (!r.width || !r.height) continue;
     // Horizontal shelves scroll on purpose.

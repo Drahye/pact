@@ -1,13 +1,16 @@
 /* Pact, on its own page: the strongest object. A tinted, richer surface that holds the title, who gave what, and the way to add to it;
    then what you are handling and who is handling what. */
+/* The hero is the page, not a box on it: the Pact's colour washes down from the very top of the screen into the page, and the ring sits
+   straight on that. The wash is the screen's own background (it scrolls with the content), so there is no seam under the top bar. */
+.screen.od-washed {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--tint-solid) 30%, var(--color-bg)) 0, color-mix(in srgb, var(--tint-solid) 8%, var(--color-bg)) 480px, var(--color-bg) 680px) local no-repeat, var(--color-bg);
+}
+
 .od-pact__hero {
   display: grid;
   gap: var(--space-3);
-  margin-top: var(--space-2);
-  padding: var(--space-5) var(--space-4) var(--space-4);
-  border-radius: var(--shape-pact);
-  background: linear-gradient(160deg, color-mix(in srgb, var(--tint-solid) 26%, var(--surface-focused)), color-mix(in srgb, var(--tint-solid) 8%, var(--surface-focused)));
-  box-shadow: inset 0 1px 0 var(--glass-strong), 0 0 0 1.5px color-mix(in srgb, var(--tint-solid) 45%, transparent), 0 16px 26px -20px color-mix(in srgb, var(--tint-solid) 75%, transparent);
+  margin-top: calc(var(--space-2) * -1);
+  padding: var(--space-2) 0 var(--space-4);
 }
 
 .od-pact__kicker {
@@ -20,12 +23,9 @@
 }
 
 .od-pact__due {
-  padding: 3px 9px;
-  border-radius: 8px 8px 8px 3px;
-  background: color-mix(in srgb, var(--tint-solid) 20%, transparent);
   color: var(--tint-fg);
   font-size: var(--t-meta-size);
-  font-weight: var(--weight-bold);
+  font-weight: var(--weight-semibold);
 }
 
 .od-pact__title {
@@ -86,4 +86,52 @@
 .completed__recap {
   justify-self: center;
   margin-top: var(--space-3);
+}
+
+/* The ring is the signature, and it is drawn for what state the Pact is in. Started: a dotted ring, waiting to be filled. Progressing:
+   the people's colours around it. Funded: closed, with a soft glow, and the amount at its largest. */
+.od-pact__hero .detail__ring {
+  margin-top: var(--space-4);
+}
+
+.od-pact__hero .detail__center-amount--total {
+  font-size: clamp(22px, calc(100cqw / (var(--chars, 8) * 0.58)), 44px);
+  font-weight: var(--t-display-weight);
+  letter-spacing: -0.055em;
+}
+
+.detail__ring[data-state='started'] .sring__track {
+  stroke-dasharray: 1 13;
+  stroke-linecap: round;
+  opacity: 0.9;
+}
+
+.detail__ring[data-state='funded'] .sring {
+  filter: drop-shadow(0 0 18px color-mix(in srgb, var(--green-500) 55%, transparent));
+}
+
+.detail__ring[data-state='funded'] .detail__center-pct {
+  background: var(--green-500);
+  color: var(--color-on-accent);
+}
+
+/* One solid action. The second thing is a plain word under it, not a second pill. */
+.od-pact__hero .detail__actions {
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-1);
+  margin-top: var(--space-4);
+}
+
+.od-pact__hero .detail__actions .btn--secondary {
+  background: none;
+  box-shadow: none;
+  color: var(--color-text-secondary);
+}
+
+.od-pact__facts {
+  gap: 2px var(--space-5);
+}
+
+.od-pact__facts b {
+  font-weight: var(--weight-semibold);
 }

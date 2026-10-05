@@ -176,3 +176,78 @@
   outline: none;
   box-shadow: var(--shadow-focus);
 }
+
+/* ---- Art direction: choosing people is choosing faces ---------------------------------------------------------------------- 
+   A guest list you tap, not a list of rows to tick: a face and a name, a green ring and a small tick when someone is in. */
+.pp {
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  gap: var(--space-5) var(--space-2);
+}
+
+.pp .pp__row {
+  position: relative;
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: center;
+  align-content: start;
+  gap: 8px;
+  min-height: 0;
+  padding: 4px 2px;
+  border-radius: 18px;
+  background: none;
+  box-shadow: none;
+  text-align: center;
+  opacity: 0.5;
+  transition: opacity var(--motion-state) var(--ease-soft), transform var(--motion-micro) var(--ease-press);
+}
+
+.pp .pp__row.is-on {
+  background: none;
+  box-shadow: none;
+  opacity: 1;
+}
+
+.pp .pp__row .avatar {
+  width: 64px;
+  height: 64px;
+  font-size: 1.125rem;
+  transition: box-shadow var(--motion-state) var(--ease-soft);
+}
+
+.pp .pp__row.is-on .avatar {
+  box-shadow: 0 0 0 2.5px var(--color-bg), 0 0 0 5px var(--green-500);
+}
+
+.pp .pp__name {
+  justify-items: center;
+  max-width: 100%;
+  font-size: var(--t-support-size);
+  font-weight: var(--weight-medium);
+}
+
+.pp .pp__mark {
+  position: absolute;
+  top: 0;
+  left: calc(50% + 14px);
+  width: 24px;
+  height: 24px;
+  background: var(--green-500);
+  box-shadow: 0 0 0 2.5px var(--color-bg);
+  color: var(--ink-900);
+  opacity: 0;
+  transform: scale(0.5);
+  transition: opacity var(--motion-state) var(--ease-soft), transform var(--motion-state) var(--ease-out);
+}
+
+.pp .pp__row.is-on .pp__mark {
+  background: var(--green-500);
+  color: var(--ink-900);
+  opacity: 1;
+  transform: scale(1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pp .pp__mark,
+  .pp .pp__row {
+    transition: none;
+  }
+}

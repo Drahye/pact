@@ -142,7 +142,8 @@ export function CreatePactScreen() {
   const [taskDraft, setTaskDraft] = useState('');
   const [step, setStep] = useState<Step>('what');
   const { done, finish } = useFinish();
-  const { user } = useAuth();
+  const { user, config } = useAuth();
+  const phoneInvites = !!config?.auth?.phone;
   const circle = useCircle(circleId);
   const circleMembers = (circle.data?.members ?? []).map((m) => m.userId).filter((id) => id !== user?.id);
   // Started from a Circle: its people are the likely ones, ticked to begin with and free to untick. Not when a draft or a Plan already chose.
@@ -625,13 +626,14 @@ export function CreatePactScreen() {
         open={pickerOpen}
         onClose={() => setPickerOpen(false)}
         title="Invite people"
-        description="They’ll get an invite as soon as the Pact is created. Numbers not on PACT get a text."
+        description={phoneInvites ? 'They’ll get an invite as soon as the Pact is created. Numbers not on PACT get a text.' : 'They’ll get an invite as soon as the Pact is created.'}
         footer={
           <Button fullWidth onClick={() => setPickerOpen(false)}>
             {count ? `Add ${count} ${count === 1 ? 'person' : 'people'}` : 'Done'}
           </Button>
         }
       >
+        {phoneInvites && (
         <div className="create__phone">
           <Input
             label="Add by phone number"
@@ -659,7 +661,8 @@ export function CreatePactScreen() {
             Add
           </Button>
         </div>
-        {recentPhones.filter((r) => !phones.includes(r.phone)).length > 0 && (
+        )}
+        {phoneInvites && recentPhones.filter((r) => !phones.includes(r.phone)).length > 0 && (
           <div className="field">
             <span className="field__label">Invited before</span>
             <div className="suggest">

@@ -139,3 +139,35 @@
 .od-plan__asks .act {
   min-height: 44px;
 }
+
+/* Guest list: the face carries the answer. A green ring for in, amber for maybe, none for can't, dashed for not yet. Labels are plain words. */
+.od-label {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--t-meta-size);
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.od-who__group--in .avatar {
+  box-shadow: 0 0 0 2px var(--color-bg), 0 0 0 4px var(--green-500);
+}
+
+.od-who__group--maybe .avatar {
+  box-shadow: 0 0 0 2px var(--color-bg), 0 0 0 4px var(--sun-400);
+}
+
+.od-who {
+  gap: var(--space-5);
+}
+
+.od-faces {
+  gap: var(--space-4) var(--space-4);
+}
+
+.od-handoff__flow {
+  font-size: var(--t-meta-size);
+  letter-spacing: 0;
+  text-transform: none;
+}

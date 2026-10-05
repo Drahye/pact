@@ -20,11 +20,11 @@
   min-width: 0;
   margin: 0;
   color: var(--tint-fg);
-  font-size: var(--t-label-size);
-  font-weight: var(--t-label-weight);
-  letter-spacing: var(--t-label-tracking);
-  line-height: var(--t-label-line);
-  text-transform: uppercase;
+  /* Sentence case, not an uppercase label on every object: the overline style is kept for the rare place that needs one. */
+  font-size: var(--t-meta-size);
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0;
+  line-height: 1.2;
 }
 
 .ox-kicker svg {
@@ -671,14 +671,6 @@
   font-size: var(--t-body-size);
 }
 
-.ox-plan__until {
-  margin-left: auto;
-  padding: 3px 8px;
-  border-radius: 8px 8px 8px 3px;
-  background: color-mix(in srgb, var(--tint-solid) 22%, transparent);
-  letter-spacing: 0.04em;
-}
-
 .ox-plan--page .ox-plan__going {
   gap: var(--space-3);
 }
@@ -1275,4 +1267,150 @@
 .ox-pact__action {
   grid-column: 2;
   justify-self: start;
+}
+
+/* ---- ComingUpRow with a date block: the day is the anchor, in the way Notion Calendar sets a date ------------------------- */
+.ox-agenda:has(.ox-agenda__date) {
+  grid-template-columns: 52px minmax(0, 1fr) auto;
+  gap: var(--space-3);
+}
+
+.ox-agenda__date {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  width: 52px;
+  height: 58px;
+  border-radius: 16px 16px 16px 6px;
+  background: var(--surface-quiet);
+  color: var(--color-text);
+  line-height: 1;
+}
+
+.ox-agenda__date i {
+  color: var(--color-text-tertiary);
+  font-size: 0.6875rem;
+  font-style: normal;
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.ox-agenda__date b {
+  margin-top: 3px;
+  font-size: 1.5rem;
+  font-weight: var(--weight-bold);
+  letter-spacing: -0.04em;
+}
+
+.ox-agenda__date.is-today {
+  background: var(--green-500);
+  color: var(--color-on-accent, #0b1a12);
+}
+
+.ox-agenda__date.is-today i {
+  color: inherit;
+  opacity: 0.75;
+}
+
+/* ---- Plan, on its own page: the event's identity. The date and title sit on the plan's own colour; people and your answer follow --- */
+.ox-plan--page .ox-plan__top {
+  grid-template-columns: 100px minmax(0, 1fr);
+  gap: var(--space-4);
+  padding: var(--space-5) var(--space-4);
+  border-radius: 30px 30px 30px 10px;
+  background: linear-gradient(160deg, color-mix(in srgb, var(--tint-solid) 30%, var(--color-surface)), color-mix(in srgb, var(--tint-solid) 9%, var(--color-surface)));
+  box-shadow: var(--ring-quiet);
+}
+
+.ox-plan--page .ox-plan__date {
+  height: 128px;
+  background: var(--surface-interactive);
+  box-shadow: 0 16px 24px -16px color-mix(in srgb, var(--tint-solid) 80%, transparent);
+}
+
+.ox-plan--page .ox-plan__date b {
+  font-size: 3.25rem;
+}
+
+.ox-plan--page .ox-plan__going {
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.ox-plan__people {
+  min-width: 0;
+  color: var(--color-text);
+  font-size: var(--t-body-size);
+  font-weight: var(--weight-medium);
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.ox-plan.is-history .ox-plan__top {
+  background: var(--surface-quiet);
+}
+
+/* ---- Plan page, art direction: time approaching, a place you can open, answers that are three people-sized choices ---------- */
+.ox-plan__countdown {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin: var(--space-2) 0 0;
+  color: var(--tint-fg);
+  line-height: 1;
+}
+
+.ox-plan__countdown b {
+  font-size: clamp(1.75rem, 8vw, 2.25rem);
+  font-weight: var(--t-display-weight);
+  letter-spacing: -0.045em;
+}
+
+.ox-plan__countdown span {
+  font-size: var(--t-support-size);
+  font-weight: var(--weight-medium);
+}
+
+.ox-plan__where {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 32px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.ox-plan__where svg:last-child {
+  width: 14px;
+  height: 14px;
+  color: var(--color-text-tertiary);
+}
+
+.ox-plan__where:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+.ox-plan--page .ox-plan__date b {
+  font-weight: var(--t-display-weight);
+}
+
+/* Three separate answers, not a form control: each is its own soft pill, and the chosen one fills. */
+.ox-plan--page .ox-rsvp {
+  gap: var(--space-2);
+  padding: 0;
+  border-radius: 0;
+  background: none;
+}
+
+.ox-plan--page .ox-rsvp__btn,
+.ox-plan--page .ox-rsvp__pill {
+  border-radius: var(--radius-full);
+}
+
+.ox-plan--page .ox-rsvp__btn {
+  background: var(--surface-quiet);
+  box-shadow: var(--ring-quiet);
 }

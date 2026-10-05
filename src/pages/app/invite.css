@@ -191,7 +191,9 @@
 }
 
 .invite__phone > .btn {
+  flex: none;
   margin-top: 28px;
+  white-space: nowrap;
 }
 
 .invite__ready {

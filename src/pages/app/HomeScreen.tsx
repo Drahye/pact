@@ -9,7 +9,7 @@ import { introSeen } from '../../features/onboarding/store';
 import { SignInUpgradePrompt } from '../../components/app/SignInUpgradePrompt';
 import { PushPrompt } from '../../components/app/PushPrompt';
 import { ErrorState, Loading, Notice } from '../../components/app/States';
-import { CirclesShelf, ComingUpSection, MadeItHappenSection, NeedsYouSection, RecentSection } from '../../components/home/HomeBits';
+import { CirclesShelf, ComingUpSection, HomePulse, MadeItHappenSection, NeedsYouSection, RecentSection } from '../../components/home/HomeBits';
 import { HomeSkeleton } from '../../components/home/HomeSkeleton';
 import { HomeStart } from '../../components/home/HomeStart';
 import { Avatar } from '../../components/ui/Avatar';
@@ -90,6 +90,8 @@ export function HomeScreen() {
         <span className="home__hi">{greeting()},</span>
         <span className="home__name">{user?.firstName}</span>
       </LargeTitle>
+
+      {h && !firstTime && h.state !== 'new' && <HomePulse total={h.needsYouTotal} next={h.comingUp[0]} recent={h.recent} selfId={user?.id} />}
 
       {stale && (
         <Notice tone="neutral">

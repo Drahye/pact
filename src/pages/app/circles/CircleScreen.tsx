@@ -1,4 +1,4 @@
-import { ChevronRight, Ellipsis, Plus, Settings2, Share2, UserPlus } from 'lucide-react';
+import { ChevronRight, Ellipsis, Plus, Settings2, Share2 } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useCircle, useEnsureInvite, useLeaveCircle, useRemoveMember, useResetInvite, useUpdateCircle } from '../../../api/circles';
@@ -26,6 +26,7 @@ import { TopBar } from '../../../components/ui/TopBar';
 import { useToast } from '../../../components/ui/Toast';
 import { getUser } from '../../../data/users';
 import { shareCircle } from '../../../lib/circleShare';
+import { peopleLine } from '../../../lib/peopleLine';
 import { Screen } from '../Screen';
 import '../../../components/ask/ask.css';
 import '../../../components/circle/circle.css';
@@ -157,15 +158,18 @@ export function CircleScreen() {
           name={c.name}
           emoji={c.emoji}
           tint={c.tint}
-          meta={people(c.memberCount)}
+          meta={peopleLine(c.members.map((m) => m.userId), user?.id, { names: 3 }) || people(c.memberCount)}
           peopleIds={c.members.map((m) => m.userId)}
           total={c.memberCount}
           live={needCount > 0}
           signal={needCount ? `${needCount} ${needCount === 1 ? 'thing needs' : 'things need'} you` : empty ? 'Nothing yet. Start something.' : 'Nothing waiting on you'}
         >
-          <Button variant="secondary" size="md" iconLeft={<UserPlus />} onClick={invite} loading={ensure.isPending} className="od-circle__invite">
-            Invite
-          </Button>
+          <button type="button" className="od-circle__slot" onClick={invite} disabled={ensure.isPending} aria-label="Invite someone to this Circle">
+            <span className="od-circle__slot-mark" aria-hidden>
+              <Plus />
+            </span>
+            <span>Invite</span>
+          </button>
         </CircleTile>
 
         {!loaded && (
@@ -221,7 +225,7 @@ export function CircleScreen() {
                   <ul className="od-ruled">
                     {upcoming.map((x) => (
                       <li key={x.id}>
-                        <ComingUpRow when={x.date ? whenLabel(x.date) : 'Soon'} today={!!x.date && whenLabel(x.date) === 'Today'} title={x.title} meta={`${x.pactId ? 'Now a Pact' : goingText(x.counts)}${x.location ? ` · ${x.location}` : ''}`} to={`/app/plans/${x.id}?from=circle`} />
+                        <ComingUpRow when={x.date ? whenLabel(x.date) : 'Soon'} date={x.date} today={!!x.date && whenLabel(x.date) === 'Today'} title={x.title} meta={`${x.pactId ? 'Now a Pact' : goingText(x.counts)}${x.location ? ` · ${x.location}` : ''}`} to={`/app/plans/${x.id}?from=circle`} />
                       </li>
                     ))}
                   </ul>
@@ -254,10 +258,10 @@ export function CircleScreen() {
           <ul className="od-people">
             {c.members.map((m) => (
               <li key={m.userId}>
-                <Avatar userId={m.userId} size="md" label={false} />
+                <Avatar userId={m.userId} size="lg" label={false} />
                 <span className="od-people__name">
                   {who(m.userId)}
-                  {m.role === 'owner' && <span className="od-people__role">Started this Circle</span>}
+                  {m.role === 'owner' && <span className="od-people__role">Started it</span>}
                 </span>
                 {isOwner && m.role !== 'owner' && (
                   <button type="button" className="od-people__remove" aria-label={`Remove ${getUser(m.userId).name}`} onClick={() => (setTarget(m.userId), setSheet('remove'))}>

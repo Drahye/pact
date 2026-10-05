@@ -8,7 +8,7 @@ import { HomeFirstTime } from '../../features/onboarding/HomeStates';
 import { introSeen } from '../../features/onboarding/store';
 import { SignInUpgradePrompt } from '../../components/app/SignInUpgradePrompt';
 import { PushPrompt } from '../../components/app/PushPrompt';
-import { ErrorState, Notice } from '../../components/app/States';
+import { ErrorState, Loading, Notice } from '../../components/app/States';
 import { CirclesShelf, ComingUpSection, MadeItHappenSection, NeedsYouSection, RecentSection } from '../../components/home/HomeBits';
 import { HomeSkeleton } from '../../components/home/HomeSkeleton';
 import { HomeStart } from '../../components/home/HomeStart';
@@ -51,6 +51,9 @@ export function HomeScreen() {
 
   // Brand new and has not seen the intro: show it first, then land back here.
   if (firstTime && user && !introSeen(user.id)) return <Navigate to="/app/onboarding" replace />;
+  // Someone who has not seen the intro might be brand new, and that is only known once both requests answer. Until then show no Home at all (no title,
+  // greeting or tab bar), so a new person goes straight to the intro instead of seeing Home for a second first. Someone who has seen it never waits here.
+  if (user && !introSeen(user.id) && (pacts.isPending || home.isPending)) return <Loading full label="Getting things ready" />;
 
   const stale = home.isError && !!h;
   // Two quiet prompts, never above what needs you: notifications first, then the better way to sign in.

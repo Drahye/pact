@@ -3,8 +3,9 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '../../api/auth';
 import { usePacts } from '../../api/hooks';
 import { Empty, ErrorState, Notice } from '../../components/app/States';
+import { EmptyState } from '../../components/objects';
 import { PactListSkeleton } from '../../components/app/Skeleton';
-import { PactCard } from '../../components/pact/PactCard';
+import { PactListItem } from '../../components/pact/PactListItem';
 import { PactTabs, PANEL_ID, tabId } from '../../components/pact/PactTabs';
 import { BottomNav } from '../../components/ui/BottomNav';
 import { Button } from '../../components/ui/Button';
@@ -21,9 +22,9 @@ import { useStartPactPath } from '../../lib/startPact';
 const SCROLL_KEY = 'pact.pactsScroll';
 
 const emptyCopy: Record<Lifecycle, string> = {
-  active: 'No active Pacts right now.',
-  completed: 'Nothing completed yet.',
-  closed: 'No closed Pacts.',
+  active: 'Nothing running right now.',
+  completed: 'Nothing made it all the way yet.',
+  closed: 'Nothing was called off.',
 };
 
 /**
@@ -134,15 +135,15 @@ export function PactsScreen() {
     body = <ErrorState message={offline || paused ? 'You’re offline. Reconnect and try again.' : undefined} onRetry={() => void pacts.refetch()} />;
   } else if (!mine.length) {
     body = (
-      <Empty
-        icon={<Plus />}
-        title="No Pacts yet"
-        body="Start one for a trip, a gift or a shared bill, or join with an invite link."
-        action={<Button to={startPath()}>Create a Pact</Button>}
+      <EmptyState
+        kind="pact"
+        title="Turn a plan into something everyone can commit to."
+        body="Start a Pact for a trip, a gift or a shared bill, or join one with an invite link."
+        action={<Button to={startPath()}>Start a Pact</Button>}
       />
     );
   } else if (!tabItems.length) {
-    body = <Empty icon={<Search />} title={tab === 'all' ? 'No Pacts yet' : emptyCopy[tab as Lifecycle]} body={tab === 'active' ? 'Start one, or join with an invite link.' : 'They’ll show up here.'} />;
+    body = <EmptyState kind="pact" compact title={emptyCopy[tab as Lifecycle] ?? 'Nothing here yet.'} body={tab === 'active' ? 'Start one, or join with an invite link.' : tab === 'completed' ? 'When a Pact finishes, it lands here.' : 'Pacts that were called off or refunded show up here.'} action={tab === 'active' ? <Button variant="secondary" to={startPath()}>Start a Pact</Button> : undefined} />;
   } else if (!shown.length) {
     body = (
       <Empty
@@ -160,7 +161,7 @@ export function PactsScreen() {
     body = (
       <div className="list-stack">
         {shown.map((p) => (
-          <PactCard key={p.id} pact={p} to={`/app/pact/${p.id}`} attention={attention.get(p.id)} />
+          <PactListItem key={p.id} pact={p} to={`/app/pact/${p.id}`} attention={attention.get(p.id)} />
         ))}
       </div>
     );

@@ -1,0 +1,141 @@
+/* Plan, on its own page: time first, then people, then what is left to sort. */
+.od-plan {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-5);
+  padding-block: var(--space-2) var(--space-7);
+}
+
+.od-plan__asks {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: calc(var(--space-2) * -1);
+}
+
+.od-yours {
+  margin-top: calc(var(--space-3) * -1);
+}
+
+.od-section {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+}
+
+.od-section h2,
+.od-who h2 {
+  margin: 0;
+}
+
+/* Who is in: faces first, names under them. People who said yes are largest; the ones who have not answered are drawn dashed. */
+.od-who {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.od-who__group {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.od-faces {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.od-faces li {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  min-width: 56px;
+  max-width: 72px;
+  font-size: var(--t-meta-size);
+  font-weight: var(--weight-medium);
+  text-align: center;
+}
+
+.od-faces li span {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.od-who__group--out .od-faces,
+.od-who__group--waiting .od-faces {
+  opacity: 0.78;
+}
+
+.od-who__group--out .avatar {
+  filter: grayscale(0.7);
+}
+
+/* Plan and Pact: the hand-off. The Plan says where the doing went; it does not repeat any of it. */
+.od-handoff {
+  display: grid;
+  gap: 6px;
+  justify-items: start;
+  padding: var(--space-4);
+  border-radius: 22px 22px 22px 8px;
+  background: linear-gradient(160deg, color-mix(in srgb, var(--tint-solid) 22%, var(--color-surface)), color-mix(in srgb, var(--tint-solid) 8%, var(--color-surface)));
+  box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--tint-solid) 45%, transparent);
+  color: inherit;
+  text-decoration: none;
+}
+
+.od-handoff--offer {
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--tint-solid) 30%, transparent);
+}
+
+.od-handoff:is(a):focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.od-handoff__flow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--tint-fg);
+  font-size: var(--t-label-size);
+  font-weight: var(--t-label-weight);
+  letter-spacing: var(--t-label-tracking);
+  text-transform: uppercase;
+}
+
+.od-handoff__flow svg {
+  width: 14px;
+  height: 14px;
+}
+
+.od-handoff strong {
+  font-size: var(--t-object-size);
+  line-height: var(--t-object-line);
+  letter-spacing: var(--t-object-tracking);
+}
+
+.od-handoff__line {
+  color: var(--color-text-secondary);
+  font-size: var(--t-support-size);
+  line-height: var(--t-support-line);
+}
+
+.od-handoff__go {
+  margin-top: var(--space-2);
+}
+
+@media (min-width: 768px) {
+  .od-plan {
+    max-width: 600px;
+  }
+}
+
+.od-plan__asks .act {
+  min-height: 44px;
+}

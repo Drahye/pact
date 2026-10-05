@@ -1,38 +1,54 @@
 import { useParams } from 'react-router-dom';
-import { ApiError } from '../../../api/client';
 import { usePublicRecap } from '../../../api/home';
-import { PactDetailSkeleton } from '../../../components/app/Skeleton';
-import { ErrorState } from '../../../components/app/States';
-import { PactLogo } from '../../../components/brand/PactLogo';
 import { RecapView } from '../../../components/home/RecapView';
+import { SharedBrand, SharedFooter, SharedUnavailable } from '../../../components/share/Shared';
 import { Button } from '../../../components/ui/Button';
 import { Screen } from '../Screen';
+import '../object-detail.css';
 
-/** A shared recap (/r/:token): the celebration, no names, no sign-in. */
+const TINT = { pact: 'mint', split: 'lilac', plan: 'sun' } as const;
+
+/**
+ * A shared recap (/r/:token): what a group did together, as a result. No names and nothing anyone owed: the title, a few numbers
+ * and the Circle it came from. The invitation underneath is one sentence and one button.
+ */
 export function RecapLinkScreen() {
   const { token = '' } = useParams();
   const recap = usePublicRecap(token);
-  const brand = (
-    <div className="al__brand" aria-hidden>
-      <PactLogo size="sm" />
-    </div>
-  );
-  if (recap.isLoading) return <Screen topBar={brand}><PactDetailSkeleton label="Loading recap" /></Screen>;
-  if (!recap.data) {
-    const s = (recap.error as ApiError)?.status;
+  if (recap.isLoading) {
     return (
-      <Screen topBar={brand}>
-        <ErrorState message={s === 410 ? 'This link is no longer active.' : s === 404 ? 'This recap is no longer available.' : undefined} onRetry={s ? undefined : () => recap.refetch()} />
+      <Screen className="share tint--mint">
+        <div className="rl">
+          <SharedBrand />
+          <div className="rl__skeleton" role="status" aria-busy="true" aria-label="Loading recap" />
+        </div>
       </Screen>
     );
   }
+  if (!recap.data) {
+    return (
+      <Screen className="share tint--mint">
+        <div className="rl">
+          <SharedBrand />
+          <SharedUnavailable kind="pact" error={recap.error} onRetry={() => recap.refetch()} />
+        </div>
+      </Screen>
+    );
+  }
+  const r = recap.data;
   return (
-    <Screen topBar={brand}>
-      <div className="plan-section" style={{ gap: 'var(--space-4)', paddingBottom: 'var(--space-6)' }}>
-        <RecapView recap={recap.data} />
-        <Button variant="secondary" to="/">
-          What is PACT?
-        </Button>
+    <Screen className={`share tint--${TINT[r.kind]}`}>
+      <div className="rl">
+        <SharedBrand />
+        <RecapView recap={r} />
+        <section className="rl__ask" aria-labelledby="rl-h">
+          <h2 id="rl-h" className="t-section">
+            {r.kind === 'split' ? 'Settling up, without the awkward.' : r.kind === 'plan' ? 'Plans that actually happen.' : 'Things happen when people commit.'}
+          </h2>
+          <p className="t-support">Ask the group, make a plan, split what you spend, commit to the big things. All with your people, in one place.</p>
+          <Button to="/app/auth/start">Start something with your people</Button>
+        </section>
+        <SharedFooter />
       </div>
     </Screen>
   );

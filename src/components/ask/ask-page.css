@@ -1,0 +1,59 @@
+/* Ask, on its own page. Lighter than every other detail screen: no header block, no card around anything. The question, the
+   answers, and a few lines of who said what. */
+.ask-page {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+  padding-block: var(--space-3) var(--space-6);
+}
+
+.ask-page .ox-kicker {
+  font-size: var(--t-label-size);
+}
+
+.ask-page__waiting {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.ask-page__waiting .avatar-group {
+  --ring-color: var(--color-bg);
+}
+
+.ask-page__hint {
+  margin: calc(var(--space-2) * -1) 0 0;
+}
+
+.ask-page__lately {
+  display: grid;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+
+.ask-page__lately h2 {
+  margin: 0;
+  color: var(--color-text-tertiary);
+}
+
+.ask-page__lately ul {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* The answers confirm themselves with a short sweep of the winning bar and a count that slides; the status line fades in under them. */
+.ask-page .ox-ask__status {
+  min-height: 1.25rem;
+  color: var(--color-text);
+  font-weight: var(--weight-semibold);
+}
+
+@media (min-width: 768px) {
+  .ask-page {
+    max-width: 560px;
+  }
+}

@@ -207,4 +207,26 @@ describe('Home', () => {
     assert.deepEqual(hv.rows[0].props, { object_type: 'split', section: 'needs_you' });
     void planPseudo;
   });
+
+  it('each card carries what its object needs to draw itself: options and answers, date and faces, amount and payer', async () => {
+    const ask = (await t.call('POST', `/circles/${circleId}/asks`, tok(ana), { type: 'choice', title: 'Friday or Saturday?', options: ['Friday', 'Saturday'] })).body.data;
+    await t.call('PUT', `/asks/${ask.id}/response`, tok(cleo), { optionId: ask.options[1].id });
+    const a = (await home(ben)).needsYou.find((n: { sourceId: string }) => n.sourceId === ask.id);
+    assert.equal(a.detail.kind, 'ask');
+    assert.deepEqual(a.detail.options.map((o: { label: string; votes: number }) => [o.label, o.votes]), [['Friday', 0], ['Saturday', 1]]);
+    assert.deepEqual([a.detail.answered, a.detail.of], [1, 3]);
+
+    const plan = (await t.call('POST', `/circles/${circleId}/plans`, tok(ana), { title: 'Beach day', date: day(9), endDate: day(10), location: 'Landmark' })).body.data;
+    await t.call('PUT', `/plans/${plan.id}/rsvp`, tok(cleo), { status: 'in' });
+    const p = (await home(ben)).needsYou.find((n: { sourceId: string }) => n.sourceId === plan.id);
+    assert.equal(p.detail.kind, 'plan');
+    assert.deepEqual([p.detail.date, p.detail.endDate, p.detail.location], [day(9), day(10), 'Landmark']);
+    assert.ok(p.detail.goingIds.includes(cleo.user.id), 'faces of those who are in');
+
+    const sp = (await t.call('POST', `/circles/${circleId}/splits`, tok(ana), { title: 'Taxi', total: 30_000_00, participants: [{ userId: ana.user.id }, { userId: ben.user.id }, { userId: cleo.user.id }] })).body.data;
+    const owe = (await home(ben)).needsYou.find((n: { sourceId: string }) => n.sourceId === sp.id);
+    assert.deepEqual([owe.detail.kind, owe.detail.owe, owe.detail.amount, owe.detail.payerName, owe.detail.shares], ['split', true, 10_000, 'Ana', 3], 'money in naira, ready to show');
+    const collect = (await home(ana)).needsYou.find((n: { sourceId: string }) => n.sourceId === sp.id);
+    assert.deepEqual([collect.detail.owe, collect.detail.amount], [false, 20_000]);
+  });
 });

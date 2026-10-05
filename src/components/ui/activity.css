@@ -119,13 +119,10 @@
 .activity-list > * + * {
   border-top: var(--border-hairline);
 }
-
-/* the identity ring's gap matches whatever surface the row sits on */
 .feed-group,
 .panel,
-.bento__history,
 .invite__joined,
-.completed__people {
+.completed__people{
   --accent-gap: var(--color-surface);
 }
 

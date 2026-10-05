@@ -458,7 +458,7 @@ const planBefore = (await api('GET', `/plans/${reunion.id}`, D.token)).b.data;
 await authReturn('plan', `/p/${planBefore.shareToken}`, `/p/${planBefore.shareToken}`, async (p) => { await p.getByRole('radio', { name: 'I’m in' }).click(); await p.getByRole('button', { name: 'Continue' }).click(); }, async () => (await api('GET', `/plans/${reunion.id}`, D.token)).b.data.counts.in > planBefore.counts.in);
 const splitTok = (await api('GET', `/splits/${splitGift.id}`, A.token)).b.data.shareToken;
 await authReturn('split', `/s/${splitTok}`, `/s/${splitTok}`, async (p) => { await p.getByRole('button', { name: 'See my share' }).click(); }, async () => true);
-await authReturn('circle-invite', `/app/c/${family.invite}`, new RegExp('^/app/circles/' + family.id + '$'), async (p) => { await p.getByRole('button', { name: 'Join Circle' }).click(); });
+await authReturn('circle-invite', `/app/c/${family.invite}`, new RegExp('^/app/circles/' + family.id + '$'), async (p) => { await p.getByRole('button', { name: /^Join / }).click(); });
 // A brand-new account is not a member of the Split, so "own share appears" is checked for a real participant below.
 current = 'auth-return-split-participant';
 {

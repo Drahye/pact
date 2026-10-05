@@ -1,0 +1,151 @@
+/* ==========================================================================
+   Detail screens (Phase C). Each kind of thing has its own page composition, in its own classes (.od-circle, .od-plan, .od-split,
+   .od-pact, and .ask-page for an Ask). What is shared here is only what every one of them says the same way: the small lowercase
+   label, a quiet note, a short list of what lately happened, the buttons in the top bar.
+   ========================================================================== */
+.detail__top-actions {
+  display: inline-flex;
+  gap: var(--space-2);
+}
+
+.od-note {
+  margin: 0;
+  color: var(--color-text-tertiary);
+  font-size: var(--t-support-size);
+  line-height: var(--t-support-line);
+}
+
+.od-lately {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.od-lately h2 {
+  margin: 0;
+  color: var(--color-text-tertiary);
+}
+
+.od-lately ul {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.od-label {
+  margin: 0;
+  color: var(--color-text-tertiary);
+}
+
+/* ---- Split: the head sits on the page, the people sit on one surface ---------------------------------------------- */
+.od-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-5);
+  padding-block: var(--space-2) var(--space-7);
+}
+
+.ox-split--page {
+  gap: var(--space-4);
+  padding: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+}
+
+.ox-split--page.is-resolved {
+  background: none;
+}
+
+.ox-split--page .ox-split__head {
+  gap: var(--space-2);
+}
+
+.ox-split--page .ox-split__total {
+  margin-block: var(--space-1) 0;
+  font-size: clamp(2.75rem, 15vw, 3.75rem);
+}
+
+.ox-split--page .ox-split__bar {
+  gap: 5px;
+  margin-top: var(--space-2);
+}
+
+.ox-split--page .ox-split__bar i {
+  height: 10px;
+  border-radius: 5px;
+}
+
+.ox-split--page .ox-split__rows {
+  padding: 6px;
+  border-radius: 22px;
+  background: color-mix(in srgb, var(--tint-solid) 7%, var(--color-surface));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--tint-solid) 18%, var(--line-quiet));
+}
+
+.ox-split--page .ox-share {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  min-height: 68px;
+  padding: 10px 12px;
+  border-radius: 16px;
+}
+
+.ox-split--page .ox-share {
+  position: relative;
+}
+
+.ox-split--page .ox-share + .ox-share {
+  border-top: 0;
+  border-radius: 16px;
+}
+
+.ox-split--page .ox-share + .ox-share::before {
+  content: '';
+  position: absolute;
+  inset: 0 14px auto;
+  height: 1px;
+  background: color-mix(in srgb, var(--tint-solid) 14%, var(--line-quiet));
+}
+
+.ox-split--page .ox-share__name {
+  font-size: 1.0625rem;
+}
+
+.ox-split--page .ox-share__amount {
+  font-size: var(--t-body-size);
+  font-weight: var(--weight-medium);
+}
+
+.ox-split--page .ox-share.is-settled {
+  background: color-mix(in srgb, var(--green-500) 7%, transparent);
+}
+
+.ox-split--page .ox-share.is-settled .ox-share__amount {
+  text-decoration: line-through;
+  text-decoration-color: color-mix(in srgb, var(--color-text) 30%, transparent);
+}
+
+.ox-split.is-cancelled .ox-split__total {
+  color: var(--color-text-secondary);
+  text-decoration: line-through;
+}
+
+.ox-share__undo {
+  min-height: 44px;
+  margin: -12px -8px -12px 6px;
+  padding: 0 10px;
+  border: 0;
+  background: none;
+  color: var(--color-text-secondary);
+  font: inherit;
+  font-size: var(--t-support-size);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.ox-share__undo:focus-visible {
+  border-radius: 10px;
+  outline: 3px solid var(--color-focus);
+  outline-offset: -2px;
+}

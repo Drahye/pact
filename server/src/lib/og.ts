@@ -78,3 +78,9 @@ export function planPreviewText(p: { title: string; circleName: string; circleEm
 
 /** The preview for a shared Split: the title and a plain line. Never an amount, a name or who owes. */
 export const splitPreviewText = (title: string): OgMeta => ({ title, description: 'A shared expense on PACT.' });
+
+/** The preview for a Circle invite: its name and emoji and how many are in. Not who, not what they are doing, not who sent it. */
+export const circlePreviewText = (c: { name: string; emoji: string; members: number }): OgMeta => ({
+  title: `Join ${c.name} ${c.emoji} on PACT`,
+  description: `${people(c.members, 'person is', 'people are')} in. Plans, questions and splits, together.`,
+});

@@ -12,15 +12,17 @@ interface Props {
   /** Invited but not yet joined: drawn dashed after the members. */
   pendingIds?: UserId[];
   className?: string;
+  /** Faces arrive one after another, once. Still under reduced motion. */
+  enter?: boolean;
 }
 
-export function AvatarGroup({ userIds, max = 4, size = 'sm', ring = 'surface', total, pendingIds = [], className = '' }: Props) {
+export function AvatarGroup({ userIds, max = 4, size = 'sm', ring = 'surface', total, pendingIds = [], className = '', enter }: Props) {
   const shown = userIds.slice(0, max);
   const pending = pendingIds.slice(0, Math.max(0, max - shown.length));
   const count = total ?? userIds.length + pendingIds.length;
   const overflow = count - shown.length - pending.length;
   return (
-    <span className={`avatar-group avatar-group--${size} ${className}`} role="group" aria-label={`${count} people`}>
+    <span className={`avatar-group avatar-group--${size} ${enter ? 'avatar-group--enter' : ''} ${className}`} role="group" aria-label={`${count} people`}>
       {shown.map((id) => (
         <Avatar key={id} userId={id} size={size} ring={ring} letters={1} />
       ))}

@@ -1,0 +1,542 @@
+/* ==========================================================================
+   Object primitives: status marks, the code input, empty and completion states.
+   Colour comes from the nearest .tint--*; motion from the --motion-* scale.
+   ========================================================================== */
+
+/* A long unbroken word (a pasted link, a very long name) must wrap inside its object, never push the object wider than the screen.
+   `anywhere` also lowers the text's minimum width, so flex and grid parents can shrink around it. */
+:where(.screen, [class^='ox-'], [class*=' ox-'], .sh, .t-page, .t-section, .t-object, .t-support, .ask-page) {
+  overflow-wrap: anywhere;
+}
+
+
+/* A number that slides when it changes. */
+.hv2-count {
+  display: inline-block;
+  min-width: 0.6em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- Status ---------------------------------------------------------------- */
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+}
+
+.status__dot {
+  position: relative;
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--tint-solid, var(--color-live));
+}
+
+.status--live .status__dot::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--tint-solid, var(--color-live));
+  animation: status-breathe 2.6s var(--ease-out) infinite;
+}
+
+.status--waiting .status__dot {
+  background: transparent;
+  box-shadow: inset 0 0 0 1.5px var(--color-text-tertiary);
+}
+
+.status--attention .status__dot {
+  background: var(--sun-400);
+}
+
+.status--done .status__dot {
+  background: var(--green-500);
+}
+
+.status--quiet .status__dot {
+  background: var(--color-border-strong);
+}
+
+@keyframes status-breathe {
+  0% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  70%,
+  100% {
+    opacity: 0;
+    transform: scale(3);
+  }
+}
+
+/* ---- Empty ----------------------------------------------------------------- */
+.empty {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-2);
+  padding: var(--space-10) var(--space-6);
+  text-align: center;
+}
+
+.empty--compact {
+  padding: var(--space-6) var(--space-4);
+}
+
+.empty__mark {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  margin-bottom: var(--space-2);
+  border-radius: 22px 22px 22px 8px;
+  background: linear-gradient(160deg, color-mix(in srgb, var(--tint-solid) 24%, var(--color-surface)), var(--tint-bg));
+  color: var(--tint-fg);
+}
+
+.empty__mark svg {
+  width: 26px;
+  height: 26px;
+}
+
+/* A faint ring around the mark, like something waiting to start. */
+.empty__ring {
+  position: absolute;
+  inset: -7px;
+  border-radius: 28px 28px 28px 12px;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--tint-solid) 28%, transparent);
+  opacity: 0.7;
+}
+
+.empty__title {
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-snug);
+  text-wrap: balance;
+}
+
+.empty__body {
+  max-width: 30ch;
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+  text-wrap: balance;
+}
+
+.empty__action {
+  margin-top: var(--space-3);
+}
+
+/* ---- Completion: a ring closes, a tick draws, the people arrive ---------------- */
+.done {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-2);
+  padding: var(--space-6) var(--space-4);
+  text-align: center;
+}
+
+.done__mark {
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  margin-bottom: var(--space-1);
+  border-radius: 50%;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--tint-solid) 22%, transparent), transparent);
+}
+
+.done--sm .done__mark {
+  width: 48px;
+  height: 48px;
+}
+
+.done__mark {
+  position: relative;
+}
+
+/* Eight small sparks leave the ring once, in the tint's colour: the whole flourish. */
+.done__sparks {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.done__sparks i {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 5px;
+  height: 5px;
+  margin: -2.5px;
+  border-radius: 50%;
+  background: var(--tint-solid);
+  opacity: 0;
+  animation: done-spark var(--motion-celebrate) var(--ease-out) 380ms 1 both;
+}
+
+@keyframes done-spark {
+  0% {
+    opacity: 0.9;
+    transform: rotate(var(--a)) translateY(-22px) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: rotate(var(--a)) translateY(-44px) scale(0.3);
+  }
+}
+
+.done--sm .done__sparks i {
+  animation-name: done-spark-sm;
+}
+
+@keyframes done-spark-sm {
+  0% {
+    opacity: 0.9;
+    transform: rotate(var(--a)) translateY(-14px) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: rotate(var(--a)) translateY(-28px) scale(0.3);
+  }
+}
+
+.done__mark svg {
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.done__ring {
+  stroke: var(--tint-solid);
+  stroke-width: 3.5;
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  transform: rotate(-90deg);
+  transform-origin: center;
+  animation: done-draw var(--motion-celebrate) var(--ease-out) 60ms forwards;
+}
+
+.done__tick {
+  stroke: var(--color-text);
+  stroke-width: 4;
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  animation: done-draw 380ms var(--ease-out) 420ms forwards;
+}
+
+@keyframes done-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.done__title {
+  font-size: var(--text-title);
+  letter-spacing: var(--tracking-tight);
+  text-wrap: balance;
+}
+
+.done--sm .done__title {
+  font-size: var(--text-lg);
+}
+
+.done__line {
+  color: var(--color-text-secondary);
+}
+
+.done__people {
+  margin-top: var(--space-2);
+}
+
+.done__action {
+  margin-top: var(--space-3);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .status--live .status__dot::after {
+    animation: none;
+  }
+
+  .done__ring,
+  .done__tick {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+
+  .done__sparks {
+    display: none;
+  }
+}
+
+.done__mark--inline {
+  width: 26px;
+  height: 26px;
+  margin: 0;
+  background: none;
+}
+
+.done__mark--inline .done__ring {
+  stroke-width: 6;
+}
+
+.done__mark--inline .done__tick {
+  stroke-width: 7;
+}
+
+/* ---- Code input: one real input under drawn boxes ----------------------------------- */
+.code-field {
+  position: relative;
+  display: block;
+  width: 100%;
+  max-width: 320px;
+  margin: var(--space-6) auto 0;
+}
+
+.code-field__input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  opacity: 0;
+  font-size: 1rem;
+  caret-color: transparent;
+}
+
+.code-field__boxes {
+  display: grid;
+  gap: var(--space-2);
+  pointer-events: none;
+}
+
+.code-field__box {
+  position: relative;
+  display: grid;
+  place-items: center;
+  height: 54px;
+  border-radius: 14px;
+  background: var(--color-surface);
+  box-shadow: inset 0 0 0 1px var(--color-border-strong);
+  font-size: 1.375rem;
+  font-weight: var(--weight-semibold);
+  transition: box-shadow var(--motion-state) var(--ease-soft), background-color var(--motion-state) var(--ease-soft), color var(--motion-state) var(--ease-soft), transform var(--motion-state) var(--ease-press);
+}
+
+.code-field__box.is-filled {
+  background: color-mix(in srgb, var(--color-text) 4%, var(--color-surface));
+  animation: code-pop var(--motion-state) var(--ease-press) 1;
+}
+
+@keyframes code-pop {
+  45% {
+    transform: scale(1.06);
+  }
+}
+
+.code-field__input:focus + .code-field__boxes .code-field__box.is-active {
+  transform: translateY(-2px);
+  box-shadow: inset 0 0 0 2px var(--color-text), 0 6px 14px -6px color-mix(in srgb, var(--color-text) 35%, transparent);
+}
+
+.code-field__input:focus + .code-field__boxes .code-field__box.is-active::after {
+  content: '';
+  width: 2px;
+  height: 22px;
+  border-radius: 1px;
+  background: var(--color-text);
+  animation: code-caret 1s steps(1) infinite;
+}
+
+@keyframes code-caret {
+  50% {
+    opacity: 0;
+  }
+}
+
+.code-field__box.is-error {
+  box-shadow: inset 0 0 0 2px var(--color-danger);
+}
+
+.code-field__box.is-success {
+  background: var(--mint-100);
+  box-shadow: inset 0 0 0 2px var(--green-500);
+  color: var(--tone-mint-fg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .code-field__box.is-filled,
+  .code-field__input:focus + .code-field__boxes .code-field__box.is-active::after {
+    animation: none;
+  }
+
+  .code-field__input:focus + .code-field__boxes .code-field__box.is-active {
+    transform: none;
+  }
+}
+
+/* ---- Contextual actions: small, embedded, three roles. Solid for the one thing, tonal for a quieter one, text for the rest. ---- */
+.act {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 36px;
+  padding: 0 var(--space-4);
+  border: 0;
+  border-radius: 12px;
+  font: inherit;
+  font-size: 0.9375rem;
+  font-weight: var(--weight-semibold);
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform var(--motion-micro) var(--ease-press), filter var(--motion-micro) var(--ease-soft), background-color var(--motion-state) var(--ease-soft);
+}
+
+/* A 44px target without a 44px button. */
+.act::after {
+  content: '';
+  position: absolute;
+  inset: -4px -2px;
+}
+
+.act:active {
+  transform: scale(var(--press-scale-small));
+  filter: brightness(var(--press-dim));
+}
+
+.act:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.act--solid {
+  background: var(--color-selected);
+  color: var(--color-on-selected);
+}
+
+.act--tonal {
+  background: color-mix(in srgb, var(--tint-solid, var(--ink-300)) 18%, var(--color-surface));
+  color: var(--tint-fg, var(--color-text));
+}
+
+.act--text {
+  min-height: 32px;
+  padding: 0;
+  background: none;
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .act:active {
+    transform: none;
+  }
+}
+
+/* ---- Shared pages: introduced by a person, in the colour of what was shared ---------------------------------- */
+.sh {
+  display: grid;
+  gap: var(--space-3);
+  padding-top: var(--space-1);
+}
+
+.sh__brand {
+  display: inline-flex;
+}
+
+.sh__from {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: fit-content;
+  max-width: 100%;
+  margin: 0;
+  padding: 4px 14px 4px 4px;
+  border-radius: 16px 16px 16px 6px;
+  background: color-mix(in srgb, var(--tint-bg) 70%, var(--surface-base));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tint-solid) 24%, transparent);
+  font-size: var(--text-sm);
+}
+
+.sh__from strong {
+  font-weight: var(--weight-semibold);
+}
+
+.sh__circle {
+  color: var(--color-text-secondary);
+}
+
+.sh__initial {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--tint-solid) 30%, var(--color-surface));
+  color: var(--tint-fg);
+  font-weight: 700;
+}
+
+/* The page itself: a soft wash of the shared thing's colour from the top, so it does not open on bare paper. */
+.share .screen__content {
+  padding-top: var(--space-4);
+  background: radial-gradient(120% 360px at 50% 0%, color-mix(in srgb, var(--tint-solid) 13%, transparent), transparent 70%);
+}
+
+/* ---- Completion, as a row in a list ---------------------------------------------------------------------- */
+.done--row {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-auto-flow: column;
+  align-items: center;
+  justify-items: start;
+  gap: var(--space-3);
+  padding: 10px 14px 10px 10px;
+  border-radius: 18px 18px 18px 6px;
+  background: linear-gradient(100deg, color-mix(in srgb, var(--sun-400) 18%, var(--color-surface)), color-mix(in srgb, var(--tint-solid) 12%, var(--color-surface)));
+  text-align: left;
+}
+
+.done__lead {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: var(--glass);
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.done__words {
+  display: grid;
+  min-width: 0;
+}
+
+.done--row .done__title {
+  overflow: hidden;
+  font-size: var(--t-body-size);
+  letter-spacing: var(--tracking-snug);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.done--row .done__line {
+  color: var(--color-text-secondary);
+  font-size: var(--t-support-size);
+}
+
+.done__rowmark {
+  --tint-solid: var(--green-500);
+}
+
+.done__rowaction {
+  display: none;
+}

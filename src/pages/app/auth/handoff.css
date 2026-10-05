@@ -1,0 +1,63 @@
+/* The thing you came for, while you sign in. */
+.handoff {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
+  padding: 10px 12px;
+  border-radius: 18px 18px 18px 6px;
+  background: color-mix(in srgb, var(--tint-solid) 12%, var(--color-surface));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--tint-solid) 24%, var(--line-quiet));
+}
+
+.handoff__icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 13px 13px 13px 5px;
+  background: var(--tint-bg);
+  color: var(--tint-fg);
+}
+
+.handoff__icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.handoff__text {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+}
+
+.handoff__text strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.handoff__text span {
+  color: var(--color-text-secondary);
+  font-size: var(--t-meta-size);
+  font-weight: var(--weight-medium);
+}
+
+.handoff__choice {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--color-selected);
+  color: var(--color-on-selected);
+  font-size: var(--t-meta-size);
+  font-weight: var(--weight-bold);
+}
+
+.handoff__choice svg {
+  width: 12px;
+  height: 12px;
+}

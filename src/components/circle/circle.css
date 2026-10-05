@@ -3,13 +3,13 @@
   place-items: center;
   flex: none;
   border-radius: 30%;
-  background: linear-gradient(160deg, color-mix(in srgb, #fff 45%, var(--tint-bg)), var(--tint-bg) 70%);
+  background: linear-gradient(160deg, color-mix(in srgb, var(--white) 45%, var(--tint-bg)), var(--tint-bg) 70%);
   /* A ring in its own colour, a lit top edge and a small tinted shadow: it reads as a thing, not a sticker. */
   box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--tint-solid) 45%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.55), 0 4px 8px -5px color-mix(in srgb, var(--tint-solid) 70%, transparent);
   line-height: 1;
 }
 
-:root[data-theme='dark'] .circle-badge {
+:is(:root[data-theme='dark'], [data-preview-theme='dark']) .circle-badge {
   background: var(--tint-bg);
   box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--tint-solid) 40%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.07);
 }
@@ -87,36 +87,6 @@
   box-shadow: inset 0 0 0 3px var(--color-text);
 }
 
-/* Circle rows and cards */
-.circle-row {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-4);
-  border-radius: var(--radius-xl);
-  background: var(--color-surface);
-  box-shadow: inset 0 0 0 1px var(--color-border);
-  min-width: 0;
-}
-
-.circle-row__text {
-  display: grid;
-  flex: 1;
-  min-width: 0;
-}
-
-.circle-row__name {
-  overflow: hidden;
-  font-weight: var(--weight-semibold);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.circle-row__meta {
-  color: var(--color-text-secondary);
-  font-size: var(--text-sm);
-}
-
 /* Create a Circle */
 .cc {
   display: grid;
@@ -160,216 +130,128 @@
   color: var(--green-500);
 }
 
-/* Circle screen */
+/* Circle screen: the group's living space. Its colour and its people come first. */
 .ch {
   display: grid;
-  justify-items: center;
-  gap: var(--space-2);
-  padding: var(--space-2) 0 var(--space-6);
-  text-align: center;
-}
-
-.ch__name {
-  max-width: 100%;
-  overflow-wrap: anywhere;
-}
-
-.ch__meta {
-  color: var(--color-text-secondary);
-}
-
-.ch > .btn {
-  margin-top: var(--space-2);
-}
-
-.ch__start {
-  display: grid;
-  justify-items: start;
-  gap: var(--space-2);
-  margin-top: var(--space-3);
-  padding: var(--space-5);
-  border-radius: var(--radius-xl);
-  background: var(--color-surface);
-  box-shadow: inset 0 0 0 1px var(--color-border);
-}
-
-.ch__start-title {
-  font-size: var(--text-h5, 1.125rem);
-  font-weight: var(--weight-semibold);
-}
-
-.ch__start-body {
-  margin-bottom: var(--space-2);
-  color: var(--color-text-secondary);
-}
-
-.ch__feed,
-.ch__members {
-  display: grid;
-  gap: var(--space-3);
-  margin: var(--space-4) 0 0;
-  padding: 0;
-  list-style: none;
-}
-
-.ch__feed li,
-.ch__members li {
-  display: flex;
+  grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
-  gap: var(--space-3);
-  min-width: 0;
+  gap: var(--space-3) var(--space-4);
+  margin-top: var(--space-2);
+  padding: var(--space-5);
+  border-radius: var(--shape-circle);
+  background: linear-gradient(160deg, color-mix(in srgb, var(--tint-solid) 28%, var(--color-surface)), color-mix(in srgb, var(--tint-solid) 10%, var(--color-surface)));
 }
-
-.ch__feed li span {
-  color: var(--color-text-secondary);
-}
-
-.ch__member-name {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  font-weight: var(--weight-medium);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.ch__owner {
-  padding: 2px var(--space-2);
-  border-radius: var(--radius-full);
-  background: var(--mint-100);
-  color: var(--tone-mint-fg);
-  font-size: var(--text-sm);
-  font-weight: var(--weight-medium);
-}
-
-.ch__remove {
-  min-height: 44px;
-  padding: 0 var(--space-2);
-  color: var(--color-text-secondary);
-  font-size: var(--text-sm);
-  text-decoration: underline;
-}
-
 .ch__edit {
   display: grid;
   gap: var(--space-4);
 }
 
-/* Circle invite page */
+/* Circle invite page: a person's invitation, the Circle's identity, and what happens there. */
 .ci {
   display: grid;
-  justify-items: center;
+  gap: var(--space-5);
+  padding-bottom: var(--space-4);
+}
+.ci__does {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ci__does li {
+  display: flex;
+  align-items: center;
   gap: var(--space-3);
-  padding: var(--space-6) 0;
+  padding: var(--space-3) 0;
+}
+
+.ci__does li + li {
+  border-top: 1px solid var(--line-quiet);
+}
+
+.ci__does li > span:last-child {
+  display: grid;
+}
+
+.ci__does li > span:last-child span {
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+}
+
+.ci__does-icon {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 13px 13px 13px 5px;
+  background: var(--tint-bg);
+  color: var(--tint-fg);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tint-solid) 26%, transparent);
+}
+
+.ci__does-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.ci__hint {
+  margin: 0;
+  color: var(--color-text-tertiary);
+  font-size: var(--text-sm);
   text-align: center;
 }
 
-.ci__inviter {
+/* The Circles list: tiles, two across. Each keeps its own tint and one live line. */
+.ch-tiles {
   display: grid;
-  place-items: center;
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background: var(--color-surface);
-  box-shadow: inset 0 0 0 3px var(--color-border);
-  border: 3px solid;
-  font-size: 1.375rem;
-  font-weight: var(--weight-semibold);
-}
-
-.ci__lead,
-.ci__meta,
-.ci__body,
-.ci__hint {
-  max-width: 34ch;
-  color: var(--color-text-secondary);
-}
-
-.ci__lead strong {
-  color: var(--color-text);
-}
-
-.ci__name {
-  max-width: 100%;
-  overflow-wrap: anywhere;
-}
-
-.ci__hint {
-  font-size: var(--text-sm);
-}
-
-/* Home shelf */
-.home-circles {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(112px, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-3);
-  margin: 0;
-  padding: 0 0 var(--space-1);
+  margin: var(--space-2) 0 0;
+  padding: 0;
   list-style: none;
-  overflow-x: auto;
-  scrollbar-width: none;
 }
 
-.home-circles::-webkit-scrollbar {
-  display: none;
-}
-
-.home-circles__item {
-  display: grid;
-  justify-items: start;
-  gap: 2px;
-  height: 100%;
-  padding: var(--space-3);
-  border-radius: var(--radius-xl);
-  background: var(--color-surface);
-  box-shadow: inset 0 0 0 1px var(--color-border);
+.ch-tiles > li {
   min-width: 0;
 }
 
-.home-circles__item .circle-badge {
-  margin-bottom: var(--space-2);
+.ch-tiles .ox-circle {
+  width: auto;
+  height: 100%;
 }
 
-.home-circles__name {
-  max-width: 100%;
-  overflow: hidden;
-  font-weight: var(--weight-semibold);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.home-circles__count {
-  color: var(--color-text-secondary);
-  font-size: var(--text-sm);
-}
-
-.home-circles__cta {
-  display: flex;
-  align-items: center;
-  gap: var(--space-4);
-  padding: var(--space-4);
-  border-radius: var(--radius-xl);
-  background: var(--color-surface);
-  box-shadow: inset 0 0 0 1px var(--color-border);
-}
-
-.home-circles__cta span:last-child {
+.ch-tiles__new {
   display: grid;
-}
-
-.home-circles__cta span:last-child span {
+  place-content: center;
+  justify-items: center;
+  gap: var(--space-2);
+  min-height: 168px;
+  height: 100%;
+  border-radius: var(--shape-circle);
+  box-shadow: inset 0 0 0 1.5px var(--color-border-strong);
   color: var(--color-text-secondary);
-  font-size: var(--text-sm);
-}
-
-.circle-row__meta {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.circle-row__meta.is-live {
-  color: var(--color-text);
   font-weight: var(--weight-semibold);
+  text-decoration: none;
+  transition: transform var(--motion-micro) var(--ease-press);
+}
+
+.ch-tiles__new:active {
+  transform: scale(var(--press-scale));
+}
+
+.ch-tiles__new svg {
+  width: 26px;
+  height: 26px;
+}
+
+/* Circle invite: the page grid and the "right now" block. */
+.ci {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.ci__now h2 {
+  margin: 0 0 var(--space-2);
 }

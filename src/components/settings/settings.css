@@ -1,0 +1,20 @@
+.st-group {
+  display: grid;
+  gap: var(--space-2);
+  margin-top: var(--space-6);
+}
+
+.st-group__title {
+  margin: 0 0 0 var(--space-1);
+  color: var(--color-text-tertiary);
+  font-size: var(--t-label-size);
+  font-weight: var(--t-label-weight);
+  letter-spacing: var(--t-label-tracking);
+  line-height: var(--t-label-line);
+  text-transform: uppercase;
+}
+
+.st-signout {
+  margin-top: var(--space-7);
+  padding-bottom: var(--space-6);
+}

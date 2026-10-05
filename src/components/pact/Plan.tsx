@@ -46,7 +46,7 @@ export function NextStep({ item, onAction }: { item: AttentionItem; onAction: (i
       </h2>
       <p className="nextstep__title">{item.title}</p>
       {item.body && <p className="nextstep__body">{item.body}</p>}
-      <Button fullWidth onClick={() => onAction(item)}>
+      <Button size="md" onClick={() => onAction(item)} className="nextstep__act">
         {item.action!.label}
       </Button>
     </section>
@@ -137,7 +137,7 @@ export function TaskList({ pact, tasks, meId, onOpen, onAdd }: { pact: Pact; tas
     <div className="tasks">
       {sorted.length === 0 ? (
         <p className="plan-empty">
-          <CircleDashed aria-hidden /> No tasks yet. Add anything the group needs to get done.
+          <CircleDashed aria-hidden /> Nothing assigned yet.
         </p>
       ) : (
         <ul className="tasks__list">

@@ -1,0 +1,89 @@
+/* Pact, on its own page: the strongest object. A tinted, richer surface that holds the title, who gave what, and the way to add to it;
+   then what you are handling and who is handling what. */
+.od-pact__hero {
+  display: grid;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+  padding: var(--space-5) var(--space-4) var(--space-4);
+  border-radius: var(--shape-pact);
+  background: linear-gradient(160deg, color-mix(in srgb, var(--tint-solid) 26%, var(--surface-focused)), color-mix(in srgb, var(--tint-solid) 8%, var(--surface-focused)));
+  box-shadow: inset 0 1px 0 var(--glass-strong), 0 0 0 1.5px color-mix(in srgb, var(--tint-solid) 45%, transparent), 0 16px 26px -20px color-mix(in srgb, var(--tint-solid) 75%, transparent);
+}
+
+.od-pact__kicker {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.od-pact__due {
+  padding: 3px 9px;
+  border-radius: 8px 8px 8px 3px;
+  background: color-mix(in srgb, var(--tint-solid) 20%, transparent);
+  color: var(--tint-fg);
+  font-size: var(--t-meta-size);
+  font-weight: var(--weight-bold);
+}
+
+.od-pact__title {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.od-pact__hero .detail__note {
+  margin: 0;
+  text-align: left;
+}
+
+.od-pact__hero .detail__ring {
+  margin-top: var(--space-2);
+}
+
+.od-pact__facts {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2px var(--space-4);
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--t-support-size);
+}
+
+.od-pact__facts b {
+  color: var(--color-text);
+}
+
+.od-pact__hero .detail__actions {
+  margin-top: var(--space-2);
+}
+
+/* Who is handling what: one thin bar, a segment per task, filling as they are done. */
+.od-pact__progress {
+  display: flex;
+  gap: 4px;
+  margin-bottom: var(--space-3);
+}
+
+.od-pact__progress i {
+  flex: 1;
+  height: 8px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--green-500) 20%, transparent);
+  transition: background-color var(--motion-celebrate) var(--ease-soft);
+}
+
+.od-pact__progress i.is-part {
+  background: color-mix(in srgb, var(--green-500) 55%, transparent);
+}
+
+.od-pact__progress i.is-on {
+  background: var(--green-500);
+}
+
+.completed__recap {
+  justify-self: center;
+  margin-top: var(--space-3);
+}

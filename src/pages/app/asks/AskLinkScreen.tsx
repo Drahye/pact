@@ -5,15 +5,15 @@ import type { AskDTO } from '../../../../shared/contracts';
 import { useAuth } from '../../../api/auth';
 import { markAskStarted, recordAskStep, recordAuthCompleted, useAskLink, useAskLinkMine, useJoinCircleFromAsk, useRespondViaLink, type Answer } from '../../../api/asks';
 import { ApiError } from '../../../api/client';
-import { PactDetailSkeleton } from '../../../components/app/Skeleton';
-import { ErrorState } from '../../../components/app/States';
+import { AskSkeleton } from '../../../components/app/DetailSkeletons';
+import { HandoffSheet, useBeginSignIn, type HandoffInput } from '../../../components/share/HandoffSheet';
+import { ShareJoin, SharedBrand, SharedFooter, SharedUnavailable } from '../../../components/share/Shared';
 import { AskView } from '../../../components/ask/AskView';
-import { PactLogo } from '../../../components/brand/PactLogo';
+import { ShareHeader } from '../../../components/objects';
+import { getUser } from '../../../data/users';
 import { Button } from '../../../components/ui/Button';
-import { Modal } from '../../../components/ui/Modal';
 import { useToast } from '../../../components/ui/Toast';
 import { reshareAsk } from '../../../lib/askShare';
-import { setReturnTo } from '../auth/flow';
 import { Screen } from '../Screen';
 import '../../../components/ask/ask.css';
 
@@ -85,20 +85,28 @@ export function AskLinkScreen() {
     }
   };
 
-  const pick = (a: Answer) => {
+  const pick = (a: Answer): Promise<void> | void => {
     markAskStarted(token, signedIn);
-    if (signedIn) return void save(a);
+    if (signedIn) return save(a);
     // Signed out: keep the pick and explain, in one sentence, why a number is needed.
     setPending(a);
     write(key(token, 'answer'), JSON.stringify(a));
     setSheet(true);
   };
 
+  const begin = useBeginSignIn();
+  const handoff = (action: HandoffInput['action']): HandoffInput => ({
+    kind: 'ask',
+    path: `/a/${token}`,
+    title: ask?.title ?? 'A question',
+    from: ask ? getUser(ask.createdBy).name : undefined,
+    action,
+    choice: action === 'answer' && pending ? ('optionId' in pending ? ask?.options.find((o) => o.id === pending.optionId)?.label : { in: 'I’m in', maybe: 'Maybe', out: 'Can’t' }[pending.attendance]) : undefined,
+  });
   const continueToSignIn = () => {
     recordAskStep(token, 'auth_started');
-    setReturnTo(`/a/${token}`);
     setSheet(false);
-    navigate('/app/auth/welcome');
+    begin(handoff('answer'));
   };
 
   const doJoin = async () => {
@@ -136,13 +144,14 @@ export function AskLinkScreen() {
     }
   }, [showJoin, token, signedIn]);
 
-  if (pub.isLoading || status === 'loading') return <Screen topBar={<Brand />}><PactDetailSkeleton label="Loading question" /></Screen>;
+  if (pub.isLoading || status === 'loading') return <Screen className="share tint--sky"><div className="al"><SharedBrand /><AskSkeleton /></div></Screen>;
   if (!ask) {
-    const err = pub.error as ApiError | undefined;
-    const message = err?.status === 410 ? 'This link is no longer active.' : err?.status === 404 ? 'This Ask is no longer available.' : undefined;
     return (
-      <Screen topBar={<Brand />}>
-        <ErrorState message={message} onRetry={message ? undefined : () => pub.refetch()} />
+      <Screen className="share tint--sky">
+        <div className="al">
+          <SharedBrand />
+          <SharedUnavailable kind="ask" error={pub.error} onRetry={() => pub.refetch()} />
+        </div>
       </Screen>
     );
   }
@@ -152,9 +161,8 @@ export function AskLinkScreen() {
   const onJoin = () => {
     if (!signedIn) {
       write(key(token, 'join'), '1');
-      setReturnTo(`/a/${token}`);
       recordAskStep(token, 'auth_started');
-      navigate('/app/auth/welcome');
+      begin(handoff('join'));
       return;
     }
     void doJoin();
@@ -164,11 +172,11 @@ export function AskLinkScreen() {
     if (r === 'copied') toast('Link copied');
     else if (r === 'failed') toast('Couldn’t share. Try again.', 'neutral');
   };
-  const circleName = `${ask.circle.name} ${ask.circle.emoji}`;
 
   return (
-    <Screen topBar={<Brand />}>
+    <Screen className={`share tint--${ask.circle.tint}`}>
       <div className="al">
+        <ShareHeader kind="ask" byId={ask.createdBy} byName={getUser(ask.createdBy).name} verb="asked the group" circleName={ask.circle.name} />
         <AskView ask={ask} meId={user?.id} busy={respond.isPending} pending={saved ? null : pending} onPick={pick}>
           {failed && pending && (
             <div className="al__retry" role="alert">
@@ -181,55 +189,21 @@ export function AskLinkScreen() {
           {!signedIn && !saved && ask.status === 'open' && <p className="ask__hint">Tap an answer. We’ll ask you to sign in so the group knows it’s you.</p>}
         </AskView>
 
-        {joined ? (
-          <div className="al__join" role="status">
-            <strong>You’re in 🎉</strong>
-            <p>You’re now part of {circleName}.</p>
-            <Button onClick={() => navigate(`/app/circles/${joined.id}`)}>Open {ask.circle.name}</Button>
-          </div>
-        ) : showJoin ? (
-          <div className="al__join">
-            <strong>This is happening in {circleName}</strong>
-            <p>Join the Circle to see the final decision and whatever they plan next.</p>
-            <Button loading={join.isPending} onClick={onJoin}>
-              Join {ask.circle.name}
-            </Button>
-          </div>
-        ) : null}
+        {(joined || showJoin) && (
+          <ShareJoin circle={ask.circle.name} tint={ask.circle.tint} joined={!!joined} loading={join.isPending} onJoin={onJoin} onOpen={() => joined && navigate(`/app/circles/${joined.id}`)} why={ask.status === 'closed' ? 'Join the Circle to see what they plan next. It’s optional.' : 'Join the Circle to see the final decision and whatever they plan next. It’s optional.'} />
+        )}
 
         {(saved || ask.status === 'closed' || joined) && (
           <Button variant="secondary" iconLeft={<Share2 />} onClick={share}>
             Share with someone
           </Button>
         )}
+        <SharedFooter />
       </div>
 
-      <Modal
-        open={sheet}
-        onClose={() => setSheet(false)}
-        title="Save your vote"
-        description="Sign in so the group knows it’s you. We’ll bring you straight back here."
-        footer={
-          <>
-            <Button fullWidth onClick={continueToSignIn}>
-              Continue
-            </Button>
-            <Button fullWidth variant="ghost" onClick={() => setSheet(false)}>
-              Not now
-            </Button>
-          </>
-        }
-      >
-        <span />
-      </Modal>
+      <HandoffSheet open={sheet} onClose={() => setSheet(false)} onContinue={continueToSignIn} h={handoff('answer')} />
     </Screen>
   );
 }
 
-function Brand() {
-  return (
-    <div className="al__brand" aria-hidden>
-      <PactLogo size="sm" />
-    </div>
-  );
-}
+export default AskLinkScreen;

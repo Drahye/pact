@@ -1,0 +1,79 @@
+.dsk {
+  display: grid;
+  gap: var(--space-4);
+  padding-block: var(--space-3) var(--space-7);
+}
+
+.dsk__lines {
+  display: grid;
+  flex: 1;
+  gap: 8px;
+  min-width: 0;
+}
+
+.dsk__id,
+.dsk__plan-top,
+.dsk__share,
+.dsk__agenda {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.dsk__plan-top {
+  align-items: flex-start;
+}
+
+.dsk__faces {
+  display: flex;
+}
+
+.dsk__face + .dsk__face {
+  margin-left: -10px;
+}
+
+.dsk__agenda {
+  padding-block: var(--space-2);
+}
+
+.dsk--ask {
+  gap: var(--space-3);
+}
+
+.dsk--ask > :nth-child(3) {
+  margin-bottom: var(--space-3);
+}
+
+.dsk__bar {
+  display: flex;
+  gap: 5px;
+}
+
+.dsk__bar > * {
+  flex: 1;
+}
+
+.dsk__rows {
+  display: grid;
+  padding: 10px 12px;
+  border-radius: 22px;
+  background: color-mix(in srgb, var(--color-text) 3.5%, var(--color-bg));
+}
+
+.dsk__rows .dsk__share {
+  min-height: 68px;
+}
+
+.dsk__hero {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: 30px 30px 22px 22px;
+  background: color-mix(in srgb, var(--mint-100) 60%, var(--color-surface));
+}
+
+.dsk__hero-body {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}

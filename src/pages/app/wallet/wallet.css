@@ -276,3 +276,7 @@
   background: transparent;
   cursor: pointer;
 }
+
+.wallet .notice {
+  margin-bottom: var(--space-3);
+}

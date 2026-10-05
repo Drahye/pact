@@ -1,14 +1,16 @@
-import { FlaskConical, Mail } from 'lucide-react';
+import { FlaskConical } from 'lucide-react';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../../api/auth';
 import { ApiError } from '../../../api/client';
 import { Loading, Notice } from '../../../components/app/States';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { TopBar } from '../../../components/ui/TopBar';
+import { OTPInput } from '../../../components/objects';
 import { Screen } from '../Screen';
 import { clearFlow, readFlow, setReturnTo, safeAppPath, writeFlow } from './flow';
+import { HandoffNote, useHandoffWords } from './HandoffNote';
 import './auth.css';
 
 /* Email: enter the address ------------------------------------------------- */
@@ -39,7 +41,7 @@ export function EmailScreen() {
 
   return (
     <Screen
-      topBar={<TopBar backTo="/app/auth/welcome" />}
+      topBar={<TopBar backTo="/app/auth/start" />}
       footer={
         <Button type="submit" form="email-form" fullWidth loading={busy} disabled={!email.trim()}>
           Continue
@@ -47,8 +49,9 @@ export function EmailScreen() {
       }
       className="auth"
     >
+      <HandoffNote />
       <h1 className="large-title">What’s your email?</h1>
-      <p className="screen-lede">We’ll send you a 6-digit code. No password to remember.</p>
+      <p className="screen-lede">{useHandoffWords()?.line ?? 'We’ll send you a 6-digit code. No password to remember.'}</p>
       <form id="email-form" className="auth__form" onSubmit={submit} noValidate>
         <Input
           label="Email"
@@ -120,7 +123,7 @@ export function EmailCodeScreen() {
   };
 
   const onChange = (v: string) => {
-    const next = v.replace(/\D/g, '').slice(0, 6);
+    const next = v;
     setCode(next);
     setError(undefined);
     if (next.length === 6) void verify(next);
@@ -139,46 +142,15 @@ export function EmailCodeScreen() {
   };
 
   return (
-    <Screen
-      topBar={<TopBar backTo="/app/auth/welcome" />}
-      footer={
-        <Button fullWidth loading={busy} disabled={code.length !== 6 || success} onClick={() => void verify(code)}>
-          Verify
-        </Button>
-      }
-      className="auth"
-    >
+    <Screen topBar={<TopBar backTo="/app/auth/start" />} className="auth">
       <h1 className="large-title">Check your email</h1>
       <p className="screen-lede">
-        We sent a code to <strong className="auth__email">{flow.email}</strong>. It expires in 10 minutes.
+        We sent a 6-digit code to
+        <br />
+        <strong className="auth__email">{flow.email}</strong>
       </p>
 
-      <label className="code-field" htmlFor="email-otp">
-        <span className="visually-hidden">6-digit code</span>
-        <input
-          ref={input}
-          id="email-otp"
-          className="code-field__input"
-          name="otp"
-          inputMode="numeric"
-          autoComplete="one-time-code"
-          enterKeyHint="done"
-          value={code}
-          onChange={(e) => onChange(e.target.value)}
-          maxLength={6}
-          disabled={busy || success}
-          autoFocus
-          aria-invalid={!!error || undefined}
-          aria-describedby={error ? 'email-otp-error' : undefined}
-        />
-        <span className="code-field__boxes" aria-hidden>
-          {Array.from({ length: 6 }, (_, i) => (
-            <span key={i} className={`code-field__box num ${i === code.length && !busy && !success ? 'is-active' : ''} ${error ? 'is-error' : ''} ${success ? 'is-success' : ''}`}>
-              {code[i] ?? ''}
-            </span>
-          ))}
-        </span>
-      </label>
+      <OTPInput ref={input} id="email-otp" value={code} onChange={onChange} busy={busy} success={success} error={!!error} describedBy={error ? 'email-otp-error' : undefined} />
       {error && <p className="field__error auth__error" id="email-otp-error" role="alert">{error}</p>}
 
       {devCode && config?.exposeDevCodes && (
@@ -192,16 +164,20 @@ export function EmailCodeScreen() {
 
       <div className="auth__resend">
         {resendIn > 0 && !expired ? (
-          <p className="num">Resend code in 0:{String(resendIn).padStart(2, '0')}</p>
+          <span className="num">Resend code in 0:{String(resendIn).padStart(2, '0')}</span>
         ) : (
-          <Button variant="ghost" size="sm" iconLeft={<Mail />} onClick={resend}>
-            Send a new code
-          </Button>
+          <button type="button" className="auth__textbtn" onClick={resend}>
+            {expired ? 'Send a new code' : 'Resend code'}
+          </button>
         )}
-        <Button variant="ghost" size="sm" to="/app/auth/welcome">
+        <Link to="/app/auth/start" className="auth__textbtn">
           Change email
-        </Button>
+        </Link>
       </div>
+
+      <Button className="auth__verify" fullWidth loading={busy} disabled={code.length !== 6 || success} onClick={() => void verify(code)}>
+        Verify
+      </Button>
     </Screen>
   );
 }
@@ -221,7 +197,7 @@ export function GoogleReturnScreen() {
     setReturnTo(safeAppPath(params.get('to')) ?? undefined);
     void completeRedirectSignIn().then((ok) => {
       // Signed in: the guest-only guard sends them on. Otherwise back to the start, with the usual Google message.
-      if (!ok) navigate('/app/auth/welcome?error=google', { replace: true });
+      if (!ok) navigate('/app/auth/start?error=google', { replace: true });
     });
   }, [completeRedirectSignIn, navigate, params]);
 
@@ -245,7 +221,7 @@ export function AuthenticateScreen() {
     const token = params.get('token');
     const type = params.get('stytch_token_type');
     window.history.replaceState(null, '', '/authenticate');
-    const fail = () => navigate('/app/auth/welcome?error=google', { replace: true });
+    const fail = () => navigate('/app/auth/start?error=google', { replace: true });
     if (!token || (type && type !== 'oauth')) {
       fail();
       return;

@@ -10,6 +10,7 @@ import { RowListSkeleton } from '../../../components/app/Skeleton';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { Modal } from '../../../components/ui/Modal';
+import { LargeTitle } from '../../../components/ui/LargeTitle';
 import { TopBar } from '../../../components/ui/TopBar';
 import { useToast } from '../../../components/ui/Toast';
 import { formatPhone } from '../../../lib/format';
@@ -51,6 +52,7 @@ export function AccountScreen() {
       toast('Google connected');
       void account.refetch();
     }
+    if (params.get('verify') === 'phone') setSheet('phone');
     if (params.get('google') === 'conflict') setNotice('This sign-in method is already connected to another PACT account. Sign in with it there, or use a different Google account.');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -72,13 +74,14 @@ export function AccountScreen() {
   };
 
   return (
-    <Screen topBar={<TopBar backTo="/app/profile" title="Account and sign-in" />}>
+    <Screen topBar={<TopBar backTo="/app/profile" title="Account and sign-in" collapse />}>
+      <LargeTitle>Account and sign-in</LargeTitle>
       {account.isLoading || !a ? (
         <RowListSkeleton count={3} label="Loading your account" />
       ) : (
         <>
           {notice && <Notice tone="sun">{notice}</Notice>}
-          <p className="menu-label">Sign in</p>
+          <p className="menu-label">Sign-in methods</p>
           <div className="menu">
             <button type="button" className="menu__row" onClick={() => setSheet('email')}>
               <span className="menu__icon tint--sky"><Mail /></span>
@@ -108,7 +111,7 @@ export function AccountScreen() {
             ) : null}
           </div>
 
-          <p className="menu-label">Trust</p>
+          <p className="menu-label">Verification</p>
           <div className="menu">
             <button type="button" className="menu__row" onClick={() => (a.phone ? setSheet({ disconnect: 'phone' }) : setSheet('phone'))} disabled={!!a.phone && a.signInMethods <= 1}>
               <span className={`menu__icon ${a.phone ? 'tint--mint' : 'tint--sun'}`}>{a.phone ? <ShieldCheck /> : <Phone />}</span>

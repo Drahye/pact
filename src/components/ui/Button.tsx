@@ -2,7 +2,8 @@ import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import './button.css';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'inverse';
+/** primary: the one confident action (green). ink: the same weight in ink, for screens that already have green. secondary: tonal. tertiary (ghost): a text-level action. inverse: on a dark surface. */
+export type ButtonVariant = 'primary' | 'ink' | 'secondary' | 'tertiary' | 'ghost' | 'inverse';
 export type ButtonSize = 'sm' | 'md' | 'lg';
 
 interface BaseProps {
@@ -21,7 +22,7 @@ type LinkProps = BaseProps & { to: string; href?: undefined; onClick?: () => voi
 type AnchorProps = BaseProps & { href: string; to?: undefined; onClick?: () => void; 'aria-label'?: string };
 
 const classes = ({ variant = "primary", size = "lg", fullWidth, loading, className }: Partial<BaseProps>) =>
-  ['btn', `btn--${variant}`, `btn--${size}`, fullWidth && 'btn--full', loading && 'is-loading', className].filter(Boolean).join(' ');
+  ['btn', `btn--${variant === 'tertiary' ? 'ghost' : variant}`, `btn--${size}`, fullWidth && 'btn--full', loading && 'is-loading', className].filter(Boolean).join(' ');
 
 function Content({ iconLeft, iconRight, children, loading }: BaseProps) {
   return (

@@ -47,7 +47,7 @@ export function BottomNav() {
           aria-label="Create"
           aria-haspopup="dialog"
           aria-expanded={create.isOpen}
-          onClick={() => create.open({ from: 'nav' })}
+          onClick={(e) => create.open({ from: 'nav', origin: e.currentTarget.getBoundingClientRect() })}
           whileTap={{ scale: 0.92 }}
           transition={spring.press}
         >

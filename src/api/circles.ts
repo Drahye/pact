@@ -78,6 +78,16 @@ export function useCircleInvitePreview(token: string) {
   });
 }
 
+/** Signed in: is this person already in the Circle the invite is for? (The public preview carries no Circle id.) */
+export function useCircleInviteMine(token: string, enabled: boolean) {
+  return useQuery({
+    queryKey: [...circleKeys.invite(token), 'mine'],
+    queryFn: () => api<{ memberOf: string | null }>('GET', `/circle-invites/${token}/mine`),
+    enabled,
+    retry: false,
+  });
+}
+
 export function useJoinCircle() {
   const qc = useQueryClient();
   return useMutation({

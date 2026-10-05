@@ -1,4 +1,3 @@
-import { Check } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../../api/auth';
@@ -6,20 +5,21 @@ import { useCircle, useCircles } from '../../../api/circles';
 import { ApiError } from '../../../api/client';
 import { useCreateSplit, useSplit, useUpdateSplit } from '../../../api/splits';
 import { CircleBadge } from '../../../components/circle/CircleBadge';
+import { CirclePicker, PeoplePicker, StepHint } from '../../../components/create/fields';
+import { useFinish } from '../../../components/create/useFinish';
 import { QuickCircle } from '../../../components/circle/QuickCircle';
 import { AmountInput } from '../../../components/ui/AmountInput';
 import { Avatar } from '../../../components/ui/Avatar';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { Segmented } from '../../../components/ui/Segmented';
-import { TopBar } from '../../../components/ui/TopBar';
 import { getUser } from '../../../data/users';
 import { equalPreview, koboInput, koboText, parseKobo } from '../../../lib/splitMoney';
-import { Screen } from '../Screen';
+import { CreateShell } from '../../../components/create/CreateShell';
 import '../../../components/ask/ask.css';
 import '../../../components/split/split.css';
 
-type Step = 'circle' | 'title' | 'amount' | 'who' | 'review';
+type Step = 'circle' | 'title' | 'paid' | 'who' | 'review';
 const EXAMPLES = ['Dinner', 'Uber to the airport', 'Groceries', 'Fuel'];
 
 /**
@@ -52,12 +52,14 @@ export function CreateSplitScreen() {
   const [custom, setCustom] = useState<Record<string, string>>({});
   const [step, setStep] = useState<Step>('title');
   const [error, setError] = useState<string>();
+  const [amountSeen, setAmountSeen] = useState(false);
+  const { done, finish } = useFinish();
   const seeded = useState({ done: false })[0];
 
   const members = useMemo(() => (circle.data?.members ?? []).map((m) => m.userId), [circle.data]);
   const needsCircleStep = !editId && !preCircle && (list.length !== 1 || madeCircle);
   const locked = !!editId && !!existing.data && !existing.data.canEditStructure;
-  const steps = useMemo<Step[]>(() => (locked ? ['title', 'review'] : needsCircleStep ? ['circle', 'title', 'amount', 'who', 'review'] : ['title', 'amount', 'who', 'review']), [needsCircleStep, locked]);
+  const steps = useMemo<Step[]>(() => (locked ? ['title', 'review'] : needsCircleStep ? ['title', 'circle', 'paid', 'who', 'review'] : ['title', 'paid', 'who', 'review']), [needsCircleStep, locked]);
   const idx = Math.max(0, steps.indexOf(step));
   const last = idx === steps.length - 1;
   const totalKobo = Math.round(total * 100);
@@ -92,7 +94,7 @@ export function CreateSplitScreen() {
   const structureLocked = locked;
 
   const valid =
-    step === 'circle' ? !!chosen : step === 'title' ? !!title.trim() : step === 'amount' ? totalKobo >= 100 : step === 'who' ? others.length >= 1 && !!paidBy : mode === 'equal' || (remaining === 0 && included.every((id) => amountFor(id) > 0));
+    step === 'circle' ? !!chosen : step === 'title' ? !!title.trim() && (locked || totalKobo >= 100) : step === 'paid' ? !!paidBy : step === 'who' ? others.length >= 1 : mode === 'equal' || (remaining === 0 && included.every((id) => amountFor(id) > 0));
 
   const toggle = (id: string) => setIncluded((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]));
   const switchMode = (m: 'equal' | 'custom') => {
@@ -116,7 +118,7 @@ export function CreateSplitScreen() {
         navigate(`/app/splits/${editId}`, { replace: true });
       } else {
         const r = await create.mutateAsync({ ...body, from: preCircle ? 'circle' : 'nav' });
-        navigate(`/app/splits/${r.data.id}`, { replace: true, state: { justCreated: true } });
+        finish({ title: 'Split created', line: `${koboText(totalKobo)} · ${title.trim()}` }, `/app/splits/${r.data.id}`, { replace: true, state: { justCreated: true } });
       }
     } catch (e) {
       setError((e as ApiError).message);
@@ -125,38 +127,38 @@ export function CreateSplitScreen() {
   const next = () => (last ? void submit() : setStep(steps[idx + 1]));
   const name = (id: string) => (id === me ? 'You' : getUser(id).name);
 
-  const heading = { circle: 'Which Circle?', title: 'What are we splitting?', amount: 'How much?', who: 'Who paid?', review: 'Split it' }[step];
+  const heading = { circle: 'Who’s it with?', title: 'What are we splitting?', paid: 'Who paid?', who: 'Who’s sharing it?', review: 'Here’s the split' }[step];
   const sub = {
-    circle: 'Who is this split with?',
-    title: 'Something that already happened.',
-    amount: 'The whole amount that was paid.',
-    who: 'Then pick who the expense was for.',
+    circle: 'Pick the Circle this was with.',
+    title: 'Something that already happened, and what it came to.',
+    paid: 'The person who covered it up front.',
+    who: 'Tick everyone whose share counts.',
     review: 'Check it, then create it.',
   }[step];
 
+  const circleName = list.find((c) => c.id === chosen);
   return (
-    <Screen
-      topBar={<TopBar leading="back" onBack={() => (idx === 0 ? navigate(-1) : setStep(steps[idx - 1]))} title={editId ? 'Edit split' : `Step ${idx + 1} of ${steps.length}`} />}
+    <CreateShell
+      kind="split"
+      stepIndex={idx}
+      steps={steps.length}
+      stepKey={step}
+      onBack={() => setStep(steps[Math.max(0, idx - 1)])}
+      onLeave={() => navigate(-1)}
+      dirty={!editId && (!!title.trim() || total > 0)}
+      done={done}
+      heading={editId && step === 'title' ? 'Edit this split' : heading}
+      sub={sub}
+      context={step !== 'circle' && circleName ? <><CircleBadge emoji={circleName.emoji} tint={circleName.tint} size="sm" /> {circleName.name}</> : undefined}
       footer={
-        <Button fullWidth onClick={next} disabled={!valid} loading={create.isPending || update.isPending}>
+        <Button fullWidth onClick={next} disabled={!valid || !!done} loading={create.isPending || update.isPending}>
           {last ? (editId ? 'Save changes' : 'Create split') : 'Next'}
         </Button>
       }
     >
-      <div className="ca">
-        <h1 className="large-title">{heading}</h1>
-        <p style={{ color: 'var(--color-text-secondary)' }}>{sub}</p>
-
         {step === 'circle' &&
           (list.length ? (
-            <div className="ca__opts" role="radiogroup" aria-label="Circle">
-              {list.map((c) => (
-                <button key={c.id} type="button" role="radio" aria-checked={chosen === c.id} className="ca__type" onClick={() => (setCircleId(c.id), (seeded.done = false))} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <CircleBadge emoji={c.emoji} tint={c.tint} size="sm" />
-                  <strong>{c.name}</strong>
-                </button>
-              ))}
-            </div>
+            <CirclePicker circles={list} value={chosen} onChange={(id) => (setCircleId(id), (seeded.done = false))} />
           ) : (
             <QuickCircle onCreated={(id) => (setCircleId(id), setMadeCircle(true))} />
           ))}
@@ -171,42 +173,24 @@ export function CreateSplitScreen() {
                 </button>
               ))}
             </div>
+            {!locked && (
+              <>
+                <AmountInput label="Total amount" value={total} onChange={(v) => (setTotal(v), setAmountSeen(true))} size="xl" />
+                <StepHint show={amountSeen && totalKobo < 100}>Enter an amount.</StepHint>
+              </>
+            )}
           </>
         )}
 
-        {step === 'amount' && <AmountInput label="Total amount" value={total} onChange={setTotal} size="xl" />}
+        {step === 'paid' && <PeoplePicker single label="Who paid" ids={members} selected={[paidBy]} onToggle={(id) => setPaidBy(id)} nameOf={name} />}
 
         {step === 'who' && (
           <>
-            <fieldset className="split-amounts" style={{ border: 0, padding: 0, margin: 0 }}>
-              <legend className="field__label">Who paid?</legend>
-              <div className="ca__chips" role="radiogroup" aria-label="Who paid">
-                {members.map((id) => (
-                  <button key={id} type="button" role="radio" aria-checked={paidBy === id} className={`ca__chip ${paidBy === id ? 'is-on' : ''}`} style={paidBy === id ? { boxShadow: 'inset 0 0 0 2px var(--green-500)' } : undefined} onClick={() => setPaidBy(id)}>
-                    {name(id)}
-                  </button>
-                ))}
-              </div>
-            </fieldset>
-            <fieldset style={{ border: 0, padding: 0, margin: 0 }}>
-              <legend className="field__label">Who was this expense for?</legend>
-              <p className="split-note">Select everyone whose share should be included. This may include the payer.</p>
-              <ul className="split-pick">
-                {members.map((id) => {
-                  const on = included.includes(id);
-                  return (
-                    <li key={id}>
-                      <button type="button" role="checkbox" aria-checked={on} className="split-pick__row" onClick={() => toggle(id)}>
-                        <Avatar userId={id} size="sm" label={false} />
-                        <span className="split-pick__name">{name(id)}</span>
-                        {on && <Check className="split-pick__mark" aria-hidden strokeWidth={3} />}
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            </fieldset>
-            {others.length < 1 && <p className="split-note">Add at least one other person to split this with.</p>}
+            <PeoplePicker label="Who is sharing this expense" ids={members} selected={included} onToggle={toggle} nameOf={name} tag={(id) => (id === paidBy ? 'Paid' : undefined)} />
+            <p className="cf__sub" role="status">
+              {included.includes(paidBy) ? `${name(paidBy)} ${paidBy === me ? 'are' : 'is'} sharing it too.` : `${name(paidBy)} paid and ${paidBy === me ? 'aren’t' : 'isn’t'} sharing it. The others cover it.`}
+            </p>
+            <StepHint show={others.length < 1}>Choose at least one other person.</StepHint>
           </>
         )}
 
@@ -263,7 +247,6 @@ export function CreateSplitScreen() {
             {error}
           </p>
         )}
-      </div>
-    </Screen>
+    </CreateShell>
   );
 }

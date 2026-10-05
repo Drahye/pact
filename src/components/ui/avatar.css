@@ -79,3 +79,26 @@
 .avatar--accent {
   box-shadow: 0 0 0 2px var(--accent-gap, var(--color-bg)), 0 0 0 4px var(--accent);
 }
+
+/* Faces arriving in turn. Each child's delay comes from its position; reduced motion shows them at once. */
+.avatar-group--enter > * {
+  animation: avatar-arrive var(--motion-state) var(--ease-press) both;
+}
+
+.avatar-group--enter > *:nth-child(2) { animation-delay: 70ms; }
+.avatar-group--enter > *:nth-child(3) { animation-delay: 140ms; }
+.avatar-group--enter > *:nth-child(4) { animation-delay: 210ms; }
+.avatar-group--enter > *:nth-child(n + 5) { animation-delay: 280ms; }
+
+@keyframes avatar-arrive {
+  from {
+    opacity: 0;
+    transform: translateX(-8px) scale(0.9);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .avatar-group--enter > * {
+    animation: none;
+  }
+}

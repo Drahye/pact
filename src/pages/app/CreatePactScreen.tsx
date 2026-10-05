@@ -1,5 +1,5 @@
-import { CalendarDays, Check, ChevronDown, ChevronRight, History, ListChecks, Phone, Plus, RotateCcw, Scale, ShoppingBag, Wallet, X } from 'lucide-react';
-import { useEffect, useId, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react';
+import { Check, ChevronDown, ChevronRight, History, Phone, Plus, RotateCcw, Scale, ShoppingBag, Wallet, X } from 'lucide-react';
+import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ApiError, newIdempotencyKey } from '../../api/client';
 import { useCreatePact, useRecentPeople } from '../../api/hooks';
@@ -13,8 +13,6 @@ import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { Modal } from '../../components/ui/Modal';
 import { Segmented } from '../../components/ui/Segmented';
-import { TopBar } from '../../components/ui/TopBar';
-import { useToast } from '../../components/ui/Toast';
 import type { PactCategory } from '../../data/types';
 import { getUser } from '../../data/users';
 import { addDaysIso, isoDay } from '../../lib/dates';
@@ -22,7 +20,11 @@ import { clearDraft, pushRecent, readDraft, readRecents, useSaveDraft } from '..
 import { daysUntil, formatDate, formatDaysLeft, formatNaira, joinNames, parseAmount, formatAmountInput, toKobo } from '../../lib/format';
 import { PACT_TYPES, TEMPLATES } from '../../../shared/templates';
 import { inferCategory } from '../../lib/pact';
-import { Screen } from './Screen';
+import { CreateShell } from '../../components/create/CreateShell';
+import { DateField, PeoplePicker, StepHint } from '../../components/create/fields';
+import { useFinish } from '../../components/create/useFinish';
+import { useCircle } from '../../api/circles';
+import { useAuth } from '../../api/auth';
 import '../../components/app/app-ui.css';
 import './create.css';
 
@@ -34,6 +36,9 @@ interface Line {
   amount: number;
 }
 let lineKey = 0;
+
+type Step = 'what' | 'who' | 'todo' | 'when' | 'review';
+const STEPS: Step[] = ['what', 'who', 'todo', 'when', 'review'];
 
 interface ItemDraft {
   key: number;
@@ -89,7 +94,6 @@ const normalizePhone = (raw: string) => {
 
 export function CreatePactScreen() {
   const navigate = useNavigate();
-  const toast = useToast();
   const create = useCreatePact();
   // Started from inside a Circle (the create sheet passes ?circle=). The server checks they are in it.
   const [params] = useSearchParams();
@@ -113,8 +117,6 @@ export function CreatePactScreen() {
   });
   const [recentPhones] = useState(() => readRecents<{ phone: string }>('invite-phones'));
   const [restored, setRestored] = useState(!!saved);
-  // Optional parts stay closed unless a restored draft already has something in them.
-  const [tasksOpen, setTasksOpen] = useState(!!saved?.tasks?.length);
   const [rulesOpen, setRulesOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const [title, setTitle] = useState(saved?.title ?? '');
@@ -138,6 +140,19 @@ export function CreatePactScreen() {
   const [lines, setLines] = useState<Line[]>(saved?.lines ?? []);
   const [tasks, setTasks] = useState<string[]>(saved?.tasks ?? []);
   const [taskDraft, setTaskDraft] = useState('');
+  const [step, setStep] = useState<Step>('what');
+  const { done, finish } = useFinish();
+  const { user } = useAuth();
+  const circle = useCircle(circleId);
+  const circleMembers = (circle.data?.members ?? []).map((m) => m.userId).filter((id) => id !== user?.id);
+  // Started from a Circle: its people are the likely ones, ticked to begin with and free to untick. Not when a draft or a Plan already chose.
+  const seededPeople = useRef(!!saved || !!planId);
+  useEffect(() => {
+    if (seededPeople.current || !circleMembers.length) return;
+    seededPeople.current = true;
+    setInvitees(circleMembers);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [circleMembers.length]);
   const category = picked ?? inferCategory(title);
   const template = TEMPLATES[category];
   const budgetTotal = lines.reduce((sum, l) => sum + l.amount, 0);
@@ -153,7 +168,6 @@ export function CreatePactScreen() {
     setTarget(d.target ? Math.round(d.target / 100) : 0);
     setDeadline(d.deadline ?? '');
     setTasks(d.tasks);
-    setTasksOpen(d.tasks.length > 0);
     setInvitees(d.inviteUserIds);
     setRestored(false);
   }, [planDraft.data]);
@@ -204,8 +218,7 @@ export function CreatePactScreen() {
     setRestored(false);
   };
 
-  const submit = async (e: FormEvent) => {
-    e.preventDefault();
+  const submit = async () => {
     setTouched(true);
     if (!valid) return;
     setError(undefined);
@@ -240,8 +253,7 @@ export function CreatePactScreen() {
       });
       clearDraft(DRAFT_KEY);
       phones.forEach((phone) => pushRecent('invite-phones', { phone }, (x) => x.phone, 6));
-      toast('Pact created');
-      navigate(`/app/pact/${r.data.pact.id}/invite`, { replace: true, state: { created: true } });
+      finish({ title: 'Your Pact is made', line: title.trim(), strong: true }, `/app/pact/${r.data.pact.id}/invite`, { replace: true, state: { created: true } });
     } catch (err) {
       setError((err as ApiError).message);
     }
@@ -256,27 +268,56 @@ export function CreatePactScreen() {
     setPhoneError(undefined);
   };
 
-  return (
-    <Screen
-      topBar={<TopBar leading="close" backTo="/app/home" title="New Pact" />}
-      footer={
-        <Button type="submit" form="create-pact" fullWidth loading={create.isPending}>
-          {goal >= 1000 ? `Create Pact · ${formatNaira(goal)}` : 'Create Pact'}
-        </Button>
-      }
-      className="create"
-    >
-      {planId && (
-        <Notice tone={planDraft.error ? 'danger' : 'accent'}>
-          {planDraft.error
-            ? (planDraft.error as ApiError).message
-            : `Started from your plan${planInfo.data ? ` “${planInfo.data.title}”` : ''}. Set the target, deadline and rules, then confirm. Nothing is created until you do.`}
-        </Notice>
-      )}
-      <h1 className="large-title">What are you planning?</h1>
-      <p className="screen-lede">Name it, pick a date, say roughly how much. Everything else can wait.</p>
+  const idx = STEPS.indexOf(step);
+  const last = step === 'review';
+  const firstError = errors.target ?? errors.deadline;
+  const stepValid = step === 'what' ? !errors.title : step === 'when' ? !errors.target && !errors.deadline : step === 'review' ? valid : true;
+  const optional = step === 'who' || step === 'todo';
+  const leave = () => navigate(circleId ? `/app/circles/${circleId}` : planId ? `/app/plans/${planId}` : '/app/home');
+  const next = () => (last ? void submit() : setStep(STEPS[idx + 1]));
+  const heading = { what: 'What are we committing to?', who: 'Who’s in?', todo: 'What needs to happen?', when: 'How much, and by when?', review: 'Ready to make it real?' }[step];
+  const sub = {
+    what: 'Name it. A Pact is something your people will actually do.',
+    who: circleMembers.length ? 'Your Circle is ticked. Untick anyone, or add someone new.' : 'You’ll also get a link to share with anyone.',
+    todo: 'Jobs people can pick up once they’re in. Skip if it’s just money.',
+    when: mode === 'orders' ? 'Items people can order, and the date they pay by.' : 'A rough number is fine, and the day it needs to be ready.',
+    review: 'Check it over. Nothing is created until you say so.',
+  }[step];
+  const deadlineQuick = [
+    { label: 'In 1 week', value: addDaysIso(isoDay(new Date()), 7) },
+    { label: 'In 2 weeks', value: addDaysIso(isoDay(new Date()), 14) },
+    { label: 'In a month', value: addDaysIso(isoDay(new Date()), 30) },
+  ];
 
-      {restored && (
+  return (
+    <CreateShell
+      kind="pact"
+      stepIndex={idx}
+      steps={STEPS.length}
+      stepKey={step}
+      onBack={() => setStep(STEPS[Math.max(0, idx - 1)])}
+      onLeave={leave}
+      dirty={!untouched}
+      keepNote={planId ? undefined : 'Your Pact is saved on this device, so you can pick it up again.'}
+      done={done}
+      heading={heading}
+      sub={sub}
+      context={planId && planInfo.data && step !== 'review' ? <>From your plan “{planInfo.data.title}”</> : undefined}
+      footer={
+        <>
+          <Button fullWidth onClick={next} disabled={!stepValid || !!done} loading={create.isPending}>
+            {last ? (goal >= 1000 ? `Create Pact · ${formatNaira(goal)}` : 'Create Pact') : 'Next'}
+          </Button>
+          {optional && (
+            <Button fullWidth variant="ghost" onClick={() => setStep(STEPS[idx + 1])}>
+              Skip
+            </Button>
+          )}
+        </>
+      }
+    >
+      {planId && planDraft.error && step === 'what' && <Notice tone="danger">{(planDraft.error as ApiError).message}</Notice>}
+      {restored && step === 'what' && (
         <Notice tone="accent" icon={<History />}>
           We kept what you’d filled in.{' '}
           <button type="button" className="link" onClick={startOver}>
@@ -285,61 +326,81 @@ export function CreatePactScreen() {
         </Notice>
       )}
 
-      <form id="create-pact" className="create__form" onSubmit={submit} noValidate>
-        <Input
-          label="Name"
-          placeholder={template.placeholder}
-          value={title}
-          maxLength={60}
-          onChange={(e) => setTitle(e.target.value)}
-          error={touched ? errors.title : undefined}
-          autoComplete="off"
-        />
-
-        <div className="create__kinds" role="radiogroup" aria-label="Kind of plan (optional)">
-          {kinds.map((k) => (
-            <button
-              key={k.value}
-              type="button"
-              role="radio"
-              aria-checked={category === k.value}
-              className={`create__kind tint--${categoryMeta[k.value].tint} ${category === k.value ? 'is-on' : ''}`}
-              onClick={() => setPicked(k.value)}
-            >
-              {categoryMeta[k.value].icon}
-              {k.label}
-            </button>
-          ))}
-        </div>
-
-        <Input
-          label="When is it happening?"
-          type="date"
-          min={minDate}
-          value={deadline}
-          onChange={(e) => setDeadline(e.target.value)}
-          error={touched ? errors.deadline : undefined}
-          trailing={<CalendarDays />}
-          hint={deadline && !errors.deadline ? `${formatDate(deadline)} · ${formatDaysLeft(daysUntil(deadline))}` : 'Up to a year from today'}
-          className={deadline ? '' : 'is-empty'}
-          autoComplete="off"
-        />
-        <div className="suggest" role="group" aria-label="Quick dates">
-          {[
-            { label: 'In 1 week', days: 7 },
-            { label: 'In 2 weeks', days: 14 },
-            { label: 'In a month', days: 30 },
-          ].map((q) => {
-            const v = addDaysIso(isoDay(new Date()), q.days);
-            return (
-              <button key={q.label} type="button" className={`suggest__chip ${deadline === v ? 'is-on' : ''}`} aria-pressed={deadline === v} onClick={() => setDeadline(v)}>
-                {deadline === v && <Check aria-hidden />} {q.label}
+      {step === 'what' && (
+        <>
+          <Input label="Name" placeholder={template.placeholder} value={title} maxLength={60} autoFocus onChange={(e) => setTitle(e.target.value)} onBlur={() => setTouched(true)} onKeyDown={(e) => e.key === 'Enter' && title.trim() && next()} autoComplete="off" enterKeyHint="next" />
+          <StepHint show={touched && !title.trim()}>{errors.title}</StepHint>
+          <div className="create__kinds" role="radiogroup" aria-label="Kind of Pact (optional)">
+            {kinds.map((k) => (
+              <button key={k.value} type="button" role="radio" aria-checked={category === k.value} className={`create__kind tint--${categoryMeta[k.value].tint} ${category === k.value ? 'is-on' : ''}`} onClick={() => setPicked(k.value)}>
+                {categoryMeta[k.value].icon}
+                {k.label}
               </button>
-            );
-          })}
+            ))}
+          </div>
+        </>
+      )}
+
+      {step === 'who' && (
+        <>
+          {circleMembers.length > 0 && <PeoplePicker label="People in your Circle" ids={circleMembers} selected={invitees} onToggle={toggle} nameOf={(id) => getUser(id).name} />}
+          <button type="button" className="create__invite" onClick={() => setPickerOpen(true)}>
+            {phones.length || invitees.some((id) => !circleMembers.includes(id)) ? (
+              <>
+                <AvatarGroup userIds={invitees.filter((id) => !circleMembers.includes(id))} max={4} size="sm" />
+                <span className="create__invite-text">{joinNames([...invitees.filter((id) => !circleMembers.includes(id)).map((id) => getUser(id).name), ...phones], 2)}</span>
+              </>
+            ) : (
+              <span className="create__invite-text">{circleMembers.length ? 'Add someone else' : 'Invite people now'}</span>
+            )}
+            <ChevronRight aria-hidden />
+          </button>
+        </>
+      )}
+
+      {step === 'todo' && (
+<div className="field">
+          <div className="suggest">
+            {[...template.tasks, ...tasks.filter((t) => !template.tasks.includes(t))].map((t) => {
+              const on = tasks.includes(t);
+              return (
+                <button key={t} type="button" className={`suggest__chip ${on ? 'is-on' : ''}`} aria-pressed={on} onClick={() => toggleTask(t)}>
+                  {on ? <Check aria-hidden /> : <Plus aria-hidden />} {t}
+                </button>
+              );
+            })}
+          </div>
+          <div className="create__task-add">
+            <input
+              className="field__input create__task-input"
+              aria-label="Add your own task"
+              placeholder="Add your own"
+              value={taskDraft}
+              maxLength={80}
+              onChange={(e) => setTaskDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && taskDraft.trim()) {
+                  e.preventDefault();
+                  if (!tasks.includes(taskDraft.trim())) setTasks((l) => [...l, taskDraft.trim()]);
+                  setTaskDraft('');
+                }
+              }}
+            />
+          </div>
+          <p className="field__hint">People can pick these up once they join. {tasks.length ? `${tasks.length} selected.` : ''}</p>
         </div>
+              )}
 
-
+      {step === 'when' && (
+        <>
+          <DateField
+            label={mode === 'orders' ? 'Pay by' : 'When does it need to be ready?'}
+            value={deadline}
+            min={minDate}
+            quick={deadlineQuick}
+            onChange={(v) => (setDeadline(v), setTouched(true))}
+            hint={deadline && !errors.deadline ? `${formatDate(deadline)} · ${formatDaysLeft(daysUntil(deadline))}` : undefined}
+          />
         <div className="field">
           <span className="field__label">{mode === 'orders' ? 'What are people ordering?' : 'Roughly how much do you need?'}</span>
           {mode === 'orders' && <p className="field__hint">For aso-ebi, souvenirs or tickets: people order what they want, and the total is what they order.</p>}
@@ -444,60 +505,52 @@ export function CreatePactScreen() {
           </button>
         )}
 
-        <Disclosure icon={<ListChecks aria-hidden />} title="Add things that need doing" summary={tasks.length ? `${tasks.length} added` : 'Optional'} open={tasksOpen} onToggle={() => setTasksOpen((o) => !o)}>
-        <div className="field">
-          <div className="suggest">
-            {[...template.tasks, ...tasks.filter((t) => !template.tasks.includes(t))].map((t) => {
-              const on = tasks.includes(t);
-              return (
-                <button key={t} type="button" className={`suggest__chip ${on ? 'is-on' : ''}`} aria-pressed={on} onClick={() => toggleTask(t)}>
-                  {on ? <Check aria-hidden /> : <Plus aria-hidden />} {t}
-                </button>
-              );
-            })}
-          </div>
-          <div className="create__task-add">
-            <input
-              className="field__input create__task-input"
-              aria-label="Add your own task"
-              placeholder="Add your own"
-              value={taskDraft}
-              maxLength={80}
-              onChange={(e) => setTaskDraft(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && taskDraft.trim()) {
-                  e.preventDefault();
-                  if (!tasks.includes(taskDraft.trim())) setTasks((l) => [...l, taskDraft.trim()]);
-                  setTaskDraft('');
-                }
-              }}
-            />
-          </div>
-          <p className="field__hint">People can pick these up once they join. {tasks.length ? `${tasks.length} selected.` : ''}</p>
-        </div>
-        </Disclosure>
+          <StepHint show={touched && !!firstError}>{firstError}</StepHint>
+        {mode !== 'orders' && (
+          <Disclosure icon={<ShoppingBag aria-hidden />} title="More ways to use PACT" summary="Group orders" open={moreOpen} onToggle={() => setMoreOpen((o) => !o)}>
+            <button type="button" className="choice" onClick={() => { setMode('orders'); if (!items.length) addItem(); }}>
+              <span className="choice__icon tint--pink"><ShoppingBag /></span>
+              <span className="choice__text">
+                <span className="choice__title">Group order</span>
+                <span className="choice__sub">Aso-ebi, shirts, tickets: people order what they want and pay for their own.</span>
+              </span>
+              <ChevronRight aria-hidden />
+            </button>
+          </Disclosure>
+        )}
 
-        <div className="field">
-          <span className="field__label" id="invite-label">
-            Bring your people <span className="field__optional">Optional</span>
-          </span>
-          <button type="button" className="create__invite" onClick={() => setPickerOpen(true)} aria-describedby="invite-label">
-            {count ? (
-              <>
-                {invitees.length > 0 && <AvatarGroup userIds={invitees} max={4} size="sm" />}
-                <span className="create__invite-text">
-                  {joinNames([...invitees.map((id) => getUser(id).name), ...phones], 2)}
-                </span>
-              </>
-            ) : (
-              <span className="create__invite-text">Invite people now</span>
+        </>
+      )}
+
+      {step === 'review' && (
+        <>
+          <section className={`create__summary tint--${categoryMeta[category].tint}`} aria-label="Your Pact">
+            <p className="create__summary-kind">
+              {categoryMeta[category].icon} {TEMPLATES[category].label}
+            </p>
+            <h2 className="create__summary-title t-page">{title.trim()}</h2>
+            <p className="create__summary-line num">
+              <strong>{formatNaira(goal)}</strong> by {formatDate(deadline, { month: 'short', day: 'numeric' })} · {formatDaysLeft(daysUntil(deadline))}
+            </p>
+            <p className="create__summary-people">
+              {count ? (
+                <>
+                  <AvatarGroup userIds={invitees} max={5} size="sm" />
+                  <span>{joinNames([...invitees.map((id) => getUser(id).name), ...phones], 2)} invited</span>
+                </>
+              ) : (
+                <span>Just you for now. You’ll get a link to share.</span>
+              )}
+            </p>
+            {tasks.length > 0 && (
+              <ul className="create__summary-tasks" aria-label="Things that need doing">
+                {tasks.slice(0, 4).map((t) => (
+                  <li key={t}>{t}</li>
+                ))}
+                {tasks.length > 4 && <li>+{tasks.length - 4} more</li>}
+              </ul>
             )}
-            <ChevronRight aria-hidden />
-          </button>
-          <p className="field__hint">You’ll also get a link to share with anyone.</p>
-        </div>
-
-
+          </section>
         {mode === 'orders' ? (
           <Notice icon={<Scale />}>
             The date above is the pay-by date. People pay for their own orders by then, and PACT reminds them on the day. Unpaid orders are released after it.
@@ -564,21 +617,9 @@ export function CreatePactScreen() {
           </div>
         )}
 
-        {mode !== 'orders' && (
-          <Disclosure icon={<ShoppingBag aria-hidden />} title="More ways to use PACT" summary="Group orders" open={moreOpen} onToggle={() => setMoreOpen((o) => !o)}>
-            <button type="button" className="choice" onClick={() => { setMode('orders'); if (!items.length) addItem(); }}>
-              <span className="choice__icon tint--pink"><ShoppingBag /></span>
-              <span className="choice__text">
-                <span className="choice__title">Group order</span>
-                <span className="choice__sub">Aso-ebi, shirts, tickets: people order what they want and pay for their own.</span>
-              </span>
-              <ChevronRight aria-hidden />
-            </button>
-          </Disclosure>
-        )}
-
-        {error && <Notice tone="danger">{error}</Notice>}
-      </form>
+          {error && <Notice tone="danger">{error}</Notice>}
+        </>
+      )}
 
       <Modal
         open={pickerOpen}
@@ -668,6 +709,6 @@ export function CreatePactScreen() {
           </>
         )}
       </Modal>
-    </Screen>
+    </CreateShell>
   );
 }

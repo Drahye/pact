@@ -1,15 +1,15 @@
-import { Check, Ellipsis, Link2, Plus, Share2 } from 'lucide-react';
+import { ArrowRight, Check, ChevronRight, Ellipsis, Link2, Plus, Share2 } from 'lucide-react';
 import { useState } from 'react';
-import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import type { Attendance, PlanDTO, PlanStatus } from '../../../../shared/contracts';
 import { useAuth } from '../../../api/auth';
 import { useCircleAsks } from '../../../api/asks';
 import { ApiError } from '../../../api/client';
 import { useAddTask, useDeleteTask, useHandOverPlan, useLinkAsk, usePatchTask, usePlan, useResetPlanLink, useRsvp, useSetRsvpOpen, useSetPlanStatus, useUpdatePlan } from '../../../api/plans';
-import { PactDetailSkeleton } from '../../../components/app/Skeleton';
+import { PlanSkeleton } from '../../../components/app/DetailSkeletons';
 import { ErrorState, Notice } from '../../../components/app/States';
-import { AskCard } from '../../../components/ask/AskCard';
-import { PlanHeading, RsvpButtons } from '../../../components/plan/PlanBits';
+import { statusLabel } from '../../../components/plan/PlanBits';
+import { ActivityRow, PlanObject } from '../../../components/objects';
 import { AmountInput } from '../../../components/ui/AmountInput';
 import { Avatar } from '../../../components/ui/Avatar';
 import { Button } from '../../../components/ui/Button';
@@ -17,7 +17,6 @@ import { IconButton } from '../../../components/ui/IconButton';
 import { Input } from '../../../components/ui/Input';
 import { HandOverSheet } from '../../../components/circle/HandOverSheet';
 import { Modal } from '../../../components/ui/Modal';
-import { SectionHeading } from '../../../components/ui/SectionHeading';
 import { TopBar } from '../../../components/ui/TopBar';
 import { useToast } from '../../../components/ui/Toast';
 import { getUser } from '../../../data/users';
@@ -26,6 +25,8 @@ import { sharePlan } from '../../../lib/planShare';
 import { startPactPath } from '../../../lib/startPactPath';
 import { Screen } from '../Screen';
 import '../../../components/plan/plan.css';
+import '../object-detail.css';
+import './plan-detail.css';
 
 type Sheet = null | 'menu' | 'edit' | 'link' | 'pact' | 'cancel' | 'reset' | 'sure' | 'hand';
 const attLabel: Record<Attendance, string> = { in: 'In', maybe: 'Maybe', out: 'Can’t' };
@@ -88,12 +89,11 @@ export function PlanScreen() {
   const circleAsks = useCircleAsks(plan.data?.circleId);
   const [sheet, setSheet] = useState<Sheet>(null);
   const [task, setTask] = useState('');
-  const [changing, setChanging] = useState(false);
   const [ask, setAsk] = useState<{ body: Record<string, unknown>; message: string } | null>(null);
   const [draft, setDraft] = useState({ title: '', date: '', endDate: '', location: '', budget: 0 });
   const justCreated = (location.state as { justCreated?: boolean } | null)?.justCreated === true;
 
-  if (plan.isLoading) return <Screen topBar={<TopBar backTo="/app/circles" />}><PactDetailSkeleton label="Loading plan" /></Screen>;
+  if (plan.isLoading) return <Screen topBar={<TopBar backTo="/app/circles" />}><PlanSkeleton /></Screen>;
   if (plan.error || !plan.data) {
     const gone = (plan.error as ApiError)?.status === 404;
     return (
@@ -104,6 +104,8 @@ export function PlanScreen() {
   }
   const p: PlanDTO = plan.data;
   const open = p.status === 'planning' || p.status === 'confirmed';
+  // Once a Pact exists the Plan is the record: nothing here is edited or added to.
+  const live = open && !p.pactId;
   // Closing RSVPs stops everyone else; the organiser can still answer for themselves.
   const canAnswer = p.rsvpOpen || p.createdBy === user?.id;
   const name = (uid: string) => (uid === user?.id ? 'You' : getUser(uid).name);
@@ -167,97 +169,138 @@ export function PlanScreen() {
         />
       }
     >
-      <div className="plan-section" style={{ gap: 'var(--space-5)', paddingBottom: 'var(--space-6)' }}>
-        <PlanHeading plan={p} counts={p.counts} note />
-        {justCreated && open && <Notice tone="accent">Your plan is up. Share it so people can say if they’re in.</Notice>}
-        {p.pactId && <Notice tone="neutral">This Plan already has a Pact. Changes here won’t change the Pact.</Notice>}
+      <div className="od-plan">
+        {p.pactId && (
+          <Link to={`/app/pact/${p.pactId}`} className="od-handoff tint--mint">
+            <span className="od-handoff__flow" aria-hidden>
+              <span>Plan</span>
+              <ArrowRight />
+              <span>Pact</span>
+            </span>
+            <strong>{p.status === 'done' ? 'Completed. You made it happen.' : 'This is a Pact now'}</strong>
+            <span className="od-handoff__line">{p.status === 'done' ? 'See what the group did together.' : 'Money, tasks and the deadline live there. This Plan stays as the record.'}</span>
+            <span className="act act--solid od-handoff__go">
+              Open Pact
+              <ChevronRight aria-hidden />
+            </span>
+          </Link>
+        )}
 
-        {/* 1. Your response */}
-        <section className="plan-section" aria-labelledby="rsvp-h">
-          {p.mine !== null && !changing ? (
-            <>
-              <h2 id="rsvp-h" className="plan-section__title">
-                {p.mine === 'in' ? 'You’re in ✓' : p.mine === 'maybe' ? 'You’re a maybe' : 'You can’t make it'}
-              </h2>
-              {open && canAnswer && (
-                <div className="plan-section__row">
-                  <Button variant="ghost" onClick={() => setChanging(true)}>
-                    Change response
-                  </Button>
-                </div>
-              )}
-            </>
-          ) : (
-            <>
-              <h2 id="rsvp-h" className="plan-section__title">
-                Are you coming?
-              </h2>
-              <RsvpButtons
-                value={p.mine}
-                disabled={!open || !canAnswer || rsvp.isPending}
-                onPick={async (a) => {
-                  if (await act(() => rsvp.mutateAsync(a))) setChanging(false);
-                }}
-              />
-            </>
-          )}
-          {open && !p.rsvpOpen && !canAnswer && <p className="plan-note">RSVPs are closed.{p.mine ? ' Your answer is saved.' : ''}</p>}
-          {!open && <p className="plan-note">{p.status === 'done' ? 'This plan happened.' : 'This plan was cancelled.'}</p>}
-          {p.status === 'done' && (
-            <div className="plan-section__row">
-              <Button variant="secondary" to={`/app/recap/plan/${p.id}`}>
-                View recap
-              </Button>
-            </div>
-          )}
-        </section>
+        <PlanObject
+          heading
+          title={p.title}
+          date={p.date}
+          endDate={p.endDate}
+          location={p.location}
+          goingIds={p.rsvps.filter((r) => r.status === 'in').map((r) => r.userId)}
+          going={p.counts.in}
+          maybe={p.counts.maybe}
+          status={p.pactId ? 'Became a Pact' : statusLabel[p.status]}
+          history={!!p.pactId}
+          done={p.status === 'done' && !p.pactId}
+          rsvp={p.mine}
+          onRsvp={live && canAnswer ? (a) => void act(() => rsvp.mutateAsync(a)) : undefined}
+          disabled={rsvp.isPending}
+          decisions={p.asks.map((a) => ({ id: a.id, question: a.title, leading: a.status === 'closed' ? a.headline : a.responseCount ? a.headline : undefined, to: `/app/asks/${a.id}?from=circle`, mine: a.answered || a.status === 'closed' }))}
+        />
+
+        {justCreated && open && <Notice tone="accent">Your plan is up. Share it so people can say if they’re in.</Notice>}
+        {!(live && canAnswer) && (
+          <p className="od-note od-yours" role="status">
+            {p.mine ? (p.mine === 'in' ? 'You’re in.' : p.mine === 'maybe' ? 'You’re a maybe.' : 'You can’t make it.') : null}{' '}
+            {open && !p.rsvpOpen && !canAnswer ? `RSVPs are closed.${p.mine ? ' Your answer is saved.' : ''}` : !open ? (p.status === 'done' ? 'This plan happened.' : 'This plan was cancelled.') : ''}
+          </p>
+        )}
+        {p.status === 'done' && !p.pactId && (
+          <Button variant="secondary" to={`/app/recap/plan/${p.id}`}>
+            View recap
+          </Button>
+        )}
 
         {/* Organiser prompt for what is still missing (never shown to others) */}
         {p.canEdit && open && (!p.date || !p.location) && (
-          <p className="plan-note">
+          <p className="od-note">
             <button type="button" className="plan-task__take" onClick={openEdit}>
               Add {!p.date && !p.location ? 'a date and place' : !p.date ? 'a date' : 'a place'}
             </button>
           </p>
         )}
 
-        {/* 2. Decisions */}
-        {(p.asks.length > 0 || open) && (
-          <section className="plan-section" aria-labelledby="dec-h">
-            <SectionHeading id="dec-h" title="Decisions" />
-            {p.asks.length > 0 && (
-              <ul className="list-stack" aria-label="Questions for this plan">
-                {p.asks.map((a) => (
-                  <li key={a.id}>
-                    <AskCard ask={a} from="circle" />
+        {live && (
+          <div className="od-plan__asks">
+            <Link className="act act--tonal tint--sky" to={`/app/asks/new?circle=${p.circleId}&plan=${p.id}`}>
+              <Plus aria-hidden /> Ask the group
+            </Link>
+            {loose.length > 0 && (
+              <button type="button" className="act act--text" onClick={() => setSheet('link')}>
+                <Link2 aria-hidden /> Link a question
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Who is coming, by answer, as faces */}
+        <section className="od-who" aria-labelledby="who-h">
+          <h2 id="who-h" className="t-section">
+            Who’s in
+          </h2>
+          {(
+            [
+              ['in', 'In'],
+              ['maybe', 'Maybe'],
+              ['out', 'Can’t make it'],
+            ] as const
+          ).map(([st, label]) => {
+            const rows = p.rsvps.filter((r) => r.status === st);
+            return rows.length ? (
+              <div key={st} className={`od-who__group od-who__group--${st}`}>
+                <h3 className="t-label od-label">
+                  {label} <span className="num">{rows.length}</span>
+                </h3>
+                <ul className="od-faces">
+                  {rows.map((r) => (
+                    <li key={r.userId}>
+                      <Avatar userId={r.userId} size={st === 'in' ? 'lg' : 'md'} label={false} />
+                      <span>{name(r.userId)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null;
+          })}
+          {p.waiting.length > 0 && (
+            <div className="od-who__group od-who__group--waiting">
+              <h3 className="t-label od-label">
+                No response <span className="num">{p.waiting.length}</span>
+              </h3>
+              <ul className="od-faces">
+                {p.waiting.map((uid) => (
+                  <li key={uid}>
+                    <Avatar userId={uid} size="md" pending label={false} />
+                    <span>{name(uid)}</span>
                   </li>
                 ))}
               </ul>
-            )}
-            {open && (
-              <div className="plan-section__row">
-                <Button variant="secondary" iconLeft={<Plus />} to={`/app/asks/new?circle=${p.circleId}&plan=${p.id}`}>
-                  Ask the group
-                </Button>
-                {loose.length > 0 && (
-                  <Button variant="ghost" iconLeft={<Link2 />} onClick={() => setSheet('link')}>
-                    Link a question
-                  </Button>
-                )}
-              </div>
-            )}
-          </section>
-        )}
+            </div>
+          )}
+        </section>
 
-        {/* 3. To do */}
-        {(p.tasks.length > 0 || open) && (
-          <section className="plan-section" aria-labelledby="todo-h">
-            <SectionHeading id="todo-h" title="To do" />
+        {/* Who is doing what. Once there is a Pact, the doing happens there. */}
+        {p.pactId && p.tasks.length > 0 && (
+          <p className="od-note">
+            {p.tasks.filter((t) => t.status === 'done').length} of {p.tasks.length} {p.tasks.length === 1 ? 'task' : 'tasks'} done here. The Pact keeps the list from now on.
+          </p>
+        )}
+        {!p.pactId && (p.tasks.length > 0 || live) && (
+          <section className="od-section" aria-labelledby="todo-h">
+            <h2 id="todo-h" className="t-section">
+              Who’s doing what
+            </h2>
             {p.tasks.length > 0 && (
               <ul className="plan-tasks">
                 {p.tasks.map((t) => {
                   const mineTask = t.assigneeId === user?.id;
-                  const canFinish = open && (mineTask || p.canEdit);
+                  const canFinish = live && (mineTask || p.canEdit);
                   return (
                     <li key={t.id} className={`plan-task ${t.status === 'done' ? 'is-done' : ''}`}>
                       <button
@@ -281,13 +324,13 @@ export function PlanScreen() {
                           {name(t.assigneeId)}
                         </span>
                       ) : (
-                        open && (
+                        live && (
                           <button type="button" className="plan-task__take" onClick={() => void act(() => patchTask.mutateAsync({ taskId: t.id, assigneeId: user!.id }), 'It’s yours')}>
                             I’ll do it
                           </button>
                         )
                       )}
-                      {open && (p.canEdit || t.createdBy === user?.id) && (
+                      {live && (p.canEdit || t.createdBy === user?.id) && (
                         <IconButton label={`Remove ${t.title}`} variant="ghost" icon={<span aria-hidden>×</span>} onClick={() => void act(() => delTask.mutateAsync(t.id))} />
                       )}
                     </li>
@@ -295,7 +338,7 @@ export function PlanScreen() {
                 })}
               </ul>
             )}
-            {open && (
+            {live && (
               <form
                 className="plan-add"
                 onSubmit={async (e) => {
@@ -313,82 +356,40 @@ export function PlanScreen() {
           </section>
         )}
 
-        {/* 4. People, grouped by answer */}
-        <section className="plan-section" aria-labelledby="people-h">
-          <SectionHeading id="people-h" title="People" />
-          {(
-            [
-              ['in', 'In'],
-              ['maybe', 'Maybe'],
-              ['out', 'Can’t make it'],
-            ] as const
-          ).map(([st, label]) => {
-            const rows = p.rsvps.filter((r) => r.status === st);
-            return rows.length ? (
-              <div key={st}>
-                <h3 className="plan-group__label">{label}</h3>
-                <ul className="plan-people">
-                  {rows.map((r) => (
-                    <li key={r.userId}>
-                      <Avatar userId={r.userId} size="sm" label={false} />
-                      <span className="ask__roster-name">{name(r.userId)}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ) : null;
-          })}
-          {p.waiting.length > 0 && (
-            <div>
-              <h3 className="plan-group__label">No response</h3>
-              <ul className="plan-people">
-                {p.waiting.map((uid) => (
-                  <li key={uid} className="is-waiting">
-                    <Avatar userId={uid} size="sm" label={false} />
-                    <span className="ask__roster-name">{name(uid)}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </section>
-
-        {/* 5. Rough budget: informational only */}
+        {/* Rough budget: informational only */}
         {budgetText(p.roughBudget) && (
-          <section className="plan-section" aria-labelledby="budget-h">
-            <SectionHeading id="budget-h" title="Rough budget" />
-            <p className="plan-head__going">{budgetText(p.roughBudget)}</p>
-            <p className="plan-note">A rough idea only. Nobody owes anything until this becomes a Pact.</p>
-          </section>
+          <p className="od-note">
+            Rough budget <b className="num">{budgetText(p.roughBudget)}</b>. A rough idea only. Nobody owes anything until this becomes a Pact.
+          </p>
         )}
 
         {p.activity.length > 0 && (
-          <ul className="ask__feed" aria-label="Recent activity">
-            {p.activity.map((a, i) => (
-              <li key={`${a.kind}-${a.userId}-${a.at}-${i}`}>
-                <Avatar userId={a.userId} size="sm" label={false} />
-                <span className="ask__feed-text">{activityText(a, name(a.userId), a.userId === user?.id)}</span>
-              </li>
-            ))}
-          </ul>
+          <section className="od-lately" aria-labelledby="plan-lately">
+            <h2 id="plan-lately" className="t-label">
+              Lately
+            </h2>
+            <ul>
+              {p.activity.map((a, i) => (
+                <li key={`${a.kind}-${a.userId}-${a.at}-${i}`}>
+                  <ActivityRow actorId={a.userId} kind="plan" at={a.at} text={activityText(a, name(a.userId), a.userId === user?.id)} />
+                </li>
+              ))}
+            </ul>
+          </section>
         )}
 
-        {/* 6. Make it a Pact: low on the page, and only once there is momentum */}
-        {p.pactId ? (
-          <section className="plan-pact is-done" aria-labelledby="pact-h">
-            <strong id="pact-h">{p.status === 'done' ? 'Completed' : 'This plan became a Pact'}</strong>
-            <p>{p.status === 'done' ? 'You made it happen 🎉' : 'The group is now committing and executing the plan through its Pact.'}</p>
-            <Button to={`/app/pact/${p.pactId}`}>Open Pact</Button>
+        {/* Make it a Pact: low on the page, and only once there is momentum */}
+        {!p.pactId && p.canMakePact && (p.status === 'confirmed' || p.counts.in >= 2) && (
+          <section className="od-handoff od-handoff--offer tint--mint" aria-labelledby="pact-h">
+            <span className="od-handoff__flow" aria-hidden>
+              <span>Plan</span>
+              <ArrowRight />
+              <span>Pact</span>
+            </span>
+            <strong id="pact-h">Ready to make this real?</strong>
+            <span className="od-handoff__line">Turn the Plan into a Pact when the group is ready to commit money, responsibilities and a deadline.</span>
+            <Button onClick={() => setSheet('pact')}>Make it a Pact</Button>
           </section>
-        ) : (
-          p.canMakePact &&
-          (p.status === 'confirmed' || p.counts.in >= 2) && (
-            <section className="plan-pact" aria-labelledby="pact-h">
-              <strong id="pact-h">Ready to make this real?</strong>
-              <p>Turn the Plan into a Pact when the group is ready to commit money, responsibilities and a deadline.</p>
-              <Button onClick={() => setSheet('pact')}>Make it a Pact</Button>
-            </section>
-          )
         )}
       </div>
 

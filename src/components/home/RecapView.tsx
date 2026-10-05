@@ -1,5 +1,5 @@
 import type { RecapDTO } from '../../../shared/contracts';
-import { PactLogo } from '../brand/PactLogo';
+import { DoneMark } from '../objects';
 import { AvatarGroup } from '../ui/AvatarGroup';
 import { CircleBadge } from '../circle/CircleBadge';
 import './recap.css';
@@ -10,21 +10,18 @@ import './recap.css';
  */
 export function RecapView({ recap }: { recap: RecapDTO }) {
   const done = recap.kind === 'split';
+  const tint = { pact: 'mint', split: 'lilac', plan: 'sun' }[recap.kind];
   return (
-    <article className="recap" aria-labelledby="recap-title">
-      <div className="recap__brand" aria-hidden>
-        <PactLogo size="sm" />
-      </div>
+    <article className={`recap recap--${recap.kind} tint--${tint}`} aria-labelledby="recap-title">
       <p className="recap__emoji" aria-hidden>
         {recap.emoji}
       </p>
+      <p className="recap__kind">{recap.kind === 'split' ? 'Split' : recap.kind === 'plan' ? 'Plan' : 'Pact'}</p>
       <h1 id="recap-title" className="recap__title">
         {recap.title}
       </h1>
       <p className="recap__headline">
-        <span className="recap__mark" aria-hidden>
-          ✓
-        </span>
+        <DoneMark className="recap__mark" />
         {recap.headline}
       </p>
       {done && <p className="recap__sub">Everyone is square.</p>}

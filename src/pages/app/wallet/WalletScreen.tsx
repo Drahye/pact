@@ -7,6 +7,7 @@ import type { WalletTxnDTO } from '../../../../shared/contracts';
 import { TIER_LIMITS } from '../../../../shared/policy';
 import { useTransactions, useWallet } from '../../../api/hooks';
 import { Empty, ErrorState } from '../../../components/app/States';
+import { SandboxNote } from '../../../components/app/SandboxNote';
 import { RowListSkeleton } from '../../../components/app/Skeleton';
 import { TxnRow, txnLabel } from '../../../components/app/TxnRow';
 import { WalletCard } from '../../../components/app/WalletCard';
@@ -37,6 +38,7 @@ export function WalletScreen() {
   return (
     <Screen tabBar={<BottomNav />} className="wallet" topBar={<TopBar leading="none" title="Wallet" collapse />}>
       <LargeTitle className="screen-title">Wallet</LargeTitle>
+      <SandboxNote />
       <WalletCard balance={wallet.data?.balance} tier={tier} />
 
       {wallet.data && (

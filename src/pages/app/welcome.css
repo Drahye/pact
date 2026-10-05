@@ -10,18 +10,6 @@
   margin-right: calc(var(--space-2) * -1);
 }
 
-.welcome__visual {
-  position: relative;
-  flex: 1;
-  min-height: 360px;
-  margin: 0 calc(var(--space-5) * -1);
-}
-
-.welcome__visual .stage {
-  position: absolute;
-  inset: 0;
-}
-
 .welcome__pill {
   display: inline-block;
   padding: 0 0.22em 0.04em;
@@ -30,91 +18,212 @@
   color: var(--ink-900);
 }
 
-.welcome__copy {
-  padding-top: var(--space-4);
-}
-
-.welcome__title {
-  font-size: 2.5rem;
-  line-height: 42px;
-  letter-spacing: -0.045em;
-}
-
-.welcome__lede {
-  margin-top: var(--space-4);
-  font-size: var(--text-lg);
-  line-height: 26px;
-  color: var(--color-text-secondary);
-}
-
 .welcome .screen__footer {
   padding-top: var(--space-6);
 }
 
-/* The sign-in front door */
-.welcome--signin .screen__content {
+/* The first moment: an introduction, not a form. */
+.welcome--intro .screen__content {
   display: flex;
   flex-direction: column;
 }
 
-.signin {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  justify-content: center;
-  gap: var(--space-6);
-  padding-bottom: var(--space-8);
+.welcome--intro .screen__footer {
+  padding-top: var(--space-4);
 }
 
-.signin__title {
-  font-size: 2.25rem;
-  line-height: 1.1;
-  letter-spacing: -0.04em;
-  font-weight: var(--weight-semibold);
-  text-wrap: balance;
-}
-
-.signin__actions {
-  display: flex;
-  flex-direction: column;
+.intro-actions {
+  display: grid;
   gap: var(--space-3);
 }
 
-.signin__error {
-  text-align: center;
-}
-
-.signin__or {
-  display: flex;
-  align-items: center;
-  gap: var(--space-4);
-  color: var(--color-text-tertiary);
-  font-size: var(--text-sm);
-}
-
-.signin__or::before,
-.signin__or::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: var(--color-border);
-}
-
-.signin__phone,
-.signin__invite {
+.intro-actions__signin {
   text-align: center;
   color: var(--color-text-secondary);
   font-size: var(--text-sm);
 }
 
-.signin__phone a {
+.intro-actions__signin a {
   color: var(--color-text);
   font-weight: var(--weight-semibold);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
 
-.signin__form {
+.intro {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  padding-bottom: var(--space-4);
+}
+
+.intro__title {
+  font-size: clamp(2rem, 8.6vw, 2.75rem);
+  line-height: 1.04;
+  letter-spacing: -0.045em;
+  font-weight: var(--weight-semibold);
+}
+
+.intro__lede {
+  max-width: 28ch;
+  color: var(--color-text-secondary);
+  font-size: var(--text-lg);
+  line-height: 1.4;
+}
+
+.intro__invite {
+  margin-top: var(--space-2);
+  font-size: var(--text-sm);
+}
+
+.intro__invite .link {
+  color: var(--color-text-secondary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* Three of PACT's own objects, overlapping and slightly turned. */
+.intro-visual {
+  position: relative;
+  flex: none;
+  height: clamp(240px, 34vh, 300px);
+  margin: var(--space-4) 0 var(--space-2);
+}
+
+.intro-visual__glow {
+  position: absolute;
+  inset: 8% -12% 0;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--green-500) 20%, transparent), transparent);
+  filter: blur(8px);
+}
+
+.intro-obj {
+  position: absolute;
   display: grid;
-  gap: var(--space-4);
+  gap: 3px;
+  padding: 14px 16px;
+  background: linear-gradient(160deg, color-mix(in srgb, var(--tint-solid) 22%, var(--color-surface)), color-mix(in srgb, var(--tint-solid) 8%, var(--color-surface)));
+  box-shadow: 0 18px 30px -20px color-mix(in srgb, var(--ink-900) 40%, transparent), 0 0 0 1px color-mix(in srgb, var(--tint-solid) 22%, var(--line-quiet));
+  animation: intro-float 7s ease-in-out infinite;
+}
+
+.intro-obj strong {
+  font-size: 1.1875rem;
+  letter-spacing: var(--tracking-snug);
+}
+
+.intro-obj__kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--tint-fg);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.intro-obj__kicker svg {
+  width: 13px;
+  height: 13px;
+}
+
+.intro-obj__meta {
+  color: var(--color-text-secondary);
+  font-size: var(--text-sm);
+}
+
+.intro-obj--plan {
+  top: 4%;
+  left: 0;
+  width: 78%;
+  border-radius: 26px 26px 26px 8px;
+  transform: rotate(-3deg);
+}
+
+.intro-obj--ask {
+  top: 38%;
+  right: 0;
+  width: 66%;
+  border-radius: 22px 8px 22px 22px;
+  transform: rotate(2.5deg);
+  animation-delay: -2.4s;
+}
+
+.intro-obj--split {
+  bottom: 0;
+  left: 8%;
+  width: 54%;
+  border-radius: 20px 20px 8px 20px;
+  transform: rotate(-1.5deg);
+  animation-delay: -4.6s;
+}
+
+.intro-obj__people {
+  display: flex;
+  margin-top: 6px;
+}
+
+.intro-obj__people span {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px var(--sun-100);
+  color: var(--ink-900);
+  font-size: 0.6875rem;
+  font-weight: 700;
+}
+
+.intro-obj__people span + span {
+  margin-left: -8px;
+}
+
+.intro-obj__people .intro-obj__more {
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+}
+
+.intro-obj__bars {
+  display: grid;
+  gap: 5px;
+  margin-top: 6px;
+}
+
+.intro-obj__bars i {
+  display: block;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--tint-solid);
+}
+
+@keyframes intro-float {
+  50% {
+    translate: 0 -6px;
+  }
+}
+
+/* Screens ease in: one short rise, so Get started, the way in and the code feel like one path. */
+.welcome .screen__content,
+.auth .screen__content {
+  animation: auth-rise var(--motion-state, 280ms) var(--ease-out, ease-out) both;
+}
+
+@keyframes auth-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .intro-obj,
+  .welcome .screen__content,
+  .auth .screen__content {
+    animation: none;
+  }
 }

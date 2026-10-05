@@ -2,7 +2,7 @@ import { useParams } from 'react-router-dom';
 import { ApiError } from '../../api/client';
 import { usePact } from '../../api/hooks';
 import { ErrorState } from '../../components/app/States';
-import { PactDetailSkeleton } from '../../components/app/Skeleton';
+import { PactSkeleton } from '../../components/app/DetailSkeletons';
 import { TopBar } from '../../components/ui/TopBar';
 import { isOutcomeComplete } from '../../lib/execution';
 import { CompletedScreen } from './CompletedScreen';
@@ -13,7 +13,7 @@ import { Screen } from './Screen';
 export function PactRoute() {
   const { id = '' } = useParams();
   const q = usePact(id);
-  if (q.isLoading) return <Screen topBar={<TopBar backTo="/app/home" />}><PactDetailSkeleton /></Screen>;
+  if (q.isLoading) return <Screen topBar={<TopBar backTo="/app/home" />}><PactSkeleton /></Screen>;
   if (q.error || !q.data) {
     const missing = (q.error as ApiError)?.status === 404;
     return (

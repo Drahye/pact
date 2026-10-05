@@ -1,10 +1,9 @@
-import { Plus, UsersRound } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useCircles } from '../../../api/circles';
-import { Empty, ErrorState } from '../../../components/app/States';
+import { ErrorState } from '../../../components/app/States';
+import { CircleTile, EmptyState } from '../../../components/objects';
 import { PactListSkeleton } from '../../../components/app/Skeleton';
-import { CircleBadge } from '../../../components/circle/CircleBadge';
-import { AvatarGroup } from '../../../components/ui/AvatarGroup';
 import { BottomNav } from '../../../components/ui/BottomNav';
 import { Button } from '../../../components/ui/Button';
 import { IconButton } from '../../../components/ui/IconButton';
@@ -32,10 +31,10 @@ export function CirclesScreen() {
       ) : circles.error ? (
         <ErrorState onRetry={() => circles.refetch()} />
       ) : !items.length ? (
-        <Empty
-          icon={<UsersRound />}
-          title="Your people, in one place"
-          body="Create a Circle for the groups you plan things with: the friends, the family, the crew."
+        <EmptyState
+          kind="circle"
+          title="Start with the people you already plan with."
+          body="A Circle keeps your group, its plans and its questions in one place: the friends, the family, the crew."
           action={
             <Button to="/app/circles/new" iconLeft={<Plus />}>
               Create a Circle
@@ -44,25 +43,19 @@ export function CirclesScreen() {
         />
       ) : (
         <>
-          <ul className="list-stack" aria-label="Your Circles">
-            {items.map((c) => (
+          <ul className="ch-tiles" aria-label="Your Circles">
+            {items.map((c, i) => (
               <li key={c.id}>
-                <Link to={`/app/circles/${c.id}`} className="circle-row">
-                  <CircleBadge emoji={c.emoji} tint={c.tint} size="md" />
-                  <span className="circle-row__text">
-                    <span className="circle-row__name">{c.name}</span>
-                    <span className={`circle-row__meta ${c.live?.needsYou ? 'is-live' : ''}`}>{c.live ? c.live.text : people(c.memberCount)}</span>
-                  </span>
-                  <AvatarGroup userIds={c.memberIds} total={c.memberCount} size="sm" max={3} />
-                </Link>
+                <CircleTile name={c.name} emoji={c.emoji} tint={c.tint} peopleIds={c.memberIds} total={c.memberCount} signal={c.live ? c.live.text : people(c.memberCount)} live={!!c.live?.needsYou} alt={i % 2 === 1} to={`/app/circles/${c.id}`} />
               </li>
             ))}
+            <li>
+              <Link to="/app/circles/new" className="ch-tiles__new" aria-label="New Circle">
+                <Plus aria-hidden />
+                <span>New Circle</span>
+              </Link>
+            </li>
           </ul>
-          <div className="screen-section">
-            <Button to="/app/circles/new" variant="secondary" fullWidth iconLeft={<Plus />}>
-              New Circle
-            </Button>
-          </div>
         </>
       )}
     </Screen>

@@ -26,7 +26,6 @@
   overflow-x: clip;
 }
 
-
 /* Hero ---------------------------------------------------------------------- */
 .hero {
   position: relative;
@@ -247,100 +246,6 @@
 /* Why PACT ----------------------------------------------------------------------- */
 .why {
   position: relative;
-}
-
-.why__grid {
-  display: grid;
-  gap: var(--space-12);
-  margin-top: var(--space-12);
-}
-
-.why__side {
-  display: flex;
-  flex-direction: column;
-}
-
-.why__mock {
-  display: flex;
-  justify-content: center;
-  padding: var(--space-8) var(--space-5);
-  border-radius: var(--radius-3xl);
-  background: var(--color-bg-sunken);
-}
-
-.why__side--with .why__mock {
-  background: var(--mint-100);
-}
-
-.why__mock .mock {
-  width: 100%;
-  max-width: 400px;
-}
-
-.why__mock--chat .mock {
-  transform: rotate(-1.5deg);
-}
-
-.why__label {
-  margin: var(--space-6) 0 var(--space-3);
-  font-size: var(--text-title);
-  line-height: var(--leading-title);
-  letter-spacing: -0.03em;
-}
-
-.why__list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-}
-
-.why__list li {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-3);
-  color: var(--color-text-secondary);
-  line-height: 24px;
-}
-
-.why__side--with .why__list li {
-  color: var(--color-text);
-}
-
-.why__mark {
-  display: grid;
-  place-items: center;
-  width: 24px;
-  height: 24px;
-  flex-shrink: 0;
-  border-radius: 50%;
-}
-
-.why__mark svg {
-  width: 14px;
-  height: 14px;
-}
-
-.why__mark--no {
-  background: var(--color-bg-sunken);
-  color: var(--ink-500);
-}
-
-.why__mark--yes {
-  background: var(--green-500);
-  color: var(--ink-900);
-}
-
-@media (min-width: 768px) {
-  .why__grid {
-    grid-template-columns: 1fr 1fr;
-    gap: var(--space-6);
-  }
-
-  .why__mock {
-    flex: 1;
-    align-items: center;
-    padding: var(--space-12) var(--space-8);
-  }
 }
 
 /* Product story: one phone, one Pact, five scenes -------------------------------------------- */
@@ -960,7 +865,6 @@
   line-height: 26px;
   color: var(--color-text-secondary);
 }
-
 
 /* Eyebrows on the landing read as small tags, so each section starts with its own label. */
 .landing .section-heading__eyebrow {

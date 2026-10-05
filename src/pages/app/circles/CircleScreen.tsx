@@ -1,24 +1,22 @@
-import { Ellipsis, Plus, Share2 } from 'lucide-react';
-import { useState } from 'react';
+import { ChevronRight, Ellipsis, Plus, Settings2, Share2, UserPlus } from 'lucide-react';
+import { useState, type ReactNode } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useCircle, useEnsureInvite, useLeaveCircle, useRemoveMember, useResetInvite, useUpdateCircle } from '../../../api/circles';
 import { ApiError } from '../../../api/client';
 import { usePacts } from '../../../api/hooks';
+import { goingText } from '../../../lib/planDates';
 import { useCircleAsks } from '../../../api/asks';
-import { AskCard } from '../../../components/ask/AskCard';
-import { PlanCard } from '../../../components/plan/PlanBits';
 import { useCirclePlans } from '../../../api/plans';
 import { useCircleSplits } from '../../../api/splits';
-import { SplitCard } from '../../../components/split/SplitBits';
 import { useAuth } from '../../../api/auth';
 import { ErrorState, Notice } from '../../../components/app/States';
-import { PactDetailSkeleton } from '../../../components/app/Skeleton';
-import { CircleBadge } from '../../../components/circle/CircleBadge';
+import { Bone } from '../../../components/app/Skeleton';
+import { CircleSkeleton } from '../../../components/app/DetailSkeletons';
+import { CircleAsk, CirclePact, CirclePlan, CircleSplit } from '../../../components/circle/CircleObjects';
 import { EmojiPicker, TintPicker } from '../../../components/circle/IdentityPicker';
-import { PactCard } from '../../../components/pact/PactCard';
+import { ActivityRow, CircleTile, ComingUpRow } from '../../../components/objects';
 import { useCreateSheet } from '../../../components/create/CreateSheet';
 import { Avatar } from '../../../components/ui/Avatar';
-import { AvatarGroup } from '../../../components/ui/AvatarGroup';
 import { Button } from '../../../components/ui/Button';
 import { IconButton } from '../../../components/ui/IconButton';
 import { Input } from '../../../components/ui/Input';
@@ -31,7 +29,18 @@ import { shareCircle } from '../../../lib/circleShare';
 import { Screen } from '../Screen';
 import '../../../components/ask/ask.css';
 import '../../../components/circle/circle.css';
+import '../object-detail.css';
+import './circle-detail.css';
 
+const today = () => `${new Date().toISOString().slice(0, 10)}T00:00:00Z`;
+/** "Today", "Tomorrow", then the weekday for this week, then the date (the same words Home uses for Coming up). */
+const whenLabel = (date: string) => {
+  const d = Math.round((Date.parse(`${date}T00:00:00Z`) - Date.parse(today())) / 86_400_000);
+  if (d <= 0) return 'Today';
+  if (d === 1) return 'Tomorrow';
+  const at = new Date(`${date}T12:00:00`);
+  return d < 7 ? at.toLocaleDateString('en-US', { weekday: 'long' }) : at.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+};
 const people = (n: number) => `${n} ${n === 1 ? 'person' : 'people'}`;
 type Sheet = null | 'menu' | 'edit' | 'leave' | 'remove' | 'reset';
 
@@ -54,9 +63,10 @@ export function CircleScreen() {
   const remove = useRemoveMember(id);
   const [sheet, setSheet] = useState<Sheet>(null);
   const [target, setTarget] = useState<string | null>(null);
+  const [showAll, setShowAll] = useState(false);
   const [draft, setDraft] = useState({ name: '', emoji: '', tint: 'mint' as 'mint' });
 
-  if (circle.isLoading) return <Screen topBar={<TopBar backTo="/app/circles" />}><PactDetailSkeleton label="Loading Circle" /></Screen>;
+  if (circle.isLoading) return <Screen topBar={<TopBar backTo="/app/circles" />}><CircleSkeleton /></Screen>;
   if (circle.error || !circle.data) {
     const gone = (circle.error as ApiError)?.status === 404;
     return (
@@ -69,7 +79,36 @@ export function CircleScreen() {
   const isOwner = c.role === 'owner';
   const mine = (pacts.data ?? []).filter((p) => p.circleId === c.id);
   const who = (uid: string) => (uid === user?.id ? 'You' : getUser(uid).name);
+  const loaded = !asks.isLoading && !plans.isLoading && !splits.isLoading;
+
+  // What is happening now: an Ask, a Plan that is waiting on your answer, a Pact, a Split. Everything else is Upcoming or Recent.
+  const openAsks = (asks.data ?? []).filter((x) => !x.planId && x.status === 'open').sort((a, b) => Number(a.answered) - Number(b.answered));
+  const livePlans = (plans.data ?? []).filter((x) => x.status === 'planning' || x.status === 'confirmed');
+  const needPlans = livePlans.filter((x) => !x.mine && !x.pactId);
+  const livePacts = mine.filter((p) => p.status === 'open' || p.status === 'funded');
+  const openSplits = (splits.data ?? []).filter((x) => x.status === 'open').sort((a, b) => Number(!!b.mine && !b.mine.isPayer && b.mine.status === 'owed') - Number(!!a.mine && !a.mine.isPayer && a.mine.status === 'owed'));
+  const current: { key: string; node: ReactNode }[] = [
+    ...openAsks.map((x) => ({ key: `a-${x.id}`, node: <CircleAsk ask={x} /> })),
+    ...needPlans.map((x) => ({ key: `l-${x.id}`, node: <CirclePlan plan={x} /> })),
+    ...livePacts.map((p) => ({ key: `p-${p.id}`, node: <CirclePact pact={p} /> })),
+    ...openSplits.map((x) => ({ key: `s-${x.id}`, node: <CircleSplit split={x} /> })),
+  ];
+  const upcoming = livePlans.filter((x) => !needPlans.includes(x) && !x.pactId).sort((a, b) => (a.date ?? '9999').localeCompare(b.date ?? '9999'));
+
+  // Recent: what finished, and who arrived, newest first.
+  const recent: { key: string; at: string; actorId?: string; kind: 'ask' | 'plan' | 'split' | 'circle'; text: string; to?: string }[] = [
+    ...(asks.data ?? []).filter((x) => !x.planId && x.status !== 'open').map((x) => ({ key: `a-${x.id}`, at: x.createdAt, kind: 'ask' as const, text: `${x.title} · ${x.headline}`, to: `/app/asks/${x.id}?from=circle` })),
+    ...(splits.data ?? []).filter((x) => x.status !== 'open').map((x) => ({ key: `s-${x.id}`, at: x.settledAt ?? x.createdAt, kind: 'split' as const, text: x.status === 'settled' ? `${x.title} is all settled` : `${x.title} was cancelled`, to: `/app/splits/${x.id}?from=circle` })),
+    ...(plans.data ?? []).filter((x) => x.status === 'done' || x.status === 'cancelled').map((x) => ({ key: `l-${x.id}`, at: x.createdAt, kind: 'plan' as const, text: x.status === 'done' ? `${x.title} happened` : `${x.title} was cancelled`, to: `/app/plans/${x.id}?from=circle` })),
+    ...c.activity.map((a) => ({ key: `c-${a.type}-${a.actorId}-${a.at}`, at: a.at, actorId: a.actorId, kind: 'circle' as const, text: a.type === 'created' ? `${who(a.actorId)} started ${c.name}` : `${who(a.actorId)} joined ${c.name}` })),
+  ].sort((a, b) => b.at.localeCompare(a.at));
+  const all = showAll;
+  const setAll = setShowAll;
+
+  const empty = loaded && !asks.data?.length && !plans.data?.length && !splits.data?.length && !mine.length;
+  const needCount = openAsks.filter((x) => !x.answered).length + openSplits.filter((x) => x.mine && !x.mine.isPayer && x.mine.status === 'owed').length + needPlans.length;
   const close = () => setSheet(null);
+  const start = (e: { currentTarget: HTMLElement }) => create.open({ from: 'circle', circleId: c.id, origin: e.currentTarget.getBoundingClientRect() });
 
   const act = async (fn: () => Promise<unknown>, ok?: string) => {
     try {
@@ -112,55 +151,33 @@ export function CircleScreen() {
         />
       }
     >
-      <header className="ch">
-        <CircleBadge emoji={c.emoji} tint={c.tint} size="xl" />
-        <h1 className="large-title ch__name">{c.name}</h1>
-        <p className="ch__meta">{people(c.memberCount)}</p>
-        <AvatarGroup userIds={c.members.map((m) => m.userId)} total={c.memberCount} size="md" max={6} />
-        <Button variant="secondary" iconLeft={<Share2 />} onClick={invite} loading={ensure.isPending}>
-          Invite people
-        </Button>
-      </header>
+      <div className="od-circle">
+        <CircleTile
+          density="header"
+          name={c.name}
+          emoji={c.emoji}
+          tint={c.tint}
+          meta={people(c.memberCount)}
+          peopleIds={c.members.map((m) => m.userId)}
+          total={c.memberCount}
+          live={needCount > 0}
+          signal={needCount ? `${needCount} ${needCount === 1 ? 'thing needs' : 'things need'} you` : empty ? 'Nothing yet. Start something.' : 'Nothing waiting on you'}
+        >
+          <Button variant="secondary" size="md" iconLeft={<UserPlus />} onClick={invite} loading={ensure.isPending} className="od-circle__invite">
+            Invite
+          </Button>
+        </CircleTile>
 
-      <section className="screen-section" aria-labelledby="happening">
-        <SectionHeading id="happening" title="What’s happening" />
-        {(splits.data?.length ?? 0) > 0 && (
-          <ul className="list-stack" aria-label="Splits">
-            {splits.data!.map((x) => (
-              <li key={x.id}>
-                <SplitCard split={x} from="circle" />
-              </li>
-            ))}
-          </ul>
+        {!loaded && (
+          <section className="screen-section" aria-label="Loading what is happening">
+            <Bone w="100%" h={104} style={{ borderRadius: '20px 20px 20px 8px' }} />
+          </section>
         )}
-        {(plans.data?.length ?? 0) > 0 && (
-          <ul className="list-stack" aria-label="Plans">
-            {plans.data!.map((x) => (
-              <li key={x.id}>
-                <PlanCard plan={x} from="circle" />
-              </li>
-            ))}
-          </ul>
-        )}
-        {(asks.data?.filter((x) => !x.planId).length ?? 0) > 0 && (
-          <ul className="list-stack" aria-label="Questions">
-            {asks.data!.filter((x) => !x.planId).map((x) => (
-              <li key={x.id}>
-                <AskCard ask={x} from="circle" />
-              </li>
-            ))}
-          </ul>
-        )}
-        {mine.length > 0 && (
-          <div className="list-stack">
-            {mine.map((p) => (
-              <PactCard key={p.id} pact={p} to={`/app/pact/${p.id}`} />
-            ))}
-          </div>
-        )}
-        {!asks.isLoading && !plans.isLoading && !splits.isLoading && !(asks.data?.length) && !(plans.data?.length) && !(splits.data?.length) && !mine.length ? (
-          <div className="quick">
-            <p className="quick__title">What are you trying to figure out?</p>
+
+        {empty ? (
+          <section className="screen-section od-circle__start" aria-labelledby="ch-start">
+            <SectionHeading id="ch-start" title="Start here" />
+            <p className="od-note">No plans yet. Start with something your people want to do.</p>
             <div className="ca__chips">
               <Link className="ca__chip" to={`/app/asks/new?circle=${c.id}&type=attendance&title=${encodeURIComponent('Who’s free this weekend?')}`}>
                 Who’s free?
@@ -175,46 +192,94 @@ export function CircleScreen() {
                 Ask something else
               </Link>
             </div>
-            <Button variant="secondary" iconLeft={<Plus />} onClick={() => create.open({ from: 'circle', circleId: c.id })}>
+            <Button variant="secondary" iconLeft={<Plus />} onClick={start}>
               More ways to start
             </Button>
-          </div>
+          </section>
         ) : (
-          <div className="ch__start">
-            <p className="ch__start-title">Start something else together</p>
-            <p className="ch__start-body">Ask the group, make a plan, split an expense, or turn something serious into a Pact.</p>
-            <Button iconLeft={<Plus />} onClick={() => create.open({ from: 'circle', circleId: c.id })}>
-              Create something
-            </Button>
-          </div>
-        )}
-        <ul className="ch__feed" aria-label="Circle activity">
-          {c.activity.map((a) => (
-            <li key={`${a.type}-${a.actorId}-${a.at}`}>
-              <Avatar userId={a.actorId} size="sm" label={false} />
-              <span>{a.type === 'created' ? `${who(a.actorId)} started ${c.name}.` : `${who(a.actorId)} joined ${c.name}.`}</span>
-            </li>
-          ))}
-        </ul>
-      </section>
+          loaded && (
+            <>
+              <section className="screen-section" aria-labelledby="ch-current">
+                <SectionHeading id="ch-current" title="Happening now" />
+                {current.length > 0 ? (
+                  <ul className="od-circle__stack" aria-label="Happening now">
+                    {current.map((x) => (
+                      <li key={x.key}>{x.node}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="od-note">Nothing is open right now.</p>
+                )}
+                <Button variant="secondary" iconLeft={<Plus />} onClick={start} className="od-circle__more">
+                  Start something
+                </Button>
+              </section>
 
-      <section className="screen-section" aria-labelledby="members">
-        <SectionHeading id="members" title={`Members · ${c.memberCount}`} />
-        <ul className="ch__members">
-          {c.members.map((m) => (
-            <li key={m.userId}>
-              <Avatar userId={m.userId} size="md" label={false} />
-              <span className="ch__member-name">{who(m.userId)}</span>
-              {m.role === 'owner' && <span className="ch__owner">Owner</span>}
-              {isOwner && m.role !== 'owner' && (
-                <button type="button" className="ch__remove" aria-label={`Remove ${getUser(m.userId).name}`} onClick={() => (setTarget(m.userId), setSheet('remove'))}>
-                  Remove
-                </button>
+              {upcoming.length > 0 && (
+                <section className="screen-section" aria-labelledby="ch-upcoming">
+                  <SectionHeading id="ch-upcoming" title="Upcoming" />
+                  <ul className="od-ruled">
+                    {upcoming.map((x) => (
+                      <li key={x.id}>
+                        <ComingUpRow when={x.date ? whenLabel(x.date) : 'Soon'} today={!!x.date && whenLabel(x.date) === 'Today'} title={x.title} meta={`${x.pactId ? 'Now a Pact' : goingText(x.counts)}${x.location ? ` · ${x.location}` : ''}`} to={`/app/plans/${x.id}?from=circle`} />
+                      </li>
+                    ))}
+                  </ul>
+                </section>
               )}
-            </li>
-          ))}
-        </ul>
-      </section>
+
+              {recent.length > 0 && (
+                <section className="screen-section" aria-labelledby="ch-recent">
+                  <SectionHeading id="ch-recent" title="Recent" />
+                  <ul className="od-ruled" aria-label="Circle activity">
+                    {(all ? recent : recent.slice(0, 5)).map((r) => (
+                      <li key={r.key}>
+                        <ActivityRow actorId={r.actorId} kind={r.kind} at={r.at} text={r.text} to={r.to} />
+                      </li>
+                    ))}
+                  </ul>
+                  {recent.length > 5 && !all && (
+                    <button type="button" className="od-circle__all" onClick={() => setAll(true)}>
+                      Show {recent.length - 5} more
+                    </button>
+                  )}
+                </section>
+              )}
+            </>
+          )
+        )}
+
+        <section className="screen-section" aria-labelledby="members">
+          <SectionHeading id="members" title={`People · ${c.memberCount}`} />
+          <ul className="od-people">
+            {c.members.map((m) => (
+              <li key={m.userId}>
+                <Avatar userId={m.userId} size="md" label={false} />
+                <span className="od-people__name">
+                  {who(m.userId)}
+                  {m.role === 'owner' && <span className="od-people__role">Started this Circle</span>}
+                </span>
+                {isOwner && m.role !== 'owner' && (
+                  <button type="button" className="od-people__remove" aria-label={`Remove ${getUser(m.userId).name}`} onClick={() => (setTarget(m.userId), setSheet('remove'))}>
+                    Remove
+                  </button>
+                )}
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        <section className="od-circle__settings" aria-label="Circle settings">
+          <button type="button" className="od-circle__settings-btn" onClick={() => setSheet('menu')}>
+            <Settings2 aria-hidden />
+            <span>
+              Circle settings
+              <small>{isOwner ? 'Edit, reset the invite link, leave' : 'Leave this Circle'}</small>
+            </span>
+            <ChevronRight aria-hidden />
+          </button>
+        </section>
+      </div>
 
       <Modal open={sheet === 'menu'} onClose={close} title={c.name}>
         <div className="menu">

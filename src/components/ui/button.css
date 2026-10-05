@@ -21,7 +21,8 @@
 
 /* Every major button gives under the finger and springs back. */
 .btn:active:not(:disabled):not(.is-loading) {
-  transform: scale(0.972);
+  transform: scale(var(--press-scale));
+  filter: brightness(var(--press-dim));
 }
 
 .btn.is-loading {
@@ -181,7 +182,7 @@
 }
 
 .icon-btn:active {
-  transform: scale(0.94);
+  transform: scale(var(--press-scale-small));
 }
 
 .icon-btn:focus-visible {
@@ -206,4 +207,19 @@
 .icon-btn--inverse {
   background: rgba(255, 255, 255, 0.08);
   color: var(--color-text-inverse);
+}
+
+/* Ink: the primary's weight without the green, for places that already carry colour. */
+.btn--ink {
+  background: var(--color-selected);
+  color: var(--color-on-selected);
+}
+
+.btn--ink:hover:not(:disabled) {
+  filter: brightness(1.12);
+}
+
+.btn--ink:disabled {
+  background: var(--color-bg-sunken);
+  color: var(--color-text-tertiary);
 }

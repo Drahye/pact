@@ -3,9 +3,10 @@ import { Link } from 'react-router-dom';
 import { useAccount, useAccountActions } from '../../api/account';
 import { useAuth } from '../../api/auth';
 import { ApiError } from '../../api/client';
-import { Button } from '../ui/Button';
+import { MailPlus, X } from 'lucide-react';
+import { IconButton } from '../ui/IconButton';
 import { useToast } from '../ui/Toast';
-import './sign-in-upgrade.css';
+import './strip.css';
 
 const KEY = 'pact.upgradePrompt.until';
 const quietDays = 14;
@@ -49,23 +50,26 @@ export function SignInUpgradePrompt() {
   };
 
   return (
-    <section className="upgrade" aria-labelledby="upgrade-h">
-      <h2 id="upgrade-h" className="upgrade__title">Make signing in easier</h2>
-      <p className="upgrade__body">{config?.auth?.google ? 'Add an email or connect Google, so you’re not tied to one phone number.' : 'Add an email, so you’re not tied to one phone number.'}</p>
-      <div className="upgrade__actions">
-        {config?.auth?.google && (
-          <Button size="sm" onClick={google} loading={startGoogle.isPending}>
-            Connect Google
-          </Button>
-        )}
-        <Button size="sm" variant={config?.auth?.google ? 'secondary' : 'primary'} to="/app/profile/account">
-          Add email
-        </Button>
-        <button type="button" className="link upgrade__later" onClick={hide}>
-          Maybe later
-        </button>
+    <section className="strip" aria-labelledby="upgrade-h">
+      <span className="strip__icon" aria-hidden>
+        <MailPlus />
+      </span>
+      <div className="strip__text">
+        <h2 id="upgrade-h" className="strip__title">
+          Make signing in easier
+        </h2>
+        <p>{config?.auth?.google ? 'Add an email or connect Google, so you’re not tied to one phone number.' : 'Add an email, so you’re not tied to one phone number.'}</p>
       </div>
-      <Link to="/app/profile/account" className="visually-hidden">Account and sign-in</Link>
+      {config?.auth?.google ? (
+        <button type="button" className="act act--solid" onClick={google} disabled={startGoogle.isPending}>
+          Connect Google
+        </button>
+      ) : (
+        <Link to="/app/profile/account" className="act act--solid">
+          Add email
+        </Link>
+      )}
+      <IconButton label="Maybe later" variant="ghost" icon={<X />} onClick={hide} />
     </section>
   );
 }

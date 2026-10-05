@@ -260,7 +260,32 @@ export async function previewInvite(ctx: Ctx, token: string, req: ReqMeta): Prom
   await track(ctx.db, ctx.config, 'circle_invite_opened', { actor: who, key: `ciov:${who}:${state}`, props: { state } });
   if (state !== 'valid') throw badLink(state);
   if (i.n <= 0) throw notFound('That invite');
-  return { circleId: i.circle_id, name: i.name, emoji: i.emoji, tint: i.tint, memberCount: i.n, inviter: { firstName: i.first_name, color: i.color, photoUrl: i.photo_url } };
+  // Who is in, as faces: first names, colour and photo only, never an id, and not the person who sent the invite (they are named already).
+  const faces = await ctx.db.query<{ first_name: string; color: string; tint: string; photo_url: string | null }>(
+    `SELECT u.first_name, u.color, u.tint, u.photo_url FROM circle_members m JOIN users u ON u.id = m.user_id
+      WHERE m.circle_id = $1 AND m.status = 'joined' AND m.user_id <> $2 ORDER BY m.joined_at NULLS LAST LIMIT 4`,
+    [i.circle_id, i.created_by],
+  );
+  // What is going on, as counts only: no titles, no names, nothing a stranger with the link should not see.
+  const live = (
+    await ctx.db.query<{ asks: number; plans: number; splits: number }>(
+      `SELECT (SELECT COUNT(*)::int FROM asks WHERE circle_id = $1 AND status = 'open' AND plan_id IS NULL) AS asks,
+              (SELECT COUNT(*)::int FROM plans WHERE circle_id = $1 AND status IN ('planning','confirmed')) AS plans,
+              (SELECT COUNT(*)::int FROM splits WHERE circle_id = $1 AND status = 'open') AS splits`,
+      [i.circle_id],
+    )
+  ).rows[0];
+  return { name: i.name, emoji: i.emoji, tint: i.tint, memberCount: i.n, inviter: { firstName: i.first_name, color: i.color, photoUrl: i.photo_url }, members: faces.rows.map((f) => ({ firstName: f.first_name, color: f.color, tint: f.tint, photoUrl: f.photo_url })), now: live };
+}
+
+/** The signed-in person's side of an invite: the Circle's id only if they are already in it, so the preview itself carries no account or Circle id. */
+export async function myInviteState(ctx: Ctx, userId: string, token: string) {
+  if (!TOKEN.test(token)) throw notFound('That invite');
+  const r = await ctx.db.query<{ circle_id: string }>(
+    `SELECT i.circle_id FROM circle_invites i JOIN circle_members m ON m.circle_id = i.circle_id AND m.user_id = $2 AND m.status = 'joined' WHERE i.token = $1`,
+    [token, userId],
+  );
+  return { memberOf: r.rows[0]?.circle_id ?? null };
 }
 
 export async function joinByToken(ctx: Ctx, userId: string, token: string, meta: ReqMeta, fromAsk?: string, fromPlan?: string, fromSplit?: string) {

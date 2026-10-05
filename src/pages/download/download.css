@@ -212,20 +212,6 @@
   box-shadow: inset 0 0 0 1px var(--color-border);
 }
 
-.dl__modal-list li {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  min-height: 44px;
-  font-weight: var(--weight-medium);
-}
-
-.dl__modal-list svg {
-  width: 18px;
-  height: 18px;
-  color: var(--color-accent-text);
-}
-
 .dl__install {
   display: flex;
   flex-direction: column;

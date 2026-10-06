@@ -62,9 +62,11 @@ export function AskScreen() {
 
   return (
     <Screen
+      className="xhero xhero--full tint--sky"
       topBar={
         <TopBar
           backTo={params.get('from') === 'home' ? '/app/home' : `/app/circles/${a.circleId}`}
+          tone="transparent"
           title={a.circle.name}
           trailing={
             <span className="detail__top-actions">

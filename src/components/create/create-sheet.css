@@ -58,7 +58,7 @@
 }
 
 .csheet__title {
-  font-size: var(--text-lg);
+  font-size: var(--t-lead-size);
   letter-spacing: var(--tracking-snug);
 }
 
@@ -166,14 +166,14 @@
 }
 
 .create-sheet__title {
-  font-size: 1.0625rem;
+  font-size: var(--t-lead-size);
   font-weight: var(--weight-semibold);
   letter-spacing: var(--tracking-snug);
 }
 
 .create-sheet__body {
   color: var(--color-text-secondary);
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
   line-height: 1.3;
 }
 

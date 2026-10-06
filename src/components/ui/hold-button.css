@@ -10,7 +10,7 @@
   background: var(--color-surface-inverse);
   color: var(--color-text-inverse);
   font-weight: var(--weight-semibold);
-  font-size: var(--text-body);
+  font-size: var(--t-body-size);
   user-select: none;
   -webkit-user-select: none;
   touch-action: none;

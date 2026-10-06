@@ -3,13 +3,12 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '../../api/auth';
 import { usePacts } from '../../api/hooks';
 import { Empty, ErrorState, Notice } from '../../components/app/States';
-import { EmptyState } from '../../components/objects';
+import { EmptyState, PageHero } from '../../components/objects';
 import { PactListSkeleton } from '../../components/app/Skeleton';
 import { PactListItem } from '../../components/pact/PactListItem';
 import { PactTabs, PANEL_ID, tabId } from '../../components/pact/PactTabs';
 import { BottomNav } from '../../components/ui/BottomNav';
 import { Button } from '../../components/ui/Button';
-import { LargeTitle } from '../../components/ui/LargeTitle';
 import { TopBar } from '../../components/ui/TopBar';
 import { IconButton } from '../../components/ui/IconButton';
 import type { Pact } from '../../data/types';
@@ -171,8 +170,8 @@ export function PactsScreen() {
   const announce = loading || failed || !mine.length ? '' : nq ? `${shown.length} of ${tabItems.length} ${tabLabel[tab]} Pacts match` : `${tabItems.length} ${tabLabel[tab]} Pacts`;
 
   return (
-    <Screen tabBar={<BottomNav />} topBar={<TopBar leading="none" title="Pacts" collapse trailing={<IconButton label="Create a Pact" icon={<Plus />} to={startPath()} />} />}>
-      <LargeTitle className="pacts-head">Your Pacts</LargeTitle>
+    <Screen className="xhero xhero--lite tint--mint" tabBar={<BottomNav />} topBar={<TopBar tone="transparent" leading="none" title="Pacts" collapse trailing={<IconButton label="Create a Pact" icon={<Plus />} to={startPath()} />} />}>
+      <PageHero tint="mint" title="Your Pacts" />
       <div ref={root} aria-busy={loading || pacts.isFetching ? true : undefined}>
         {showControls && (
           <>

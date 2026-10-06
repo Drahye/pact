@@ -14,7 +14,7 @@
   align-items: baseline;
   justify-content: space-between;
   gap: var(--space-3);
-  font-size: var(--text-body);
+  font-size: var(--t-body-size);
   color: var(--color-text-tertiary);
 }
 
@@ -24,7 +24,7 @@
 }
 
 .contribute__after {
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
   font-weight: var(--weight-semibold);
   color: var(--color-accent-text);
   font-variant-numeric: tabular-nums;
@@ -48,7 +48,7 @@
   gap: 0.3em;
   padding: 0 var(--space-3);
   border-radius: var(--radius-full);
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
   color: var(--color-text-tertiary);
 }
 
@@ -60,8 +60,10 @@
   text-underline-offset: 3px;
 }
 
-.contribute__fill:hover {
-  background: var(--color-bg-sunken);
+@media (hover: hover) {
+  .contribute__fill:hover {
+    background: var(--color-bg-sunken);
+  }
 }
 
 .contribute__hint--accent {
@@ -75,7 +77,7 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  font-size: var(--text-caption);
+  font-size: var(--t-meta-size);
   line-height: var(--leading-caption);
   color: var(--color-text-tertiary);
   text-align: center;
@@ -141,12 +143,12 @@
 .confirm__title {
   font-size: 2.75rem;
   line-height: 48px;
-  letter-spacing: -0.05em;
+  letter-spacing: var(--tracking-display);
 }
 
 .confirm__line {
   margin-top: var(--space-2);
-  font-size: var(--text-lg);
+  font-size: var(--t-lead-size);
   line-height: 26px;
   color: var(--color-text-secondary);
 }
@@ -179,11 +181,11 @@
 .confirm__raised {
   font-size: var(--num-sm);
   font-weight: var(--weight-bold);
-  letter-spacing: -0.04em;
+  letter-spacing: var(--tracking-tight);
 }
 
 .confirm__raised > .num {
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
   font-weight: var(--weight-medium);
   letter-spacing: 0;
   color: var(--color-text-tertiary);
@@ -194,12 +196,12 @@
   border-radius: var(--radius-full);
   background: color-mix(in srgb, var(--c) 22%, var(--color-surface));
   color: var(--color-text);
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
   font-weight: var(--weight-bold);
 }
 
 .confirm__meta {
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
   color: var(--color-text-tertiary);
 }
 
@@ -214,6 +216,6 @@
   padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-md);
   background: var(--sun-100);
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
   line-height: var(--leading-sm);
 }

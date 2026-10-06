@@ -164,35 +164,106 @@ export function PlanObject({
         </div>
       )}
 
-      {!done && !action && (onRsvp || !heading) && (
-        <div className="ox-rsvp" role="radiogroup" aria-label="Are you coming?">
-          {ANSWERS.map((a) => {
-            const on = rsvp === a.value;
-            return (
-              <button key={a.value} type="button" role="radio" aria-checked={on} disabled={disabled} className={`ox-rsvp__btn ${on ? 'is-on' : ''}`} onClick={() => onRsvp?.(a.value)}>
-                {on && <motion.span layoutId={`${id}-pill`} className="ox-rsvp__pill" transition={spring.soft} />}
-                <span className="ox-rsvp__label">{a.label}</span>
-              </button>
-            );
-          })}
-        </div>
-      )}
-      {heading && decisions && decisions.length > 0 && (
-        <ul className="ox-plan__decisions" aria-label="Still to decide">
-          {decisions.map((d) => (
-            <li key={d.id}>
-              <Link to={d.to} className={`ox-plan__decision ${d.mine ? '' : 'is-open'}`}>
-                <MessagesSquare aria-hidden />
-                <span className="ox-plan__decision-text">
-                  <strong>{d.question}</strong>
-                  <span>{d.leading ? `${d.leading}${d.mine ? '' : ' · tap to vote'}` : d.mine ? 'You’ve answered' : 'Tap to vote'}</span>
-                </span>
-                <ChevronRight aria-hidden />
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
+      {!done && !action && (onRsvp || !heading) && <RsvpTrack value={rsvp ?? null} onChange={onRsvp} disabled={disabled} />}
+      {heading && decisions && decisions.length > 0 && <PlanDecisions decisions={decisions} />}
     </article>
+  );
+}
+
+/** Your answer: three separate choices, and the one you picked slides into place. */
+export function RsvpTrack({ value, onChange, disabled }: { value: Attendance | null; onChange?: (a: Attendance) => void; disabled?: boolean }) {
+  const id = useId();
+  return (
+    <div className="ox-rsvp" role="radiogroup" aria-label="Are you coming?">
+      {ANSWERS.map((a) => {
+        const on = value === a.value;
+        return (
+          <button key={a.value} type="button" role="radio" aria-checked={on} disabled={disabled} className={`ox-rsvp__btn ${on ? 'is-on' : ''}`} onClick={() => onChange?.(a.value)}>
+            {on && <motion.span layoutId={`${id}-pill`} className="ox-rsvp__pill" transition={spring.soft} />}
+            <span className="ox-rsvp__label">{a.label}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Questions still open on a plan, each a way into the Ask. */
+export function PlanDecisions({ decisions }: { decisions: { id: string; question: string; leading?: string; to: string; mine?: boolean }[] }) {
+  return (
+    <ul className="ox-plan__decisions" aria-label="Still to decide">
+      {decisions.map((d) => (
+        <li key={d.id}>
+          <Link to={d.to} className={`ox-plan__decision ${d.mine ? '' : 'is-open'}`}>
+            <MessagesSquare aria-hidden />
+            <span className="ox-plan__decision-text">
+              <strong>{d.question}</strong>
+              <span>{d.leading ? `${d.leading}${d.mine ? '' : ' · tap to vote'}` : d.mine ? 'You’ve answered' : 'Tap to vote'}</span>
+            </span>
+            <ChevronRight aria-hidden />
+          </Link>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/**
+ * A plan's own page, top to bottom of its hero: the date as the biggest thing on the screen, then what it is, where, how far away it is
+ * and who is coming. Time is the object.
+ */
+export function PlanHero({ title, date, endDate, location, status, goingIds, going, peopleText, history, done }: { title: string; date?: string | null; endDate?: string | null; location?: string | null; status: string; goingIds: string[]; going: number; peopleText?: string; history?: boolean; done?: boolean }) {
+  const when = date ? new Date(`${date}T12:00:00`) : null;
+  const range = dateRange(date ?? null, endDate ?? null);
+  const until = when && !done && !history ? daysUntil(date!) : null;
+  return (
+    <>
+      <p className="xh__pill">
+        {done ? <DoneMark className="ox-kicker__done" /> : <StatusIndicator tone={history ? 'quiet' : 'live'} />}
+        <span>{done ? 'It happened' : status}</span>
+      </p>
+      {when ? (
+        <p className="xh__date">
+          <span className="visually-hidden">{when.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</span>
+          <span className="xh__date-small" aria-hidden>
+            {when.toLocaleDateString('en-US', { weekday: 'long' })} · {when.toLocaleDateString('en-US', { month: 'short' }).toUpperCase()}
+          </span>
+          <b className="xh__date-big num" aria-hidden>
+            {when.getDate()}
+          </b>
+        </p>
+      ) : (
+        <p className="xh__date">
+          <span className="xh__date-small">Date to be decided</span>
+        </p>
+      )}
+      <h1 className="xh__title">{title}</h1>
+      {(range || location) && (
+        <p className="xh__meta xh__meta--plan">
+          {range && <span>{range}</span>}
+          {location && (
+            <a className="ox-plan__where" href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location)}`} target="_blank" rel="noopener noreferrer" aria-label={`${location}. Open in Maps`}>
+              <MapPin aria-hidden /> {location}
+              <ChevronRight aria-hidden />
+            </a>
+          )}
+        </p>
+      )}
+      {until !== null && (
+        <p className="xh__count">
+          {until > 1 ? (
+            <>
+              <b className="num">{until}</b> days to go
+            </>
+          ) : (
+            <b>{until === 0 ? 'Today' : 'Tomorrow'}</b>
+          )}
+        </p>
+      )}
+      <p className="xh__people">
+        {goingIds.length > 0 && <AvatarStack userIds={goingIds} total={going} size="md" max={5} />}
+        <span>{peopleText || (going ? `${going} in` : 'No one has RSVP’d yet.')}</span>
+      </p>
+    </>
   );
 }

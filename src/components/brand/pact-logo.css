@@ -15,8 +15,8 @@
 }
 
 /* The mark scales with the size; the wordmark is set relative to it so they always sit together. */
-.pact-logo--sm { --mark: 20px; font-size: 0.9375rem; }
-.pact-logo--md { --mark: 24px; font-size: 1.125rem; }
+.pact-logo--sm { --mark: 20px; font-size: var(--t-support-size); }
+.pact-logo--md { --mark: 24px; font-size: var(--t-lead-size); }
 .pact-logo--lg { --mark: 36px; font-size: 1.6875rem; }
 .pact-logo--xl { --mark: 56px; font-size: 2.625rem; }
 

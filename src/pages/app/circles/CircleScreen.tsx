@@ -14,7 +14,7 @@ import { Bone } from '../../../components/app/Skeleton';
 import { CircleSkeleton } from '../../../components/app/DetailSkeletons';
 import { CircleAsk, CirclePact, CirclePlan, CircleSplit } from '../../../components/circle/CircleObjects';
 import { EmojiPicker, TintPicker } from '../../../components/circle/IdentityPicker';
-import { ActivityRow, CircleTile, ComingUpRow } from '../../../components/objects';
+import { ActivityRow, AvatarStack, ComingUpRow, Hero, Sheet, StatusIndicator } from '../../../components/objects';
 import { useCreateSheet } from '../../../components/create/CreateSheet';
 import { Avatar } from '../../../components/ui/Avatar';
 import { Button } from '../../../components/ui/Button';
@@ -139,9 +139,11 @@ export function CircleScreen() {
 
   return (
     <Screen
+      className={`xhero tint--${c.tint}`}
       topBar={
         <TopBar
           backTo="/app/circles"
+          tone="transparent"
           title={c.name}
           trailing={
             <span className="detail__top-actions">
@@ -152,26 +154,27 @@ export function CircleScreen() {
         />
       }
     >
-      <div className="od-circle">
-        <CircleTile
-          density="header"
-          name={c.name}
-          emoji={c.emoji}
-          tint={c.tint}
-          meta={peopleLine(c.members.map((m) => m.userId), user?.id, { names: 3 }) || people(c.memberCount)}
-          peopleIds={c.members.map((m) => m.userId)}
-          total={c.memberCount}
-          live={needCount > 0}
-          signal={needCount ? `${needCount} ${needCount === 1 ? 'thing needs' : 'things need'} you` : empty ? 'Nothing yet. Start something.' : 'Nothing waiting on you'}
-        >
+      <Hero tint={c.tint} className="xh--circle">
+        <span className="xh__emoji" aria-hidden>
+          {c.emoji}
+        </span>
+        <h1 className="xh__title">{c.name}</h1>
+        <p className="xh__meta">{peopleLine(c.members.map((m) => m.userId), user?.id, { names: 3 }) || people(c.memberCount)}</p>
+        <div className="xh__faces">
+          <AvatarStack userIds={c.members.map((m) => m.userId)} total={c.memberCount} size="lg" max={5} enter />
           <button type="button" className="od-circle__slot" onClick={invite} disabled={ensure.isPending} aria-label="Invite someone to this Circle">
             <span className="od-circle__slot-mark" aria-hidden>
               <Plus />
             </span>
             <span>Invite</span>
           </button>
-        </CircleTile>
+        </div>
+        <p className="xh__signal">
+          <StatusIndicator tone={needCount > 0 ? 'live' : 'quiet'} label={needCount ? `${needCount} ${needCount === 1 ? 'thing needs' : 'things need'} you` : empty ? 'Nothing yet. Start something.' : 'Nothing waiting on you'} />
+        </p>
+      </Hero>
 
+      <Sheet className="od-circle">
         {!loaded && (
           <section className="screen-section" aria-label="Loading what is happening">
             <Bone w="100%" h={104} style={{ borderRadius: '20px 20px 20px 8px' }} />
@@ -283,7 +286,7 @@ export function CircleScreen() {
             <ChevronRight aria-hidden />
           </button>
         </section>
-      </div>
+      </Sheet>
 
       <Modal open={sheet === 'menu'} onClose={close} title={c.name}>
         <div className="menu">

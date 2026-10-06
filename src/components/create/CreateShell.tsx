@@ -6,7 +6,7 @@ import { TopBar } from '../ui/TopBar';
 import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
 import { useOverlayRoot } from '../ui/overlay';
-import { CompletionState, OBJECT_KINDS, type ObjectKind } from '../objects';
+import { CompletionState, Hero, OBJECT_KINDS, type ObjectKind } from '../objects';
 import { motion as speed, ease } from '../../tokens/tokens';
 import './create-flow.css';
 
@@ -63,7 +63,8 @@ export function CreateShell({
   const back = () => (stepIndex > 0 ? onBack() : dirty ? setAsking(true) : onLeave());
   const inFrame = !!root && root !== document.body;
   return (
-    <Screen topBar={<TopBar leading={stepIndex === 0 ? 'close' : 'back'} onBack={back} />} footer={footer} className={`cf tint--${k.tint}`}>
+    <Screen topBar={<TopBar tone="transparent" leading={stepIndex === 0 ? 'close' : 'back'} onBack={back} />} footer={footer} className={`cf xhero xhero--lite tint--${k.tint}`}>
+      <Hero tint={k.tint} className="xh--page xh--cf">
       <div className="cf__meta">
         <span className="cf__kind">
           <span className="cf__icon" aria-hidden>
@@ -85,10 +86,15 @@ export function CreateShell({
         )}
       </div>
       <AnimatePresence mode="wait" initial={false}>
-        <motion.div key={stepKey} className="ca" initial={{ opacity: 0, x: dx }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -dx }} transition={{ duration: speed.nav * 0.8, ease: ease.out }}>
+        <motion.div key={stepKey} className="cf__headblock" initial={{ opacity: 0, x: dx }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -dx }} transition={{ duration: speed.nav * 0.8, ease: ease.out }}>
           <h1 className="large-title cf__heading">{heading}</h1>
           {context && <p className="cf__context">{context}</p>}
           {sub && <p className="cf__sub">{sub}</p>}
+        </motion.div>
+      </AnimatePresence>
+      </Hero>
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div key={stepKey} className="ca cf__body" initial={{ opacity: 0, x: dx }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -dx }} transition={{ duration: speed.nav * 0.8, ease: ease.out }}>
           {children}
         </motion.div>
       </AnimatePresence>

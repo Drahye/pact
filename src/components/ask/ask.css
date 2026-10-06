@@ -54,7 +54,7 @@
 }
 .ask__hint{
   color: var(--color-text-secondary);
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
 }
 
 @keyframes ask-in {
@@ -164,9 +164,9 @@
    Ask, second pass: the question dominates, the answers are physical.
    ========================================================================== */
 .ask__title {
-  font-size: clamp(2rem, 9vw, 2.5rem);
+  font-size: var(--t-page-size);
   line-height: 1.06;
-  letter-spacing: -0.04em;
+  letter-spacing: var(--tracking-tight);
   text-wrap: balance;
 }
 

@@ -2,12 +2,11 @@ import { Plus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useCircles } from '../../../api/circles';
 import { ErrorState } from '../../../components/app/States';
-import { CircleTile, EmptyState } from '../../../components/objects';
+import { CircleTile, EmptyState, PageHero } from '../../../components/objects';
 import { PactListSkeleton } from '../../../components/app/Skeleton';
 import { BottomNav } from '../../../components/ui/BottomNav';
 import { Button } from '../../../components/ui/Button';
 import { IconButton } from '../../../components/ui/IconButton';
-import { LargeTitle } from '../../../components/ui/LargeTitle';
 import { TopBar } from '../../../components/ui/TopBar';
 import { Screen } from '../Screen';
 import '../../../components/circle/circle.css';
@@ -20,12 +19,11 @@ export function CirclesScreen() {
   const items = circles.data ?? [];
   return (
     <Screen
+      className="xhero xhero--lite tint--coral"
       tabBar={<BottomNav />}
-      topBar={<TopBar leading="none" title="Circles" collapse trailing={<IconButton label="New Circle" icon={<Plus />} to="/app/circles/new" />} />}
+      topBar={<TopBar tone="transparent" leading="none" title="Circles" collapse trailing={<IconButton label="New Circle" icon={<Plus />} to="/app/circles/new" />} />}
     >
-      <LargeTitle className="pacts-head" subtitle="The people you make things happen with.">
-        Your Circles
-      </LargeTitle>
+      <PageHero tint="coral" title="Your Circles" subtitle="The people you make things happen with." />
       {circles.isLoading ? (
         <PactListSkeleton count={3} label="Loading your Circles" />
       ) : circles.error ? (

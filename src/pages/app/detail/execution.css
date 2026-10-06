@@ -29,7 +29,7 @@
 }
 
 .exec__money dt {
-  font-size: var(--text-caption);
+  font-size: var(--t-meta-size);
   font-weight: var(--weight-medium);
   color: var(--color-text-tertiary);
 }
@@ -61,7 +61,7 @@
   justify-content: space-between;
   gap: var(--space-3);
   margin-bottom: 6px;
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
   color: var(--color-text-secondary);
 }
 
@@ -115,7 +115,7 @@
 .exec__link {
   min-height: 44px;
   padding: 0 var(--space-3);
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
   font-weight: var(--weight-semibold);
   color: var(--color-accent-text);
   text-decoration: underline;
@@ -123,7 +123,7 @@
 }
 
 .exec__member {
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
   color: var(--color-text-secondary);
 }
 
@@ -155,7 +155,7 @@
 }
 
 .exec__review dt {
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
   color: var(--color-text-secondary);
 }
 
@@ -167,7 +167,7 @@
 
 .exec__left {
   margin: var(--space-3) 0;
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
   color: var(--color-text-secondary);
 }
 
@@ -223,7 +223,7 @@
 .planpay__sub {
   grid-column: 1;
   min-width: 0;
-  font-size: var(--text-caption);
+  font-size: var(--t-meta-size);
   color: var(--color-text-tertiary);
 }
 

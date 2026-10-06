@@ -33,7 +33,7 @@
   font-size: clamp(20px, calc(100cqw / (var(--chars, 8) * 0.6)), var(--num-md));
   line-height: 1.15;
   font-weight: var(--weight-bold);
-  letter-spacing: -0.05em;
+  letter-spacing: var(--tracking-display);
   white-space: nowrap;
 }
 
@@ -43,12 +43,12 @@
 
 .detail__center-name {
   margin-top: var(--space-2);
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
   font-weight: var(--weight-semibold);
 }
 
 .detail__center-meta {
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
   color: var(--color-text-tertiary);
 }
 
@@ -58,12 +58,12 @@
   border-radius: var(--radius-full);
   background: var(--color-accent-soft);
   color: var(--color-accent-text);
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
   font-weight: var(--weight-semibold);
 }
 
 .detail__ring-hint {
-  font-size: var(--text-caption);
+  font-size: var(--t-meta-size);
   color: var(--color-text-tertiary);
 }
 
@@ -102,12 +102,12 @@
 
 .person__name {
   margin-top: 4px;
-  font-size: var(--text-caption);
+  font-size: var(--t-meta-size);
   font-weight: var(--weight-semibold);
 }
 
 .person__amount {
-  font-size: 0.6875rem;
+  font-size: var(--t-label-size);
   color: var(--color-text-tertiary);
 }
 
@@ -122,7 +122,7 @@
   padding: var(--space-6);
   border-radius: var(--radius-lg);
   background: var(--color-bg-sunken);
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
   color: var(--color-text-secondary);
   text-align: center;
 }
@@ -158,7 +158,7 @@
 
 .detail__note {
   margin-top: var(--space-4);
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
   line-height: var(--leading-sm);
   color: var(--color-text-secondary);
   font-style: italic;
@@ -172,7 +172,7 @@
   border-radius: var(--radius-lg);
   background: var(--color-surface);
   box-shadow: inset 0 0 0 1px var(--color-border);
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
   line-height: var(--leading-sm);
   color: var(--color-text-secondary);
 }
@@ -192,7 +192,7 @@
 
 .detail__almost {
   margin-top: var(--space-2);
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
   font-weight: var(--weight-medium);
   color: var(--color-accent-text);
   text-align: center;
@@ -216,12 +216,12 @@
   flex-direction: column;
   flex: 1;
   min-width: 0;
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
   color: var(--color-text-tertiary);
 }
 
 .detail__me strong {
-  font-size: var(--text-body);
+  font-size: var(--t-body-size);
   font-weight: var(--weight-semibold);
   color: var(--color-text);
 }
@@ -248,7 +248,7 @@
   padding: 0 var(--space-4);
   border-radius: var(--radius-lg);
   border: 1.5px dashed var(--color-border-strong);
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
   font-weight: var(--weight-medium);
   color: var(--color-text-secondary);
 }

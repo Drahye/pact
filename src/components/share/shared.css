@@ -92,9 +92,9 @@
 
 .sl__amount {
   margin: 0;
-  font-size: clamp(2rem, 10vw, 2.5rem);
+  font-size: var(--t-page-size);
   font-weight: var(--weight-semibold);
-  letter-spacing: -0.04em;
+  letter-spacing: var(--tracking-tight);
   line-height: 1;
 }
 

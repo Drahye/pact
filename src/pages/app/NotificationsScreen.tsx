@@ -6,10 +6,9 @@ import { notificationLink } from '../../../shared/notificationLink';
 import { kindFor } from '../../components/communication/fromNotification';
 import { useMarkRead, useNotifications } from '../../api/hooks';
 import { ErrorState } from '../../components/app/States';
-import { CompletionState } from '../../components/objects';
+import { CompletionState, PageHero } from '../../components/objects';
 import { RowListSkeleton } from '../../components/app/Skeleton';
 import { IconButton } from '../../components/ui/IconButton';
-import { LargeTitle } from '../../components/ui/LargeTitle';
 import { TopBar } from '../../components/ui/TopBar';
 import { formatRelative } from '../../lib/format';
 import { Screen } from './Screen';
@@ -109,8 +108,10 @@ export function NotificationsScreen() {
 
   return (
     <Screen
+      className="xhero xhero--lite tint--sun"
       topBar={
         <TopBar
+          tone="transparent"
           backTo="/app/home"
           title="Notifications"
           collapse
@@ -118,7 +119,7 @@ export function NotificationsScreen() {
         />
       }
     >
-      <LargeTitle>Notifications</LargeTitle>
+      <PageHero tint="sun" title="Notifications" />
       {notes.isLoading ? (
         <RowListSkeleton trailing={false} label="Loading notifications" />
       ) : notes.error ? (

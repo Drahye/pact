@@ -31,7 +31,7 @@
 }
 
 .tier__req {
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
   color: var(--color-text-tertiary);
 }
 
@@ -39,7 +39,7 @@
   display: grid;
   grid-template-columns: 1fr auto;
   gap: var(--space-1) var(--space-3);
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
   color: var(--color-text-secondary);
 }
 
@@ -73,7 +73,7 @@
 
 .appearance__hint {
   padding: 0 var(--space-2) var(--space-1);
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
   color: var(--color-text-tertiary);
 }
 
@@ -96,7 +96,7 @@
 
 .acct__fine {
   margin-top: var(--space-3);
-  font-size: var(--text-caption);
+  font-size: var(--t-meta-size);
   line-height: var(--leading-caption);
   color: var(--color-text-tertiary);
 }
@@ -130,16 +130,16 @@
   grid-column: 1 / -1;
   margin: var(--space-2) 0 0;
   color: var(--color-text-secondary);
-  font-size: 1.1875rem;
+  font-size: var(--t-object-size);
   line-height: 1.4;
-  letter-spacing: -0.015em;
+  letter-spacing: var(--tracking-snug);
   text-wrap: pretty;
 }
 
 .me__story b {
   color: var(--color-text);
   font-weight: var(--t-display-weight);
-  letter-spacing: -0.03em;
+  letter-spacing: var(--tracking-snug);
 }
 
 .me__given-inline {

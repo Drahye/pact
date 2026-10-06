@@ -34,6 +34,7 @@ import { CompleteSheet, ExecutionSection, PlanPayments, presetFor } from './deta
 import { ApprovalCards, AssignGuestSheet, canPayVendors, CoOrganizerSheet, GuestAvatar, guestsOf, isOrganizerOf, PaidFromPact, PayByTransfer, PayoutSheet, PayVendorSheet, type GuestGroup } from './detail/Money';
 import { isOrderPact, MyOrders, OrderMenu, OrderSheetSection, owedOnOrders } from './detail/Orders';
 import { MyPledge, pledgeLabel } from './detail/Pledges';
+import { Hero, Sheet } from '../../components/objects';
 import { AddTaskSheet, BudgetLineSheet, ParticipationSheet, SplitSheet, TaskSheet } from './detail/Sheets';
 import { Screen } from './Screen';
 import './detail.css';
@@ -215,9 +216,9 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
           }
         />
       }
-      className={`detail od-washed tint--${categoryMeta[pact.category].tint}`}
+      className={`detail xhero tint--${categoryMeta[pact.category].tint}`}
     >
-      <section className={`od-pact__hero tint--${categoryMeta[pact.category].tint}`} aria-labelledby="pact-title">
+      <Hero tint={categoryMeta[pact.category].tint} className="xh--pact od-pact__hero">
         <p className="od-pact__kicker">
           <CategoryChip category={pact.category} suffix={`by ${organizer}`} />
           {!executing && active && <span className="od-pact__due num">{s.daysLeft === 0 ? 'Due today' : `${s.daysLeft} ${s.daysLeft === 1 ? 'day' : 'days'} left`}</span>}
@@ -294,8 +295,9 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
         </div>
       )}
 
-      </section>
+      </Hero>
 
+      <Sheet className="od-pact">
       {stage === 'invited' && (
         <div className="detail__invite">
           <p>
@@ -481,6 +483,8 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
           <p className="detail__empty">{stage === 'invited' ? 'Join to see what the group has been up to.' : 'Your Pact activity will appear here.'}</p>
         )}
       </section>
+
+      </Sheet>
 
       <Modal open={menuOpen} onClose={() => setMenuOpen(false)} title={pact.title}>
         <div className="menu">

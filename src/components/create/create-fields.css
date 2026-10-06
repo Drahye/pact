@@ -144,7 +144,7 @@
   border-radius: var(--radius-full);
   background: var(--color-surface);
   box-shadow: inset 0 0 0 1px var(--color-border-strong);
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
   font-weight: var(--weight-medium);
   color: var(--color-text-secondary);
   transition: background-color var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
@@ -155,8 +155,10 @@
   height: 14px;
 }
 
-.suggest__chip:hover {
-  color: var(--color-text);
+@media (hover: hover) {
+  .suggest__chip:hover {
+    color: var(--color-text);
+  }
 }
 
 .suggest__chip.is-on {
@@ -209,7 +211,7 @@
 .pp .pp__row .avatar {
   width: 64px;
   height: 64px;
-  font-size: 1.125rem;
+  font-size: var(--t-lead-size);
   transition: box-shadow var(--motion-state) var(--ease-soft);
 }
 

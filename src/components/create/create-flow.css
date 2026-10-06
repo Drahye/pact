@@ -12,7 +12,7 @@
   align-items: center;
   gap: var(--space-2);
   color: var(--tint-fg);
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
   font-weight: var(--weight-semibold);
 }
 
@@ -92,7 +92,7 @@
   padding: 4px 12px 4px 4px;
   border-radius: 14px 14px 14px 5px;
   background: color-mix(in srgb, var(--tint-solid) 12%, var(--surface-base));
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
   font-weight: var(--weight-medium);
 }
 
@@ -106,7 +106,7 @@
 .cf__label {
   margin: var(--space-2) 0 0;
   color: var(--color-text-secondary);
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
   font-weight: var(--weight-semibold);
 }
 
@@ -152,10 +152,10 @@
    The question is large and sits alone. The first answer is written on a line, not in a box. Ideas are plain words to tap. */
 .cf__heading {
   margin-top: var(--space-6);
-  font-size: clamp(2.125rem, 10.5vw, 2.75rem);
+  font-size: var(--t-hero-size);
   font-weight: var(--t-page-weight);
   line-height: 1.05;
-  letter-spacing: -0.045em;
+  letter-spacing: var(--tracking-tight);
   text-wrap: balance;
 }
 
@@ -189,7 +189,7 @@
   height: 64px;
   font-size: 1.5rem;
   font-weight: var(--weight-medium);
-  letter-spacing: -0.02em;
+  letter-spacing: var(--tracking-snug);
 }
 
 .cf .field__label {

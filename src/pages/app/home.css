@@ -13,7 +13,7 @@
 
 .home__hi {
   color: var(--color-text-secondary);
-  font-size: var(--text-lg);
+  font-size: var(--t-lead-size);
   font-weight: var(--weight-regular);
   letter-spacing: var(--tracking-snug);
 }

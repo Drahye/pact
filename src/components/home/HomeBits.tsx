@@ -8,7 +8,7 @@ import { formatDate } from '../../lib/format';
 import { dateRange } from '../../lib/planDates';
 import { transition } from '../../tokens/tokens';
 import { peopleLine } from '../../lib/peopleLine';
-import { ActivityRow, AnimatedCount, AvatarStack, CircleTile, CompletionState, ComingUpRow } from '../objects';
+import { ActivityRow, AnimatedCount, AvatarStack, CircleTile, CompletionState, ComingUpRow, OBJECT_KINDS, ObjectArt } from '../objects';
 import { SectionHeading } from '../ui/SectionHeading';
 import { NeedItem, needsShape } from './NeedsObjects';
 import './home-v2.css';
@@ -59,6 +59,7 @@ export function NeedsYouSection({ items, total, circles = [], caughtUp }: { item
         <AnimatePresence initial={false}>
           {shown.map((n, i) => (
             <motion.li key={n.id} className={`is-${needsShape(n)}`} layout="position" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.97, height: 0, marginTop: 0, overflow: 'hidden' }} transition={transition.state}>
+              {i === 0 && (needsShape(n) === 'ask' || needsShape(n) === 'plan' || needsShape(n) === 'split') && <ObjectArt kind={needsShape(n) as 'ask' | 'plan' | 'split'} className="hv3-lead-art" />}
               <NeedItem n={n} memberIds={people(n.circleId)} onAnswered={() => hold(n, i)} />
             </motion.li>
           ))}
@@ -140,6 +141,28 @@ export function HomePulse({ total, next, recent = [], selfId }: { total: number;
       </p>
     )}
     </div>
+  );
+}
+
+/** Four ways to start, one tap each: a coloured tile per kind, so starting something is the first thing Home offers. */
+export function HomeShortcuts() {
+  const kinds = [
+    { to: '/app/asks/new', kind: 'ask' as const, label: 'Ask' },
+    { to: '/app/plans/new', kind: 'plan' as const, label: 'Plan' },
+    { to: '/app/splits/new', kind: 'split' as const, label: 'Split' },
+    { to: '/app/create', kind: 'pact' as const, label: 'Pact' },
+  ];
+  return (
+    <nav className="hv3-start" aria-label="Start something">
+      {kinds.map((k) => (
+        <Link key={k.kind} to={k.to} className={`hv3-start__item tint--${OBJECT_KINDS[k.kind].tint}`}>
+          <span className="hv3-start__tile" aria-hidden>
+            {OBJECT_KINDS[k.kind].icon}
+          </span>
+          <span className="hv3-start__label">{k.label}</span>
+        </Link>
+      ))}
+    </nav>
   );
 }
 

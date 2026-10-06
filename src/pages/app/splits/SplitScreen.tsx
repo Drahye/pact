@@ -92,9 +92,11 @@ export function SplitScreen() {
 
   return (
     <Screen
+      className="xhero xhero--full tint--lilac"
       topBar={
         <TopBar
           backTo={params.get('from') === 'home' ? '/app/home' : `/app/circles/${s.circleId}`}
+          tone="transparent"
           title={s.circle.name}
           trailing={
             <span className="detail__top-actions">

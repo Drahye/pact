@@ -116,7 +116,7 @@
 .ox-circle__name {
   margin-top: 6px;
   overflow: hidden;
-  font-size: 1.0625rem;
+  font-size: var(--t-lead-size);
   font-weight: var(--weight-semibold);
   letter-spacing: var(--tracking-snug);
   text-overflow: ellipsis;
@@ -257,7 +257,7 @@
 
 .ox-agenda__main strong {
   overflow: hidden;
-  font-size: 1.0625rem;
+  font-size: var(--t-lead-size);
   letter-spacing: var(--tracking-snug);
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -278,16 +278,21 @@
   transition: transform var(--motion-state) var(--ease-soft), color var(--motion-state) var(--ease-soft);
 }
 
+.ox-agenda:focus-visible {
+  outline-offset: 5px;
+  border-radius: var(--radius-sm);
+}
+
 .ox-agenda:active:not(.is-disabled) > svg,
 .ox-agenda:focus-visible > svg {
   color: var(--color-text);
-  transform: translateX(4px);
+  transform: translateX(3px);
 }
 
 @media (hover: hover) {
   .ox-agenda:hover:not(.is-disabled) > svg {
     color: var(--color-text);
-    transform: translateX(4px);
+    transform: translateX(3px);
   }
 }
 
@@ -501,13 +506,13 @@
 }
 
 .ox-ask--page .ox-opt__label {
-  font-size: 1.0625rem;
+  font-size: var(--t-lead-size);
 }
 
 .ox-ask--page .ox-opt__n {
   min-width: 1.25ch;
   text-align: right;
-  font-size: 1.125rem;
+  font-size: var(--t-lead-size);
 }
 
 .ox-opt__faces {
@@ -550,7 +555,7 @@
   justify-items: center;
   height: 80px;
   border-radius: 18px;
-  background: linear-gradient(160deg, color-mix(in srgb, var(--white) 45%, var(--tint-bg)), var(--tint-bg));
+  background: linear-gradient(160deg, color-mix(in srgb, var(--white) var(--date-lift, 45%), var(--tint-bg)), var(--tint-bg));
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tint-solid) 26%, transparent);
   color: var(--tint-fg);
   line-height: 1;
@@ -657,7 +662,7 @@
 
 .ox-plan--page .ox-plan__date b {
   font-size: 2.875rem;
-  letter-spacing: -0.05em;
+  letter-spacing: var(--tracking-display);
 }
 
 .ox-plan--page .ox-plan__text {
@@ -685,7 +690,7 @@
 
 .ox-plan--page .ox-rsvp__btn {
   min-height: 48px;
-  font-size: 1.0625rem;
+  font-size: var(--t-lead-size);
 }
 
 /* A plan that has become a Pact: still here as the record, so the date goes quiet and nothing asks for an answer. */
@@ -825,9 +830,9 @@
 
 .ox-split__total {
   margin: 0;
-  font-size: clamp(2.25rem, 11vw, 3rem);
+  font-size: var(--t-hero-size);
   font-weight: var(--weight-semibold);
-  letter-spacing: -0.045em;
+  letter-spacing: var(--tracking-tight);
   line-height: 1;
 }
 
@@ -1177,7 +1182,7 @@
 }
 
 .ox-plan--compact .ox-plan__title {
-  font-size: 1.25rem;
+  font-size: var(--t-object-size);
 }
 
 /* Split, compact: who you owe and how much, how far along; one tonal action at the end. */
@@ -1239,7 +1244,7 @@
 }
 
 .ox-pact--compact .ox-pact__title {
-  font-size: 1.1875rem;
+  font-size: var(--t-object-size);
 }
 
 .ox-pact__yours {
@@ -1254,8 +1259,8 @@
 }
 
 .ox-pact__pct {
-  font-size: 0.75rem;
-  font-weight: 700;
+  font-size: var(--t-meta-size);
+  font-weight: var(--weight-bold);
 }
 
 .ox-pact--compact .ox-pact__meta {
@@ -1289,7 +1294,7 @@
 
 .ox-agenda__date i {
   color: var(--color-text-tertiary);
-  font-size: 0.6875rem;
+  font-size: var(--t-label-size);
   font-style: normal;
   font-weight: var(--weight-semibold);
   letter-spacing: 0.08em;
@@ -1300,7 +1305,7 @@
   margin-top: 3px;
   font-size: 1.5rem;
   font-weight: var(--weight-bold);
-  letter-spacing: -0.04em;
+  letter-spacing: var(--tracking-tight);
 }
 
 .ox-agenda__date.is-today {
@@ -1364,7 +1369,7 @@
 .ox-plan__countdown b {
   font-size: clamp(1.75rem, 8vw, 2.25rem);
   font-weight: var(--t-display-weight);
-  letter-spacing: -0.045em;
+  letter-spacing: var(--tracking-tight);
 }
 
 .ox-plan__countdown span {

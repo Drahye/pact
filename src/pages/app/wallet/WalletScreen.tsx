@@ -1,4 +1,3 @@
-import { LargeTitle } from '../../../components/ui/LargeTitle';
 import { TopBar } from '../../../components/ui/TopBar';
 import { ChevronRight, Landmark, ReceiptText, ShieldCheck } from 'lucide-react';
 import { useMemo, useState } from 'react';
@@ -17,6 +16,7 @@ import { Modal } from '../../../components/ui/Modal';
 import { ProgressBar } from '../../../components/ui/ProgressBar';
 import { Segmented } from '../../../components/ui/Segmented';
 import { formatDateTime, formatNairaKobo } from '../../../lib/format';
+import { PageHero } from '../../../components/objects';
 import { Screen } from '../Screen';
 import './wallet.css';
 
@@ -36,8 +36,8 @@ export function WalletScreen() {
   }, [txns.data, filter]);
 
   return (
-    <Screen tabBar={<BottomNav />} className="wallet" topBar={<TopBar leading="none" title="Wallet" collapse />}>
-      <LargeTitle className="screen-title">Wallet</LargeTitle>
+    <Screen className="wallet xhero xhero--lite tint--sun" tabBar={<BottomNav />} topBar={<TopBar tone="transparent" leading="none" title="Wallet" collapse />}>
+      <PageHero tint="sun" title="Wallet" />
       <SandboxNote />
       <WalletCard balance={wallet.data?.balance} tier={tier} />
 

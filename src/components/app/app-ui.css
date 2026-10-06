@@ -42,7 +42,7 @@
 
 .pinpad__msg {
   min-height: 20px;
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
   line-height: var(--leading-sm);
   color: var(--color-text-tertiary);
   text-align: center;
@@ -71,8 +71,10 @@
   transition: background-color var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out);
 }
 
-.pinpad__key:hover {
-  background: var(--color-bg-sunken);
+@media (hover: hover) {
+  .pinpad__key:hover {
+    background: var(--color-bg-sunken);
+  }
 }
 
 .pinpad__key:active {
@@ -137,7 +139,7 @@
 }
 
 .wallet-card__label {
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
   font-weight: var(--weight-medium);
   color: rgba(15, 23, 19, 0.7);
 }
@@ -149,7 +151,7 @@
   padding: 0 var(--space-3);
   border-radius: var(--radius-full);
   background: rgba(15, 23, 19, 0.1);
-  font-size: var(--text-caption);
+  font-size: var(--t-meta-size);
   font-weight: var(--weight-semibold);
 }
 
@@ -200,7 +202,7 @@
   height: 44px;
   border-radius: var(--radius-full);
   background: rgba(255, 255, 255, 0.55);
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
   font-weight: var(--weight-semibold);
   transition: transform var(--duration-fast) var(--ease-out), background-color var(--duration-fast) var(--ease-out);
 }
@@ -280,7 +282,7 @@
 }
 
 .txn__meta {
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
   color: var(--color-text-tertiary);
 }
 
@@ -338,14 +340,14 @@
 }
 
 .state__title {
-  font-size: var(--text-lg);
+  font-size: var(--t-lead-size);
   font-weight: var(--weight-semibold);
 }
 
 .state__body {
   max-width: 280px;
   margin-bottom: var(--space-3);
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
   line-height: var(--leading-sm);
   color: var(--color-text-secondary);
 }
@@ -357,7 +359,7 @@
   padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-md);
   background: var(--color-bg-sunken);
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
   line-height: var(--leading-sm);
   color: var(--color-text-secondary);
 }
@@ -467,9 +469,11 @@
   transition: background-color var(--duration-fast) var(--ease-out);
 }
 
-a.menu__row:hover,
-button.menu__row:hover {
-  background: var(--surface-quiet);
+@media (hover: hover) {
+  a.menu__row:hover,
+  button.menu__row:hover {
+    background: var(--surface-quiet);
+  }
 }
 
 .menu__row:focus-visible {
@@ -504,7 +508,7 @@ button.menu__row:hover {
 }
 
 .menu__sub {
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
   color: var(--color-text-tertiary);
 }
 
@@ -513,7 +517,7 @@ button.menu__row:hover {
   align-items: center;
   gap: var(--space-2);
   flex-shrink: 0;
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
   color: var(--color-text-tertiary);
 }
 
@@ -528,7 +532,7 @@ button.menu__row:hover {
 
 .menu-label {
   margin: var(--space-6) 0 var(--space-2) var(--space-1);
-  font-size: var(--text-caption);
+  font-size: var(--t-meta-size);
   font-weight: var(--weight-semibold);
   letter-spacing: var(--tracking-wide);
   text-transform: uppercase;
@@ -550,7 +554,7 @@ button.menu__row:hover {
   display: flex;
   justify-content: space-between;
   gap: var(--space-4);
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
   color: var(--color-text-secondary);
 }
 
@@ -563,7 +567,7 @@ button.menu__row:hover {
 .summary__row--total {
   padding-top: var(--space-3);
   border-top: var(--border-hairline);
-  font-size: var(--text-body);
+  font-size: var(--t-body-size);
 }
 
 /* Choice cards (payment method, missed-goal rule) ------------------------- */
@@ -621,7 +625,7 @@ button.menu__row:hover {
 }
 
 .choice__sub {
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
   line-height: var(--leading-sm);
   color: var(--color-text-tertiary);
 }
@@ -654,7 +658,7 @@ button.menu__row:hover {
   border-radius: var(--radius-full);
   background: var(--coral-400);
   box-shadow: 0 0 0 2px var(--color-bg);
-  font-size: 0.6875rem;
+  font-size: var(--t-label-size);
   line-height: 18px;
   font-weight: var(--weight-bold);
   color: var(--ink-900);
@@ -670,7 +674,7 @@ button.menu__row:hover {
   padding: 4px var(--space-3);
   border-radius: var(--radius-xl);
   background: var(--lilac-50);
-  font-size: var(--text-caption);
+  font-size: var(--t-meta-size);
   font-weight: var(--weight-semibold);
   color: var(--tone-lilac-fg);
 }
@@ -698,7 +702,7 @@ button.menu__row:hover {
 
 .sheet-note {
   padding: var(--space-3) var(--space-4);
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
   color: var(--color-text-tertiary);
 }
 
@@ -768,12 +772,12 @@ button.menu__row:hover {
 }
 
 .wallet-strip__label {
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
   color: var(--color-text-secondary);
 }
 
 .wallet-strip__balance {
-  font-size: var(--text-body);
+  font-size: var(--t-body-size);
   font-weight: var(--weight-semibold);
 }
 
@@ -785,7 +789,7 @@ button.menu__row:hover {
   padding: 0 var(--space-3);
   border-radius: var(--radius-full);
   background: var(--color-bg-sunken);
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
   font-weight: var(--weight-semibold);
   color: var(--color-text);
 }

@@ -10,7 +10,7 @@
 }
 
 .legal__updated {
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
   color: var(--color-text-tertiary);
 }
 
@@ -23,7 +23,7 @@
 
 .legal__intro {
   margin-top: var(--space-4);
-  font-size: var(--text-lg);
+  font-size: var(--t-lead-size);
   line-height: var(--leading-lg);
   color: var(--color-text-secondary);
 }
@@ -55,7 +55,7 @@
   border-radius: var(--radius-full);
   background: var(--color-surface);
   box-shadow: inset 0 0 0 1px var(--color-border);
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
   font-weight: var(--weight-medium);
 }
 

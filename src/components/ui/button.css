@@ -67,20 +67,20 @@
 .btn--lg {
   min-height: 56px;
   padding: var(--space-2) var(--space-6);
-  font-size: var(--text-body);
+  font-size: var(--t-body-size);
 }
 
 .btn--md {
   min-height: 48px;
   padding: var(--space-2) var(--space-5);
-  font-size: var(--text-body);
+  font-size: var(--t-body-size);
 }
 
 .btn--sm {
   height: 36px;
   padding: 0 var(--space-4);
   white-space: nowrap;
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
 }
 
 .btn--sm .btn__icon svg {
@@ -98,8 +98,10 @@
   color: var(--color-on-accent);
 }
 
-.btn--primary:hover:not(:disabled) {
-  background: var(--color-accent-hover);
+@media (hover: hover) {
+  .btn--primary:hover:not(:disabled) {
+    background: var(--color-accent-hover);
+  }
 }
 
 .btn--primary:active:not(:disabled) {
@@ -117,9 +119,11 @@
   box-shadow: inset 0 0 0 1px var(--color-border-strong);
 }
 
-.btn--secondary:hover:not(:disabled) {
-  background: var(--color-surface-raised);
-  box-shadow: inset 0 0 0 1px var(--color-border-hover);
+@media (hover: hover) {
+  .btn--secondary:hover:not(:disabled) {
+    background: var(--color-surface-raised);
+    box-shadow: inset 0 0 0 1px var(--color-border-hover);
+  }
 }
 
 .btn--secondary:focus-visible {
@@ -130,8 +134,10 @@
   color: var(--color-text);
 }
 
-.btn--ghost:hover:not(:disabled) {
-  background: var(--color-bg-sunken);
+@media (hover: hover) {
+  .btn--ghost:hover:not(:disabled) {
+    background: var(--color-bg-sunken);
+  }
 }
 
 .btn--inverse {
@@ -139,8 +145,10 @@
   color: var(--color-text-inverse);
 }
 
-.btn--inverse:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--color-surface-inverse) 88%, var(--color-text-inverse));
+@media (hover: hover) {
+  .btn--inverse:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--color-surface-inverse) 88%, var(--color-text-inverse));
+  }
 }
 
 /* loading ---------------------------------------------------------------- */
@@ -196,12 +204,16 @@
   box-shadow: inset 0 0 0 1px var(--color-border);
 }
 
-.icon-btn--surface:hover {
-  background: var(--color-surface-raised);
+@media (hover: hover) {
+  .icon-btn--surface:hover {
+    background: var(--color-surface-raised);
+  }
 }
 
-.icon-btn--ghost:hover {
-  background: var(--color-bg-sunken);
+@media (hover: hover) {
+  .icon-btn--ghost:hover {
+    background: var(--color-bg-sunken);
+  }
 }
 
 .icon-btn--inverse {
@@ -215,8 +227,10 @@
   color: var(--color-on-selected);
 }
 
-.btn--ink:hover:not(:disabled) {
-  filter: brightness(1.12);
+@media (hover: hover) {
+  .btn--ink:hover:not(:disabled) {
+    filter: brightness(1.12);
+  }
 }
 
 .btn--ink:disabled {

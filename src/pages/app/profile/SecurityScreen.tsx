@@ -9,10 +9,10 @@ import { PinSheet } from '../../../components/app/PinSheet';
 import { RowListSkeleton } from '../../../components/app/Skeleton';
 import { Button } from '../../../components/ui/Button';
 import { Modal } from '../../../components/ui/Modal';
-import { LargeTitle } from '../../../components/ui/LargeTitle';
 import { TopBar } from '../../../components/ui/TopBar';
 import { useToast } from '../../../components/ui/Toast';
 import { formatRelative } from '../../../lib/format';
+import { PageHero } from '../../../components/objects';
 import { Screen } from '../Screen';
 import '../../../components/app/app-ui.css';
 import '../profile.css';
@@ -70,8 +70,8 @@ export function SecurityScreen() {
   const others = sessions.data?.filter((s) => !s.current) ?? [];
 
   return (
-    <Screen topBar={<TopBar backTo="/app/profile" title="PIN and devices" collapse />}>
-      <LargeTitle>PIN and devices</LargeTitle>
+    <Screen className="xhero xhero--lite tint--sky" topBar={<TopBar tone="transparent" backTo="/app/profile" title="PIN and devices" collapse />}>
+      <PageHero tint="sky" title="PIN and devices" />
       <p className="menu-label">PIN</p>
       <div className="menu">
         {user && !user.hasPin ? (

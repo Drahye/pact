@@ -27,3 +27,5 @@
 
 .gs__ctx-icon { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 9px 9px 9px 3px; background: var(--tint-bg); color: var(--tint-fg); }
 .gs__ctx-icon svg { width: 15px; height: 15px; }
+
+.gs__title { font-size: var(--t-page-size); line-height: var(--t-page-line); font-weight: var(--t-page-weight); letter-spacing: var(--t-page-tracking); text-wrap: balance; }

@@ -2,6 +2,7 @@
 @import './tokens.css';
 @import './dark.css';
 @import './touch.css';
+@import './press.css';
 
 *,
 *::before,
@@ -24,7 +25,7 @@ html {
 body {
   margin: 0;
   font-family: var(--font-sans);
-  font-size: var(--text-body);
+  font-size: var(--t-body-size);
   line-height: var(--leading-body);
   letter-spacing: var(--tracking-normal);
   color: var(--color-text);
@@ -33,6 +34,8 @@ body {
   -moz-osx-font-smoothing: grayscale;
   font-feature-settings: 'ss01' on, 'cv11' on;
   text-rendering: optimizeLegibility;
+  /* Only the weights the ladder names are drawn: no browser-faked bold or italic. */
+  font-synthesis: none;
 }
 
 h1,
@@ -69,6 +72,7 @@ p {
 a {
   color: inherit;
   text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 button,

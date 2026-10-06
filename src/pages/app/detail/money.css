@@ -30,14 +30,14 @@
 }
 
 .pay-transfer__title {
-  font-size: var(--text-body);
+  font-size: var(--t-body-size);
   font-weight: var(--weight-semibold);
 }
 
 .pay-transfer__sub,
 .pay-transfer__meta,
 .pay-transfer__hint {
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
   color: var(--color-text-secondary);
 }
 
@@ -81,7 +81,7 @@
 
 .pay-transfer__hint {
   margin-top: var(--space-3);
-  font-size: var(--text-caption);
+  font-size: var(--t-meta-size);
 }
 
 .pay-transfer-cta {
@@ -97,8 +97,10 @@
   text-align: left;
 }
 
-.pay-transfer-cta:hover {
-  box-shadow: inset 0 0 0 1.5px var(--color-text);
+@media (hover: hover) {
+  .pay-transfer-cta:hover {
+    box-shadow: inset 0 0 0 1.5px var(--color-text);
+  }
 }
 
 .pay-transfer-cta__text {
@@ -114,7 +116,7 @@
 }
 
 .pay-transfer-cta__text span {
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
   color: var(--color-text-secondary);
 }
 
@@ -131,7 +133,7 @@
 }
 
 .person__guest {
-  font-size: 0.6875rem;
+  font-size: var(--t-label-size);
   font-weight: var(--weight-semibold);
   color: var(--color-text-secondary);
 }
@@ -146,7 +148,7 @@
 }
 
 .paid__total {
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
   font-weight: var(--weight-semibold);
   color: var(--color-text-secondary);
 }
@@ -208,7 +210,7 @@
 
 .paid__sub {
   overflow: hidden;
-  font-size: var(--text-caption);
+  font-size: var(--t-meta-size);
   color: var(--color-text-secondary);
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -230,13 +232,13 @@
   padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-lg);
   background: var(--color-bg-sunken);
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
   color: var(--color-text-secondary);
 }
 
 /* One payment */
 .payout__bank {
-  font-size: var(--text-caption);
+  font-size: var(--t-meta-size);
   font-weight: var(--weight-regular, 400);
   color: var(--color-text-secondary);
 }
@@ -273,7 +275,7 @@
 
 .vendor__available {
   margin-top: calc(var(--space-2) * -1);
-  font-size: var(--text-caption);
+  font-size: var(--t-meta-size);
   color: var(--color-text-secondary);
 }
 
@@ -309,11 +311,11 @@
   flex-direction: column;
   gap: 2px;
   min-width: 0;
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
 }
 
 .approval__text strong {
-  font-size: var(--text-body);
+  font-size: var(--t-body-size);
 }
 
 .approval > svg {
@@ -359,12 +361,12 @@
   flex-direction: column;
   gap: 2px;
   min-width: 0;
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
   color: var(--color-text-secondary);
 }
 
 .pledge-card__text strong {
-  font-size: var(--text-body);
+  font-size: var(--t-body-size);
   color: var(--color-text);
 }
 
@@ -385,7 +387,7 @@
 }
 
 .person__pledge {
-  font-size: 0.6875rem;
+  font-size: var(--t-label-size);
   font-weight: var(--weight-semibold);
   color: var(--tone-sky-fg);
 }
@@ -459,7 +461,7 @@
 }
 
 .order-item__meta {
-  font-size: var(--text-caption);
+  font-size: var(--t-meta-size);
   color: var(--color-text-secondary);
 }
 
@@ -501,13 +503,13 @@
 }
 
 .stepper__hint {
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
   color: var(--color-text-secondary);
 }
 
 .order__cancel {
   min-height: 24px;
-  font-size: var(--text-caption);
+  font-size: var(--t-meta-size);
 }
 
 .order-sheet {
@@ -533,7 +535,7 @@
 }
 
 .order-sheet__head span {
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
   color: var(--color-text-secondary);
 }
 
@@ -555,7 +557,7 @@
   padding: 2px 8px;
   border-radius: var(--radius-full);
   background: var(--pink-100);
-  font-size: var(--text-caption);
+  font-size: var(--t-meta-size);
   font-weight: var(--weight-semibold);
   text-align: center;
 }
@@ -573,7 +575,7 @@
   padding: 2px 8px;
   border-radius: var(--radius-full);
   background: var(--color-bg-sunken);
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
 }
 
 .order-sheet__name.is-paid {
@@ -593,7 +595,7 @@
   gap: 6px;
   min-height: 44px;
   margin: 0 var(--space-1);
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
   font-weight: var(--weight-semibold);
   color: var(--color-text-secondary);
   text-decoration: underline;

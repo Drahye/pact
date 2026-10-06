@@ -97,7 +97,7 @@
 .od-pact__hero .detail__center-amount--total {
   font-size: clamp(22px, calc(100cqw / (var(--chars, 8) * 0.58)), 44px);
   font-weight: var(--t-display-weight);
-  letter-spacing: -0.055em;
+  letter-spacing: var(--tracking-display);
 }
 
 .detail__ring[data-state='started'] .sring__track {

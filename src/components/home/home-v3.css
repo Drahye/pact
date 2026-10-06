@@ -110,7 +110,7 @@
 .hv3-day__name {
   margin: 0 0 var(--space-1);
   color: var(--color-text-secondary);
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
   font-weight: var(--weight-semibold);
   letter-spacing: 0.04em;
   text-transform: uppercase;

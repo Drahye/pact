@@ -1,0 +1,44 @@
+/* ==========================================================================
+   Pressed. Everything tappable gives under a finger, in one of two ways:
+     objects (cards, rows, buttons, chips, tiles): a small scale and a tone shift, the surface lifts in dark and settles in light;
+     text (links, inline actions): they dim, because a scale means nothing to words.
+   Every selector here is :where(), so it has no specificity: a component that defines its own pressed state always wins, and this
+   only fills in for what has none. The pressed colour never changes hue and never leaves the contrast the resting state had.
+   ========================================================================== */
+
+:where(a[href], button, [role='button'], summary) {
+  -webkit-tap-highlight-color: transparent;
+}
+
+:where(a[href], button, [role='button'], summary):where(:not(:disabled, [aria-disabled='true'], .is-disabled)) {
+  transition: transform var(--motion-micro) var(--ease-press), filter var(--motion-micro) var(--ease-soft), opacity var(--motion-micro) var(--ease-soft);
+}
+
+:where(a[href], button, [role='button'], summary):where(:not(:disabled, [aria-disabled='true'], .is-disabled)):active {
+  transform: scale(var(--press-scale));
+  filter: brightness(var(--press-dim));
+}
+
+/* Words get a soft tonal halo behind them instead of a scale. It is currentColor at a few percent, so the text keeps its colour and its
+   contrast. :is() rather than :where() here, so the halo beats the reset that gives every button no background. */
+:is(a[href], button, [role='button']):is(.link, .sp-foot__link, .ox-plan__where, .pledge-link, .ob__skip, .ox-share__undo, .plan-add, .od-circle__all, .od-people__remove, .section-heading__action, .auth__textbtn, .act--text):not(:disabled, [aria-disabled='true']):active {
+  transform: none;
+  filter: none;
+  border-radius: 8px;
+  background-color: color-mix(in srgb, currentColor 6%, transparent);
+  box-shadow: 0 0 0 5px color-mix(in srgb, currentColor 6%, transparent);
+}
+
+/* A link inside a sentence is text too. */
+p a[href]:active,
+li a[href]:active {
+  background-color: color-mix(in srgb, currentColor 6%, transparent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, currentColor 6%, transparent);
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :where(a[href], button, [role='button'], summary):where(:not(:disabled, [aria-disabled='true'], .is-disabled)):active {
+    transform: none;
+  }
+}

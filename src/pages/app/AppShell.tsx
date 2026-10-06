@@ -131,6 +131,8 @@ export function AppShell() {
   const shared = /^\/(a|p|s|r)\//.test(location.pathname) || location.pathname.startsWith('/app/c/');
   const wide = useMediaQuery('(min-width: 600px)');
   const framed = wide && !shared;
+  // Sign-in and welcome keep their own look. Everything signed in, and every shared page, wears the bold one.
+  const bold = !(location.pathname === '/app' || location.pathname === '/app/' || location.pathname.startsWith('/app/auth'));
   const [overlayRoot, setOverlayRoot] = useState<HTMLElement | null>(null);
   const direction = useTransitionDirection(location.pathname);
 
@@ -163,7 +165,7 @@ export function AppShell() {
 
   return (
     <ToastProviderWithRoot root={framed ? overlayRoot : null}>
-      <div className={`proto ${framed ? 'proto--framed' : 'proto--native'} ${shared ? 'proto--share' : ''}`}>
+      <div className={`proto ${framed ? 'proto--framed' : 'proto--native'} ${shared ? 'proto--share' : ''} ${bold ? 'proto--bold' : ''}`}>
         <a href="#app-main" className="skip-link">
           Skip to app
         </a>

@@ -37,7 +37,7 @@ export function RecapLinkScreen() {
   }
   const r = recap.data;
   return (
-    <Screen className={`share tint--${TINT[r.kind]}`}>
+    <Screen className={`share xhero xhero--full tint--${TINT[r.kind]}`}>
       <div className="rl">
         <SharedBrand />
         <RecapView recap={r} />

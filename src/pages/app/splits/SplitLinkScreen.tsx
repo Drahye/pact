@@ -88,7 +88,7 @@ export function SplitLinkScreen() {
   const showJoin = !joined && signedIn && view.canJoinCircle && (touched || (!!m && m.status === 'settled'));
 
   return (
-    <Screen className="share tint--lilac">
+    <Screen className="share xhero xhero--full tint--lilac">
       <div className="split-link sl">
         <ShareHeader kind="split" byName={payer} verb="paid and split it" circleName={view.circle.name} />
         {view.status === 'settled' && <CompletionState tint="lilac" size="sm" title="All settled." line="Everyone is square." flourish={false} />}

@@ -18,9 +18,10 @@
 
 .recap__title {
   margin: 0;
-  font-size: var(--text-3xl, 2.125rem);
-  line-height: 1.1;
-  font-weight: var(--weight-bold);
+  font-size: var(--t-page-size);
+  line-height: var(--t-page-line);
+  font-weight: var(--t-page-weight);
+  letter-spacing: var(--t-page-tracking);
   overflow-wrap: anywhere;
 }
 
@@ -86,7 +87,7 @@
 }
 
 .recap__metric dt {
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
   opacity: 0.8;
 }
 

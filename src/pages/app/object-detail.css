@@ -108,7 +108,7 @@
 }
 
 .ox-split--page .ox-share__name {
-  font-size: 1.0625rem;
+  font-size: var(--t-lead-size);
 }
 
 .ox-split--page .ox-share__amount {

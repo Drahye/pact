@@ -1,0 +1,1120 @@
+/* ==========================================================================
+   The bold look. Everything signed in, and every shared page, wears it; sign-in and the welcome screen do not (.proto--bold is only set
+   outside /app/auth and /app).
+
+   One idea: each screen commits to one saturated colour, the colour of the thing it is about. That colour is the hero at the top, the
+   title is set large on it with a solid object beside it, and the body of the screen rises over it as a rounded sheet. Numbers are the
+   biggest thing on a money surface. Cards have depth, not outlines. Navigation is a dark bar. One solid action, with an arrow.
+   ========================================================================== */
+
+.proto--bold {
+  --t-hero-weight: var(--weight-heavy);
+  --t-display-weight: var(--weight-heavy);
+  --t-page-weight: var(--weight-heavy);
+  --t-section-weight: var(--weight-bold);
+  --t-object-weight: var(--weight-bold);
+  --t-lead-weight: var(--weight-semibold);
+  --on-hero: #0c1a12;                       /* 5.7:1 on lilac, 7:1+ on every other tint */
+  --on-hero-2: rgba(12, 26, 18, 0.88);      /* secondary: 4.9:1 on lilac */
+  --on-hero-3: rgba(12, 26, 18, 0.84);      /* tertiary: 4.6:1 on lilac. Hierarchy comes from size and weight, never from fading below AA. */
+  --card-radius: 28px;
+  --card-shadow: 0 0 0 1px rgba(15, 23, 19, 0.04), 0 1px 2px rgba(15, 23, 19, 0.05), 0 20px 36px -22px rgba(15, 23, 19, 0.3);
+  --sheet-radius: 34px;
+  /* Cards laid on a hero cast a short shadow: a long one darkens the colour under the text below, and ink loses contrast on it. */
+  --hero-shadow: 0 12px 22px -18px rgba(12, 26, 18, 0.3);
+}
+
+:root[data-theme='dark'] .proto--bold {
+  --card-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 0 0 1px rgba(255, 255, 255, 0.04), 0 20px 36px -20px rgba(0, 0, 0, 0.7);
+}
+
+/* In dark, the sheet is lifted by a lit edge, not a black shadow cast upward onto a bright hero. */
+:root[data-theme='dark'] .proto--bold .xs {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 -10px 30px -24px rgba(0, 0, 0, 0.5);
+}
+
+/* ---- Hero + sheet ------------------------------------------------------------------------------------------------------------ */
+.proto--bold .screen.xhero {
+  --xh-a: color-mix(in srgb, var(--tint-solid) 70%, #fff);
+  background: var(--xh-a);
+}
+
+.proto--bold .screen.xhero .screen__content {
+  padding-bottom: 0;
+}
+
+.proto--bold .screen.xhero {
+  --tb-h: calc(60px + env(safe-area-inset-top));
+}
+
+.proto--framed.proto--bold .screen.xhero {
+  --tb-h: 110px;
+}
+
+.proto--bold .screen.xhero .topbar {
+  color: var(--on-hero);
+}
+
+/* The bar floats over the hero instead of sitting above it: the hero's colour runs to the very top, and its content starts below the bar. */
+.proto--bold .screen.xhero:has(> .screen__content > .xh:first-child) > .topbar {
+  margin-bottom: calc(var(--tb-h) * -1);
+}
+
+.proto--bold .screen.xhero > .topbar + .screen__content > .xh:first-child {
+  padding-top: calc(var(--tb-h) + var(--space-2));
+}
+
+.proto--bold .screen.xhero .topbar.is-scrolled {
+  background: color-mix(in srgb, var(--tint-solid) 86%, #fff);
+  box-shadow: none;
+}
+
+.proto--bold .xh {
+  --xh-a: color-mix(in srgb, var(--tint-solid) 70%, #fff);
+  --xh-c: var(--tint-solid);
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  margin: 0 calc(var(--space-5) * -1);
+  padding: var(--space-2) var(--space-5) 64px;
+  color: var(--on-hero);
+  background: radial-gradient(90% 70% at 100% 45%, rgba(255, 255, 255, 0.34), transparent 62%), linear-gradient(168deg, var(--xh-a) 0%, var(--tint-solid) 56%, var(--xh-c) 100%);
+}
+
+.proto--bold .xh__body {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: var(--space-3);
+}
+
+.proto--bold .xh__art {
+  position: absolute;
+  z-index: 0;
+  right: -18px;
+  bottom: 14px;
+  width: 168px;
+  height: 168px;
+  transform: rotate(-6deg);
+  pointer-events: none;
+}
+
+.proto--bold .xh--art .xh__body {
+  padding-right: 96px;
+}
+
+.proto--bold .xh :is(h1, h2, p, span, b, strong) {
+  color: inherit;
+}
+
+.proto--bold .xs {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  flex: 1 0 auto;
+  margin: -34px calc(var(--space-5) * -1) 0;
+  padding: var(--space-6) var(--space-5) calc(var(--space-9, 56px) + 24px);
+  border-radius: var(--sheet-radius) var(--sheet-radius) 0 0;
+  background: var(--color-bg);
+  box-shadow: 0 -14px 34px -22px rgba(0, 0, 0, 0.35);
+}
+
+.proto--bold .xs > .screen-section:first-child {
+  margin-top: 0;
+}
+
+/* ---- Actions: one solid action, with an arrow ------------------------------------------------------------------------------- */
+.proto--bold .btn--primary {
+  position: relative;
+  padding-inline: 28px 62px;
+  background: var(--color-selected);
+  color: var(--color-on-selected);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-snug);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 16px 26px -16px rgba(15, 23, 19, 0.65);
+}
+
+.proto--bold .btn--primary.btn--full {
+  padding-inline: 62px;
+}
+
+.proto--bold .btn--primary:not(:disabled)::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 7px;
+  width: 42px;
+  height: 42px;
+  margin-top: -21px;
+  border-radius: 50%;
+  background: var(--green-500) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230c1a12' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12h14M13 6l6 6-6 6'/%3E%3C/svg%3E") center / 20px no-repeat;
+}
+
+.proto--bold .btn--primary:active:not(:disabled) {
+  background: color-mix(in srgb, var(--color-selected) 82%, var(--color-on-selected));
+}
+
+@media (hover: hover) {
+  .proto--bold .btn--primary:hover:not(:disabled):not(:active) {
+    background: color-mix(in srgb, var(--color-selected) 90%, var(--color-on-selected));
+  }
+}
+
+.proto--bold .btn--primary.btn--md,
+.proto--bold .btn--primary.btn--sm {
+  padding-inline: 20px 52px;
+}
+
+.proto--bold .btn--primary.btn--md:not(:disabled)::after,
+.proto--bold .btn--primary.btn--sm:not(:disabled)::after {
+  right: 5px;
+  width: 32px;
+  height: 32px;
+  margin-top: -16px;
+  background-size: 16px;
+}
+
+.proto--bold .btn--secondary {
+  background: var(--color-surface);
+  box-shadow: 0 1px 2px rgba(15, 23, 19, 0.06), 0 10px 20px -14px rgba(15, 23, 19, 0.3);
+  color: var(--color-text);
+  font-weight: var(--weight-semibold);
+}
+
+.proto--bold .nextstep .btn--primary {
+  background: var(--color-selected);
+  color: var(--color-on-selected);
+}
+
+.proto--bold .nextstep .btn--primary:active:not(:disabled) {
+  background: color-mix(in srgb, var(--color-selected) 82%, var(--color-on-selected));
+}
+
+/* ---- The bar: dark, floating, with a bright create button ------------------------------------------------------------------- */
+.proto--bold .tabbar__pill {
+  padding: 7px;
+  background: #121c17;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 22px 36px -14px rgba(5, 12, 8, 0.7);
+}
+
+:root[data-theme='dark'] .proto--bold .tabbar__pill {
+  background: #1b2822;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.06), 0 22px 36px -14px rgba(0, 0, 0, 0.8);
+}
+
+.proto--bold .tabbar__item {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+@media (hover: hover) {
+  .proto--bold .tabbar__item:hover {
+    color: #fff;
+  }
+}
+
+.proto--bold .tabbar__item.is-active {
+  color: var(--green-500);
+}
+
+.proto--bold .tabbar__active {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.proto--bold .tabbar__label {
+  font-weight: var(--weight-semibold);
+}
+
+.proto--bold .tabbar__create {
+  width: 58px;
+  height: 58px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), inset 0 -3px 6px rgba(19, 122, 74, 0.3), 0 10px 22px -6px color-mix(in srgb, var(--green-500) 75%, transparent);
+}
+
+/* ---- Cards with depth -------------------------------------------------------------------------------------------------------- */
+.proto--bold :is(.ox-ask, .ox-plan, .ox-split, .ox-pact) {
+  border-radius: var(--card-radius);
+  background: var(--color-surface);
+  box-shadow: var(--card-shadow);
+}
+
+/* ==========================================================================
+   Home
+   ========================================================================== */
+.proto--bold .screen.xhero--home {
+  background: #15402d;
+}
+
+.proto--bold .screen.xhero--home .topbar {
+  color: #fff;
+}
+
+.proto--bold .screen.xhero--home .topbar.is-scrolled {
+  background: #15402d;
+}
+
+.proto--bold .xh--home {
+  padding-bottom: 104px;
+  color: #fff;
+  background: radial-gradient(70% 60% at 92% 8%, rgba(61, 214, 140, 0.5), transparent 62%), radial-gradient(60% 55% at 0% 100%, rgba(77, 163, 255, 0.24), transparent 62%), linear-gradient(172deg, #17483a 0%, #0e2a1f 100%);
+}
+
+.proto--bold .xh--home .xh__body {
+  gap: var(--space-2);
+}
+
+.proto--bold .home__date {
+  margin: var(--space-2) 0 0;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: var(--t-support-size);
+  font-weight: var(--weight-medium);
+}
+
+.proto--bold .home__title {
+  display: grid;
+  margin: 0;
+  font-size: inherit;
+}
+
+.proto--bold .home__hi {
+  color: rgba(255, 255, 255, 0.78);
+  font-size: var(--t-object-size);
+  font-weight: var(--weight-medium);
+  letter-spacing: var(--tracking-snug);
+}
+
+.proto--bold .home__name {
+  color: #fff;
+  font-size: var(--t-display-size);
+  font-weight: var(--weight-heavy);
+  line-height: 1;
+  letter-spacing: var(--tracking-display);
+}
+
+.proto--bold .xh--home .hv3-pulse-wrap {
+  margin: var(--space-3) 0 0;
+}
+
+.proto--bold .xh--home .hv3-pulse {
+  color: rgba(255, 255, 255, 0.82);
+  font-size: var(--t-lead-size);
+}
+
+.proto--bold .xh--home .hv3-pulse strong {
+  color: #fff;
+}
+
+.proto--bold .xh--home .hv3-active {
+  color: rgba(255, 255, 255, 0.78);
+}
+
+/* Four ways to start: one coloured tile each, set into the sheet's top edge. */
+.proto--bold .hv3-start {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin: -64px 0 var(--space-8);
+}
+
+.proto--bold .hv3-start__item {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.proto--bold .hv3-start__tile {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  max-width: 76px;
+  aspect-ratio: 1;
+  border-radius: 26px 26px 26px 10px;
+  background: linear-gradient(160deg, color-mix(in srgb, var(--tint-solid) 62%, #fff), var(--tint-solid));
+  color: var(--on-hero);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55), 0 16px 24px -14px color-mix(in srgb, var(--tint-solid) 90%, #000);
+  transition: transform var(--motion-micro) var(--ease-press);
+}
+
+.proto--bold .hv3-start__tile svg {
+  width: 30px;
+  height: 30px;
+  stroke-width: 2.2;
+}
+
+.proto--bold .hv3-start__item:active .hv3-start__tile {
+  transform: scale(var(--press-scale));
+}
+
+.proto--bold .hv3-start__item:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 4px;
+  border-radius: 20px;
+}
+
+.proto--bold .hv3-start__label {
+  font-size: var(--t-support-size);
+  font-weight: var(--weight-semibold);
+}
+
+/* Needs you: the first is a saturated card with a solid object beside it; the rest are white cards with depth. */
+.proto--bold .hv3-needs {
+  gap: var(--space-4);
+}
+
+.proto--bold .hv3-needs > li {
+  position: relative;
+  padding: 0;
+  border: 0;
+}
+
+.proto--bold .hv3-needs > li:not(:first-child) :is(.ox-ask, .ox-plan, .ox-split, .ox-pact) {
+  padding: var(--space-4);
+  border-radius: var(--card-radius);
+  background: var(--color-surface);
+  box-shadow: var(--card-shadow);
+}
+
+.proto--bold .hv3-needs > li:first-child {
+  padding: 0;
+}
+
+.proto--bold .hv3-needs > li:first-child :is(.ox-ask, .ox-plan, .ox-split, .ox-pact) {
+  position: relative;
+  padding: var(--space-5);
+  border-radius: 32px 32px 32px 12px;
+  background: radial-gradient(90% 70% at 100% 0%, rgba(255, 255, 255, 0.4), transparent 60%), linear-gradient(165deg, color-mix(in srgb, var(--tint-solid) 66%, #fff), var(--tint-solid) 62%);
+  box-shadow: 0 26px 40px -22px color-mix(in srgb, var(--tint-solid) 95%, #000);
+  color: var(--on-hero);
+  --tint-fg: var(--on-hero);
+}
+
+.proto--bold .hv3-needs > li:first-child :is(.t-support, .ox-kicker, .ox-plan__meta, .ox-plan__going span) {
+  color: var(--on-hero-2);
+}
+
+.proto--bold .hv3-needs > li:first-child .ox-kicker {
+  color: var(--on-hero);
+}
+
+.proto--bold .hv3-lead-art {
+  position: absolute;
+  z-index: 2;
+  right: -6px;
+  top: 10px;
+  width: 124px;
+  height: 124px;
+  transform: rotate(7deg);
+  pointer-events: none;
+}
+
+.proto--bold .hv3-needs > li:first-child .act--solid {
+  background: var(--ink-900);
+  color: #fff;
+}
+
+.proto--bold .hv3-needs > li:first-child:has(.hv3-lead-art) :is(.ox-ask, .ox-plan, .ox-split) {
+  padding-right: calc(var(--space-5) + 70px);
+}
+
+/* ==========================================================================
+   Hero titles (Circle, and the shape the others follow)
+   ========================================================================== */
+.proto--bold .xh__title {
+  margin: 0;
+  font-size: var(--t-hero-size);
+  font-weight: var(--weight-heavy);
+  line-height: 1.02;
+  letter-spacing: var(--tracking-display);
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+
+.proto--bold .xh__meta {
+  margin: 0;
+  color: var(--on-hero-2);
+  font-size: var(--t-lead-size);
+  font-weight: var(--weight-medium);
+  line-height: 1.35;
+}
+
+.proto--bold .xh__emoji {
+  display: grid;
+  place-items: center;
+  width: 84px;
+  height: 84px;
+  border-radius: 30px 30px 30px 10px;
+  background: rgba(255, 255, 255, 0.55);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85), 0 16px 26px -16px rgba(0, 0, 0, 0.4);
+  font-size: 3rem;
+  line-height: 1;
+}
+
+.proto--bold .xh__faces {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+
+.proto--bold .xh__signal {
+  display: inline-flex;
+  width: fit-content;
+  margin: 0;
+  padding: 7px 14px 7px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.5);
+  font-size: var(--t-support-size);
+  font-weight: var(--weight-semibold);
+}
+
+.proto--bold .xh .od-circle__slot {
+  color: var(--on-hero);
+}
+
+.proto--bold .xh .od-circle__slot-mark {
+  border-color: rgba(12, 26, 18, 0.55);
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.proto--bold .xs.od-circle {
+  display: grid;
+  align-content: start;
+  gap: var(--space-7);
+}
+
+.proto--bold .xs.od-circle > .screen-section {
+  margin: 0;
+}
+
+/* Circle: what is happening are cards with depth again, now that the colour is carried by the hero. */
+.proto--bold .od-circle__stack {
+  gap: var(--space-4);
+}
+
+.proto--bold .od-circle__stack > li + li {
+  margin-top: 0;
+  padding-top: 0;
+  border: 0;
+}
+
+.proto--bold .od-circle__stack :is(.ox-ask, .ox-plan, .ox-split, .ox-pact) {
+  padding: var(--space-4);
+  border-radius: var(--card-radius);
+  background: var(--color-surface);
+  box-shadow: var(--card-shadow);
+}
+
+/* ==========================================================================
+   Plan: time is the object
+   ========================================================================== */
+.proto--bold .xh__pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  margin: var(--space-2) 0 0;
+  padding: 6px 14px 6px 10px;
+  border-radius: 999px;
+  background: rgba(12, 26, 18, 0.88);
+  color: #fff;
+  font-size: var(--t-meta-size);
+  font-weight: var(--weight-semibold);
+}
+
+.proto--bold .xh__pill .status,
+.proto--bold .xh__pill span {
+  color: #fff;
+}
+
+.proto--bold .xh__date {
+  display: grid;
+  gap: 2px;
+  margin: var(--space-3) 0 0;
+}
+
+.proto--bold .xh__date-small {
+  font-size: var(--t-support-size);
+  font-weight: var(--weight-bold);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--on-hero-2);
+}
+
+.proto--bold .xh__date-big {
+  font-size: clamp(5.5rem, 30vw, 8rem);
+  font-weight: var(--weight-heavy);
+  line-height: 0.86;
+  letter-spacing: var(--tracking-numeral);
+}
+
+.proto--bold .xh--plan .xh__title {
+  margin-top: var(--space-1);
+  font-size: var(--t-page-size);
+}
+
+.proto--bold .xh__meta--plan {
+  display: grid;
+  gap: 2px;
+}
+
+.proto--bold .xh__meta--plan .ox-plan__where {
+  color: inherit;
+  font-weight: var(--weight-semibold);
+}
+
+.proto--bold .xh__count {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  width: fit-content;
+  margin: var(--space-2) 0 0;
+  padding: 10px 18px;
+  border-radius: 20px 20px 20px 7px;
+  background: rgba(255, 255, 255, 0.55);
+  font-size: var(--t-lead-size);
+  font-weight: var(--weight-semibold);
+}
+
+.proto--bold .xh__count b {
+  font-size: 1.75rem;
+  font-weight: var(--weight-heavy);
+  letter-spacing: var(--tracking-tight);
+}
+
+.proto--bold .xh__people {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin: var(--space-2) 0 0;
+  font-size: var(--t-body-size);
+  font-weight: var(--weight-medium);
+  line-height: 1.35;
+}
+
+.proto--bold .xs.od-plan {
+  display: grid;
+  align-content: start;
+  gap: var(--space-6);
+}
+
+.proto--bold .xs .ox-rsvp {
+  gap: var(--space-2);
+  padding: 0;
+  border-radius: 0;
+  background: none;
+}
+
+.proto--bold .xs .ox-rsvp__btn {
+  min-height: 58px;
+  border-radius: 999px;
+  background: var(--color-surface);
+  box-shadow: var(--card-shadow);
+  color: var(--color-text);
+  font-size: var(--t-lead-size);
+  font-weight: var(--weight-bold);
+}
+
+.proto--bold .xs .ox-rsvp__btn.is-on {
+  color: var(--color-on-selected);
+}
+
+.proto--bold .xs .ox-rsvp__pill {
+  border-radius: 999px;
+}
+
+.proto--bold .xs .ox-plan__decision {
+  border-radius: 24px;
+  background: var(--color-surface);
+  box-shadow: var(--card-shadow);
+}
+
+.proto--bold .xs .plan-task {
+  padding: var(--space-3) var(--space-4);
+  border: 0;
+  border-radius: 22px;
+  background: var(--color-surface);
+  box-shadow: var(--card-shadow);
+}
+
+.proto--bold .xs .plan-tasks {
+  gap: var(--space-3);
+}
+
+/* ==========================================================================
+   Pact: commitment, as a dial
+   ========================================================================== */
+.proto--bold .xh--pact .od-pact__kicker {
+  justify-content: space-between;
+}
+
+.proto--bold .xh--pact .cat-chip {
+  background: rgba(12, 26, 18, 0.88);
+  color: #fff;
+}
+
+.proto--bold .xh--pact .cat-chip .cat-chip__suffix {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.proto--bold .xh--pact .od-pact__due {
+  color: var(--on-hero);
+  font-weight: var(--weight-bold);
+}
+
+.proto--bold .xh--pact .xh__body {
+  gap: var(--space-2);
+}
+
+.proto--bold .xh--pact .od-pact__title {
+  font-size: var(--t-hero-size);
+  font-weight: var(--weight-heavy);
+  line-height: 1.03;
+  letter-spacing: var(--tracking-display);
+}
+
+.proto--bold .xh--pact .detail__note {
+  color: var(--on-hero-2);
+  font-style: normal;
+  font-size: var(--t-lead-size);
+}
+
+/* The ring sits on a white dial, so every person's colour reads on any hero. */
+.proto--bold .xh--pact .detail__ring {
+  align-self: center;
+  margin-top: var(--space-4);
+  padding: 22px 22px 18px;
+  border-radius: 46px 46px 46px 16px;
+  background: linear-gradient(180deg, #fff, #f6f2e8);
+  box-shadow: var(--hero-shadow), inset 0 -8px 16px rgba(12, 26, 18, 0.06);
+  color: #0c1a12;
+}
+
+.proto--bold .xh--pact .detail__ring .detail__center-amount,
+.proto--bold .xh--pact .detail__ring .detail__center-name {
+  color: #0c1a12;
+}
+
+.proto--bold .xh--pact .detail__ring .detail__center-meta,
+.proto--bold .xh--pact .detail__ring-hint {
+  color: #5d665f;
+}
+
+.proto--bold .xh--pact .od-pact__facts {
+  color: var(--on-hero-2);
+  font-size: var(--t-body-size);
+}
+
+.proto--bold .xh--pact .od-pact__facts b {
+  color: var(--on-hero);
+  font-weight: var(--weight-heavy);
+}
+
+.proto--bold .xh--pact .detail__actions {
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.proto--bold .xh--pact .detail__actions .btn--secondary {
+  color: var(--on-hero);
+  background: rgba(255, 255, 255, 0.4);
+  box-shadow: none;
+}
+
+.proto--bold .xh--pact .detail__ring .detail__center-pct {
+  background: rgba(12, 26, 18, 0.9);
+  color: #fff;
+}
+
+.proto--bold .xs.od-pact {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  gap: var(--space-5);
+}
+
+.proto--bold .xs.od-pact > * {
+  margin-top: 0;
+}
+
+.proto--bold .xs .nextstep {
+  padding: var(--space-5);
+  border: 0;
+  border-radius: var(--card-radius);
+  background: var(--color-surface);
+  box-shadow: var(--card-shadow);
+}
+
+.proto--bold .xs .progress {
+  padding: var(--space-5);
+  border: 0;
+  border-radius: var(--card-radius);
+  background: var(--color-surface);
+  box-shadow: var(--card-shadow);
+}
+
+/* ==========================================================================
+   Ask and Split: the whole screen is the thing's colour. The question or the amount is set large on it, and the answers and shares are
+   white cards laid on top, so the colour does the identifying and the cards do the work.
+   ========================================================================== */
+.proto--bold .screen.xhero--full {
+  background: linear-gradient(168deg, color-mix(in srgb, var(--tint-solid) 70%, #fff) 0%, var(--tint-solid) 52%, var(--tint-solid) 100%) local no-repeat, var(--tint-solid);
+  --color-text: var(--on-hero);
+  --color-text-secondary: var(--on-hero-2);
+  --color-text-tertiary: var(--on-hero-3);
+  color: var(--on-hero);
+}
+
+.proto--bold .screen.xhero--full .screen__content {
+  padding-bottom: calc(var(--space-9, 56px));
+}
+
+.proto--bold .xhero--full .ox-ask--page,
+.proto--bold .xhero--full .ox-split--page {
+  padding: 0;
+  background: none;
+  box-shadow: none;
+  --tint-fg: var(--on-hero);
+}
+
+.proto--bold .xhero--full .ox-ask__q,
+.proto--bold .xhero--full .ox-split__title {
+  font-size: var(--t-hero-size);
+  font-weight: var(--weight-heavy);
+  line-height: 1.04;
+  letter-spacing: var(--tracking-display);
+  color: var(--on-hero);
+}
+
+.proto--bold .xhero--full .ox-kicker {
+  width: fit-content;
+  padding: 6px 14px 6px 10px;
+  border-radius: 999px;
+  background: rgba(12, 26, 18, 0.88);
+  color: #fff;
+}
+
+.proto--bold .xhero--full .ox-kicker span {
+  color: #fff;
+}
+
+.proto--bold .xhero--full .ox-opt {
+  min-height: 68px;
+  border-radius: 26px;
+  background: #fff;
+  color: #0c1a12;
+  box-shadow: var(--hero-shadow);
+}
+
+.proto--bold .xhero--full .ox-opt__label,
+.proto--bold .xhero--full .ox-opt__n {
+  color: #0c1a12;
+}
+
+.proto--bold .xhero--full .ox-split__total {
+  font-size: clamp(3rem, 17vw, 4.5rem);
+  font-weight: var(--weight-heavy);
+  line-height: 0.95;
+  letter-spacing: var(--tracking-numeral);
+  color: var(--on-hero);
+}
+
+.proto--bold .xhero--full .ox-split__rows {
+  margin: var(--space-3) 0 0;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--card-radius);
+  background: #fff;
+  color: #0c1a12;
+  box-shadow: var(--hero-shadow);
+  --color-text: #0c1a12;
+  --color-text-secondary: #5d665f;
+}
+
+.proto--bold .xhero--full .ox-split__bar i {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.proto--bold .xhero--full .ox-split__bar i.is-on {
+  background: #0c1a12;
+}
+
+.proto--bold .xhero--full .ox-split__left-n {
+  color: var(--on-hero);
+  font-weight: var(--weight-heavy);
+}
+
+/* ==========================================================================
+   Me: your history with people, on a colour of your own
+   ========================================================================== */
+.proto--bold .xh--me {
+  padding-bottom: 72px;
+}
+
+.proto--bold .xh--me .xh__body {
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.proto--bold .xh--me .avatar {
+  box-shadow: 0 0 0 4px #fff, 0 16px 24px -12px rgba(12, 26, 18, 0.5);
+}
+
+.proto--bold .xh--me .me__name {
+  font-size: var(--t-page-size);
+  font-weight: var(--weight-heavy);
+  letter-spacing: var(--tracking-display);
+  color: var(--on-hero);
+}
+
+.proto--bold .xh--me .me__since {
+  color: var(--on-hero-2);
+}
+
+.proto--bold .xh--me .me__trust {
+  width: fit-content;
+  padding: 4px 12px 4px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.55);
+  color: var(--on-hero);
+}
+
+.proto--bold .xh--me .me__people p,
+.proto--bold .xh--me .me__story,
+.proto--bold .xh--me .me__people-empty {
+  color: var(--on-hero-2);
+}
+
+.proto--bold .xh--me .me__people p strong,
+.proto--bold .xh--me .me__story b {
+  color: var(--on-hero);
+}
+
+.proto--bold .xh--me .me__story {
+  font-size: var(--t-section-size);
+  font-weight: var(--weight-medium);
+  line-height: 1.32;
+}
+
+.proto--bold .xh--me .me__story b {
+  font-weight: var(--weight-heavy);
+}
+
+.proto--bold .xs.me-sheet > .screen-section:first-child {
+  margin-top: 0;
+}
+
+.proto--bold .hv3-made {
+  gap: var(--space-3);
+}
+
+.proto--bold .hv3-made > li + li {
+  border: 0;
+}
+
+.proto--bold .hv3-made .done--row {
+  padding: var(--space-3) var(--space-4);
+  border-radius: 24px;
+  background: var(--color-surface);
+  box-shadow: var(--card-shadow);
+}
+
+/* ==========================================================================
+   Lists and settings: the same colour-and-title top, with the page body rising over its rounded edge. No wrapper needed: the hero draws
+   the edge itself, and the screen is hero-coloured only where the top bar is.
+   ========================================================================== */
+.proto--bold .screen.xhero--lite {
+  background: var(--color-bg);
+}
+
+.proto--bold .xh--page {
+  padding: var(--space-2) var(--space-5) 54px;
+  margin-bottom: var(--space-2);
+}
+
+.proto--bold .xh--page::after {
+  content: '';
+  position: absolute;
+  z-index: 1;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 30px;
+  border-radius: var(--sheet-radius) var(--sheet-radius) 0 0;
+  background: var(--color-bg);
+}
+
+.proto--bold .xh--page .xh__title {
+  font-size: var(--t-hero-size);
+}
+
+/* ==========================================================================
+   Making something: the kind's colour carries the question, the answers sit on the page below it
+   ========================================================================== */
+.proto--bold .xh--cf {
+  padding-bottom: 58px;
+}
+
+.proto--bold .xh--cf .xh__body {
+  gap: var(--space-4);
+}
+
+.proto--bold .cf__headblock {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.proto--bold .xh--cf .cf__heading {
+  margin: 0;
+  color: var(--on-hero);
+  font-size: var(--t-hero-size);
+  font-weight: var(--weight-heavy);
+  line-height: 1.04;
+  letter-spacing: var(--tracking-display);
+}
+
+.proto--bold .xh--cf .cf__sub {
+  color: var(--on-hero-2);
+  font-size: var(--t-lead-size);
+}
+
+.proto--bold .xh--cf .cf__kind {
+  color: var(--on-hero);
+  font-weight: var(--weight-bold);
+}
+
+.proto--bold .xh--cf .cf__icon {
+  background: rgba(255, 255, 255, 0.6);
+  box-shadow: none;
+}
+
+.proto--bold .xh--cf .cf__dots i {
+  background: rgba(12, 26, 18, 0.22);
+}
+
+.proto--bold .xh--cf .cf__dots i.is-past {
+  background: rgba(12, 26, 18, 0.6);
+}
+
+.proto--bold .xh--cf .cf__dots i.is-now {
+  background: #0c1a12;
+}
+
+.proto--bold .xh--cf .cf__context {
+  background: rgba(255, 255, 255, 0.55);
+  color: var(--on-hero);
+}
+
+.proto--bold .cf__body {
+  padding-top: var(--space-4);
+}
+
+/* Circle invite: the Circle is the hero, so its tile loses its card and writes on the colour like the other shared pages. */
+.proto--bold .xhero--full .ox-circle--header {
+  padding: 0;
+  background: none;
+  box-shadow: none;
+  --tint-fg: var(--on-hero);
+}
+
+.proto--bold .xhero--full .ox-circle--header .ox-circle__emoji {
+  background: rgba(255, 255, 255, 0.55);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85), 0 14px 22px -14px rgba(12, 26, 18, 0.4);
+}
+
+.proto--bold .xhero--full .ox-circle--header .ox-circle__name,
+.proto--bold .xhero--full .ox-circle--header .ox-circle__signal {
+  color: var(--on-hero);
+}
+
+.proto--bold .xhero--full .ox-circle--header .ox-circle__meta {
+  color: var(--on-hero-2);
+}
+
+.proto--bold .xhero--full .ci__does-icon {
+  background: rgba(255, 255, 255, 0.6);
+  color: var(--on-hero);
+  box-shadow: none;
+}
+
+.proto--bold .xhero--full .ci__does li + li {
+  border-color: rgba(12, 26, 18, 0.14);
+}
+
+.proto--bold .xhero--full .ci__does li > span:last-child span {
+  color: var(--on-hero-2);
+}
+
+.proto--bold .xhero--full .ci__hint {
+  color: var(--on-hero-2);
+}
+
+.proto--bold .xh .ox-plan__where,
+.proto--bold .xh .ox-plan__where svg {
+  color: var(--on-hero-2);
+}
+
+.proto--bold .xhero--full .ox-kicker .done__mark--inline :is(.done__ring, .done__tick) {
+  stroke: var(--green-500);
+}
+
+/* Shared pages: the same colour-first treatment, for someone who has just been sent the link. */
+.proto--bold .share.xhero--full .sp-foot,
+.proto--bold .share.xhero--full .sp-foot p {
+  color: var(--on-hero-2);
+}
+
+.proto--bold .share.xhero--full .sp-foot strong,
+.proto--bold .share.xhero--full .sp-foot__link {
+  color: var(--on-hero);
+}
+
+.proto--bold .share.xhero--full .sh__from {
+  background: rgba(255, 255, 255, 0.55);
+  color: var(--on-hero);
+}
+
+.proto--bold .share.xhero--full :is(.ox-plan--page .ox-plan__top) {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* ==========================================================================
+   Dark theme, on bright heroes: the colour stays bright and its text stays ink, whatever the page theme is.
+   ========================================================================== */
+.proto--bold .hv3-needs > li:first-child :is(.ox-ask, .ox-plan, .ox-split, .ox-pact) {
+  --color-text: var(--on-hero);
+  --color-text-secondary: var(--on-hero-2);
+  --color-text-tertiary: var(--on-hero-3);
+}
+
+.proto--bold :is(.xh, .xhero--full) .avatar:not(.avatar__overflow):not(.is-pending) {
+  background-color: rgba(255, 255, 255, 0.88);
+  color: #0c1a12;
+}
+
+.proto--bold :is(.xh, .xhero--full) .avatar {
+  --ring-color: #fff;
+}
+
+.proto--bold :is(.xh, .xhero--full) .avatar__overflow {
+  background-color: #0c1a12;
+  color: #fff;
+}
+
+.proto--bold .xh--pact .detail__ring .sring__track {
+  stroke: #e7e3d8;
+}
+
+.proto--bold .xh--pact .detail__ring {
+  --color-text: #0c1a12;
+  --color-text-secondary: #5d665f;
+  --color-text-tertiary: #5d665f;
+}
+
+.proto--bold .xh--home .avatar:not(.avatar__overflow) {
+  background-color: rgba(255, 255, 255, 0.9);
+}

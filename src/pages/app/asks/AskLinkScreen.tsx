@@ -174,7 +174,7 @@ export function AskLinkScreen() {
   };
 
   return (
-    <Screen className={`share tint--${ask.circle.tint}`}>
+    <Screen className={`share xhero xhero--full tint--${ask.circle.tint}`}>
       <div className="al">
         <ShareHeader kind="ask" byId={ask.createdBy} byName={getUser(ask.createdBy).name} verb="asked the group" circleName={ask.circle.name} />
         <AskView ask={ask} meId={user?.id} busy={respond.isPending} pending={saved ? null : pending} onPick={pick}>

@@ -2,7 +2,7 @@
 .nd-error {
   margin: var(--space-2) 0 0;
   color: var(--color-danger);
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
 }
 
 .nd-row {
@@ -30,7 +30,7 @@
 
 .nd-row__main span {
   color: var(--color-text-secondary);
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
 }
 
 .nd-row:focus-visible {

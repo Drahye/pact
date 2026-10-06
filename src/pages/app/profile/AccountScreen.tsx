@@ -10,10 +10,10 @@ import { RowListSkeleton } from '../../../components/app/Skeleton';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { Modal } from '../../../components/ui/Modal';
-import { LargeTitle } from '../../../components/ui/LargeTitle';
 import { TopBar } from '../../../components/ui/TopBar';
 import { useToast } from '../../../components/ui/Toast';
 import { formatPhone } from '../../../lib/format';
+import { PageHero } from '../../../components/objects';
 import { Screen } from '../Screen';
 import '../../../components/app/app-ui.css';
 import '../profile.css';
@@ -74,8 +74,8 @@ export function AccountScreen() {
   };
 
   return (
-    <Screen topBar={<TopBar backTo="/app/profile" title="Account and sign-in" collapse />}>
-      <LargeTitle>Account and sign-in</LargeTitle>
+    <Screen className="xhero xhero--lite tint--lilac" topBar={<TopBar tone="transparent" backTo="/app/profile" title="Account and sign-in" collapse />}>
+      <PageHero tint="lilac" title="Account and sign-in" />
       {account.isLoading || !a ? (
         <RowListSkeleton count={3} label="Loading your account" />
       ) : (

@@ -12,7 +12,7 @@
   padding: 0 var(--space-4);
   border-radius: var(--radius-full);
   font-weight: var(--weight-semibold);
-  font-size: var(--text-body);
+  font-size: var(--t-body-size);
   color: var(--color-text-secondary);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
@@ -53,8 +53,10 @@
   box-shadow: var(--shadow-sm);
 }
 
-.segmented--track .segmented__option:hover:not(.is-active) {
-  color: var(--color-text);
+@media (hover: hover) {
+  .segmented--track .segmented__option:hover:not(.is-active) {
+    color: var(--color-text);
+  }
 }
 
 /* chips: separate outlined pills; the active one fills with ink */
@@ -68,8 +70,10 @@
   box-shadow: inset 0 0 0 1px var(--color-border-strong);
 }
 
-.segmented--chips .segmented__option:hover:not(.is-active) {
-  box-shadow: inset 0 0 0 1px var(--color-border-hover);
+@media (hover: hover) {
+  .segmented--chips .segmented__option:hover:not(.is-active) {
+    box-shadow: inset 0 0 0 1px var(--color-border-hover);
+  }
 }
 
 .segmented--chips .segmented__thumb {
@@ -82,5 +86,5 @@
 
 .segmented--lg .segmented__option {
   min-height: 52px;
-  font-size: var(--text-lg);
+  font-size: var(--t-lead-size);
 }

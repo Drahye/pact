@@ -12,13 +12,13 @@ import { IosInstallSheet } from '../../../components/pwa/InstallPactPrompt';
 import { SettingsGroup, SettingsRow } from '../../../components/settings/Settings';
 import { Button } from '../../../components/ui/Button';
 import { Segmented } from '../../../components/ui/Segmented';
-import { LargeTitle } from '../../../components/ui/LargeTitle';
 import { TopBar } from '../../../components/ui/TopBar';
 import { useToast } from '../../../components/ui/Toast';
 import { usePwaInstall } from '../../../hooks/usePwaInstall';
 import { shareOrCopy } from '../../../lib/shareLink';
 import { useTheme, type Theme } from '../../../theme/useTheme';
 import { clearReturnTo } from '../auth/flow';
+import { PageHero } from '../../../components/objects';
 import { Screen } from '../Screen';
 import '../profile.css';
 
@@ -65,8 +65,8 @@ export function SettingsScreen() {
   };
 
   return (
-    <Screen topBar={<TopBar backTo="/app/profile" title="Settings" collapse />} className="settings">
-      <LargeTitle>Settings</LargeTitle>
+    <Screen className="settings xhero xhero--lite tint--lilac" topBar={<TopBar tone="transparent" backTo="/app/profile" title="Settings" collapse />}>
+      <PageHero tint="lilac" title="Settings" />
 
       <SettingsGroup id="st-account" title="Account">
         <SettingsRow to="/app/profile/account" icon={<UserRound />} title="Account and sign-in" sub={ways || 'How you sign in'} />

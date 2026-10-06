@@ -224,22 +224,26 @@ export function StyleGuidePage() {
           </div>
         </Section>
 
-        <Section id="type" title="Typography" lede="One typeface: Geist. Tabular numerals for every amount. Large numbers are the visual anchors.">
+        <Section id="type" title="Typography" lede="One typeface: Geist. Ten roles, five weights (400, 500, 600, 700, 800). A piece of text takes one role and a component never sets a size of its own. Tabular numerals for every amount; large numbers are the visual anchors.">
           <div className="sg-type">
             {[
-              ['--text-display', 'Display', 'Plan it together.'],
-              ['--text-h1', 'H1', 'Money works better together.'],
-              ['--text-h2', 'H2', 'Start with what you’re planning.'],
-              ['--text-h3', 'H3', 'Bring your people in'],
-              ['--text-title', 'Title', 'Sarah’s Birthday'],
-              ['--text-lg', 'Body large', 'Create a shared goal, invite your people.'],
-              ['--text-body', 'Body', 'Everyone sees each contribution as it lands.'],
-              ['--text-sm', 'Small', '12 days left · 8 people'],
-              ['--text-caption', 'Caption', 'Just now'],
-            ].map(([t, label, sample]) => (
-              <TokenRow key={t} token={t}>
-                <span style={{ fontSize: `min(var(${t}), 64px)`, fontWeight: t.includes('display') || t.includes('h') || t.includes('title') ? 600 : 400, letterSpacing: '-0.03em' }}>
-                  {label}: {sample}
+              ['hero', 'Hero', 'The title on a coloured screen', 'Which date works?'],
+              ['display', 'Display', 'A moment: a welcome, a name', 'Good evening, Abraham'],
+              ['page', 'Page', 'A screen’s title with no hero', 'Name your Circle'],
+              ['section', 'Section', 'A group’s heading', 'Needs you'],
+              ['object', 'Object', 'A Circle, Ask, Plan, Split or Pact', 'Sarah’s Birthday'],
+              ['lead', 'Lead', 'A name, a row title, a hero’s sub-line', 'Maya is in for Jollof cook-off'],
+              ['body', 'Body', 'Reading text', 'Everyone sees each contribution as it lands.'],
+              ['support', 'Support', 'What sits under a title', '₦320,000 of ₦500,000 · 12 days left'],
+              ['label', 'Label', 'Kickers and chips, always caps', 'Question'],
+              ['meta', 'Meta', 'Times, counts, fine print', '4m ago'],
+            ].map(([role, label, use, sample]) => (
+              <TokenRow key={role} token={`--t-${role}-size`}>
+                <span className={`t-${role}`} style={{ display: 'block', fontSize: `min(var(--t-${role}-size), 56px)` }}>
+                  {sample}
+                </span>
+                <span className="t-meta">
+                  {label}: {use}
                 </span>
               </TokenRow>
             ))}

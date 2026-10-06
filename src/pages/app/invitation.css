@@ -19,7 +19,7 @@
 }
 
 .invitation__meta {
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
   color: var(--color-text-secondary);
 }
 

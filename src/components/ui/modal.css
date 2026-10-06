@@ -58,7 +58,7 @@
 
 .modal__description {
   margin-top: var(--space-1);
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
   line-height: var(--leading-sm);
   color: var(--color-text-secondary);
 }

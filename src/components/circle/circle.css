@@ -46,7 +46,7 @@
 }
 
 .idpick__label {
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
   color: var(--color-text-secondary);
 }
 
@@ -177,7 +177,7 @@
 
 .ci__does li > span:last-child span {
   color: var(--color-text-secondary);
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
 }
 
 .ci__does-icon {
@@ -200,7 +200,7 @@
 .ci__hint {
   margin: 0;
   color: var(--color-text-tertiary);
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
   text-align: center;
 }
 

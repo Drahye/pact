@@ -4,7 +4,7 @@ import { useAuth } from '../../api/auth';
 import { useHome } from '../../api/home';
 import { usePacts } from '../../api/hooks';
 import { CirclesShelf, MadeItHappenSection } from '../../components/home/HomeBits';
-import { AvatarStack, EmptyState } from '../../components/objects';
+import { AvatarStack, EmptyState, Hero, Sheet } from '../../components/objects';
 import { SettingsGroup, SettingsRow } from '../../components/settings/Settings';
 import { Bone } from '../../components/app/Skeleton';
 import { Avatar } from '../../components/ui/Avatar';
@@ -38,10 +38,10 @@ export function ProfileScreen() {
   return (
     <Screen
       tabBar={<BottomNav />}
-      className="profile"
-      topBar={<TopBar leading="none" title="Me" trailing={<Link to="/app/profile/settings" className="me__settings" aria-label="Settings"><Settings2 aria-hidden /></Link>} />}
+      className="profile xhero tint--pink"
+      topBar={<TopBar leading="none" tone="transparent" title="Me" trailing={<Link to="/app/profile/settings" className="me__settings" aria-label="Settings"><Settings2 aria-hidden /></Link>} />}
     >
-      <header className="me tint--mint">
+      <Hero tint="pink" className="xh--me">
         <Avatar userId={user.id} size="xl" />
         <div className="me__id">
           <h1 className="me__name">
@@ -94,7 +94,8 @@ export function ProfileScreen() {
             )}
           </p>
         )}
-      </header>
+      </Hero>
+      <Sheet className="me-sheet">
 
       {loading ? null : recaps.length > 0 ? (
         <MadeItHappenSection items={recaps} title="What you made happen" />
@@ -123,6 +124,7 @@ export function ProfileScreen() {
       <SettingsGroup id="me-settings" title="Settings">
         <SettingsRow to="/app/profile/settings" icon={<Settings2 />} title="Settings" sub="Account, notifications, appearance, privacy and security" />
       </SettingsGroup>
+      </Sheet>
     </Screen>
   );
 }

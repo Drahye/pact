@@ -2,9 +2,8 @@ import { useFeed } from '../../api/home';
 import { RecentList } from '../../components/home/HomeBits';
 import { ErrorState } from '../../components/app/States';
 import { RowListSkeleton } from '../../components/app/Skeleton';
-import { EmptyState } from '../../components/objects';
+import { EmptyState, PageHero } from '../../components/objects';
 import { BottomNav } from '../../components/ui/BottomNav';
-import { LargeTitle } from '../../components/ui/LargeTitle';
 import { TopBar } from '../../components/ui/TopBar';
 import { Screen } from './Screen';
 
@@ -15,8 +14,8 @@ import { Screen } from './Screen';
 export function ActivityScreen() {
   const feed = useFeed();
   return (
-    <Screen tabBar={<BottomNav />} topBar={<TopBar leading="none" title="Activity" collapse />}>
-      <LargeTitle className="pacts-head">Activity</LargeTitle>
+    <Screen className="xhero xhero--lite tint--sky" tabBar={<BottomNav />} topBar={<TopBar tone="transparent" leading="none" title="Activity" collapse />}>
+      <PageHero tint="sky" title="Activity" />
       {feed.isLoading ? (
         <RowListSkeleton count={7} label="Loading activity" />
       ) : feed.error ? (

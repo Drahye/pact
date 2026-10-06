@@ -5,7 +5,11 @@ import './styles/base.css';
 import './styles/surfaces.css';
 import './styles/type.css';
 import './components/objects/objects.css';
+import './styles/bold.css';
 import { initPwaInstall } from './lib/pwaInstall';
+
+// iOS Safari only applies :active (the pressed look of every control) when something on the page listens for touch.
+document.addEventListener('touchstart', () => undefined, { passive: true });
 
 // Before React renders: Chromium can fire beforeinstallprompt very early, and it fires once.
 initPwaInstall();

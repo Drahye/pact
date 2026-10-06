@@ -163,7 +163,7 @@ export function PlanLinkScreen() {
           : null;
 
   return (
-    <Screen className="share tint--sun">
+    <Screen className="share xhero xhero--full tint--sun">
       <div className="plan-link">
         <ShareHeader kind="plan" byId={plan.createdBy} byName={getUser(plan.createdBy).name} verb="is planning something" circleName={plan.circle.name} />
         <PlanObject

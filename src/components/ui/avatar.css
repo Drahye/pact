@@ -13,8 +13,8 @@
   color: var(--color-text);
   box-shadow: 0 0 0 var(--ring-width, 0) var(--ring-color);
   font-weight: var(--weight-semibold);
-  font-size: calc(var(--avatar-size) * 0.36);
-  letter-spacing: -0.02em;
+  font-size: max(0.625rem, calc(var(--avatar-size) * 0.38));
+  letter-spacing: var(--tracking-snug);
   isolation: isolate;
 }
 
@@ -56,7 +56,7 @@
 .avatar__overflow {
   background: var(--color-bg-sunken);
   color: var(--color-text-secondary);
-  font-size: calc(var(--avatar-size) * 0.34);
+  font-size: max(0.625rem, calc(var(--avatar-size) * 0.34));
   font-variant-numeric: tabular-nums;
 }
 

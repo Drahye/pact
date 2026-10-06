@@ -33,7 +33,7 @@
   flex-direction: column;
   gap: var(--space-2);
   margin-top: var(--space-2);
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
   color: var(--color-text-secondary);
 }
 
@@ -55,7 +55,7 @@
   margin-top: var(--space-5);
   padding-left: var(--space-5);
   list-style: disc;
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
   line-height: var(--leading-sm);
   color: var(--color-text-secondary);
 }
@@ -66,7 +66,7 @@
 
 .join__how-title {
   margin-bottom: var(--space-3);
-  font-size: var(--text-lg);
+  font-size: var(--t-lead-size);
   line-height: var(--leading-lg);
   letter-spacing: var(--tracking-snug);
 }

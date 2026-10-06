@@ -29,7 +29,7 @@
   border-radius: var(--radius-full);
   background: var(--tint-bg);
   color: var(--tint-fg);
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
   font-weight: var(--weight-semibold);
   white-space: nowrap;
 }

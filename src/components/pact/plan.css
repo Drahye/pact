@@ -12,7 +12,7 @@
 
 .attention__title {
   margin-bottom: var(--space-2);
-  font-size: var(--text-caption);
+  font-size: var(--t-meta-size);
   font-weight: var(--weight-semibold);
   letter-spacing: var(--tracking-wide);
   text-transform: uppercase;
@@ -53,13 +53,13 @@
   flex: 1;
   min-width: 0;
   gap: 2px;
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
   line-height: var(--leading-sm);
   color: var(--color-text-secondary);
 }
 
 .attention__text strong {
-  font-size: var(--text-body);
+  font-size: var(--t-body-size);
   line-height: 22px;
   font-weight: var(--weight-semibold);
   color: var(--color-text);
@@ -71,7 +71,7 @@
   padding: 0 var(--space-3);
   border-radius: var(--radius-full);
   background: var(--color-selected);
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
   font-weight: var(--weight-semibold);
   color: var(--color-on-selected);
 }
@@ -105,8 +105,10 @@
   text-align: left;
 }
 
-button.budget__row:hover {
-  background: var(--color-surface-raised);
+@media (hover: hover) {
+  button.budget__row:hover {
+    background: var(--color-surface-raised);
+  }
 }
 
 .budget__row:focus-visible {
@@ -130,7 +132,7 @@ button.budget__row:hover {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
   color: var(--color-text-tertiary);
   white-space: nowrap;
 }
@@ -186,8 +188,10 @@ button.budget__row:hover {
   text-align: left;
 }
 
-.task:hover {
-  background: var(--color-surface-raised);
+@media (hover: hover) {
+  .task:hover {
+    background: var(--color-surface-raised);
+  }
 }
 
 .task:focus-visible {
@@ -252,7 +256,7 @@ button.budget__row:hover {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: var(--text-caption);
+  font-size: var(--t-meta-size);
   color: var(--color-text-tertiary);
 }
 
@@ -263,7 +267,7 @@ button.budget__row:hover {
   flex-shrink: 1;
   min-width: 0;
   max-width: min(110px, 32%);
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
   font-weight: var(--weight-medium);
   color: var(--color-text-secondary);
   /* Not overflow:hidden: the avatar's colour ring is an outer shadow and would be cut off. The name truncates on its own. */
@@ -300,7 +304,7 @@ button.budget__row:hover {
   min-height: 44px;
   margin-top: var(--space-2);
   padding: 0 var(--space-2);
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
   font-weight: var(--weight-semibold);
   color: var(--color-accent-text);
 }
@@ -317,7 +321,7 @@ button.budget__row:hover {
   padding: var(--space-4);
   border-radius: var(--radius-lg);
   background: var(--color-bg-sunken);
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
   color: var(--color-text-secondary);
 }
 
@@ -330,7 +334,7 @@ button.budget__row:hover {
 .budget__paid {
   display: block;
   margin-top: 6px;
-  font-size: var(--text-caption);
+  font-size: var(--t-meta-size);
   font-weight: var(--weight-medium);
   color: var(--color-text-secondary);
 }
@@ -391,7 +395,7 @@ button.budget__row:hover {
 
 .progress__title {
   margin-bottom: var(--space-3);
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
   font-weight: var(--weight-semibold);
 }
 
@@ -405,7 +409,7 @@ button.budget__row:hover {
   display: flex;
   align-items: flex-start;
   gap: var(--space-3);
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
   line-height: var(--leading-sm);
   color: var(--color-text-secondary);
 }

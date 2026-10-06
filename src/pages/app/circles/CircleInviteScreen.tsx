@@ -109,7 +109,7 @@ export function CircleInviteScreen() {
 
   return (
     <Screen
-      className={`share tint--${p.tint}`}
+      className={`share xhero xhero--full tint--${p.tint}`}
       footer={
         <Button fullWidth onClick={onJoin} loading={join.isPending}>
           Join {p.name}

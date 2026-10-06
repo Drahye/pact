@@ -22,7 +22,8 @@ for (const k of Object.keys(phones)) {
   T[k] = (await call('POST', '/auth/otp/verify', null, { phone: phones[k], code: otp.devCode })).accessToken;
   U[k] = (await call('GET', '/me', T[k])).id;
 }
-const day = (d) => new Date(Date.now() + d * 86400000).toISOString().slice(0, 10);
+// Lagos date (UTC+1), like the server's "today".
+const day = (d) => new Date(Date.now() + 3600000 + d * 86400000).toISOString().slice(0, 10);
 const circles = (await call('GET', '/circles', T.abraham)).data;
 const boys = circles.find((c) => c.name === 'The Boys');
 const ids = {};

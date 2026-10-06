@@ -9,7 +9,7 @@ import { useAddTask, useDeleteTask, useHandOverPlan, useLinkAsk, usePatchTask, u
 import { PlanSkeleton } from '../../../components/app/DetailSkeletons';
 import { ErrorState, Notice } from '../../../components/app/States';
 import { statusLabel } from '../../../components/plan/PlanBits';
-import { ActivityRow, PlanObject } from '../../../components/objects';
+import { ActivityRow, Hero, PlanDecisions, PlanHero, RsvpTrack, Sheet } from '../../../components/objects';
 import { AmountInput } from '../../../components/ui/AmountInput';
 import { Avatar } from '../../../components/ui/Avatar';
 import { Button } from '../../../components/ui/Button';
@@ -168,9 +168,11 @@ export function PlanScreen() {
 
   return (
     <Screen
+      className={`xhero tint--${p.pactId ? 'mint' : 'sun'}`}
       topBar={
         <TopBar
           backTo={params.get('from') === 'home' ? '/app/home' : `/app/circles/${p.circleId}`}
+          tone="transparent"
           title={p.circle.name}
           trailing={
             <span className="detail__top-actions">
@@ -181,7 +183,21 @@ export function PlanScreen() {
         />
       }
     >
-      <div className="od-plan">
+      <Hero tint={p.pactId ? 'mint' : 'sun'} className="xh--plan">
+        <PlanHero
+          title={p.title}
+          date={p.date}
+          endDate={p.endDate}
+          location={p.location}
+          status={p.pactId ? 'Became a Pact' : statusLabel[p.status]}
+          goingIds={p.rsvps.filter((r) => r.status === 'in').map((r) => r.userId)}
+          going={p.counts.in}
+          peopleText={peopleText(p.rsvps, user?.id)}
+          history={!!p.pactId}
+          done={p.status === 'done' && !p.pactId}
+        />
+      </Hero>
+      <Sheet className="od-plan">
         {p.pactId && (
           <Link to={`/app/pact/${p.pactId}`} className="od-handoff tint--mint">
             <span className="od-handoff__flow" aria-hidden>
@@ -198,24 +214,10 @@ export function PlanScreen() {
           </Link>
         )}
 
-        <PlanObject
-          heading
-          title={p.title}
-          date={p.date}
-          endDate={p.endDate}
-          location={p.location}
-          goingIds={p.rsvps.filter((r) => r.status === 'in').map((r) => r.userId)}
-          peopleText={peopleText(p.rsvps, user?.id)}
-          going={p.counts.in}
-          maybe={p.counts.maybe}
-          status={p.pactId ? 'Became a Pact' : statusLabel[p.status]}
-          history={!!p.pactId}
-          done={p.status === 'done' && !p.pactId}
-          rsvp={p.mine}
-          onRsvp={live && canAnswer ? (a) => void act(() => rsvp.mutateAsync(a)) : undefined}
-          disabled={rsvp.isPending}
-          decisions={p.asks.map((a) => ({ id: a.id, question: a.title, leading: a.status === 'closed' ? a.headline : a.responseCount ? a.headline : undefined, to: `/app/asks/${a.id}?from=circle`, mine: a.answered || a.status === 'closed' }))}
-        />
+        {live && canAnswer && !p.pactId && p.status !== 'done' && <RsvpTrack value={p.mine ?? null} onChange={(a) => void act(() => rsvp.mutateAsync(a))} disabled={rsvp.isPending} />}
+        {p.asks.length > 0 && (
+          <PlanDecisions decisions={p.asks.map((a) => ({ id: a.id, question: a.title, leading: a.status === 'closed' ? a.headline : a.responseCount ? a.headline : undefined, to: `/app/asks/${a.id}?from=circle`, mine: a.answered || a.status === 'closed' }))} />
+        )}
 
         {justCreated && open && <Notice tone="accent">Your plan is up. Share it so people can say if they’re in.</Notice>}
         {!(live && canAnswer) && (
@@ -404,7 +406,7 @@ export function PlanScreen() {
             <Button onClick={() => setSheet('pact')}>Make it a Pact</Button>
           </section>
         )}
-      </div>
+      </Sheet>
 
       <Modal open={sheet === 'menu'} onClose={close} title={p.title}>
         <div className="menu">

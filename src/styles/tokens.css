@@ -4,7 +4,15 @@
    shadows and motion. Mirrored for JS in src/tokens/tokens.ts.
    ========================================================================== */
 
-:root {
+/* Light islands. A bright hero stays bright in both themes, so what sits directly on it (the top bar, its buttons, white answer cards, the
+   pact dial) keeps the light palette: ink on white, ink buttons, deep greens for accent text. Declaring the same tokens on these elements
+   re-resolves every derived token against the light primitives. Add .on-paper to anything else that must stay light in a dark page. */
+:root,
+.on-paper,
+.proto--bold .screen.xhero > .topbar,
+.proto--bold :is(.xh, .xhero--full) :is(.btn, .icon-btn, .act),
+.proto--bold .xhero--full :is(.ox-opt, .ox-split__rows),
+.proto--bold .xh--pact .detail__ring {
   /* ---- Colour: primitives ------------------------------------------------ */
   --ink-900: #0f1713;   /* deep ink: primary text, dark surfaces */
   --ink-800: #1b2520;
@@ -26,7 +34,7 @@
   --mint-100: #e3f7ec;   /* soft mint */
   --mint-50: #f1fbf5;
 
-  --red-600: #b44a42;    /* muted red: errors */
+  --red-600: #a8433b;    /* muted red: errors (5:1 on paper-200) */
   --red-100: #f8e4e1;
 
   /* Vivid friend palette: people, payments and shapes on the website.
@@ -59,7 +67,7 @@
   --color-scrim: rgba(15, 23, 19, 0.36);
   --color-skeleton: rgba(15, 23, 19, 0.07);
   --color-skeleton-hi: rgba(15, 23, 19, 0.13);
-  --color-placeholder: var(--ink-300);
+  --color-placeholder: var(--ink-500);          /* 5:1 on paper and white: a placeholder is still text */
   --color-border-hover: var(--ink-300);
   --color-warn-text: #8a5a00;                /* sun-toned text on soft sun */
 
@@ -102,51 +110,6 @@
 
   --device-bezel: var(--ink-900);        /* phone frame on the desktop demo page */
   --device-bezel-edge: var(--ink-700);
-
-  /* ---- Typography -------------------------------------------------------- */
-  --font-sans: 'Geist Variable', 'Geist', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
-
-  --weight-regular: 400;
-  --weight-medium: 470;
-  --weight-semibold: 570;
-  --weight-bold: 660;
-
-  /* size / line-height pairs */
-  --text-caption: 0.75rem;     --leading-caption: 1rem;
-  --text-sm: 0.875rem;          --leading-sm: 1.25rem;
-  --text-body: 1rem;        --leading-body: 1.5rem;
-  --text-lg: 1.125rem;          --leading-lg: 1.75rem;
-  --text-title: 1.375rem;       --leading-title: 1.75rem;
-  --text-h3: 1.75rem;          --leading-h3: 2rem;
-  --text-h2: 2.5rem;          --leading-h2: 2.75rem;
-  --text-h1: 3.5rem;          --leading-h1: 3.625rem;
-  --text-display: 5.5rem;     --leading-display: 5.5rem;
-
-  /* Large financial numbers */
-  --num-sm: 22px;
-  --num-md: 32px;
-  --num-lg: 44px;
-  --num-xl: 64px;
-  --num-2xl: 96px;
-
-  --tracking-tight: -0.035em;
-  --tracking-snug: -0.02em;
-  --tracking-normal: -0.005em;
-  --tracking-wide: 0.04em;
-
-  /* ---- Type roles ----------------------------------------------------------------
-     Eight roles, used by the .t-* classes in type.css and by every object primitive. Size, line, weight, tracking.
-       display: a moment (a welcome, a total)       page: a screen's title          section: a group's heading
-       object: a Circle, Ask, Plan, Split or Pact   body: reading text              support: what sits under a title
-       label: kickers and chips                     meta: times, counts, fine print                            */
-  --t-display-size: clamp(2.75rem, 13vw, 3.5rem);  --t-display-line: 0.96;  --t-display-weight: 640;  --t-display-tracking: -0.05em;
-  --t-page-size: clamp(2rem, 9vw, 2.5rem);  --t-page-line: 1.08;    --t-page-weight: 610;     --t-page-tracking: -0.042em;
-  --t-section-size: 1rem;                        --t-section-line: 1.4;  --t-section-weight: 580;  --t-section-tracking: -0.01em;
-  --t-object-size: 1.1875rem;                    --t-object-line: 1.22;  --t-object-weight: 560;   --t-object-tracking: -0.02em;
-  --t-body-size: 1rem;                           --t-body-line: 1.55;     --t-body-weight: 400;     --t-body-tracking: -0.005em;
-  --t-support-size: 0.9375rem;                   --t-support-line: 1.4; --t-support-weight: 400;  --t-support-tracking: 0;
-  --t-label-size: 0.6875rem;                     --t-label-line: 1;      --t-label-weight: 600;    --t-label-tracking: 0.08em;
-  --t-meta-size: 0.8125rem;                      --t-meta-line: 1.3;     --t-meta-weight: 450;     --t-meta-tracking: 0;
 
   /* ---- Spacing (4pt scale) ---------------------------------------------- */
   --space-1: 4px;
@@ -210,7 +173,7 @@
      One scale for objects and buttons, a tone shift, and a lowered edge. Never a bounce on its own. */
   --press-scale: 0.985;
   --press-scale-small: 0.96;          /* small embedded actions, icon buttons */
-  --press-dim: 0.92;                  /* brightness while held */
+  --press-dim: 0.96;                  /* brightness while held: a touch darker on paper, lighter on dark (below) */
 
   /* ---- Object shapes: each kind of thing has its own silhouette ---------------------
      Circle: soft and squarish, one corner tucked. Ask: light and wide. Plan: a card with an agenda edge.
@@ -262,6 +225,68 @@
   --glass: color-mix(in srgb, var(--white) 50%, transparent);
   --glass-strong: color-mix(in srgb, var(--white) 70%, transparent);
 
+}
+
+/* Type is not part of a light island: islands re-declare colour only, so a skin's weights and sizes carry through them. */
+:root {
+  /* ---- Typography -------------------------------------------------------- */
+  --font-sans: 'Geist Variable', 'Geist', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  /* Five weights, and nothing between them: regular for reading, medium for quiet emphasis, semibold for names and labels,
+     bold for actions and headings, heavy for the one big thing on a screen. */
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+  --weight-heavy: 800;
+
+  /* size / line-height pairs */
+  /* Legacy names. They point at the role sizes below (caption = meta, sm = support, lg = lead) so the app has one scale, not two. */
+  --text-caption: var(--t-meta-size);     --leading-caption: 1.0625rem;
+  --text-sm: var(--t-support-size);        --leading-sm: 1.3125rem;
+  --text-body: var(--t-body-size);         --leading-body: 1.5rem;
+  --text-lg: var(--t-lead-size);           --leading-lg: 1.625rem;
+  --text-title: 1.375rem;       --leading-title: 1.75rem;
+  --text-h3: 1.75rem;          --leading-h3: 2rem;
+  --text-h2: 2.5rem;          --leading-h2: 2.75rem;
+  --text-h1: 3.5rem;          --leading-h1: 3.625rem;
+  --text-display: 5.5rem;     --leading-display: 5.5rem;
+
+  /* Large financial numbers */
+  --num-sm: 22px;
+  --num-md: 32px;
+  --num-lg: 44px;
+  --num-xl: 64px;
+  --num-2xl: 96px;
+
+  /* Tracking tightens as type grows: big numerals and hero titles most, body not at all, small caps labels open. */
+  --tracking-numeral: -0.06em;
+  --tracking-display: -0.05em;
+  --tracking-tight: -0.035em;
+  --tracking-snug: -0.02em;
+  --tracking-normal: -0.005em;
+  --tracking-wide: 0.04em;
+
+  /* ---- Type roles ----------------------------------------------------------------
+     Ten roles, used by the .t-* classes in type.css and by every object primitive. Size, line, weight, tracking. A piece of text takes
+     one role; a component never sets a size of its own. Sizes at a 16px root: 11 / 13 / 15 / 16 / 17 / 19 / 22, then the clamps.
+       hero: the title on a coloured screen        display: a moment (a welcome, a name)       page: a screen's title with no hero
+       section: a group's heading                  object: a Circle, Ask, Plan, Split or Pact  lead: a name, a row title, a hero's sub-line
+       body: reading text                          support: what sits under a title            label: kickers and chips (11px, caps)
+       meta: times, counts, fine print                                                                                        */
+  --t-hero-size: clamp(2.25rem, 11vw, 3rem);       --t-hero-line: 1.02;    --t-hero-weight: var(--weight-heavy);    --t-hero-tracking: var(--tracking-display);
+  --t-display-size: clamp(2.75rem, 13vw, 3.5rem);  --t-display-line: 0.96; --t-display-weight: var(--weight-bold);  --t-display-tracking: var(--tracking-display);
+  --t-page-size: clamp(2rem, 9vw, 2.5rem);         --t-page-line: 1.08;    --t-page-weight: var(--weight-bold);     --t-page-tracking: var(--tracking-tight);
+  --t-section-size: 1.375rem;                      --t-section-line: 1.25; --t-section-weight: var(--weight-semibold); --t-section-tracking: -0.03em;
+  --t-object-size: 1.1875rem;                      --t-object-line: 1.22;  --t-object-weight: var(--weight-semibold); --t-object-tracking: var(--tracking-snug);
+  --t-lead-size: 1.0625rem;                        --t-lead-line: 1.35;    --t-lead-weight: var(--weight-semibold);   --t-lead-tracking: var(--tracking-snug);
+  --t-body-size: 1rem;                             --t-body-line: 1.55;    --t-body-weight: var(--weight-regular);  --t-body-tracking: var(--tracking-normal);
+  --t-support-size: 0.9375rem;                     --t-support-line: 1.4;  --t-support-weight: var(--weight-regular); --t-support-tracking: 0;
+  --t-label-size: 0.6875rem;                       --t-label-line: 1;      --t-label-weight: var(--weight-semibold); --t-label-tracking: 0.08em;
+  --t-meta-size: 0.8125rem;                        --t-meta-line: 1.3;     --t-meta-weight: var(--weight-medium);   --t-meta-tracking: 0;
+}
+
+:root {
   /* ---- Layout ------------------------------------------------------------ */
   --container-max: 1280px;
   --gutter: 16px;
@@ -316,7 +341,7 @@
   --color-scrim: rgba(3, 6, 5, 0.66);
   --color-skeleton: rgba(239, 236, 228, 0.06);
   --color-skeleton-hi: rgba(239, 236, 228, 0.12);
-  --color-placeholder: #7d877f;
+  --color-placeholder: #8f9992;
   --color-border-hover: #4b5750;
   --color-warn-text: #f0c25a;
 
@@ -343,6 +368,8 @@
   --color-danger-soft: var(--red-100);
 
   --color-focus: #efece4;
+  --press-dim: 1.1;
+  --date-lift: 6%;
   --device-bezel: #05080a;
   --device-bezel-edge: #3a4740;
 

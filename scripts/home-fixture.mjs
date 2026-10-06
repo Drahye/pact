@@ -19,7 +19,8 @@ const login = async (key) => {
   const v = await call('POST', '/auth/otp/verify', null, { phone: phones[key], code: otp.devCode });
   return v.accessToken;
 };
-const day = (n) => new Date(Date.now() + n * 86400000).toISOString().slice(0, 10);
+// The server's "today" is the Lagos date (UTC+1): a UTC date is a day behind it between 23:00 and 24:00 UTC.
+const day = (n) => new Date(Date.now() + 3600000 + n * 86400000).toISOString().slice(0, 10);
 const T = {};
 for (const k of Object.keys(phones)) T[k] = await login(k);
 const me = await call('GET', '/me', T.abraham);

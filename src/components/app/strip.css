@@ -32,7 +32,7 @@
 }
 
 .strip__title {
-  font-size: 0.9375rem;
+  font-size: var(--t-support-size);
   font-weight: var(--weight-semibold);
   line-height: 1.25;
 }

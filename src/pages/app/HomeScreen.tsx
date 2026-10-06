@@ -9,14 +9,14 @@ import { introSeen } from '../../features/onboarding/store';
 import { SignInUpgradePrompt } from '../../components/app/SignInUpgradePrompt';
 import { PushPrompt } from '../../components/app/PushPrompt';
 import { ErrorState, Loading, Notice } from '../../components/app/States';
-import { CirclesShelf, ComingUpSection, HomePulse, MadeItHappenSection, NeedsYouSection, RecentSection } from '../../components/home/HomeBits';
+import { CirclesShelf, ComingUpSection, HomePulse, HomeShortcuts, MadeItHappenSection, NeedsYouSection, RecentSection } from '../../components/home/HomeBits';
+import { Hero, Sheet } from '../../components/objects';
 import { HomeSkeleton } from '../../components/home/HomeSkeleton';
 import { HomeStart } from '../../components/home/HomeStart';
 import { Avatar } from '../../components/ui/Avatar';
 import { BottomNav } from '../../components/ui/BottomNav';
 import '../../components/ui/button.css';
 import { SectionHeading } from '../../components/ui/SectionHeading';
-import { LargeTitle } from '../../components/ui/LargeTitle';
 import { TopBar } from '../../components/ui/TopBar';
 import { isoDay } from '../../lib/dates';
 import { formatDate, greeting } from '../../lib/format';
@@ -66,10 +66,11 @@ export function HomeScreen() {
   return (
     <Screen
       tabBar={<BottomNav />}
-      className="home"
+      className="home xhero xhero--home"
       topBar={
         <TopBar
           leading="none"
+          tone="transparent"
           title="Home"
           collapse
           trailing={
@@ -86,13 +87,16 @@ export function HomeScreen() {
         />
       }
     >
-      <LargeTitle className="home__header" eyebrow={formatDate(isoDay(new Date()), { weekday: 'long', month: 'long', day: 'numeric' })}>
-        <span className="home__hi">{greeting()},</span>
-        <span className="home__name">{user?.firstName}</span>
-      </LargeTitle>
-
-      {h && !firstTime && h.state !== 'new' && <HomePulse total={h.needsYouTotal} next={h.comingUp[0]} recent={h.recent} selfId={user?.id} />}
-
+      <Hero className="xh--home home__header">
+        <p className="home__date">{formatDate(isoDay(new Date()), { weekday: 'long', month: 'long', day: 'numeric' })}</p>
+        <h1 className="home__title">
+          <span className="home__hi">{greeting()},</span>
+          <span className="home__name">{user?.firstName}</span>
+        </h1>
+        {h && !firstTime && h.state !== 'new' && <HomePulse total={h.needsYouTotal} next={h.comingUp[0]} recent={h.recent} selfId={user?.id} />}
+      </Hero>
+      <Sheet>
+        {h && !firstTime && h.state !== 'new' && <HomeShortcuts />}
       {stale && (
         <Notice tone="neutral">
           {typeof navigator !== 'undefined' && navigator.onLine === false ? 'You’re offline. This may be out of date.' : 'Couldn’t refresh. This may be out of date.'}
@@ -145,6 +149,7 @@ export function HomeScreen() {
           <MadeItHappenSection items={h.recaps} />
         </>
       )}
+      </Sheet>
     </Screen>
   );
 }

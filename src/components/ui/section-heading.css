@@ -12,7 +12,7 @@
 
 .section-heading__eyebrow {
   margin-bottom: var(--space-3);
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
   font-weight: var(--weight-medium);
   color: var(--color-text-tertiary);
 }
@@ -22,19 +22,29 @@
   min-height: 32px;
   display: inline-flex;
   align-items: center;
-  font-size: var(--text-sm);
+  font-size: var(--t-support-size);
   font-weight: var(--weight-medium);
   color: var(--color-text-secondary);
 }
 
-.section-heading__action:hover {
-  color: var(--color-text);
+@media (hover: hover) {
+  .section-heading__action:hover {
+    color: var(--color-text);
+  }
 }
 
 .section-heading__action:focus-visible {
   outline: 3px solid var(--color-focus);
   outline-offset: 2px;
   border-radius: var(--r-control);
+}
+
+/* Every section heading is the section role; the headings that used to fall back to the browser's h2 size now match it. */
+.section-heading__title {
+  font-size: var(--t-section-size);
+  line-height: var(--t-section-line);
+  font-weight: var(--t-section-weight);
+  letter-spacing: var(--t-section-tracking);
 }
 
 /* app ---------------------------------------------------------------- */
@@ -53,7 +63,7 @@
 .section-heading--site .section-heading__title {
   font-size: clamp(2.125rem, 5.2vw, 4rem);
   line-height: 1.02;
-  letter-spacing: -0.045em;
+  letter-spacing: var(--tracking-tight);
   max-width: 16ch;
 }
 
@@ -65,7 +75,7 @@
 .section-heading--site .section-heading__description {
   margin-top: var(--space-5);
   max-width: 44ch;
-  font-size: var(--text-lg);
+  font-size: var(--t-lead-size);
   line-height: var(--leading-lg);
   color: var(--color-text-secondary);
 }
@@ -77,7 +87,7 @@
 @media (max-width: 767px) {
   .section-heading--site .section-heading__description {
     margin-top: var(--space-4);
-    font-size: var(--text-body);
+    font-size: var(--t-body-size);
     line-height: var(--leading-body);
   }
 }

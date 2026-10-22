@@ -76,7 +76,7 @@ Numerals use `.num` (tabular, lining) and never wrap.
 
 ## Space, shape and depth
 
-- **Space:** 4pt scale, `--space-1..40` (4, 8, 12, 16, 20, 24, 32, 40, 48, 64, 80, 96, 128, 160). Screen gutter 20px.
+- **Space:** 4pt scale, `--space-1..40` (4, 8, 12, 16, 20, 24, 28, 32, 40, 48, 64, 80, 96, 128, 160). Use only these names: a `var()` of a name that does not exist silently drops the whole declaration (`--space-7` once did). Screen gutter 20px.
 - **Radius families:** control 12 (`--r-control`), tile 20 (`--r-tile`), object 24 (`--r-object`), sheet 28 (`--r-sheet`); hero sheet 34, cards 28 in the skin.
   Each kind of object has its own silhouette (`--shape-circle`, `--shape-ask`, `--shape-plan`, `--shape-split`, `--shape-pact`).
 - **Elevation:** three levels. 0 flat, 1 an object you can press (`--elev-interactive`), 2 chosen or modal (`--elev-focused`). Cards use `--card-shadow`:
@@ -101,8 +101,8 @@ ink pill with a filled icon (the same chosen look as a chip). The bar overlaps t
 by `--tab-h` plus 16px, so the last line scrolls clear of it and no strip of another colour is left under it. It follows the theme.
 
 **Scale and restraint (audit 2026-10-22).** Titles stop at 36px, figures at 56px, body is 15px, support 13px, meta 12px. Weights stop at bold: size makes
-hierarchy, a black face does not (Apple's large titles are 34pt bold). Group related rows in one inset card with hairlines between them (People, Settings),
-not as loose tiles. A sticky footer holds one action; two stacked actions close the page instead (`.screen--completed`).
+hierarchy, a black face does not (Apple's large titles are 34pt bold). Group related rows in one inset card with hairlines between them (People, Settings, Home's Coming up and Recent, Activity days, Wallet history),
+not as loose rows: `.hv2-list--ruled`, `.txn-list` and `.st-group > .menu` share one rule in `bold.css`. A sticky footer holds one action; two stacked actions close the page instead (`.screen--completed`).
 
 ## Actions
 
@@ -135,8 +135,9 @@ follow the theme. Accent text becomes pale green (`--color-accent-text` #5fe3a3)
 
 `npm run lint:design` fails on a new raw hex, `rgb()`/`rgba()`/`hsl()`, `font-size`, `font-weight` or `letter-spacing` in app CSS. Allowed: black-alpha
 shadows, `var(--x, fallback)`, data URIs, and values built from tokens (`calc`/`clamp` with a `var`). Skipped: `tokens.css` (the source), `loader.css`
-(runs before tokens), the marketing site, the gallery and the styleguide. The baseline is `scripts/design-lint.baseline.json` and is currently empty, so
-any exception is a regression. Lower it with `--update` when you remove one; it never rises.
+(runs before tokens), the gallery and the styleguide. The app has no exceptions. The marketing site (landing, site nav, store buttons, download) is linted
+too, against `scripts/design-lint.baseline.json`: 41 existing exceptions, almost all its own display sizes. They can go down (`--update`) and never up.
+Separately, every `var(--x)` with no fallback must name a custom property that exists.
 
 ## Adding to the system
 
@@ -148,7 +149,7 @@ any exception is a regression. Lower it with `--update` when you remove one; it 
 
 ## Verifying
 
-`node scripts/ui-audit.mjs /tmp/ui --w=390,320 --theme=light,dark` captures every main screen at the top and scrolled to the bottom, and fails any
+`node scripts/ui-audit.mjs /tmp/ui --w=390,320 --theme=light,dark` (also the `UI audit` GitHub workflow, path-filtered, not required) captures every main screen at the top and scrolled to the bottom, and fails any
 screen where text or a control ends under the tab bar or a sticky footer.
 
 ```
@@ -166,4 +167,4 @@ Do not kill an audit mid-run (refresh tokens rotate and the saved session goes s
 ## Not covered
 
 Ceremony screens (the onboarding carousel, the completed-Pact page, the join-invite card) use the shared tokens and roles but keep their own
-composition. The marketing site is light-only and has its own display sizes. Real devices, iOS `:active` and slow networks are untested.
+composition. The marketing site is light-only and has its own display sizes (41 baselined exceptions). Real devices, iOS `:active` and slow networks are untested.

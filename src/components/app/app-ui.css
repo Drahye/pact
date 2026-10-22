@@ -469,6 +469,12 @@
   transition: background-color var(--duration-fast) var(--ease-out);
 }
 
+/* A row with no surface of its own gets one while it is pressed, so the press can be seen. */
+a.menu__row:active,
+button.menu__row:active {
+  background: var(--surface-quiet);
+}
+
 @media (hover: hover) {
   a.menu__row:hover,
   button.menu__row:hover {

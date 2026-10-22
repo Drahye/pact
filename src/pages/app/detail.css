@@ -94,6 +94,10 @@
   transition: background-color var(--duration-fast) var(--ease-out);
 }
 
+.person:active {
+  background: var(--surface-quiet);
+}
+
 .person:hover,
 .person.is-selected {
   background: var(--color-surface);

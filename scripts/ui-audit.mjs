@@ -16,7 +16,7 @@ const browser = await chromium.launch(existsSync(shell) ? { executablePath: shel
 let state = JSON.parse(readFileSync('/tmp/detail-state.json', 'utf8'));
 const screens = [
   ['home', '/app/home'], ['pacts', '/app/pacts'], ['circles', '/app/circles'], ['activity', '/app/activity'], ['profile', '/app/profile'],
-  ['wallet', '/app/wallet'], ['notifications', '/app/notifications'], ['topup', '/app/topup'], ['withdraw', '/app/wallet/withdraw'],
+  ['wallet', '/app/wallet'], ['settings', '/app/profile/settings'], ['pacts-all', '/app/pacts'], ['notifications', '/app/notifications'], ['topup', '/app/topup'], ['withdraw', '/app/wallet/withdraw'],
   ['circle', `/app/circles/${ids.boys}`], ['ask-open', `/app/asks/${ids.askOpen}`], ['ask-answered', `/app/asks/${ids.askAnswered}`],
   ['plan-open', `/app/plans/${ids.planOpen}`], ['split-open', `/app/splits/${ids.splitOpen}`], ['split-settled', `/app/splits/${ids.splitSettled}`],
   ['pact-active', `/app/pact/${ids.pactActive}`], ['pact-completed', ids.pactCompleted && `/app/pact/${ids.pactCompleted}`],
@@ -64,3 +64,4 @@ for (const theme of themes) for (const width of widths) {
 writeFileSync(`${out}/report.json`, JSON.stringify(report, null, 1));
 console.log('done', report.length, 'screens;', report.filter((r) => r.overlapCount).length, 'with overlap');
 await browser.close();
+if (report.some((r) => r.overlapCount)) process.exit(1);

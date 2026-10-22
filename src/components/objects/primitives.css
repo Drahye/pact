@@ -109,7 +109,7 @@
   height: 52px;
   border-radius: 50%;
   background: var(--glass);
-  font-size: 1.75rem;
+  font-size: var(--fig-md);
   line-height: 1;
 }
 
@@ -165,7 +165,7 @@
 .ox-circle--header .ox-circle__emoji {
   width: 60px;
   height: 60px;
-  font-size: 2rem;
+  font-size: var(--fig-lg);
 }
 
 .ox-circle--header .ox-circle__id {
@@ -563,7 +563,7 @@
 
 .ox-plan__date b {
   margin: 3px 0;
-  font-size: 1.875rem;
+  font-size: var(--fig-lg);
   letter-spacing: var(--tracking-tight);
 }
 
@@ -661,7 +661,7 @@
 }
 
 .ox-plan--page .ox-plan__date b {
-  font-size: 2.875rem;
+  font-size: var(--fig-2xl);
   letter-spacing: var(--tracking-display);
 }
 
@@ -978,7 +978,7 @@
 
 .ox-pact__title {
   margin: 0;
-  font-size: 1.5rem;
+  font-size: var(--fig-sm);
   line-height: 1.15;
   overflow-wrap: anywhere;
 }
@@ -994,7 +994,7 @@
 
 .ox-pact__money strong {
   color: var(--color-text);
-  font-size: 1.375rem;
+  font-size: var(--fig-sm);
   letter-spacing: var(--tracking-tight);
 }
 
@@ -1178,7 +1178,7 @@
 }
 
 .ox-plan--compact .ox-plan__date b {
-  font-size: 1.5rem;
+  font-size: var(--fig-sm);
 }
 
 .ox-plan--compact .ox-plan__title {
@@ -1208,7 +1208,7 @@
 }
 
 .ox-split--compact .ox-split__amount {
-  font-size: 1.75rem;
+  font-size: var(--fig-md);
   font-weight: var(--weight-semibold);
   letter-spacing: var(--tracking-tight);
   line-height: 1.1;
@@ -1303,14 +1303,14 @@
 
 .ox-agenda__date b {
   margin-top: 3px;
-  font-size: 1.5rem;
+  font-size: var(--fig-sm);
   font-weight: var(--weight-bold);
   letter-spacing: var(--tracking-tight);
 }
 
 .ox-agenda__date.is-today {
   background: var(--green-500);
-  color: var(--color-on-accent, #0b1a12);
+  color: var(--color-on-accent);
 }
 
 .ox-agenda__date.is-today i {
@@ -1335,7 +1335,7 @@
 }
 
 .ox-plan--page .ox-plan__date b {
-  font-size: 3.25rem;
+  font-size: var(--fig-2xl);
 }
 
 .ox-plan--page .ox-plan__going {
@@ -1367,7 +1367,7 @@
 }
 
 .ox-plan__countdown b {
-  font-size: clamp(1.75rem, 8vw, 2.25rem);
+  font-size: var(--num-md-size);
   font-weight: var(--t-display-weight);
   letter-spacing: var(--tracking-tight);
 }

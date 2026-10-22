@@ -110,7 +110,7 @@
 }
 
 .ca__type strong {
-  font-size: var(--text-lg, 1.125rem);
+  font-size: var(--t-lead-size);
 }
 
 .ca__type span {

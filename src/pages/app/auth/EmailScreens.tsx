@@ -8,6 +8,7 @@ import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { TopBar } from '../../../components/ui/TopBar';
 import { OTPInput } from '../../../components/objects';
+import { PageHero } from '../../../components/objects';
 import { Screen } from '../Screen';
 import { clearFlow, readFlow, setReturnTo, safeAppPath, writeFlow } from './flow';
 import { HandoffNote, useHandoffWords } from './HandoffNote';
@@ -41,17 +42,16 @@ export function EmailScreen() {
 
   return (
     <Screen
-      topBar={<TopBar backTo="/app/auth/start" />}
+      topBar={<TopBar tone="transparent" backTo="/app/auth/start" />}
       footer={
         <Button type="submit" form="email-form" fullWidth loading={busy} disabled={!email.trim()}>
           Continue
         </Button>
       }
-      className="auth"
+      className="auth xhero xhero--lite tint--mint"
     >
+      <PageHero tint="mint" title="What’s your email?" subtitle={<>{useHandoffWords()?.line ?? 'We’ll send you a 6-digit code. No password to remember.'}</>} />
       <HandoffNote />
-      <h1 className="large-title">What’s your email?</h1>
-      <p className="screen-lede">{useHandoffWords()?.line ?? 'We’ll send you a 6-digit code. No password to remember.'}</p>
       <form id="email-form" className="auth__form" onSubmit={submit} noValidate>
         <Input
           label="Email"
@@ -142,13 +142,10 @@ export function EmailCodeScreen() {
   };
 
   return (
-    <Screen topBar={<TopBar backTo="/app/auth/start" />} className="auth">
-      <h1 className="large-title">Check your email</h1>
-      <p className="screen-lede">
-        We sent a 6-digit code to
+    <Screen topBar={<TopBar tone="transparent" backTo="/app/auth/start" />} className="auth xhero xhero--lite tint--mint">
+      <PageHero tint="mint" title="Check your email" subtitle={<>We sent a 6-digit code to
         <br />
-        <strong className="auth__email">{flow.email}</strong>
-      </p>
+        <strong className="auth__email">{flow.email}</strong></>} />
 
       <OTPInput ref={input} id="email-otp" value={code} onChange={onChange} busy={busy} success={success} error={!!error} describedBy={error ? 'email-otp-error' : undefined} />
       {error && <p className="field__error auth__error" id="email-otp-error" role="alert">{error}</p>}

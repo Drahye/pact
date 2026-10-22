@@ -63,7 +63,7 @@
 
 .ox-split--page .ox-split__total {
   margin-block: var(--space-1) 0;
-  font-size: clamp(2.75rem, 15vw, 3.75rem);
+  font-size: var(--num-lg-size);
 }
 
 .ox-split--page .ox-split__bar {

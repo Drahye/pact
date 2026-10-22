@@ -8,34 +8,30 @@
    ========================================================================== */
 
 .proto--bold {
-  --t-hero-weight: var(--weight-heavy);
-  --t-display-weight: var(--weight-heavy);
-  --t-page-weight: var(--weight-heavy);
-  --t-section-weight: var(--weight-bold);
-  --t-object-weight: var(--weight-bold);
-  --t-lead-weight: var(--weight-semibold);
-  --on-hero: #0c1a12;                       /* 5.7:1 on lilac, 7:1+ on every other tint */
-  --on-hero-2: rgba(12, 26, 18, 0.88);      /* secondary: 4.9:1 on lilac */
-  --on-hero-3: rgba(12, 26, 18, 0.84);      /* tertiary: 4.6:1 on lilac. Hierarchy comes from size and weight, never from fading below AA. */
+  /* Text on a bright hero. Ink at three weights of emphasis: all AA on every tint (lilac, the lightest ink-contrast, is 5.0:1 at shade-6). The
+     secondary and tertiary are one value on purpose: hierarchy on a hero comes from size and weight, never from fading. */
+  --on-hero: var(--ink-900);
+  --on-hero-2: var(--shade-6);
+  --on-hero-3: var(--shade-6);
   --card-radius: 28px;
-  --card-shadow: 0 0 0 1px rgba(15, 23, 19, 0.04), 0 1px 2px rgba(15, 23, 19, 0.05), 0 20px 36px -22px rgba(15, 23, 19, 0.3);
+  --card-shadow: 0 0 0 1px var(--shade-1), 0 1px 2px var(--shade-1), 0 20px 36px -22px var(--shade-3);
   --sheet-radius: 34px;
   /* Cards laid on a hero cast a short shadow: a long one darkens the colour under the text below, and ink loses contrast on it. */
-  --hero-shadow: 0 12px 22px -18px rgba(12, 26, 18, 0.3);
+  --hero-shadow: 0 12px 22px -18px var(--shade-3);
 }
 
 :root[data-theme='dark'] .proto--bold {
-  --card-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 0 0 1px rgba(255, 255, 255, 0.04), 0 20px 36px -20px rgba(0, 0, 0, 0.7);
+  --card-shadow: inset 0 1px 0 var(--veil-1), 0 0 0 1px var(--veil-1), 0 20px 36px -20px rgba(0, 0, 0, 0.7);
 }
 
 /* In dark, the sheet is lifted by a lit edge, not a black shadow cast upward onto a bright hero. */
 :root[data-theme='dark'] .proto--bold .xs {
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 -10px 30px -24px rgba(0, 0, 0, 0.5);
+  box-shadow: inset 0 1px 0 var(--veil-1), 0 -10px 30px -24px rgba(0, 0, 0, 0.5);
 }
 
 /* ---- Hero + sheet ------------------------------------------------------------------------------------------------------------ */
 .proto--bold .screen.xhero {
-  --xh-a: color-mix(in srgb, var(--tint-solid) 70%, #fff);
+  --xh-a: color-mix(in srgb, var(--tint-solid) 70%, var(--white));
   background: var(--xh-a);
 }
 
@@ -65,12 +61,12 @@
 }
 
 .proto--bold .screen.xhero .topbar.is-scrolled {
-  background: color-mix(in srgb, var(--tint-solid) 86%, #fff);
+  background: color-mix(in srgb, var(--tint-solid) 86%, var(--white));
   box-shadow: none;
 }
 
 .proto--bold .xh {
-  --xh-a: color-mix(in srgb, var(--tint-solid) 70%, #fff);
+  --xh-a: color-mix(in srgb, var(--tint-solid) 70%, var(--white));
   --xh-c: var(--tint-solid);
   position: relative;
   isolation: isolate;
@@ -78,7 +74,7 @@
   margin: 0 calc(var(--space-5) * -1);
   padding: var(--space-2) var(--space-5) 64px;
   color: var(--on-hero);
-  background: radial-gradient(90% 70% at 100% 45%, rgba(255, 255, 255, 0.34), transparent 62%), linear-gradient(168deg, var(--xh-a) 0%, var(--tint-solid) 56%, var(--xh-c) 100%);
+  background: radial-gradient(90% 70% at 100% 45%, var(--veil-4), transparent 62%), linear-gradient(168deg, var(--xh-a) 0%, var(--tint-solid) 56%, var(--xh-c) 100%);
 }
 
 .proto--bold .xh__body {
@@ -132,7 +128,7 @@
   color: var(--color-on-selected);
   font-weight: var(--weight-bold);
   letter-spacing: var(--tracking-snug);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 16px 26px -16px rgba(15, 23, 19, 0.65);
+  box-shadow: inset 0 1px 0 var(--veil-3), 0 16px 26px -16px var(--shade-5);
 }
 
 .proto--bold .btn--primary.btn--full {
@@ -177,7 +173,7 @@
 
 .proto--bold .btn--secondary {
   background: var(--color-surface);
-  box-shadow: 0 1px 2px rgba(15, 23, 19, 0.06), 0 10px 20px -14px rgba(15, 23, 19, 0.3);
+  box-shadow: 0 1px 2px var(--shade-1), 0 10px 20px -14px var(--shade-3);
   color: var(--color-text);
   font-weight: var(--weight-semibold);
 }
@@ -194,24 +190,24 @@
 /* ---- The bar: dark, floating, with a bright create button ------------------------------------------------------------------- */
 .proto--bold .tabbar__pill {
   padding: 7px;
-  background: #121c17;
+  background: var(--night-bar);
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 22px 36px -14px rgba(5, 12, 8, 0.7);
+  box-shadow: inset 0 1px 0 var(--veil-1), 0 22px 36px -14px var(--shade-5);
 }
 
 :root[data-theme='dark'] .proto--bold .tabbar__pill {
-  background: #1b2822;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.06), 0 22px 36px -14px rgba(0, 0, 0, 0.8);
+  background: var(--night-bar-dark);
+  box-shadow: inset 0 1px 0 var(--veil-2), 0 0 0 1px var(--veil-1), 0 22px 36px -14px rgba(0, 0, 0, 0.8);
 }
 
 .proto--bold .tabbar__item {
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--veil-5);
 }
 
 @media (hover: hover) {
   .proto--bold .tabbar__item:hover {
-    color: #fff;
+    color: var(--white);
   }
 }
 
@@ -220,7 +216,7 @@
 }
 
 .proto--bold .tabbar__active {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--veil-2);
 }
 
 .proto--bold .tabbar__label {
@@ -230,7 +226,7 @@
 .proto--bold .tabbar__create {
   width: 58px;
   height: 58px;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6), inset 0 -3px 6px rgba(19, 122, 74, 0.3), 0 10px 22px -6px color-mix(in srgb, var(--green-500) 75%, transparent);
+  box-shadow: inset 0 1px 0 var(--veil-5), inset 0 -3px 6px color-mix(in srgb, var(--green-700) 30%, transparent), 0 10px 22px -6px color-mix(in srgb, var(--green-500) 75%, transparent);
 }
 
 /* ---- Cards with depth -------------------------------------------------------------------------------------------------------- */
@@ -244,21 +240,21 @@
    Home
    ========================================================================== */
 .proto--bold .screen.xhero--home {
-  background: #15402d;
+  background: var(--forest-800);
 }
 
 .proto--bold .screen.xhero--home .topbar {
-  color: #fff;
+  color: var(--white);
 }
 
 .proto--bold .screen.xhero--home .topbar.is-scrolled {
-  background: #15402d;
+  background: var(--forest-800);
 }
 
 .proto--bold .xh--home {
   padding-bottom: 104px;
-  color: #fff;
-  background: radial-gradient(70% 60% at 92% 8%, rgba(61, 214, 140, 0.5), transparent 62%), radial-gradient(60% 55% at 0% 100%, rgba(77, 163, 255, 0.24), transparent 62%), linear-gradient(172deg, #17483a 0%, #0e2a1f 100%);
+  color: var(--white);
+  background: radial-gradient(70% 60% at 92% 8%, color-mix(in srgb, var(--green-500) 50%, transparent), transparent 62%), radial-gradient(60% 55% at 0% 100%, color-mix(in srgb, var(--sky-400) 24%, transparent), transparent 62%), linear-gradient(172deg, var(--forest-700) 0%, var(--forest-900) 100%);
 }
 
 .proto--bold .xh--home .xh__body {
@@ -267,7 +263,7 @@
 
 .proto--bold .home__date {
   margin: var(--space-2) 0 0;
-  color: rgba(255, 255, 255, 0.72);
+  color: var(--veil-6);
   font-size: var(--t-support-size);
   font-weight: var(--weight-medium);
 }
@@ -279,14 +275,14 @@
 }
 
 .proto--bold .home__hi {
-  color: rgba(255, 255, 255, 0.78);
+  color: var(--veil-6);
   font-size: var(--t-object-size);
   font-weight: var(--weight-medium);
   letter-spacing: var(--tracking-snug);
 }
 
 .proto--bold .home__name {
-  color: #fff;
+  color: var(--white);
   font-size: var(--t-display-size);
   font-weight: var(--weight-heavy);
   line-height: 1;
@@ -298,16 +294,16 @@
 }
 
 .proto--bold .xh--home .hv3-pulse {
-  color: rgba(255, 255, 255, 0.82);
+  color: var(--veil-7);
   font-size: var(--t-lead-size);
 }
 
 .proto--bold .xh--home .hv3-pulse strong {
-  color: #fff;
+  color: var(--white);
 }
 
 .proto--bold .xh--home .hv3-active {
-  color: rgba(255, 255, 255, 0.78);
+  color: var(--veil-6);
 }
 
 /* Four ways to start: one coloured tile each, set into the sheet's top edge. */
@@ -333,9 +329,9 @@
   max-width: 76px;
   aspect-ratio: 1;
   border-radius: 26px 26px 26px 10px;
-  background: linear-gradient(160deg, color-mix(in srgb, var(--tint-solid) 62%, #fff), var(--tint-solid));
+  background: linear-gradient(160deg, color-mix(in srgb, var(--tint-solid) 62%, var(--white)), var(--tint-solid));
   color: var(--on-hero);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55), 0 16px 24px -14px color-mix(in srgb, var(--tint-solid) 90%, #000);
+  box-shadow: inset 0 1px 0 var(--veil-5), 0 16px 24px -14px color-mix(in srgb, var(--tint-solid) 90%, var(--black));
   transition: transform var(--motion-micro) var(--ease-press);
 }
 
@@ -386,8 +382,8 @@
   position: relative;
   padding: var(--space-5);
   border-radius: 32px 32px 32px 12px;
-  background: radial-gradient(90% 70% at 100% 0%, rgba(255, 255, 255, 0.4), transparent 60%), linear-gradient(165deg, color-mix(in srgb, var(--tint-solid) 66%, #fff), var(--tint-solid) 62%);
-  box-shadow: 0 26px 40px -22px color-mix(in srgb, var(--tint-solid) 95%, #000);
+  background: radial-gradient(90% 70% at 100% 0%, var(--veil-4), transparent 60%), linear-gradient(165deg, color-mix(in srgb, var(--tint-solid) 66%, var(--white)), var(--tint-solid) 62%);
+  box-shadow: 0 26px 40px -22px color-mix(in srgb, var(--tint-solid) 95%, var(--black));
   color: var(--on-hero);
   --tint-fg: var(--on-hero);
 }
@@ -413,7 +409,7 @@
 
 .proto--bold .hv3-needs > li:first-child .act--solid {
   background: var(--ink-900);
-  color: #fff;
+  color: var(--white);
 }
 
 .proto--bold .hv3-needs > li:first-child:has(.hv3-lead-art) :is(.ox-ask, .ox-plan, .ox-split) {
@@ -447,9 +443,9 @@
   width: 84px;
   height: 84px;
   border-radius: 30px 30px 30px 10px;
-  background: rgba(255, 255, 255, 0.55);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85), 0 16px 26px -16px rgba(0, 0, 0, 0.4);
-  font-size: 3rem;
+  background: var(--veil-5);
+  box-shadow: inset 0 1px 0 var(--veil-7), 0 16px 26px -16px rgba(0, 0, 0, 0.4);
+  font-size: var(--fig-2xl);
   line-height: 1;
 }
 
@@ -467,7 +463,7 @@
   margin: 0;
   padding: 7px 14px 7px 12px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.5);
+  background: var(--veil-5);
   font-size: var(--t-support-size);
   font-weight: var(--weight-semibold);
 }
@@ -477,8 +473,8 @@
 }
 
 .proto--bold .xh .od-circle__slot-mark {
-  border-color: rgba(12, 26, 18, 0.55);
-  background: rgba(255, 255, 255, 0.35);
+  border-color: var(--shade-4);
+  background: var(--veil-4);
 }
 
 .proto--bold .xs.od-circle {
@@ -520,15 +516,15 @@
   margin: var(--space-2) 0 0;
   padding: 6px 14px 6px 10px;
   border-radius: 999px;
-  background: rgba(12, 26, 18, 0.88);
-  color: #fff;
+  background: var(--shade-6);
+  color: var(--white);
   font-size: var(--t-meta-size);
   font-weight: var(--weight-semibold);
 }
 
 .proto--bold .xh__pill .status,
 .proto--bold .xh__pill span {
-  color: #fff;
+  color: var(--white);
 }
 
 .proto--bold .xh__date {
@@ -546,7 +542,7 @@
 }
 
 .proto--bold .xh__date-big {
-  font-size: clamp(5.5rem, 30vw, 8rem);
+  font-size: var(--num-date-size);
   font-weight: var(--weight-heavy);
   line-height: 0.86;
   letter-spacing: var(--tracking-numeral);
@@ -575,13 +571,13 @@
   margin: var(--space-2) 0 0;
   padding: 10px 18px;
   border-radius: 20px 20px 20px 7px;
-  background: rgba(255, 255, 255, 0.55);
+  background: var(--veil-5);
   font-size: var(--t-lead-size);
   font-weight: var(--weight-semibold);
 }
 
 .proto--bold .xh__count b {
-  font-size: 1.75rem;
+  font-size: var(--fig-md);
   font-weight: var(--weight-heavy);
   letter-spacing: var(--tracking-tight);
 }
@@ -653,12 +649,12 @@
 }
 
 .proto--bold .xh--pact .cat-chip {
-  background: rgba(12, 26, 18, 0.88);
-  color: #fff;
+  background: var(--shade-6);
+  color: var(--white);
 }
 
 .proto--bold .xh--pact .cat-chip .cat-chip__suffix {
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--veil-7);
 }
 
 .proto--bold .xh--pact .od-pact__due {
@@ -689,19 +685,19 @@
   margin-top: var(--space-4);
   padding: 22px 22px 18px;
   border-radius: 46px 46px 46px 16px;
-  background: linear-gradient(180deg, #fff, #f6f2e8);
-  box-shadow: var(--hero-shadow), inset 0 -8px 16px rgba(12, 26, 18, 0.06);
-  color: #0c1a12;
+  background: linear-gradient(180deg, var(--white), var(--paper-dial));
+  box-shadow: var(--hero-shadow), inset 0 -8px 16px var(--shade-1);
+  color: var(--ink-900);
 }
 
 .proto--bold .xh--pact .detail__ring .detail__center-amount,
 .proto--bold .xh--pact .detail__ring .detail__center-name {
-  color: #0c1a12;
+  color: var(--ink-900);
 }
 
 .proto--bold .xh--pact .detail__ring .detail__center-meta,
 .proto--bold .xh--pact .detail__ring-hint {
-  color: #5d665f;
+  color: var(--ink-500);
 }
 
 .proto--bold .xh--pact .od-pact__facts {
@@ -721,13 +717,13 @@
 
 .proto--bold .xh--pact .detail__actions .btn--secondary {
   color: var(--on-hero);
-  background: rgba(255, 255, 255, 0.4);
+  background: var(--veil-4);
   box-shadow: none;
 }
 
 .proto--bold .xh--pact .detail__ring .detail__center-pct {
-  background: rgba(12, 26, 18, 0.9);
-  color: #fff;
+  background: var(--shade-6);
+  color: var(--white);
 }
 
 .proto--bold .xs.od-pact {
@@ -762,7 +758,7 @@
    white cards laid on top, so the colour does the identifying and the cards do the work.
    ========================================================================== */
 .proto--bold .screen.xhero--full {
-  background: linear-gradient(168deg, color-mix(in srgb, var(--tint-solid) 70%, #fff) 0%, var(--tint-solid) 52%, var(--tint-solid) 100%) local no-repeat, var(--tint-solid);
+  background: linear-gradient(168deg, color-mix(in srgb, var(--tint-solid) 70%, var(--white)) 0%, var(--tint-solid) 52%, var(--tint-solid) 100%) local no-repeat, var(--tint-solid);
   --color-text: var(--on-hero);
   --color-text-secondary: var(--on-hero-2);
   --color-text-tertiary: var(--on-hero-3);
@@ -794,29 +790,29 @@
   width: fit-content;
   padding: 6px 14px 6px 10px;
   border-radius: 999px;
-  background: rgba(12, 26, 18, 0.88);
-  color: #fff;
+  background: var(--shade-6);
+  color: var(--white);
 }
 
 .proto--bold .xhero--full .ox-kicker span {
-  color: #fff;
+  color: var(--white);
 }
 
 .proto--bold .xhero--full .ox-opt {
   min-height: 68px;
   border-radius: 26px;
-  background: #fff;
-  color: #0c1a12;
+  background: var(--white);
+  color: var(--ink-900);
   box-shadow: var(--hero-shadow);
 }
 
 .proto--bold .xhero--full .ox-opt__label,
 .proto--bold .xhero--full .ox-opt__n {
-  color: #0c1a12;
+  color: var(--ink-900);
 }
 
 .proto--bold .xhero--full .ox-split__total {
-  font-size: clamp(3rem, 17vw, 4.5rem);
+  font-size: var(--num-xl-size);
   font-weight: var(--weight-heavy);
   line-height: 0.95;
   letter-spacing: var(--tracking-numeral);
@@ -827,19 +823,19 @@
   margin: var(--space-3) 0 0;
   padding: var(--space-2) var(--space-4);
   border-radius: var(--card-radius);
-  background: #fff;
-  color: #0c1a12;
+  background: var(--white);
+  color: var(--ink-900);
   box-shadow: var(--hero-shadow);
-  --color-text: #0c1a12;
-  --color-text-secondary: #5d665f;
+  --color-text: var(--ink-900);
+  --color-text-secondary: var(--ink-500);
 }
 
 .proto--bold .xhero--full .ox-split__bar i {
-  background: rgba(255, 255, 255, 0.5);
+  background: var(--veil-5);
 }
 
 .proto--bold .xhero--full .ox-split__bar i.is-on {
-  background: #0c1a12;
+  background: var(--ink-900);
 }
 
 .proto--bold .xhero--full .ox-split__left-n {
@@ -861,7 +857,7 @@
 }
 
 .proto--bold .xh--me .avatar {
-  box-shadow: 0 0 0 4px #fff, 0 16px 24px -12px rgba(12, 26, 18, 0.5);
+  box-shadow: 0 0 0 4px var(--white), 0 16px 24px -12px var(--shade-4);
 }
 
 .proto--bold .xh--me .me__name {
@@ -879,7 +875,7 @@
   width: fit-content;
   padding: 4px 12px 4px 8px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.55);
+  background: var(--veil-5);
   color: var(--on-hero);
 }
 
@@ -988,24 +984,24 @@
 }
 
 .proto--bold .xh--cf .cf__icon {
-  background: rgba(255, 255, 255, 0.6);
+  background: var(--veil-5);
   box-shadow: none;
 }
 
 .proto--bold .xh--cf .cf__dots i {
-  background: rgba(12, 26, 18, 0.22);
+  background: var(--shade-2);
 }
 
 .proto--bold .xh--cf .cf__dots i.is-past {
-  background: rgba(12, 26, 18, 0.6);
+  background: var(--shade-4);
 }
 
 .proto--bold .xh--cf .cf__dots i.is-now {
-  background: #0c1a12;
+  background: var(--ink-900);
 }
 
 .proto--bold .xh--cf .cf__context {
-  background: rgba(255, 255, 255, 0.55);
+  background: var(--veil-5);
   color: var(--on-hero);
 }
 
@@ -1022,8 +1018,8 @@
 }
 
 .proto--bold .xhero--full .ox-circle--header .ox-circle__emoji {
-  background: rgba(255, 255, 255, 0.55);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85), 0 14px 22px -14px rgba(12, 26, 18, 0.4);
+  background: var(--veil-5);
+  box-shadow: inset 0 1px 0 var(--veil-7), 0 14px 22px -14px var(--shade-3);
 }
 
 .proto--bold .xhero--full .ox-circle--header .ox-circle__name,
@@ -1036,13 +1032,13 @@
 }
 
 .proto--bold .xhero--full .ci__does-icon {
-  background: rgba(255, 255, 255, 0.6);
+  background: var(--veil-5);
   color: var(--on-hero);
   box-shadow: none;
 }
 
 .proto--bold .xhero--full .ci__does li + li {
-  border-color: rgba(12, 26, 18, 0.14);
+  border-color: var(--shade-2);
 }
 
 .proto--bold .xhero--full .ci__does li > span:last-child span {
@@ -1074,12 +1070,12 @@
 }
 
 .proto--bold .share.xhero--full .sh__from {
-  background: rgba(255, 255, 255, 0.55);
+  background: var(--veil-5);
   color: var(--on-hero);
 }
 
 .proto--bold .share.xhero--full :is(.ox-plan--page .ox-plan__top) {
-  background: rgba(255, 255, 255, 0.5);
+  background: var(--veil-5);
 }
 
 /* ==========================================================================
@@ -1092,29 +1088,89 @@
 }
 
 .proto--bold :is(.xh, .xhero--full) .avatar:not(.avatar__overflow):not(.is-pending) {
-  background-color: rgba(255, 255, 255, 0.88);
-  color: #0c1a12;
+  background-color: var(--veil-7);
+  color: var(--ink-900);
 }
 
 .proto--bold :is(.xh, .xhero--full) .avatar {
-  --ring-color: #fff;
+  --ring-color: var(--white);
 }
 
 .proto--bold :is(.xh, .xhero--full) .avatar__overflow {
-  background-color: #0c1a12;
-  color: #fff;
+  background-color: var(--ink-900);
+  color: var(--white);
 }
 
 .proto--bold .xh--pact .detail__ring .sring__track {
-  stroke: #e7e3d8;
+  stroke: var(--track-warm);
 }
 
 .proto--bold .xh--pact .detail__ring {
-  --color-text: #0c1a12;
-  --color-text-secondary: #5d665f;
-  --color-text-tertiary: #5d665f;
+  --color-text: var(--ink-900);
+  --color-text-secondary: var(--ink-500);
+  --color-text-tertiary: var(--ink-500);
 }
 
 .proto--bold .xh--home .avatar:not(.avatar__overflow) {
-  background-color: rgba(255, 255, 255, 0.9);
+  background-color: var(--veil-7);
+}
+
+/* ==========================================================================
+   Welcome and sign-in: the same hero and sheet as everything else. Welcome is the brand moment, so it wears Home's night-green and
+   shows PACT's own objects on it; the sign-in steps are a green page hero over the form.
+   ========================================================================== */
+.proto--bold .welcome .xh--welcome {
+  padding-bottom: 72px;
+}
+
+.proto--bold .welcome .xh--welcome .welcome__top {
+  min-height: 0;
+  margin: 0;
+}
+
+.proto--bold .welcome .xh--welcome .intro-visual {
+  margin: var(--space-4) 0 0;
+}
+
+.proto--bold .welcome .intro-visual__glow {
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--brand) 38%, transparent), transparent);
+}
+
+.proto--bold .welcome .xs.intro {
+  flex: 1;
+  justify-content: flex-start;
+  gap: var(--space-3);
+  padding-bottom: var(--space-4);
+}
+
+.proto--bold .xh .xh__meta strong {
+  color: inherit;
+  font-weight: var(--weight-bold);
+}
+
+.proto--bold .auth .entry {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.proto--bold .screen.welcome.xhero--home {
+  background: var(--color-bg);
+}
+
+.proto--bold .welcome .xh--welcome {
+  padding-top: calc(var(--space-6) + env(safe-area-inset-top));
+}
+
+/* PACT's own objects are light cards on the night-green hero in both themes: ink on paper, whatever the page theme is. */
+.proto--bold .xh .intro-obj,
+.proto--bold .xh .intro-obj :is(strong, span, b) {
+  color: var(--ink-900);
+}
+
+.proto--bold .xh .intro-obj .intro-obj__kicker {
+  color: var(--tint-fg);
+}
+
+.proto--bold .xh .intro-obj .intro-obj__meta {
+  color: var(--ink-600);
 }

@@ -16,6 +16,7 @@ import { TopBar } from '../../../components/ui/TopBar';
 import { clearDraft, readDraft, useSaveDraft } from '../../../lib/drafts';
 import { formatNairaKobo, fromKobo, toKobo } from '../../../lib/format';
 import { spring } from '../../../tokens/tokens';
+import { PageHero } from '../../../components/objects';
 import { Screen } from '../Screen';
 import { AddBankSheet } from './AddBankSheet';
 import './wallet.css';
@@ -86,7 +87,7 @@ export function WithdrawScreen() {
 
   return (
     <Screen
-      topBar={<TopBar backTo="/app/wallet" title="Withdraw" />}
+      topBar={<TopBar tone="transparent" backTo="/app/wallet" title="Withdraw" />}
       footer={
         accounts.data && !account ? (
           <Button fullWidth iconLeft={<Plus />} onClick={() => setAddOpen(true)}>
@@ -98,13 +99,10 @@ export function WithdrawScreen() {
           </Button>
         )
       }
-      className="topup"
+      className="topup xhero xhero--lite tint--sun"
     >
-      <h1 className="large-title">Withdraw to bank</h1>
+      <PageHero tint="sun" title="Withdraw to bank" subtitle={<>Available <span className="num">{formatNairaKobo(balance)}</span></>} />
       <PhoneRequired what="withdraw" />
-      <p className="screen-lede">
-        Available <span className="num">{formatNairaKobo(balance)}</span>
-      </p>
 
       <div className="topup__amount">
         <AmountInput

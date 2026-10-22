@@ -44,9 +44,9 @@
   width: 36px;
   height: 36px;
   border-radius: var(--r-control);
-  background: linear-gradient(160deg, color-mix(in srgb, #fff 40%, var(--tint-bg, var(--color-bg-sunken))), var(--tint-bg, var(--color-bg-sunken)));
+  background: linear-gradient(160deg, color-mix(in srgb, var(--white) 40%, var(--tint-bg, var(--color-bg-sunken))), var(--tint-bg, var(--color-bg-sunken)));
   color: var(--tint-fg, var(--color-text-secondary));
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tint-solid, var(--ink-300)) 30%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.5), 0 3px 6px -4px color-mix(in srgb, var(--tint-solid, var(--ink-300)) 60%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tint-solid, var(--ink-300)) 30%, transparent), inset 0 1px 0 var(--veil-5), 0 3px 6px -4px color-mix(in srgb, var(--tint-solid, var(--ink-300)) 60%, transparent);
 }
 
 .icon-tile svg {
@@ -57,7 +57,7 @@
 
 :root[data-theme='dark'] .icon-tile {
   background: var(--tint-bg, var(--color-bg-sunken));
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tint-solid, var(--ink-300)) 28%, transparent), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tint-solid, var(--ink-300)) 28%, transparent), inset 0 1px 0 var(--veil-1);
 }
 
 /* A compact status chip. Neutral by default: colour is for meaning. */

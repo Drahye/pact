@@ -17,6 +17,7 @@ import { pushRecent } from '../../lib/drafts';
 import { formatNaira } from '../../lib/format';
 import { joinedMembers, summarize } from '../../lib/pact';
 import { spring } from '../../tokens/tokens';
+import { PageHero } from '../../components/objects';
 import { Screen } from './Screen';
 import './invite.css';
 
@@ -34,7 +35,7 @@ export function InviteScreen() {
   const [phone, setPhone] = useState('');
   const [phoneError, setPhoneError] = useState<string>();
 
-  if (q.isLoading) return <Screen topBar={<TopBar backTo={`/app/pact/${id}`} />}><FormSkeleton fields={2} label="Loading invite" /></Screen>;
+  if (q.isLoading) return <Screen topBar={<TopBar tone="transparent" backTo={`/app/pact/${id}`} />}><FormSkeleton fields={2} label="Loading invite" /></Screen>;
   const pact = q.data?.pact;
   if (!pact) return <Navigate to="/app/home" replace />;
 
@@ -87,17 +88,14 @@ export function InviteScreen() {
           {justCreated ? 'Go to my Pact' : 'Done'}
         </Button>
       }
-      className="invite"
+      className="invite xhero xhero--lite tint--mint"
     >
       {justCreated && (
         <p className="invite__ready">
           <Check aria-hidden /> Your Pact is ready.
         </p>
       )}
-      <h1 className="large-title invite__title">{justCreated ? 'Now bring your people in.' : 'Bring your people in.'}</h1>
-      <p className="screen-lede">
-        {justCreated ? 'Share the link in your group chat. Anyone with it can see what the Pact is for and join.' : 'Anyone with this link can see what the Pact is for and join it.'}
-      </p>
+      <PageHero tint="mint" title={justCreated ? 'Now bring your people in.' : 'Bring your people in.'} subtitle={<>{justCreated ? 'Share the link in your group chat. Anyone with it can see what the Pact is for and join.' : 'Anyone with this link can see what the Pact is for and join it.'}</>} />
 
       <div className="invite__card">
         <CategoryIcon category={pact.category} size="lg" />

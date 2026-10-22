@@ -12,7 +12,8 @@
 .proto--bold .screen.xhero > .topbar,
 .proto--bold :is(.xh, .xhero--full) :is(.btn, .icon-btn, .act),
 .proto--bold .xhero--full :is(.ox-opt, .ox-split__rows),
-.proto--bold .xh--pact .detail__ring {
+.proto--bold .xh--pact .detail__ring,
+.proto--bold .intro-obj {
   /* ---- Colour: primitives ------------------------------------------------ */
   --ink-900: #0f1713;   /* deep ink: primary text, dark surfaces */
   --ink-800: #1b2520;
@@ -275,15 +276,68 @@
        body: reading text                          support: what sits under a title            label: kickers and chips (11px, caps)
        meta: times, counts, fine print                                                                                        */
   --t-hero-size: clamp(2.25rem, 11vw, 3rem);       --t-hero-line: 1.02;    --t-hero-weight: var(--weight-heavy);    --t-hero-tracking: var(--tracking-display);
-  --t-display-size: clamp(2.75rem, 13vw, 3.5rem);  --t-display-line: 0.96; --t-display-weight: var(--weight-bold);  --t-display-tracking: var(--tracking-display);
-  --t-page-size: clamp(2rem, 9vw, 2.5rem);         --t-page-line: 1.08;    --t-page-weight: var(--weight-bold);     --t-page-tracking: var(--tracking-tight);
-  --t-section-size: 1.375rem;                      --t-section-line: 1.25; --t-section-weight: var(--weight-semibold); --t-section-tracking: -0.03em;
-  --t-object-size: 1.1875rem;                      --t-object-line: 1.22;  --t-object-weight: var(--weight-semibold); --t-object-tracking: var(--tracking-snug);
+  --t-display-size: clamp(2.75rem, 13vw, 3.5rem);  --t-display-line: 0.96; --t-display-weight: var(--weight-heavy);  --t-display-tracking: var(--tracking-display);
+  --t-page-size: clamp(2rem, 9vw, 2.5rem);         --t-page-line: 1.08;    --t-page-weight: var(--weight-heavy);     --t-page-tracking: var(--tracking-tight);
+  --t-section-size: 1.375rem;                      --t-section-line: 1.25; --t-section-weight: var(--weight-bold); --t-section-tracking: -0.03em;
+  --t-object-size: 1.1875rem;                      --t-object-line: 1.22;  --t-object-weight: var(--weight-bold); --t-object-tracking: var(--tracking-snug);
   --t-lead-size: 1.0625rem;                        --t-lead-line: 1.35;    --t-lead-weight: var(--weight-semibold);   --t-lead-tracking: var(--tracking-snug);
   --t-body-size: 1rem;                             --t-body-line: 1.55;    --t-body-weight: var(--weight-regular);  --t-body-tracking: var(--tracking-normal);
   --t-support-size: 0.9375rem;                     --t-support-line: 1.4;  --t-support-weight: var(--weight-regular); --t-support-tracking: 0;
   --t-label-size: 0.6875rem;                       --t-label-line: 1;      --t-label-weight: var(--weight-semibold); --t-label-tracking: 0.08em;
   --t-meta-size: 0.8125rem;                        --t-meta-line: 1.3;     --t-meta-weight: var(--weight-medium);   --t-meta-tracking: 0;
+
+  /* Figures: numerals and emoji or glyphs, drawn at a set of sizes, never at one-offs. They scale with the role scale above, not in it. */
+  --fig-xs: 1.125rem;   --fig-sm: 1.375rem;   --fig-md: 1.75rem;   --fig-lg: 2.25rem;   --fig-xl: 2.75rem;   --fig-2xl: 3.25rem;
+  --num-md-size: clamp(1.75rem, 8vw, 2.25rem);
+  --num-lg-size: clamp(2.75rem, 15vw, 3.75rem);
+  --num-xl-size: clamp(3rem, 17vw, 4.5rem);
+  --num-date-size: clamp(5.5rem, 30vw, 8rem);
+  --num-cq-md-size: clamp(1.5rem, 8cqw, 2rem);
+  --num-cq-lg-size: clamp(2rem, 11cqw, 2.75rem);
+  --t-micro-size: 0.625rem;                        /* tab labels under 360px wide, and nothing else */
+  --t-site-heading-size: clamp(2.125rem, 5.2vw, 4rem);
+}
+
+/* ==========================================================================
+   Brand layer. Two colours are the brand: GREEN (--brand) is the signature (the arrow capsule, the create button, progress, done) and INK
+   (--brand-ink) is the anchor (primary buttons, titles, the tab bar). Everything else that is coloured is an object's own identity (--sky
+   Ask, --sun Plan, --lilac Split, --green Pact, --coral/--pink Circle) and is never used as the brand. Constants only: nothing here flips with
+   the theme, because these are the colours a bright hero, the tab bar and the home night-sky are made of in both.
+   ========================================================================== */
+:root {
+  --brand: var(--green-500);
+  --brand-ink: var(--ink-900);
+  --green-300: #55e29f;            /* the lit top of a green button */
+  --sun-300: #ffd873;              /* the lit edge of a sun tint */
+  --whatsapp: #25d366;             /* a third party's own brand colour, used only for its share button */
+  --black: #000;
+
+  /* Home's night-green hero and the dark floating tab bar. */
+  --forest-900: #0e2a1f;
+  --forest-800: #15402d;
+  --forest-700: #17483a;
+  --night-bar: #121c17;
+  --night-bar-dark: #1b2822;
+
+  /* The pact dial and its track: warm paper, so every person's colour reads on any hero. */
+  --paper-dial: #f6f2e8;
+  --track-warm: #e7e3d8;
+
+  /* Translucent white and ink, on a ladder. Veils lighten what they sit on (glass on a hero, a lit edge on dark); shades darken it (a
+     shadow, a scrim, a hairline). Seven steps of veil, six of shade, and no value between them. */
+  --veil-1: rgba(255, 255, 255, 0.06);
+  --veil-2: rgba(255, 255, 255, 0.1);
+  --veil-3: rgba(255, 255, 255, 0.16);
+  --veil-4: rgba(255, 255, 255, 0.35);
+  --veil-5: rgba(255, 255, 255, 0.55);
+  --veil-6: rgba(255, 255, 255, 0.72);
+  --veil-7: rgba(255, 255, 255, 0.88);
+  --shade-1: rgba(15, 23, 19, 0.06);
+  --shade-2: rgba(15, 23, 19, 0.14);
+  --shade-3: rgba(15, 23, 19, 0.3);
+  --shade-4: rgba(15, 23, 19, 0.55);
+  --shade-5: rgba(15, 23, 19, 0.7);
+  --shade-6: rgba(15, 23, 19, 0.88);
 }
 
 :root {

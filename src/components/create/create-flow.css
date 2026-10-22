@@ -187,7 +187,7 @@
 
 .cf .field__input:not([type='date']):not([type='number']):not([type='tel']):not([type='time']) {
   height: 64px;
-  font-size: 1.5rem;
+  font-size: var(--fig-sm);
   font-weight: var(--weight-medium);
   letter-spacing: var(--tracking-snug);
 }

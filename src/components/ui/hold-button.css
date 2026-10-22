@@ -29,7 +29,7 @@
 .hold__fill {
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg, var(--green-500), #7ce8b3);
+  background: linear-gradient(90deg, var(--green-500), color-mix(in srgb, var(--green-500) 70%, var(--white)));
   transform-origin: left;
   transform: scaleX(var(--p));
 }

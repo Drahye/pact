@@ -13,6 +13,7 @@ import { TopBar } from '../../../components/ui/TopBar';
 import { clearDraft, readDraft, useSaveDraft } from '../../../lib/drafts';
 import { formatNaira, formatNairaKobo, toKobo } from '../../../lib/format';
 import { safeAppPath } from '../auth/flow';
+import { PageHero } from '../../../components/objects';
 import { Screen } from '../Screen';
 import './wallet.css';
 
@@ -72,7 +73,7 @@ export function TopupScreen() {
 
   return (
     <Screen
-      topBar={<TopBar leading="close" backTo={returnTo ?? '/app/wallet'} title={pactId ? 'Contribute' : 'Top up'} />}
+      topBar={<TopBar tone="transparent" leading="close" backTo={returnTo ?? '/app/wallet'} title={pactId ? 'Contribute' : 'Top up'} />}
       footer={
         <>
           <Button fullWidth onClick={submit} loading={start.isPending} disabled={!valid}>
@@ -83,18 +84,15 @@ export function TopupScreen() {
           </p>
         </>
       }
-      className="topup"
+      className="topup xhero xhero--lite tint--sun"
     >
-      <h1 className="large-title">{pactId ? `Pay into ${pactTitle ?? 'your Pact'}` : 'Add money'}</h1>
-      <p className="screen-lede">
-        {pactId ? (
+      <PageHero tint="sun" title={`${pactId ? `Pay into ${pactTitle ?? 'your Pact'}` : 'Add money'}`} subtitle={<>{pactId ? (
           'It goes straight into the Pact as your contribution once the payment is confirmed.'
         ) : (
           <>
             Balance <span className="num">{wallet.data ? formatNairaKobo(wallet.data.balance) : '…'}</span>
           </>
-        )}
-      </p>
+        )}</>} />
 
       <div className="topup__amount">
         <AmountInput label="Amount" hideLabel value={amount} onChange={(v) => change(() => setAmount(v))} size="xl" align="center" max={10_000_000} />

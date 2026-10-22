@@ -8,6 +8,7 @@
 //   size     font-size is a role token (--t-*-size, legacy --text-*), a figure token (--fig-*, --num-*), inherit, or calc/clamp built from a token.
 //   weight   font-weight is one of the five --weight-* tokens, or a --t-*-weight role.
 //   tracking letter-spacing is a --tracking-* / --t-*-tracking token, 0, normal or inherit.
+//   defined  every var(--x) with no fallback names a custom property that exists somewhere in src (a missing one silently drops the declaration).
 // Skipped on purpose: tokens.css (the source), loader.css (runs before the tokens load), the marketing site, the gallery, the styleguide.
 import { readdirSync, readFileSync, writeFileSync, existsSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
@@ -43,6 +44,17 @@ for (const f of files) {
     const l = /letter-spacing\s*:\s*([^;}]+)/.exec(line);
     if (l) { const v = l[1].trim(); if (!(/^var\(--(tracking-[a-z]+|t-[a-z]+-tracking)\)$/.test(v) || /^(0|normal|inherit|initial)$/.test(v) || /^0?\.?\d+em$/.test(v) && Number(v.replace('em', '')) >= 0)) at('tracking', line); }
   });
+}
+
+// Undefined custom properties: checked in every app and site stylesheet, never baselined.
+{
+  const all = [];
+  const walkAll = (d) => { for (const n of readdirSync(d)) { const p = join(d, n); if (statSync(p).isDirectory()) walkAll(p); else if (/\.(css|tsx|ts)$/.test(p)) all.push(p); } };
+  walkAll(ROOT);
+  const defined = new Set();
+  const css = [];
+  for (const f of all) { const t = readFileSync(f, 'utf8'); for (const m of t.matchAll(/(--[\w-]+)\s*:/g)) defined.add(m[1]); for (const m of t.matchAll(/['"](--[\w-]+)['"]/g)) defined.add(m[1]); if (f.endsWith('.css')) css.push([f, t]); }
+  for (const [f, t] of css) for (const m of strip(t).matchAll(/var\((--[\w-]+)\s*\)/g)) if (!defined.has(m[1])) found.push({ rule: 'defined', file: relative(ROOT, f), line: strip(t).slice(0, m.index).split('\n').length, text: `${m[1]} is not defined anywhere` });
 }
 
 const counts = {};

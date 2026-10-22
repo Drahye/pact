@@ -187,6 +187,15 @@
   background: color-mix(in srgb, var(--color-selected) 82%, var(--color-on-selected));
 }
 
+/* ---- Grouped lists: related rows share one inset card, with hairlines between them (Apple's inset grouped list) -------------------- */
+.proto--bold :is(.hv2-list--ruled, .txn-list, .st-group > .menu) {
+  overflow: hidden;
+  padding: 0 var(--space-4);
+  border-radius: var(--r-tile);
+  background: var(--color-surface);
+  box-shadow: var(--card-shadow);
+}
+
 /* ---- Cards with depth -------------------------------------------------------------------------------------------------------- */
 .proto--bold :is(.ox-ask, .ox-plan, .ox-split, .ox-pact) {
   border-radius: var(--card-radius);

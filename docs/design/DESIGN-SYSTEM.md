@@ -76,7 +76,7 @@ Numerals use `.num` (tabular, lining) and never wrap.
 
 ## Space, shape and depth
 
-- **Space:** 4pt scale, `--space-1..40` (4, 8, 12, 16, 20, 24, 32, 40, 48, 64, 80, 96, 128, 160). Screen gutter 20px.
+- **Space:** 4pt scale, `--space-1..40` (4, 8, 12, 16, 20, 24, 28, 32, 40, 48, 64, 80, 96, 128, 160). Use only these names: a `var()` of a name that does not exist silently drops the whole declaration (`--space-7` once did). Screen gutter 20px.
 - **Radius families:** control 12 (`--r-control`), tile 20 (`--r-tile`), object 24 (`--r-object`), sheet 28 (`--r-sheet`); hero sheet 34, cards 28 in the skin.
   Each kind of object has its own silhouette (`--shape-circle`, `--shape-ask`, `--shape-plan`, `--shape-split`, `--shape-pact`).
 - **Elevation:** three levels. 0 flat, 1 an object you can press (`--elev-interactive`), 2 chosen or modal (`--elev-focused`). Cards use `--card-shadow`:
@@ -101,8 +101,8 @@ ink pill with a filled icon (the same chosen look as a chip). The bar overlaps t
 by `--tab-h` plus 16px, so the last line scrolls clear of it and no strip of another colour is left under it. It follows the theme.
 
 **Scale and restraint (audit 2026-10-22).** Titles stop at 36px, figures at 56px, body is 15px, support 13px, meta 12px. Weights stop at bold: size makes
-hierarchy, a black face does not (Apple's large titles are 34pt bold). Group related rows in one inset card with hairlines between them (People, Settings),
-not as loose tiles. A sticky footer holds one action; two stacked actions close the page instead (`.screen--completed`).
+hierarchy, a black face does not (Apple's large titles are 34pt bold). Group related rows in one inset card with hairlines between them (People, Settings, Home's Coming up and Recent, Activity days, Wallet history),
+not as loose rows: `.hv2-list--ruled`, `.txn-list` and `.st-group > .menu` share one rule in `bold.css`. A sticky footer holds one action; two stacked actions close the page instead (`.screen--completed`).
 
 ## Actions
 
@@ -148,7 +148,7 @@ any exception is a regression. Lower it with `--update` when you remove one; it 
 
 ## Verifying
 
-`node scripts/ui-audit.mjs /tmp/ui --w=390,320 --theme=light,dark` captures every main screen at the top and scrolled to the bottom, and fails any
+`node scripts/ui-audit.mjs /tmp/ui --w=390,320 --theme=light,dark` (also the `UI audit` GitHub workflow, path-filtered, not required) captures every main screen at the top and scrolled to the bottom, and fails any
 screen where text or a control ends under the tab bar or a sticky footer.
 
 ```

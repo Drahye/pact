@@ -63,6 +63,12 @@
 .ob__ask { font-size: var(--t-support-size); font-weight: var(--weight-semibold); color: var(--color-text-secondary); text-align: center; }
 .ob__actions { display: flex; flex-direction: column; gap: var(--space-2); }
 
+/* One solid action, one tonal, one quiet: the third is words, not a third pill. */
+.proto--bold .ob__actions .btn--ghost {
+  background: none;
+  box-shadow: none;
+}
+
 /* scenes */
 .ob-scene { margin-top: var(--space-3); }
 

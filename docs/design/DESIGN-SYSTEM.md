@@ -135,8 +135,9 @@ follow the theme. Accent text becomes pale green (`--color-accent-text` #5fe3a3)
 
 `npm run lint:design` fails on a new raw hex, `rgb()`/`rgba()`/`hsl()`, `font-size`, `font-weight` or `letter-spacing` in app CSS. Allowed: black-alpha
 shadows, `var(--x, fallback)`, data URIs, and values built from tokens (`calc`/`clamp` with a `var`). Skipped: `tokens.css` (the source), `loader.css`
-(runs before tokens), the marketing site, the gallery and the styleguide. The baseline is `scripts/design-lint.baseline.json` and is currently empty, so
-any exception is a regression. Lower it with `--update` when you remove one; it never rises.
+(runs before tokens), the gallery and the styleguide. The app has no exceptions. The marketing site (landing, site nav, store buttons, download) is linted
+too, against `scripts/design-lint.baseline.json`: 41 existing exceptions, almost all its own display sizes. They can go down (`--update`) and never up.
+Separately, every `var(--x)` with no fallback must name a custom property that exists.
 
 ## Adding to the system
 
@@ -166,4 +167,4 @@ Do not kill an audit mid-run (refresh tokens rotate and the saved session goes s
 ## Not covered
 
 Ceremony screens (the onboarding carousel, the completed-Pact page, the join-invite card) use the shared tokens and roles but keep their own
-composition. The marketing site is light-only and has its own display sizes. Real devices, iOS `:active` and slow networks are untested.
+composition. The marketing site is light-only and has its own display sizes (41 baselined exceptions). Real devices, iOS `:active` and slow networks are untested.

@@ -9,13 +9,14 @@
 //   weight   font-weight is one of the five --weight-* tokens, or a --t-*-weight role.
 //   tracking letter-spacing is a --tracking-* / --t-*-tracking token, 0, normal or inherit.
 //   defined  every var(--x) with no fallback names a custom property that exists somewhere in src (a missing one silently drops the declaration).
-// Skipped on purpose: tokens.css (the source), loader.css (runs before the tokens load), the marketing site, the gallery, the styleguide.
+// Skipped on purpose: tokens.css (the source), loader.css (runs before the tokens load), the gallery, the styleguide. The marketing site is
+// linted too, against a baseline of its existing exceptions (its own display sizes): it can go down and never up.
 import { readdirSync, readFileSync, writeFileSync, existsSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
 const ROOT = 'src';
 const BASELINE = 'scripts/design-lint.baseline.json';
-const SKIP = ['pages/site', 'components/site', 'pages/dev', 'pages/styleguide', 'pages/download', 'features/demo', 'styles/tokens.css', 'styles/loader.css', 'brand/pact-logo.css', 'landing.css', 'mockups'];
+const SKIP = ['pages/dev', 'pages/styleguide', 'features/demo', 'styles/tokens.css', 'styles/loader.css', 'brand/pact-logo.css', 'mockups'];
 const args = new Set(process.argv.slice(2));
 
 const files = [];

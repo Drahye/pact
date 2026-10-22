@@ -1,4 +1,4 @@
-import { ChevronRight, Ellipsis, Plus, Settings2, Share2 } from 'lucide-react';
+import { ChevronRight, Ellipsis, LogOut, Pencil, Plus, RefreshCw, Settings2, Share2 } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useCircle, useEnsureInvite, useLeaveCircle, useRemoveMember, useResetInvite, useUpdateCircle } from '../../../api/circles';
@@ -292,15 +292,18 @@ export function CircleScreen() {
         <div className="menu">
           {isOwner && (
             <button type="button" className="menu__row" onClick={() => (setDraft({ name: c.name, emoji: c.emoji, tint: c.tint as 'mint' }), setSheet('edit'))}>
+              <span className="menu__icon tint--sky"><Pencil aria-hidden /></span>
               <span className="menu__text"><span className="menu__title">Edit Circle</span><span className="menu__sub">Name, emoji and colour</span></span>
             </button>
           )}
           {isOwner && (
             <button type="button" className="menu__row" onClick={() => setSheet('reset')}>
+              <span className="menu__icon tint--sun"><RefreshCw aria-hidden /></span>
               <span className="menu__text"><span className="menu__title">Reset invite link</span><span className="menu__sub">Turns the old link off</span></span>
             </button>
           )}
           <button type="button" className="menu__row menu__row--danger" onClick={() => setSheet('leave')}>
+            <span className="menu__icon tint--coral"><LogOut aria-hidden /></span>
             <span className="menu__text"><span className="menu__title">Leave Circle</span></span>
           </button>
         </div>

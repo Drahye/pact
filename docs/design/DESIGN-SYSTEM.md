@@ -17,7 +17,7 @@ The living version, with every value read from the live tokens in both themes, i
    Ink (`--brand-ink`, #0f1713) is the anchor: titles, primary buttons, the tab bar. Object colours are identity, never brand.
 3. **Numbers are the biggest thing on a money surface.** Amounts and dates are larger than any title, tabular, and never wrap.
 4. **One solid action.** One ink pill with a green arrow capsule per screen. The second and third actions are tonal (the object's tint) or text.
-5. **Hierarchy is size and weight.** Ten type roles, five weights. Secondary text keeps AA contrast; it is smaller or lighter, never faded.
+5. **Hierarchy is size and weight.** Ten type roles, four weights. Secondary text keeps AA contrast; it is smaller or lighter, never faded.
 6. **Depth, not outlines.** Cards lift with a hairline and a soft shadow. Borders are for fields and for selection.
 7. **Everything gives under a finger.** Objects scale and shift tone, words get a halo. Pressed never changes hue and never loses contrast.
 8. **Heroes stay bright.** In dark mode the sheet follows the theme and the hero does not. What sits on a bright hero is a light island.
@@ -30,7 +30,7 @@ The living version, with every value read from the live tokens in both themes, i
 semantic ones. Dark mode re-declares the same names in `:root[data-theme='dark']`. A screen never names a theme.
 
 **Brand layer** (constants, in both themes): `--brand`, `--brand-ink`, `--green-300`, `--forest-900/800/700` (Home's night-green hero),
-`--night-bar` (the tab bar), `--paper-dial` and `--track-warm` (the pact dial), `--sun-300`, `--whatsapp` (a third party's colour, used only for its button).
+`--paper-dial` and `--track-warm` (the pact dial), `--sun-300`, `--whatsapp` (a third party's colour, used only for its button).
 
 **Translucent ladders.** Seven `--veil-1..7` (white, 6 to 88%) lighten what they sit on: glass on a hero, a lit edge in dark. Six
 `--shade-1..6` (ink, 6 to 88%) darken it: shadows, hairlines, text on a hero. No value between steps.
@@ -48,27 +48,27 @@ Placeholders are 5:1 (`--color-placeholder`). Danger text is `--red-600` (#a8433
 
 ## Typography
 
-One typeface, Geist Variable. **Five weights, nothing between:** `--weight-regular` 400, `--weight-medium` 500, `--weight-semibold` 600,
-`--weight-bold` 700, `--weight-heavy` 800. `font-synthesis: none`.
+One typeface, Geist Variable. **Four weights, nothing between:** `--weight-regular` 400, `--weight-medium` 500, `--weight-semibold` 600,
+`--weight-bold` 700. (`--weight-heavy` is a legacy alias of bold.) `font-synthesis: none`. Size makes hierarchy; a heavier face does not.
 
 | Role | Token prefix | Size (at 390px) | Weight | Tracking | Use |
 |---|---|---|---|---|---|
-| Hero | `--t-hero-*` | clamp 36 to 48px (43) | 800 | -0.05em | the title on a coloured screen |
-| Display | `--t-display-*` | clamp 44 to 56px | 800 | -0.05em | a moment: a welcome, a name |
-| Page | `--t-page-*` | clamp 32 to 40px (35) | 800 | -0.035em | a screen's title with no hero |
-| Section | `--t-section-*` | 22px | 700 | -0.03em | a group's heading |
-| Object | `--t-object-*` | 19px | 700 | -0.02em | a Circle, Ask, Plan, Split, Pact |
-| Lead | `--t-lead-*` | 17px | 600 | -0.02em | a name, a row title, a hero's sub-line |
-| Body | `--t-body-*` | 16px | 400 | -0.005em | reading text |
-| Support | `--t-support-*` | 15px | 400 | 0 | what sits under a title |
+| Hero | `--t-hero-*` | clamp 28 to 36px (33) | 700 | -0.035em | the title on a coloured screen |
+| Display | `--t-display-*` | clamp 36 to 46px (41) | 700 | -0.035em | a moment: a welcome, a name |
+| Page | `--t-page-*` | clamp 28 to 34px (31) | 700 | -0.035em | a screen's title with no hero |
+| Section | `--t-section-*` | 20px | 700 | -0.03em | a group's heading |
+| Object | `--t-object-*` | 17px | 700 | -0.02em | a Circle, Ask, Plan, Split, Pact |
+| Lead | `--t-lead-*` | 16px | 600 | -0.02em | a name, a row title, a hero's sub-line |
+| Body | `--t-body-*` | 15px | 400 | -0.005em | reading text |
+| Support | `--t-support-*` | 13px | 400 | 0 | what sits under a title |
 | Label | `--t-label-*` | 11px, caps | 600 | +0.08em | kickers and chips |
-| Meta | `--t-meta-*` | 13px | 500 | 0 | times, counts, fine print |
+| Meta | `--t-meta-*` | 12px | 500 | 0 | times, counts, fine print |
 
 Each role has `-size`, `-line`, `-weight` and `-tracking`. Classes `.t-hero`, `.t-page`, `.t-section`, `.t-lead` and so on live in `type.css`.
 Legacy names alias the role sizes (`--text-caption` is meta, `--text-sm` is support, `--text-lg` is lead).
 
 **Figures** are numerals and emoji, drawn at a set of sizes and never at a one-off: `--fig-xs/sm/md/lg/xl/2xl` (18, 22, 28, 36, 44, 52px),
-plus the big numeral clamps `--num-md-size`, `--num-lg-size`, `--num-xl-size` (a split's total), `--num-date-size` (a plan's day).
+plus the big numeral clamps (28 to 44px at most; none above 56px) `--num-md-size`, `--num-lg-size`, `--num-xl-size` (a split's total), `--num-date-size` (a plan's day).
 Numerals use `.num` (tabular, lining) and never wrap.
 
 **Tracking tokens:** `--tracking-numeral` -0.06em, `--tracking-display` -0.05em, `--tracking-tight` -0.035em, `--tracking-snug` -0.02em,
@@ -95,7 +95,14 @@ Every screen is a **hero** over a **sheet**.
 5. Full-colour screens (Ask, Split, shared pages) carry the colour to the whole screen and lay white answer cards on it.
 6. List, settings, sign-in and money screens use `PageHero` (a tint, a title, one line) and the page body below.
 
-The tab bar is a dark floating pill (`--night-bar`) with a green create button. It is the same in light and dark.
+**Tab bar.** A floating capsule of four tabs (Home, Circles, Activity, Me) on the page surface, with Create as its own round green button beside it
+(navigation and the one verb are different kinds of control, so they are different shapes). Icon over label, always labelled. The chosen tab is a solid
+ink pill with a filled icon (the same chosen look as a chip). The bar overlaps the content (`--tab-h`), and every screen that carries it pads its end
+by `--tab-h` plus 16px, so the last line scrolls clear of it and no strip of another colour is left under it. It follows the theme.
+
+**Scale and restraint (audit 2026-10-22).** Titles stop at 36px, figures at 56px, body is 15px, support 13px, meta 12px. Weights stop at bold: size makes
+hierarchy, a black face does not (Apple's large titles are 34pt bold). Group related rows in one inset card with hairlines between them (People, Settings),
+not as loose tiles. A sticky footer holds one action; two stacked actions close the page instead (`.screen--completed`).
 
 ## Actions
 
@@ -140,6 +147,9 @@ any exception is a regression. Lower it with `--update` when you remove one; it 
 5. Run `npm run lint:design`, then the audit.
 
 ## Verifying
+
+`node scripts/ui-audit.mjs /tmp/ui --w=390,320 --theme=light,dark` captures every main screen at the top and scrolled to the bottom, and fails any
+screen where text or a control ends under the tab bar or a sticky footer.
 
 ```
 bash scripts/detail-up.sh                       # fresh stack with fixtures and one saved session

@@ -224,7 +224,7 @@ export function StyleGuidePage() {
               ['Green and ink are the brand', 'Green is the signature: the arrow capsule, the create button, progress, done. Ink anchors: titles, primary buttons, the tab bar. Object colours are identity, never brand.'],
               ['Numbers are the biggest thing on a money surface', 'Amounts and dates are set larger than any title, in tabular figures, and never wrap.'],
               ['One solid action', 'One ink button with a green arrow per screen. Second and third actions are tonal or text.'],
-              ['Hierarchy is size and weight', 'Ten type roles, five weights. Secondary text keeps AA contrast; it is smaller or lighter in weight, never faded.'],
+              ['Hierarchy is size and weight', 'Ten type roles, four weights. Secondary text keeps AA contrast; it is smaller or lighter in weight, never faded.'],
               ['Depth, not outlines', 'Cards lift with a hairline and a soft shadow. Borders are for fields and selection.'],
               ['Everything gives under a finger', 'Objects scale and shift tone; words get a halo. Pressed never changes hue and never loses contrast.'],
               ['Heroes stay bright', 'In dark mode the sheet follows the theme and the hero does not: what sits on a bright hero is a light island, ink on white.'],
@@ -341,7 +341,7 @@ export function StyleGuidePage() {
           </div>
         </Section>
 
-        <Section id="type" title="Typography" lede="One typeface: Geist. Ten roles, five weights (400, 500, 600, 700, 800). A piece of text takes one role and a component never sets a size of its own. Tabular numerals for every amount; large numbers are the visual anchors.">
+        <Section id="type" title="Typography" lede="One typeface: Geist. Ten roles, four weights (400, 500, 600, 700). A piece of text takes one role and a component never sets a size of its own. Tabular numerals for every amount; large numbers are the visual anchors.">
           <div className="sg-type">
             {[
               ['hero', 'Hero', 'The title on a coloured screen', 'Which date works?'],

@@ -67,26 +67,31 @@
   border-radius: 10px;
 }
 
-/* People: a guest list, faces first. */
+/* People: one grouped list (Apple's inset grouped style): a face, a name, an action on the right, hairlines between rows. */
 .od-people {
-  grid-template-columns: repeat(auto-fill, minmax(78px, 1fr));
-  gap: var(--space-5) var(--space-2);
+  overflow: hidden;
+  border-radius: var(--r-tile);
+  background: var(--color-surface);
+  box-shadow: var(--card-shadow);
 }
 
 .od-people > li {
   display: grid;
-  justify-items: center;
-  align-content: start;
-  gap: var(--space-2);
-  text-align: center;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+}
+
+.od-people > li + li {
+  border-top: var(--border-quiet);
 }
 
 .od-people__name {
   display: grid;
   min-width: 0;
-  max-width: 100%;
-  font-size: var(--t-support-size);
-  font-weight: var(--weight-medium);
+  font-size: var(--t-body-size);
+  font-weight: var(--weight-semibold);
   overflow-wrap: anywhere;
 }
 
@@ -97,7 +102,7 @@
 }
 
 .od-people__remove {
-  min-height: 32px;
+  min-height: 44px;
   padding: 0 var(--space-2);
   border: 0;
   background: none;

@@ -110,7 +110,7 @@
   flex-direction: column;
   flex: 1 0 auto;
   margin: -34px calc(var(--space-5) * -1) 0;
-  padding: var(--space-6) var(--space-5) calc(var(--space-9, 56px) + 24px);
+  padding: var(--space-6) var(--space-5) var(--space-9, 56px);
   border-radius: var(--sheet-radius) var(--sheet-radius) 0 0;
   background: var(--color-bg);
   box-shadow: 0 -14px 34px -22px rgba(0, 0, 0, 0.35);
@@ -185,48 +185,6 @@
 
 .proto--bold .nextstep .btn--primary:active:not(:disabled) {
   background: color-mix(in srgb, var(--color-selected) 82%, var(--color-on-selected));
-}
-
-/* ---- The bar: dark, floating, with a bright create button ------------------------------------------------------------------- */
-.proto--bold .tabbar__pill {
-  padding: 7px;
-  background: var(--night-bar);
-  -webkit-backdrop-filter: none;
-  backdrop-filter: none;
-  box-shadow: inset 0 1px 0 var(--veil-1), 0 22px 36px -14px var(--shade-5);
-}
-
-:root[data-theme='dark'] .proto--bold .tabbar__pill {
-  background: var(--night-bar-dark);
-  box-shadow: inset 0 1px 0 var(--veil-2), 0 0 0 1px var(--veil-1), 0 22px 36px -14px rgba(0, 0, 0, 0.8);
-}
-
-.proto--bold .tabbar__item {
-  color: var(--veil-5);
-}
-
-@media (hover: hover) {
-  .proto--bold .tabbar__item:hover {
-    color: var(--white);
-  }
-}
-
-.proto--bold .tabbar__item.is-active {
-  color: var(--green-500);
-}
-
-.proto--bold .tabbar__active {
-  background: var(--veil-2);
-}
-
-.proto--bold .tabbar__label {
-  font-weight: var(--weight-semibold);
-}
-
-.proto--bold .tabbar__create {
-  width: 58px;
-  height: 58px;
-  box-shadow: inset 0 1px 0 var(--veil-5), inset 0 -3px 6px color-mix(in srgb, var(--green-700) 30%, transparent), 0 10px 22px -6px color-mix(in srgb, var(--green-500) 75%, transparent);
 }
 
 /* ---- Cards with depth -------------------------------------------------------------------------------------------------------- */
@@ -856,14 +814,14 @@
   gap: var(--space-4);
 }
 
-.proto--bold .xh--me .avatar {
+.proto--bold .xh--me .xh__body > .avatar {
   box-shadow: 0 0 0 4px var(--white), 0 16px 24px -12px var(--shade-4);
 }
 
 .proto--bold .xh--me .me__name {
   font-size: var(--t-page-size);
-  font-weight: var(--weight-heavy);
-  letter-spacing: var(--tracking-display);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-tight);
   color: var(--on-hero);
 }
 
@@ -871,33 +829,82 @@
   color: var(--on-hero-2);
 }
 
+.proto--bold .xh--me .me__since {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-2);
+}
+
 .proto--bold .xh--me .me__trust {
-  width: fit-content;
-  padding: 4px 12px 4px 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px 2px 6px;
   border-radius: 999px;
   background: var(--veil-5);
   color: var(--on-hero);
 }
 
-.proto--bold .xh--me .me__people p,
-.proto--bold .xh--me .me__story,
-.proto--bold .xh--me .me__people-empty {
-  color: var(--on-hero-2);
+/* The summary is one grouped card: the three numbers first, the people under them. */
+.proto--bold .xh--me .me__card {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--r-object);
+  background: var(--paper-50);
+  box-shadow: var(--hero-shadow);
 }
 
-.proto--bold .xh--me .me__people p strong,
-.proto--bold .xh--me .me__story b {
-  color: var(--on-hero);
+.proto--bold .xh--me .me__stats {
+  display: flex;
+  gap: var(--space-5);
+  margin: 0;
 }
 
-.proto--bold .xh--me .me__story {
-  font-size: var(--t-section-size);
+.proto--bold .xh--me .me__stats > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.proto--bold .xh--me .me__stats dd {
+  margin: 0;
+  color: var(--ink-900);
+  font-size: var(--fig-md);
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-numeral);
+  line-height: 1.05;
+  white-space: nowrap;
+}
+
+.proto--bold .xh--me .me__stats dt {
+  color: var(--shade-6);
+  font-size: var(--t-meta-size);
   font-weight: var(--weight-medium);
-  line-height: 1.32;
 }
 
-.proto--bold .xh--me .me__story b {
-  font-weight: var(--weight-heavy);
+.proto--bold .xh--me .me__people {
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--shade-1);
+}
+
+.proto--bold .xh--me .me__people .avatar:not(.avatar__overflow):not(.is-pending) {
+  /* Faces on the white card take the hero's own colour, so they read as people and not as blank discs. */
+  background: color-mix(in srgb, var(--tint-solid) 62%, var(--white));
+  color: var(--ink-900);
+}
+
+.proto--bold .xh--me .me__people p,
+.proto--bold .xh--me .me__people-empty {
+  color: var(--shade-6);
+  font-size: var(--t-support-size);
+}
+
+.proto--bold .xh--me .me__people p strong {
+  color: var(--ink-900);
+  font-weight: var(--weight-semibold);
 }
 
 .proto--bold .xs.me-sheet > .screen-section:first-child {

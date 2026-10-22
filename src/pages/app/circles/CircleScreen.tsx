@@ -261,7 +261,7 @@ export function CircleScreen() {
           <ul className="od-people">
             {c.members.map((m) => (
               <li key={m.userId}>
-                <Avatar userId={m.userId} size="lg" label={false} />
+                <Avatar userId={m.userId} size="md" label={false} />
                 <span className="od-people__name">
                   {who(m.userId)}
                   {m.role === 'owner' && <span className="od-people__role">Started it</span>}

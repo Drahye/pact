@@ -233,13 +233,14 @@
   /* ---- Typography -------------------------------------------------------- */
   --font-sans: 'Geist Variable', 'Geist', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
 
-  /* Five weights, and nothing between them: regular for reading, medium for quiet emphasis, semibold for names and labels,
-     bold for actions and headings, heavy for the one big thing on a screen. */
+  /* Four weights, and nothing between them: regular for reading, medium for quiet emphasis, semibold for names and labels,
+     bold for actions, headings and the one big thing on a screen. Hierarchy comes from size, not from a heavier face (Apple's
+     large titles are bold, not black). --weight-heavy is kept as an alias so old rules resolve; do not use it in new work. */
   --weight-regular: 400;
   --weight-medium: 500;
   --weight-semibold: 600;
   --weight-bold: 700;
-  --weight-heavy: 800;
+  --weight-heavy: var(--weight-bold);
 
   /* size / line-height pairs */
   /* Legacy names. They point at the role sizes below (caption = meta, sm = support, lg = lead) so the app has one scale, not two. */
@@ -275,23 +276,23 @@
        section: a group's heading                  object: a Circle, Ask, Plan, Split or Pact  lead: a name, a row title, a hero's sub-line
        body: reading text                          support: what sits under a title            label: kickers and chips (11px, caps)
        meta: times, counts, fine print                                                                                        */
-  --t-hero-size: clamp(2.25rem, 11vw, 3rem);       --t-hero-line: 1.02;    --t-hero-weight: var(--weight-heavy);    --t-hero-tracking: var(--tracking-display);
-  --t-display-size: clamp(2.75rem, 13vw, 3.5rem);  --t-display-line: 0.96; --t-display-weight: var(--weight-heavy);  --t-display-tracking: var(--tracking-display);
-  --t-page-size: clamp(2rem, 9vw, 2.5rem);         --t-page-line: 1.08;    --t-page-weight: var(--weight-heavy);     --t-page-tracking: var(--tracking-tight);
-  --t-section-size: 1.375rem;                      --t-section-line: 1.25; --t-section-weight: var(--weight-bold); --t-section-tracking: -0.03em;
-  --t-object-size: 1.1875rem;                      --t-object-line: 1.22;  --t-object-weight: var(--weight-bold); --t-object-tracking: var(--tracking-snug);
-  --t-lead-size: 1.0625rem;                        --t-lead-line: 1.35;    --t-lead-weight: var(--weight-semibold);   --t-lead-tracking: var(--tracking-snug);
-  --t-body-size: 1rem;                             --t-body-line: 1.55;    --t-body-weight: var(--weight-regular);  --t-body-tracking: var(--tracking-normal);
-  --t-support-size: 0.9375rem;                     --t-support-line: 1.4;  --t-support-weight: var(--weight-regular); --t-support-tracking: 0;
+  --t-hero-size: clamp(1.75rem, 8.4vw, 2.25rem);   --t-hero-line: 1.1;     --t-hero-weight: var(--weight-bold);     --t-hero-tracking: var(--tracking-tight);
+  --t-display-size: clamp(2.25rem, 10.5vw, 2.875rem); --t-display-line: 1.02; --t-display-weight: var(--weight-bold); --t-display-tracking: var(--tracking-tight);
+  --t-page-size: clamp(1.75rem, 8vw, 2.125rem);    --t-page-line: 1.12;    --t-page-weight: var(--weight-bold);      --t-page-tracking: var(--tracking-tight);
+  --t-section-size: 1.25rem;                       --t-section-line: 1.25; --t-section-weight: var(--weight-bold); --t-section-tracking: -0.03em;
+  --t-object-size: 1.0625rem;                      --t-object-line: 1.22;  --t-object-weight: var(--weight-bold); --t-object-tracking: var(--tracking-snug);
+  --t-lead-size: 1rem;                             --t-lead-line: 1.35;    --t-lead-weight: var(--weight-semibold);   --t-lead-tracking: var(--tracking-snug);
+  --t-body-size: 0.9375rem;                           --t-body-line: 1.55;    --t-body-weight: var(--weight-regular);  --t-body-tracking: var(--tracking-normal);
+  --t-support-size: 0.8125rem;                     --t-support-line: 1.4;  --t-support-weight: var(--weight-regular); --t-support-tracking: 0;
   --t-label-size: 0.6875rem;                       --t-label-line: 1;      --t-label-weight: var(--weight-semibold); --t-label-tracking: 0.08em;
-  --t-meta-size: 0.8125rem;                        --t-meta-line: 1.3;     --t-meta-weight: var(--weight-medium);   --t-meta-tracking: 0;
+  --t-meta-size: 0.75rem;                          --t-meta-line: 1.3;     --t-meta-weight: var(--weight-medium);   --t-meta-tracking: 0;
 
   /* Figures: numerals and emoji or glyphs, drawn at a set of sizes, never at one-offs. They scale with the role scale above, not in it. */
   --fig-xs: 1.125rem;   --fig-sm: 1.375rem;   --fig-md: 1.75rem;   --fig-lg: 2.25rem;   --fig-xl: 2.75rem;   --fig-2xl: 3.25rem;
-  --num-md-size: clamp(1.75rem, 8vw, 2.25rem);
-  --num-lg-size: clamp(2.75rem, 15vw, 3.75rem);
-  --num-xl-size: clamp(3rem, 17vw, 4.5rem);
-  --num-date-size: clamp(5.5rem, 30vw, 8rem);
+  --num-md-size: clamp(1.5rem, 7vw, 2rem);
+  --num-lg-size: clamp(2.25rem, 11vw, 3rem);
+  --num-xl-size: clamp(2.5rem, 12.5vw, 3.5rem);
+  --num-date-size: clamp(4rem, 22vw, 5.5rem);
   --num-cq-md-size: clamp(1.5rem, 8cqw, 2rem);
   --num-cq-lg-size: clamp(2rem, 11cqw, 2.75rem);
   --t-micro-size: 0.625rem;                        /* tab labels under 360px wide, and nothing else */

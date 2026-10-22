@@ -338,6 +338,9 @@ code {
 }
 
 .sg-tabbar .tabbar {
+  --tab-pill: 58px;
+  --tab-h: 78px;
+  margin-top: 0;
   position: static;
   background: none;
 }

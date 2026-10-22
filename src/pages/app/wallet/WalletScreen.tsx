@@ -43,12 +43,18 @@ export function WalletScreen() {
 
       {wallet.data && (
         <div className="wallet__limits">
-          <div className="wallet__limit">
-            <p>
-              Topped up today <span className="num">{formatNairaKobo(wallet.data.usage.topupToday)} / {formatNairaKobo(limits.dailyTopup)}</span>
+          {wallet.data.usage.topupToday > 0 ? (
+            <div className="wallet__limit">
+              <p>
+                Topped up today <span className="num">{formatNairaKobo(wallet.data.usage.topupToday)} / {formatNairaKobo(limits.dailyTopup)}</span>
+              </p>
+              <ProgressBar value={(wallet.data.usage.topupToday / limits.dailyTopup) * 100} size="sm" label="Daily top-up used" />
+            </div>
+          ) : (
+            <p className="wallet__limit-note">
+              Daily top-up limit <span className="num">{formatNairaKobo(limits.dailyTopup)}</span>
             </p>
-            <ProgressBar value={(wallet.data.usage.topupToday / limits.dailyTopup) * 100} size="sm" label="Daily top-up used" />
-          </div>
+          )}
           {tier < 2 && (
             <Link to="/app/profile/verify" className="wallet__upgrade">
               <ShieldCheck aria-hidden />

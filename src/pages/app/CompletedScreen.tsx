@@ -92,7 +92,7 @@ export function CompletedScreen({ pact, activity = [] }: { pact: Pact; activity?
           </Button>
         </>
       }
-      className="completed"
+      className="completed screen--completed"
     >
       <div className="completed__hero">
         <div className="completed__ring">

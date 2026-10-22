@@ -65,36 +65,47 @@
   text-overflow: ellipsis;
 }
 
-/* Tab bar: a floating pill, echoing the website navigation ------------------------ */
+/* Tab bar: a capsule of four tabs, and Create as its own round button -------------------------------------------------- */
+/* The bar floats over the content (negative margin), so nothing is ever left beneath it in a different colour. Screens that carry
+   it pad their end by --tab-h, so the last line always scrolls clear of it. */
+.screen {
+  --tab-pill: 58px;
+  --tab-h: calc(var(--tab-pill) + var(--space-2) + var(--space-2) + max(env(safe-area-inset-bottom), var(--space-3)));
+}
+
 .tabbar {
   position: sticky;
   bottom: 0;
   z-index: 5;
-  padding: var(--space-3) var(--space-4) calc(var(--space-3) + max(env(safe-area-inset-bottom), 14px));
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: var(--tab-h);
+  margin-top: calc(var(--tab-h) * -1);
+  padding: var(--space-2) var(--space-4) calc(var(--space-2) + max(env(safe-area-inset-bottom), var(--space-3)));
   /* Content dissolves into the bar's edge instead of being cut by it. */
-  background: linear-gradient(180deg, color-mix(in srgb, var(--color-bg) 0%, transparent) 0%, color-mix(in srgb, var(--color-bg) 88%, transparent) 55%);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--color-bg) 0%, transparent) 0%, color-mix(in srgb, var(--color-bg) 92%, transparent) 62%);
   pointer-events: none;
 }
 
-.tabbar__pill {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto minmax(0, 1fr) minmax(0, 1fr);
-  align-items: center;
-  gap: 4px;
-  padding: 6px;
-  border-radius: var(--radius-full);
-  /* Lightly frosted: the page shows through a little. Only this one surface blurs. */
-  background: color-mix(in srgb, var(--color-surface) 90%, transparent);
-  -webkit-backdrop-filter: blur(16px) saturate(1.25);
-  backdrop-filter: blur(16px) saturate(1.25);
-  box-shadow: var(--lit-edge), 0 0 0 1px var(--line-quiet), 0 14px 30px -16px var(--shade-3);
-  pointer-events: auto;
+.screen:has(> .tabbar) .screen__content,
+.proto--bold .screen.xhero:has(> .tabbar) .screen__content:not(:has(> .xs)),
+.proto--bold .screen.xhero:has(> .tabbar) .xs {
+  padding-bottom: calc(var(--tab-h) + var(--space-4));
 }
 
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .tabbar__pill {
-    background: var(--color-surface);
-  }
+.tabbar__pill {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: stretch;
+  height: var(--tab-pill);
+  padding: 5px;
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  box-shadow: var(--lit-edge), 0 0 0 1px var(--line-quiet), 0 1px 2px var(--shade-1), 0 16px 28px -14px var(--shade-4);
+  pointer-events: auto;
 }
 
 .tabbar__item {
@@ -103,10 +114,10 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
-  min-height: 52px;
+  gap: 3px;
+  min-width: 0;
   border-radius: var(--radius-full);
-  color: var(--color-text-tertiary);
+  color: var(--color-text-secondary);
   transition: color var(--motion-micro) var(--ease-soft);
 }
 
@@ -119,31 +130,70 @@
   transform: scale(0.88);
 }
 
-/* The create button: the one round, coloured thing in the bar. Always the same place, always the same name. */
-.tabbar__create {
-  display: grid;
-  place-items: center;
-  width: 54px;
-  height: 54px;
-  margin: 0 var(--space-1);
-  border: 0;
-  border-radius: var(--radius-full);
-  /* Elevated mint: lit from above, a small coloured shadow underneath. */
-  background: linear-gradient(180deg, var(--green-300) 0%, var(--green-500) 55%, var(--green-600) 100%);
-  color: var(--ink-900);
-  box-shadow: inset 0 1px 0 var(--veil-5), inset 0 -2px 4px color-mix(in srgb, var(--green-700) 25%, transparent), 0 6px 14px -4px color-mix(in srgb, var(--green-500) 65%, transparent), 0 1px 2px var(--shade-2);
-  transition: box-shadow var(--motion-state) var(--ease-soft), transform var(--motion-micro) var(--ease-press);
+.tabbar__item.is-active {
+  color: var(--color-on-selected);
 }
 
-/* Pressed, the button compresses; the sheet then opens out of this same shape. */
+/* The chosen tab is a solid ink pill, the same chosen look as a chip, and its icon is drawn filled. */
+.tabbar__active {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--color-selected);
+}
+
+.tabbar__item.is-active .tabbar__icon svg {
+  fill: currentColor;
+  fill-opacity: 0.22;
+}
+
+.tabbar__icon,
+.tabbar__label {
+  position: relative;
+}
+
+.tabbar__icon svg {
+  display: block;
+  width: 21px;
+  height: 21px;
+  stroke-width: 2;
+}
+
+.tabbar__label {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--t-label-size);
+  line-height: 12px;
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0;
+}
+
+/* Create: the one round, bright thing, beside the bar and not in it. The sheet opens out of this shape. */
+.tabbar__create {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: var(--tab-pill);
+  height: var(--tab-pill);
+  border: 0;
+  border-radius: var(--radius-full);
+  background: var(--brand);
+  color: var(--brand-ink);
+  box-shadow: inset 0 1px 0 var(--veil-5), 0 1px 2px var(--shade-2), 0 14px 24px -10px color-mix(in srgb, var(--green-500) 80%, transparent);
+  transition: box-shadow var(--motion-state) var(--ease-soft), transform var(--motion-micro) var(--ease-press);
+  pointer-events: auto;
+}
+
 .tabbar__create:active {
-  transform: scale(0.88);
+  transform: scale(0.9);
 }
 
 .tabbar__create svg {
   width: 26px;
   height: 26px;
-  stroke-width: 2.6;
+  stroke-width: 2.4;
   transition: transform var(--motion-sheet) var(--ease-press);
 }
 
@@ -153,12 +203,19 @@
 }
 
 .tabbar__create.is-open {
-  box-shadow: inset 0 1px 0 var(--veil-4), inset 0 -1px 2px color-mix(in srgb, var(--green-700) 20%, transparent), 0 2px 6px -2px color-mix(in srgb, var(--green-500) 50%, transparent);
+  box-shadow: inset 0 1px 0 var(--veil-4), 0 1px 2px var(--shade-2);
 }
 
+.tabbar__item:focus-visible,
 .tabbar__create:focus-visible {
   outline: none;
   box-shadow: var(--shadow-focus);
+}
+
+@media (hover: hover) {
+  .tabbar__item:not(.is-active):hover {
+    color: var(--color-text);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -167,59 +224,18 @@
     transition: none;
   }
 
-  .tabbar__create:active {
-    transform: none;
-  }
-
+  .tabbar__create:active,
   .tabbar__item:active .tabbar__icon {
     transform: none;
   }
 }
 
 @media (max-width: 359px) {
+  .tabbar {
+    padding-inline: var(--space-3);
+  }
+
   .tabbar__label {
     font-size: var(--t-micro-size);
   }
-}
-
-@media (hover: hover) {
-  .tabbar__item:hover {
-    color: var(--color-text);
-  }
-}
-
-.tabbar__item.is-active {
-  color: var(--color-on-selected);
-}
-
-.tabbar__active {
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: var(--color-selected);
-}
-
-.tabbar__icon,
-.tabbar__label {
-  position: relative;
-}
-.tabbar__icon svg {
-  width: 22px;
-  height: 22px;
-}
-
-.tabbar__label {
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: var(--t-label-size);
-  line-height: 14px;
-  font-weight: var(--weight-semibold);
-  letter-spacing: 0;
-}
-
-.tabbar__item:focus-visible {
-  outline: none;
-  box-shadow: var(--shadow-focus);
 }

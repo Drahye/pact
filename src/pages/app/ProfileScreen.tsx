@@ -35,6 +35,17 @@ export function ProfileScreen() {
   const loading = home.isLoading && !home.data;
   const since = new Date(user.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
+  const stats =
+    recaps.length > 0
+      ? [
+          { value: recaps.length, label: 'made happen' },
+          ...(people.length > 0 ? [{ value: people.length, label: people.length === 1 ? 'person' : 'people' }] : []),
+          ...(given > 0 ? [{ value: formatNairaCompact(given), label: 'put in together' }] : []),
+        ]
+      : circles.length > 0
+        ? [{ value: circles.length, label: circles.length === 1 ? 'Circle' : 'Circles' }]
+        : [];
+
   return (
     <Screen
       tabBar={<BottomNav />}
@@ -47,52 +58,40 @@ export function ProfileScreen() {
           <h1 className="me__name">
             {user.firstName} {user.lastName}
           </h1>
-          <p className="me__since">On PACT since {since}</p>
-          {user.kycTier >= 2 && (
-            <p className="me__trust">
-              <ShieldCheck aria-hidden /> Identity verified
-            </p>
-          )}
-        </div>
-        {loading ? (
-          <Bone w="100%" h={56} style={{ gridColumn: '1 / -1', borderRadius: 16 }} />
-        ) : people.length > 0 ? (
-          <div className="me__people">
-            <AvatarStack userIds={people} total={people.length} size="md" max={6} />
-            <p>
-              You do things with <strong>{peopleLine(people, null, { names: 2 })}</strong>.
-            </p>
-          </div>
-        ) : (
-          <p className="me__people-empty">Your people will show up here once you start a Circle.</p>
-        )}
-        {!loading && recaps.length + circles.length > 0 && (
-          <p className="me__story">
-            {recaps.length > 0 ? (
-              <>
-                You’ve made <b className="num">{recaps.length}</b> {recaps.length === 1 ? 'thing' : 'things'} happen
-                {people.length > 0 && (
-                  <>
-                    {' '}
-                    with <b className="num">{people.length}</b> {people.length === 1 ? 'person' : 'people'}
-                  </>
-                )}
-                .
-              </>
-            ) : (
-              <>
-                You’re in <b className="num">{circles.length}</b> {circles.length === 1 ? 'Circle' : 'Circles'}. Nothing has made it all the way yet.
-              </>
-            )}
-            {given > 0 && (
-              <>
-                {' '}
-                <span className="me__given-inline">
-                  <b className="num">{formatNairaCompact(given)}</b> put in together.
-                </span>
-              </>
+          <p className="me__since">
+            Since {since}
+            {user.kycTier >= 2 && (
+              <span className="me__trust">
+                <ShieldCheck aria-hidden /> Verified
+              </span>
             )}
           </p>
+        </div>
+        {loading ? (
+          <Bone w="100%" h={120} style={{ gridColumn: '1 / -1', borderRadius: 24 }} />
+        ) : (
+          <div className="me__card on-paper">
+            {stats.length > 0 && (
+              <dl className="me__stats">
+                {stats.map((st) => (
+                  <div key={st.label}>
+                    <dd className="num">{st.value}</dd>
+                    <dt>{st.label}</dt>
+                  </div>
+                ))}
+              </dl>
+            )}
+            {people.length > 0 ? (
+              <div className="me__people">
+                <AvatarStack userIds={people} total={people.length} size="sm" max={5} />
+                <p>
+                  You do things with <strong>{peopleLine(people, null, { names: 2 })}</strong>.
+                </p>
+              </div>
+            ) : (
+              <p className="me__people-empty">Your people will show up here once you start a Circle.</p>
+            )}
+          </div>
         )}
       </Hero>
       <Sheet className="me-sheet">

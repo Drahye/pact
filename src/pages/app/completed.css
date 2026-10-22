@@ -305,3 +305,9 @@
 .completed__talk .section-heading__title {
   margin-bottom: var(--space-3);
 }
+
+/* Two stacked actions are too tall to hover over the story: here they close it instead. */
+.screen--completed .screen__footer {
+  position: static;
+  background: none;
+}

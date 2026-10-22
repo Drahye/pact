@@ -28,6 +28,21 @@
   font-weight: var(--weight-medium);
 }
 
+.wallet__limit-note {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0 var(--space-1);
+  color: var(--color-text-secondary);
+  font-size: var(--t-meta-size);
+}
+
+.wallet__limit-note span {
+  color: var(--color-text);
+  font-weight: var(--weight-medium);
+}
+
 .wallet__upgrade {
   display: flex;
   align-items: center;

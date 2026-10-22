@@ -20,6 +20,7 @@ import { clearDraft, readDraft, useSaveDraft } from '../../lib/drafts';
 import { formatNaira, formatNairaCompact, formatNairaKobo, formatPercent, fromKobo, toKobo } from '../../lib/format';
 import { sharesOf, summarize } from '../../lib/pact';
 import { ease, spring } from '../../tokens/tokens';
+import { PageHero } from '../../components/objects';
 import { Screen } from './Screen';
 import './contribute.css';
 
@@ -65,7 +66,7 @@ export function ContributeScreen() {
   const paying = useRef(false);
   useSaveDraft(draftKey, { amount: amount ?? 0 }, !amount, phase === 'enter');
 
-  if (q.isLoading) return <Screen topBar={<TopBar leading="close" backTo={`/app/pact/${id}`} title="Contribute" />}><AmountSkeleton label="Loading" /></Screen>;
+  if (q.isLoading) return <Screen topBar={<TopBar tone="transparent" leading="close" backTo={`/app/pact/${id}`} title="Contribute" />}><AmountSkeleton label="Loading" /></Screen>;
   if (!pact) return <Navigate to="/app/home" replace />;
   const s = summarize(pact);
   const base = `/app/pact/${pact.id}`;
@@ -213,9 +214,9 @@ export function ContributeScreen() {
           </p>
         </>
       }
-      className="contribute"
+      className="contribute xhero xhero--lite tint--mint"
     >
-      <h1 className="large-title">Add to {pact.title}</h1>
+      <PageHero tint="mint" title={`Add to ${pact.title}`} />
 
       <div className="contribute__status">
         <div className="contribute__status-row">

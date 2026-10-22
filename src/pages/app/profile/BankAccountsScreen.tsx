@@ -10,6 +10,7 @@ import { IconButton } from '../../../components/ui/IconButton';
 import { TopBar } from '../../../components/ui/TopBar';
 import { useToast } from '../../../components/ui/Toast';
 import { AddBankSheet } from '../wallet/AddBankSheet';
+import { PageHero } from '../../../components/objects';
 import { Screen } from '../Screen';
 import '../../../components/app/app-ui.css';
 
@@ -20,13 +21,15 @@ export function BankAccountsScreen() {
   const [open, setOpen] = useState(false);
   return (
     <Screen
-      topBar={<TopBar backTo="/app/profile" title="Bank accounts" />}
+      className="xhero xhero--lite tint--lilac"
+      topBar={<TopBar tone="transparent" backTo="/app/profile" title="Bank accounts" collapse />}
       footer={
         <Button fullWidth iconLeft={<Plus />} onClick={() => setOpen(true)}>
           Add a bank account
         </Button>
       }
     >
+      <PageHero tint="lilac" title="Bank accounts" subtitle="Where your withdrawals go." />
       <PhoneRequired what="add a bank account" />
       {accounts.isLoading ? (
         <RowListSkeleton count={3} trailing={false} label="Loading bank accounts" />

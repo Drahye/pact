@@ -15,7 +15,7 @@
       (function () {
         var theme = 'light';
         try {
-          if (/^\/app(\/|$)/.test(location.pathname)) {
+          if (/^\/(app|styleguide)(\/|$)/.test(location.pathname)) {
             var t = localStorage.getItem('pact.theme');
             theme = t === 'dark' || (t === 'system' && matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
           }

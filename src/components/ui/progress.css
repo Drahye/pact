@@ -29,7 +29,7 @@
 
 .progress--light .progress__fill {
   /* hairline edge keeps the light green legible on the warm track */
-  box-shadow: inset 0 0 0 1px rgba(19, 122, 74, 0.12);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--green-700) 12%, transparent);
 }
 
 .progress__preview {

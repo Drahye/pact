@@ -6,6 +6,7 @@ import { ApiError } from '../../../api/client';
 import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { TopBar } from '../../../components/ui/TopBar';
+import { PageHero } from '../../../components/objects';
 import { Screen } from '../Screen';
 import { pendingReturnTo, readFlow, writeFlow } from './flow';
 import { GoogleMark } from './GoogleMark';
@@ -63,11 +64,14 @@ export function AuthEntryScreen({ mode }: { mode: 'start' | 'signin' }) {
   };
 
   return (
-    <Screen topBar={<TopBar backTo="/app/auth/welcome" />} className="auth auth--entry">
+    <Screen topBar={<TopBar tone="transparent" backTo="/app/auth/welcome" />} className="auth auth--entry xhero xhero--lite tint--mint">
+      <PageHero
+        tint="mint"
+        title={handoff?.title ?? (mode === 'signin' ? 'Welcome back' : 'Let’s get you in')}
+        subtitle={handoff?.line ?? (mode === 'signin' ? 'Sign in the way you did before.' : 'Pick whichever is quickest. No password to remember.')}
+      />
       <div className="entry">
         <HandoffNote />
-        <h1 className="entry__title">{handoff?.title ?? (mode === 'signin' ? 'Welcome back' : 'Let’s get you in')}</h1>
-        <p className="entry__lede">{handoff?.line ?? (mode === 'signin' ? 'Sign in the way you did before.' : 'Pick whichever is quickest. No password to remember.')}</p>
 
         {googleOn && (
           <div className="entry__google">

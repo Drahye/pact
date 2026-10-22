@@ -13,6 +13,7 @@ import { Input } from '../../../components/ui/Input';
 import { TopBar } from '../../../components/ui/TopBar';
 import { useToast } from '../../../components/ui/Toast';
 import { formatNairaKobo } from '../../../lib/format';
+import { PageHero } from '../../../components/objects';
 import { Screen } from '../Screen';
 import '../../../components/app/app-ui.css';
 import '../profile.css';
@@ -42,7 +43,8 @@ export function VerifyScreen() {
 
   return (
     <Screen
-      topBar={<TopBar backTo="/app/profile" title="Verification" />}
+      className="xhero xhero--lite tint--sky"
+      topBar={<TopBar tone="transparent" backTo="/app/profile" title="Verification" />}
       footer={
         !verified && (
           <Button type="submit" form="bvn-form" fullWidth loading={verifyBvn.isPending} disabled={bvn.length !== 11 || !dob}>
@@ -51,13 +53,10 @@ export function VerifyScreen() {
         )
       }
     >
-      <PhoneRequired what="verify your identity" />
-      <h1 className="large-title">{verified ? 'You’re verified' : 'Verify your identity'}</h1>
-      <p className="screen-lede">
-        {verified
+      <PageHero tint="sky" title={verified ? 'You’re verified' : 'Verify your identity'} subtitle={<>{verified
           ? 'Your BVN is confirmed. Higher limits are on, and you can release Pact funds as an organiser.'
-          : 'Nigerian regulations tie wallet limits to identity checks. Your BVN confirms who you are; it gives nobody access to your bank account.'}
-      </p>
+          : 'Nigerian regulations tie wallet limits to identity checks. Your BVN confirms who you are; it gives nobody access to your bank account.'}</>} />
+      <PhoneRequired what="verify your identity" />
 
       <div className="tiers">
         {([1, 2, 3] as KycTier[]).map((t) => {

@@ -51,7 +51,7 @@
   padding: 0 var(--space-4);
   border-radius: var(--radius-lg);
   background: var(--mint-100);
-  font-size: 1.625rem;
+  font-size: var(--fig-md);
   font-weight: var(--weight-bold);
   letter-spacing: 0.02em;
   color: var(--color-text);
@@ -239,7 +239,7 @@
 /* One payment */
 .payout__bank {
   font-size: var(--t-meta-size);
-  font-weight: var(--weight-regular, 400);
+  font-weight: var(--weight-regular);
   color: var(--color-text-secondary);
 }
 
@@ -497,7 +497,7 @@
 
 .stepper__value {
   min-width: 32px;
-  font-size: 1.5rem;
+  font-size: var(--fig-sm);
   font-weight: var(--weight-bold);
   text-align: center;
 }

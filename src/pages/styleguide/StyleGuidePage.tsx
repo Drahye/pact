@@ -1,6 +1,6 @@
-import { CompletionState, EmptyState, OBJECT_KINDS, StatusIndicator } from '../../components/objects';
+import { CompletionState, EmptyState, Hero, OBJECT_KINDS, Sheet, StatusIndicator } from '../../components/objects';
 import { Check, Plus, Share } from 'lucide-react';
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { CategoryChip, CategoryIcon } from '../../components/pact/category';
 import { PactListItem } from '../../components/pact/PactListItem';
@@ -28,6 +28,7 @@ import { seedActivities } from '../../data/activities';
 import { seedPacts } from '../../data/pacts';
 import type { Activity, PactCategory } from '../../data/types';
 import { users } from '../../data/users';
+import { useTheme } from '../../theme/useTheme';
 import { sharesOf } from '../../lib/pact';
 import './styleguide.css';
 import { setFixedClock } from '../../lib/clock';
@@ -65,6 +66,50 @@ function TokenRow({ token, children }: { token: string; children?: ReactNode }) 
   );
 }
 
+/** Resolves any CSS colour (var(), color-mix(), rgba()) to [r, g, b, a] by painting it. */
+function resolveColour(css: string, host: HTMLElement): [number, number, number, number] {
+  const c = document.createElement('canvas');
+  c.width = c.height = 1;
+  const x = c.getContext('2d', { willReadFrequently: true })!;
+  const probe = document.createElement('span');
+  probe.style.color = css;
+  host.appendChild(probe);
+  const resolved = getComputedStyle(probe).color;
+  probe.remove();
+  x.clearRect(0, 0, 1, 1);
+  x.fillStyle = resolved;
+  x.fillRect(0, 0, 1, 1);
+  const d = x.getImageData(0, 0, 1, 1).data;
+  return [d[0], d[1], d[2], d[3] / 255];
+}
+const lum = ([r, g, b]: number[]) => {
+  const f = (v: number) => ((v /= 255) <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
+  return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
+};
+
+/** A pair of colours with its measured WCAG ratio, recomputed from the live tokens (so it follows the theme). */
+function Contrast({ fg, bg, label, need = 4.5 }: { fg: string; bg: string; label: string; need?: number }) {
+  const { resolvedTheme } = useTheme();
+  const [r, setR] = useState<number>();
+  const host = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!host.current) return;
+    const b = resolveColour(bg, host.current);
+    const f = resolveColour(fg, host.current);
+    const a = f[3];
+    const mixed = [0, 1, 2].map((i) => f[i] * a + b[i] * (1 - a));
+    const [hi, lo] = [lum(mixed), lum(b)].sort((m, n) => n - m);
+    setR((hi + 0.05) / (lo + 0.05));
+  }, [fg, bg, resolvedTheme]);
+  return (
+    <div ref={host} className="sg-contrast" style={{ background: bg, color: fg }}>
+      <strong>Aa</strong>
+      <span>{label}</span>
+      <code className={r !== undefined && r < need ? 'is-low' : ''}>{r ? `${r.toFixed(1)}:1` : '…'} {r !== undefined && r >= need ? 'AA' : r ? 'below AA' : ''}</code>
+    </div>
+  );
+}
+
 function Section({ id, title, lede, children }: { id: string; title: string; lede?: string; children: ReactNode }) {
   const [params] = useSearchParams();
   const page = params.get('page') as keyof typeof guidePages | null;
@@ -93,7 +138,7 @@ const act = (type: Activity['type'], userId: string, amount?: number): Activity 
 
 /** Style guide pages, for exporting one group at a time (?page=…). */
 export const guidePages = {
-  foundations: { title: 'Foundations: variables', sections: ['logo', 'colour', 'type', 'space', 'shape', 'motion'] },
+  foundations: { title: 'Foundations: variables', sections: ['principles', 'logo', 'colour', 'type', 'space', 'shape', 'motion', 'screens', 'pressed'] },
   actions: { title: 'Components: buttons and inputs', sections: ['buttons', 'inputs'] },
   progress: { title: 'Components: progress and people', sections: ['progress', 'people'] },
   surfaces: { title: 'Components: cards, feed and navigation', sections: ['cards', 'objects', 'navigation'] },
@@ -101,12 +146,15 @@ export const guidePages = {
 } as const;
 
 const nav = [
-  ['logo', 'Logo'],
+  ['principles', 'Principles'],
+  ['logo', 'Brand and logo'],
   ['colour', 'Colour'],
   ['type', 'Typography'],
   ['space', 'Spacing & grid'],
   ['shape', 'Radius, borders, shadows'],
   ['motion', 'Motion'],
+  ['screens', 'Hero and sheet'],
+  ['pressed', 'Pressed states'],
   ['buttons', 'Buttons'],
   ['inputs', 'Inputs'],
   ['progress', 'Progress'],
@@ -117,6 +165,19 @@ const nav = [
   ['feedback', 'Feedback'],
   ['marketing', 'Marketing'],
 ];
+
+function ThemeSwitch() {
+  const { theme, setTheme } = useTheme();
+  return (
+    <div className="sg-theme" role="group" aria-label="Preview theme">
+      {(['light', 'dark'] as const).map((t) => (
+        <button key={t} type="button" className={theme === t ? 'is-on' : ''} onClick={() => setTheme(t)} aria-pressed={theme === t}>
+          {t === 'light' ? 'Light' : 'Dark'}
+        </button>
+      ))}
+    </div>
+  );
+}
 
 export function StyleGuidePage() {
   // Showcase numbers stay pinned to the launch date.
@@ -132,7 +193,7 @@ export function StyleGuidePage() {
   }, [current]);
 
   return (
-    <div className="sg">
+    <div className="sg proto--bold">
       <aside className="sg-nav" aria-label="Style guide sections">
         <PactLogo size="md" />
         <p className="sg-nav__label">Style guide</p>
@@ -151,11 +212,43 @@ export function StyleGuidePage() {
       <main className="sg-main">
         <header className="sg-hero">
           <p className="sg-hero__eyebrow">PACT design system{current ? ` · ${current.title}` : ''}</p>
-          <h1>{current ? current.title.split(': ')[1].replace(/^./, (c) => c.toUpperCase()) + '.' : 'Calm surfaces. Every colour is someone.'}</h1>
-          <p>Warm off-white and deep ink carry the interface. Fresh green means progress and action. Each person owns one vivid colour, and their money is drawn in it wherever it appears.</p>
+          <h1>{current ? current.title.split(': ')[1].replace(/^./, (c) => c.toUpperCase()) + '.' : 'One colour per screen. Ink does the work.'}</h1>
+          <p>Green and ink are the brand. Every screen commits to the one colour of the thing it is about, sets its title large on it, and lets the body rise over it as a sheet. Hierarchy is size and weight, never fading below AA. Everything gives under a finger. The same system, light and dark.</p>
+          <ThemeSwitch />
         </header>
 
-        <Section id="logo" title="Logo" lede="Four rounded pieces of different lengths close a loop: people giving different amounts of the same thing, finishing it together. One component, PactLogo, draws it everywhere, from one geometry file.">
+        <Section id="principles" title="Principles" lede="Nine rules. Every screen, component and token follows them, and scripts/design-lint.mjs fails the build when new CSS breaks the ones a machine can check.">
+          <ol className="sg-principles">
+            {[
+              ['One colour per screen', 'A screen commits to the colour of the thing it is about (Ask sky, Plan sun, Split lilac, Pact green, Circle coral). That colour is the hero; the body is the page colour.'],
+              ['Green and ink are the brand', 'Green is the signature: the arrow capsule, the create button, progress, done. Ink anchors: titles, primary buttons, the tab bar. Object colours are identity, never brand.'],
+              ['Numbers are the biggest thing on a money surface', 'Amounts and dates are set larger than any title, in tabular figures, and never wrap.'],
+              ['One solid action', 'One ink button with a green arrow per screen. Second and third actions are tonal or text.'],
+              ['Hierarchy is size and weight', 'Ten type roles, five weights. Secondary text keeps AA contrast; it is smaller or lighter in weight, never faded.'],
+              ['Depth, not outlines', 'Cards lift with a hairline and a soft shadow. Borders are for fields and selection.'],
+              ['Everything gives under a finger', 'Objects scale and shift tone; words get a halo. Pressed never changes hue and never loses contrast.'],
+              ['Heroes stay bright', 'In dark mode the sheet follows the theme and the hero does not: what sits on a bright hero is a light island, ink on white.'],
+              ['Tokens only', 'No raw colour, size, weight or tracking in app CSS. If a value is missing, add a token here first.'],
+            ].map(([t, d], i) => (
+              <li key={t}>
+                <b>{i + 1}</b>
+                <span>
+                  <strong>{t}</strong>
+                  <em>{d}</em>
+                </span>
+              </li>
+            ))}
+          </ol>
+        </Section>
+
+        <Section id="logo" title="Brand and logo" lede="Four rounded pieces of different lengths close a loop: people giving different amounts of the same thing, finishing it together. One component, PactLogo, draws it everywhere, from one geometry file.">
+          <h3 className="sg-h3">The brand pair</h3>
+          <div className="sg-swatches">
+            <Swatch token="--brand" label="Brand green" />
+            <Swatch token="--brand-ink" label="Brand ink" dark />
+            <Swatch token="--green-700" label="Green as text on paper" dark />
+            <Swatch token="--paper-100" label="Paper" />
+          </div>
           <h3 className="sg-h3">Sizes</h3>
           <div className="sg-row sg-row--end">
             {(['sm', 'md', 'lg', 'xl'] as const).map((size) => (
@@ -176,7 +269,7 @@ export function StyleGuidePage() {
             <div style={{ background: 'var(--color-surface-inverse)' }}>
               <PactLogo size="lg" tone="light" />
             </div>
-            <div style={{ background: 'var(--mint-100)' }}>
+            <div style={{ background: 'var(--brand)' }}>
               <PactLogo size="lg" tone="dark" />
             </div>
             <div style={{ background: 'var(--color-surface)' }}>
@@ -185,21 +278,36 @@ export function StyleGuidePage() {
           </div>
         </Section>
 
-        <Section id="colour" title="Colour" lede="Semantic tokens map to primitives. Green is reserved for progress, positive states, the primary action and completion.">
-          <h3 className="sg-h3">Core</h3>
+        <Section id="colour" title="Colour" lede="Primitives feed semantic tokens; screens use the semantic ones. Dark mode re-declares the same names, so nothing here is hard-coded to a theme. Ratios below are measured live from the tokens in the current theme.">
+          <h3 className="sg-h3">Ink and paper</h3>
           <div className="sg-swatches">
-            <Swatch token="--color-bg" label="Background" />
+            <Swatch token="--color-bg" label="Page" />
             <Swatch token="--color-bg-sunken" label="Sunken" />
             <Swatch token="--color-surface" label="Surface" />
-            <Swatch token="--color-text" label="Ink" dark />
-            <Swatch token="--color-text-secondary" label="Ink secondary" dark />
-            <Swatch token="--color-text-tertiary" label="Ink tertiary" dark />
-            <Swatch token="--color-accent" label="Accent green" />
-            <Swatch token="--color-accent-text" label="Green text" dark />
-            <Swatch token="--color-accent-soft" label="Mint" />
+            <Swatch token="--color-text" label="Text" dark />
+            <Swatch token="--color-text-secondary" label="Secondary" dark />
+            <Swatch token="--color-text-tertiary" label="Tertiary" dark />
             <Swatch token="--color-border" label="Border" />
             <Swatch token="--color-border-strong" label="Border strong" />
-            <Swatch token="--color-danger" label="Muted red" dark />
+            <Swatch token="--color-danger" label="Danger" dark />
+          </div>
+          <div className="sg-contrasts">
+            <Contrast fg="var(--color-text)" bg="var(--color-bg)" label="Text on page" />
+            <Contrast fg="var(--color-text-secondary)" bg="var(--color-bg)" label="Secondary on page" />
+            <Contrast fg="var(--color-text-tertiary)" bg="var(--color-surface)" label="Tertiary on surface" />
+            <Contrast fg="var(--color-placeholder)" bg="var(--color-surface)" label="Placeholder on field" />
+            <Contrast fg="var(--color-accent-text)" bg="var(--color-bg)" label="Green text on page" />
+            <Contrast fg="var(--color-danger)" bg="var(--color-bg)" label="Danger on page" />
+          </div>
+          <h3 className="sg-h3">Object identity: the hero colour and its text</h3>
+          <div className="sg-contrasts">
+            {(['sky', 'sun', 'lilac', 'green', 'coral', 'pink'] as const).map((t) => (
+              <div key={t}>
+                <Contrast fg="var(--on-hero)" bg={`var(${t === 'green' ? '--green-500' : `--${t}-400`})`} label={`${t}: primary`} />
+                <Contrast fg="var(--on-hero-2)" bg={`var(${t === 'green' ? '--green-500' : `--${t}-400`})`} label="secondary" />
+                <Contrast fg="var(--on-hero-3)" bg={`var(${t === 'green' ? '--green-500' : `--${t}-400`})`} label="tertiary" />
+              </div>
+            ))}
           </div>
           <h3 className="sg-h3">People (identity colours)</h3>
           <div className="sg-people">
@@ -213,7 +321,7 @@ export function StyleGuidePage() {
                 </div>
               ))}
           </div>
-          <h3 className="sg-h3">Tints (plans and sections)</h3>
+          <h3 className="sg-h3">Soft tints (chips, tiles, rows)</h3>
           <div className="sg-swatches">
             <Swatch token="--sun-100" label="Sun" />
             <Swatch token="--coral-100" label="Coral" />
@@ -221,6 +329,15 @@ export function StyleGuidePage() {
             <Swatch token="--lilac-50" label="Lilac" />
             <Swatch token="--pink-100" label="Pink" />
             <Swatch token="--mint-100" label="Mint" />
+          </div>
+          <h3 className="sg-h3">Translucent ladders</h3>
+          <div className="sg-swatches">
+            {[1, 2, 3, 4, 5, 6, 7].map((n) => (
+              <Swatch key={`v${n}`} token={`--veil-${n}`} label={`Veil ${n}`} dark />
+            ))}
+            {[1, 2, 3, 4, 5, 6].map((n) => (
+              <Swatch key={`s${n}`} token={`--shade-${n}`} label={`Shade ${n}`} />
+            ))}
           </div>
         </Section>
 
@@ -248,11 +365,21 @@ export function StyleGuidePage() {
               </TokenRow>
             ))}
           </div>
+          <h3 className="sg-h3">Figures: numerals and emoji</h3>
+          <div className="sg-numbers">
+            {['--fig-xs', '--fig-sm', '--fig-md', '--fig-lg', '--fig-xl', '--fig-2xl'].map((t) => (
+              <TokenRow key={t} token={t}>
+                <span className="num" style={{ fontSize: `var(${t})`, fontWeight: 'var(--weight-heavy)', letterSpacing: 'var(--tracking-numeral)' }}>
+                  ₦320,000
+                </span>
+              </TokenRow>
+            ))}
+          </div>
           <h3 className="sg-h3">Numbers</h3>
           <div className="sg-numbers">
             {['--num-sm', '--num-md', '--num-lg', '--num-xl'].map((t) => (
               <TokenRow key={t} token={t}>
-                <span className="num" style={{ fontSize: `var(${t})`, fontWeight: 600, letterSpacing: '-0.045em' }}>
+                <span className="num" style={{ fontSize: `var(${t})`, fontWeight: 'var(--weight-bold)', letterSpacing: 'var(--tracking-tight)' }}>
                   ₦320,000
                 </span>
               </TokenRow>
@@ -305,7 +432,50 @@ export function StyleGuidePage() {
           </div>
         </Section>
 
-        <Section id="buttons" title="Buttons" lede="One obvious primary action per screen. Green with ink text for primary, white with a hairline for secondary, ink for dark contexts.">
+        <Section id="screens" title="Hero and sheet" lede="Every screen has this shape: a hero in the object's colour that runs up under the top bar, the title set large on it in ink, and the body rising over it as a rounded sheet. The hero stays bright in both themes; the sheet follows the theme.">
+          <div className="sg-screens">
+            {([['sky', 'Which date works?', 'Ask'], ['sun', 'Bali Trip', 'Plan'], ['lilac', 'Airport taxi', 'Split'], ['mint', 'Sarah’s Birthday', 'Pact'], ['coral', 'The Boys', 'Circle']] as const).map(([tint, title, kind]) => (
+              <div key={tint} className="sg-screen">
+                <Hero tint={tint}>
+                  <p className="xh__meta">{kind}</p>
+                  <h1 className="xh__title">{title}</h1>
+                  <p className="xh__meta">2 of 5 answered</p>
+                </Hero>
+                <Sheet>
+                  <h2 className="t-section">Needs you</h2>
+                  <Button size="md">Respond</Button>
+                </Sheet>
+              </div>
+            ))}
+          </div>
+        </Section>
+
+        <Section id="pressed" title="Pressed states" lede="Press and hold anything on this page. Objects (cards, rows, buttons, chips, tiles) scale to 0.985 and shift tone: a touch darker on paper, lighter on dark. Words get a soft halo in their own colour. Pressed never changes hue, and its contrast is measured with the resting state's.">
+          <div className="sg-specs">
+            <Spec name="Solid, secondary, tonal">
+              <div className="sg-row">
+                <Button>Contribute</Button>
+                <Button variant="secondary">Invite</Button>
+                <button type="button" className="act act--tonal tint--lilac">Mark settled</button>
+              </div>
+            </Spec>
+            <Spec name="Text, link in a sentence">
+              <div className="sg-row">
+                <button type="button" className="act act--text">Show 7 more</button>
+                <p>
+                  You can <a href="#pressed">change your vote</a> until it closes.
+                </p>
+              </div>
+            </Spec>
+            <Spec name="Card, row">
+              <div style={{ maxWidth: 360 }}>
+                <PactListItem pact={trip} to="#pressed" />
+              </div>
+            </Spec>
+          </div>
+        </Section>
+
+        <Section id="buttons" title="Buttons" lede="One solid action per screen: an ink pill with a green arrow capsule. Secondary is a white pill with a soft lift, tonal is the object’s own tint, and quiet things are text. Disabled is a sunken pill at reduced emphasis.">
           <div className="sg-specs">
             <Spec name="Primary · lg / md / sm">
               <div className="sg-row">
@@ -435,7 +605,7 @@ export function StyleGuidePage() {
           </div>
         </Section>
 
-        <Section id="cards" title="Cards & feed" lede="White cards on the warm background; one ink surface per view marks what matters most.">
+        <Section id="cards" title="Cards & feed" lede="Cards lift from the page with a hairline and a soft shadow, with no outline. The first thing that needs you may take the object’s full colour; everything after it is white.">
           <div className="sg-specs">
             <Spec name="Pact in a list (the Pact object, compact)">
               <div style={{ maxWidth: 360 }}>

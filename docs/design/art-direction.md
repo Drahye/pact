@@ -1,3 +1,6 @@
+> **Superseded.** This is the record of the 2026-10-05 audit that led to the type roles. The rules, tokens and values now live in
+> [DESIGN-SYSTEM.md](DESIGN-SYSTEM.md) (and `/styleguide`); where the two disagree, that one is right. Weights and sizes below are the old ones.
+
 # Art direction + typography pass
 
 ## Phase 1: audit of what is there (2026-10-05, measured)

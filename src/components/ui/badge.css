@@ -39,7 +39,7 @@
 }
 
 .badge--inverse {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--veil-2);
   color: var(--color-text-inverse);
 }
 

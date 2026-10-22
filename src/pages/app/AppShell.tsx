@@ -131,8 +131,8 @@ export function AppShell() {
   const shared = /^\/(a|p|s|r)\//.test(location.pathname) || location.pathname.startsWith('/app/c/');
   const wide = useMediaQuery('(min-width: 600px)');
   const framed = wide && !shared;
-  // Sign-in and welcome keep their own look. Everything signed in, and every shared page, wears the bold one.
-  const bold = !(location.pathname === '/app' || location.pathname === '/app/' || location.pathname.startsWith('/app/auth'));
+  // One skin: the bold one, on every screen (welcome and sign-in included).
+  const bold = true;
   const [overlayRoot, setOverlayRoot] = useState<HTMLElement | null>(null);
   const direction = useTransitionDirection(location.pathname);
 

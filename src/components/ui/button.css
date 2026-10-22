@@ -217,7 +217,7 @@
 }
 
 .icon-btn--inverse {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--veil-1);
   color: var(--color-text-inverse);
 }
 

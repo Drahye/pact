@@ -7,6 +7,7 @@ import { PactLogo } from '../../components/brand/PactLogo';
 import { Modal } from '../../components/ui/Modal';
 import { setReturnTo } from './auth/flow';
 import { IntroVisual } from './auth/IntroVisual';
+import { Hero, Sheet } from '../../components/objects';
 import { Screen } from './Screen';
 import './welcome.css';
 
@@ -40,7 +41,7 @@ export function WelcomeScreen() {
 
   return (
     <Screen
-      className="welcome welcome--intro"
+      className="welcome welcome--intro xhero xhero--home"
       footer={
         <div className="intro-actions">
           <Button to="/app/auth/start" fullWidth size="lg">
@@ -52,11 +53,13 @@ export function WelcomeScreen() {
         </div>
       }
     >
-      <div className="welcome__top">
-        <PactLogo size="md" />
-      </div>
-      <IntroVisual />
-      <div className="intro">
+      <Hero className="xh--home xh--welcome">
+        <div className="welcome__top">
+          <PactLogo size="md" tone="light" />
+        </div>
+        <IntroVisual />
+      </Hero>
+      <Sheet className="intro">
         <h1 className="intro__title">
           Make things <span className="welcome__pill">happen</span>
           <br />
@@ -68,7 +71,7 @@ export function WelcomeScreen() {
             Have an invite link?
           </button>
         </p>
-      </div>
+      </Sheet>
 
       <Modal
         open={joinOpen}

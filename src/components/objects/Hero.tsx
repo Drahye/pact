@@ -21,7 +21,7 @@ export function Sheet({ children, className = '' }: { children: ReactNode; class
 }
 
 /** The top of a list or settings screen: its colour, its title large, one line under it. The page body follows on the page colour, rising over the hero's rounded edge. */
-export function PageHero({ tint, title, subtitle }: { tint: string; title: string; subtitle?: string }) {
+export function PageHero({ tint, title, subtitle }: { tint: string; title: string; subtitle?: ReactNode }) {
   return (
     <Hero tint={tint} className="xh--page">
       <h1 className="xh__title">{title}</h1>

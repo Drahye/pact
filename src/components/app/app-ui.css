@@ -65,7 +65,7 @@
   width: 76px;
   height: 64px;
   border-radius: var(--radius-xl);
-  font-size: 1.625rem;
+  font-size: var(--fig-md);
   font-weight: var(--weight-medium);
   color: var(--color-text);
   transition: background-color var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out);
@@ -118,7 +118,7 @@
   right: -36px;
   top: -40px;
   border-radius: 50%;
-  background: #ffd873;
+  background: var(--sun-300);
 }
 
 .wallet-card__shape--b {
@@ -141,7 +141,7 @@
 .wallet-card__label {
   font-size: var(--t-support-size);
   font-weight: var(--weight-medium);
-  color: rgba(15, 23, 19, 0.7);
+  color: var(--shade-5);
 }
 
 .wallet-card__tier {
@@ -150,7 +150,7 @@
   height: 26px;
   padding: 0 var(--space-3);
   border-radius: var(--radius-full);
-  background: rgba(15, 23, 19, 0.1);
+  background: var(--shade-1);
   font-size: var(--t-meta-size);
   font-weight: var(--weight-semibold);
 }
@@ -162,7 +162,7 @@
 }
 
 .wallet-card__balance {
-  font-size: 2.25rem;
+  font-size: var(--fig-lg);
   line-height: 44px;
   font-weight: var(--weight-semibold);
   letter-spacing: var(--tracking-tight);
@@ -174,7 +174,7 @@
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  color: rgba(15, 23, 19, 0.6);
+  color: var(--shade-4);
 }
 
 .wallet-card__eye svg {
@@ -201,7 +201,7 @@
   gap: var(--space-2);
   height: 44px;
   border-radius: var(--radius-full);
-  background: rgba(255, 255, 255, 0.55);
+  background: var(--veil-5);
   font-size: var(--t-support-size);
   font-weight: var(--weight-semibold);
   transition: transform var(--duration-fast) var(--ease-out), background-color var(--duration-fast) var(--ease-out);

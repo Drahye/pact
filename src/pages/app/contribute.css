@@ -141,7 +141,7 @@
 }
 
 .confirm__title {
-  font-size: 2.75rem;
+  font-size: var(--fig-xl);
   line-height: 48px;
   letter-spacing: var(--tracking-display);
 }

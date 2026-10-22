@@ -43,6 +43,6 @@
 
 /* The Welcome visual's colour blobs are clipped by its box; fade them out so no hard edge shows on dark. */
 :root[data-theme='dark'] .welcome-visual {
-  -webkit-mask-image: linear-gradient(to bottom, #000 90%, transparent);
-  mask-image: linear-gradient(to bottom, #000 90%, transparent);
+  -webkit-mask-image: linear-gradient(to bottom, var(--black) 90%, transparent);
+  mask-image: linear-gradient(to bottom, var(--black) 90%, transparent);
 }

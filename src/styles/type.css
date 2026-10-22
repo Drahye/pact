@@ -12,4 +12,4 @@
 
 /* Numbers that are the point: a date, an amount, a progress figure. Their own treatment, never a title style, and they do not wrap. */
 .t-numeric { font-size: var(--t-display-size); line-height: var(--t-display-line); font-weight: var(--t-display-weight); letter-spacing: var(--t-display-tracking); white-space: nowrap; font-variant-numeric: lining-nums; }
-.t-numeric--md { font-size: clamp(1.75rem, 8vw, 2.25rem); line-height: 1; letter-spacing: var(--tracking-tight); }
+.t-numeric--md { font-size: var(--num-md-size); line-height: 1; letter-spacing: var(--tracking-tight); }

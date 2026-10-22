@@ -2,6 +2,7 @@
 # Release-style regression pass for the signed-in UI: typecheck, build, axe, pathological content, dark+reduced-motion journeys,
 # creation flows, detail checks, phone-off. Usage: bash scripts/qa-all-bold.sh > /tmp/qa-bold.log
 cd "$(dirname "$0")/.."
+echo "== design lint"; node scripts/design-lint.mjs 2>&1 | tail -2
 echo "== typecheck"; npm run typecheck 2>&1 | tail -2
 echo "== build"; npm run build 2>&1 | grep -E "index-.*\.js|index-.*\.css|built in|error" | cut -c1-120
 echo "== axe"; bash scripts/demo-stack.sh | tail -1; node scripts/qa-axe.mjs > /tmp/axe-bold.log 2>&1; tail -1 /tmp/axe-bold.log; grep -A2 VIOL /tmp/axe-bold.log | cut -c1-190 | head -60

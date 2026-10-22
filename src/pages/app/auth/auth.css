@@ -13,7 +13,7 @@
 .auth__fine {
   font-size: var(--t-meta-size);
   line-height: var(--leading-caption);
-  color: var(--color-text-tertiary);
+  color: var(--color-text-secondary);
   text-align: center;
 }
 
@@ -82,7 +82,7 @@
   padding: 0 var(--space-4);
   border: 0;
   background: transparent;
-  font-size: 1.375rem;
+  font-size: var(--fig-sm);
   font-weight: var(--weight-medium);
   letter-spacing: 0.02em;
   color: var(--color-text);

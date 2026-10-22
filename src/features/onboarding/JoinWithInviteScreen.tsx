@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { TopBar } from '../../components/ui/TopBar';
+import { PageHero } from '../../components/objects';
 import { Screen } from '../../pages/app/Screen';
 import { parseInvite } from './invite';
 
@@ -22,16 +23,16 @@ export function JoinWithInviteScreen() {
 
   return (
     <Screen
-      topBar={<TopBar backTo="/app/home" title="Join a Pact" />}
+      className="xhero xhero--lite tint--mint"
+      topBar={<TopBar tone="transparent" backTo="/app/home" />}
       footer={
         <Button type="submit" form="join-invite" fullWidth disabled={!value.trim()}>
           Find my Pact
         </Button>
       }
     >
+      <PageHero tint="mint" title="Paste your invite" subtitle="Paste the link you were sent, or type the invite code. You’ll see what the Pact is for before you join." />
       <form id="join-invite" className="gs" onSubmit={submit} noValidate>
-        <h1 className="gs__title">Paste your invite</h1>
-        <p className="gs__hint">Paste the link you were sent, or type the invite code. You’ll see what the Pact is for before you join.</p>
         <Input
           label="Invite link or code"
           value={value}

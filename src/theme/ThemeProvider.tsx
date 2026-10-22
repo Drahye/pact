@@ -29,8 +29,8 @@ function readStored(): Theme {
 
 const systemPrefersDark = () => typeof matchMedia === 'function' && matchMedia(DARK_QUERY).matches;
 
-/** Mirrors the inline script in index.html: only the app is themed; marketing pages stay light. */
-const isThemedPath = (path: string) => path === '/app' || path.startsWith('/app/');
+/** Mirrors the inline script in index.html: only the app (and the style guide, which documents both themes) is themed; marketing pages stay light. */
+const isThemedPath = (path: string) => path === '/app' || path.startsWith('/app/') || path === '/styleguide';
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<Theme>(readStored);

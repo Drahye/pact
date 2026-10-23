@@ -103,7 +103,7 @@ export function PactObject({
             {daysLeft !== undefined && ` · ${daysLeft === 0 ? 'due today' : `${daysLeft} ${daysLeft === 1 ? 'day' : 'days'} left`}`}
           </p>
           {gave && (
-            <p className="ox-pact__gave t-meta">
+            <p className="ox-pact__gave">
               <AvatarStack userIds={gave.ids} size="xs" max={3} />
               <span>{gave.text}</span>
             </p>

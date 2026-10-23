@@ -1481,6 +1481,16 @@
   align-items: center;
   gap: var(--space-2);
   margin: var(--space-1) 0 0;
+  color: var(--color-text-secondary);
+  font-size: var(--t-meta-size);
+  line-height: var(--t-meta-line);
+  font-weight: var(--t-meta-weight);
 }
 
 .ox-pact__gave > span:last-child { min-width: 0; }
+
+/* The faces sit on a light plate in both themes: the card behind them is tinted, and an initial on a dark tint was unreadable in dark mode. */
+.ox-pact__gave .avatar.avatar { background: var(--white); color: var(--ink-900); opacity: 1; filter: none; }
+
+/* Little overlap here: at this size the next face's ring would otherwise bite into the letter before it. */
+.ox-pact__gave .avatar-group > .avatar + .avatar { margin-left: -4px; }

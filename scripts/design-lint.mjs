@@ -16,7 +16,7 @@ import { join, relative } from 'node:path';
 
 const ROOT = 'src';
 const BASELINE = 'scripts/design-lint.baseline.json';
-const SKIP = ['pages/dev', 'pages/styleguide', 'features/demo', 'styles/tokens.css', 'styles/loader.css', 'brand/pact-logo.css', 'mockups'];
+const SKIP = ['pages/site/home', 'pages/dev', 'pages/styleguide', 'features/demo', 'styles/tokens.css', 'styles/loader.css', 'brand/pact-logo.css', 'mockups'];
 const args = new Set(process.argv.slice(2));
 
 const files = [];

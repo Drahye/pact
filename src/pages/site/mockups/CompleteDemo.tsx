@@ -1,5 +1,5 @@
 import { Check, ImagePlus } from 'lucide-react';
-import { AppBar, Chip, DemoRing, Face, kobo, NextStepCard, seg, sharesAt, StatusBar, Swap, cast } from './demoKit';
+import { AppBar, Chip, DemoRing, Face, HeroCopy, kobo, NextStepCard, seg, sharesAt, StatusBar, Swap, cast } from './demoKit';
 
 /** Scene 5: the last loose ends settle, the organiser completes the Pact, and the outcome appears. t runs 0..1. */
 export function CompleteDemo({ t }: { t: number }) {
@@ -14,6 +14,7 @@ export function CompleteDemo({ t }: { t: number }) {
       <div className="d-layer" style={{ opacity: 1 - o, pointerEvents: 'none' }}>
         <StatusBar />
         <AppBar title="Sarah’s Birthday" />
+        <HeroCopy sub="Almost done" />
         <div className="d-detail">
           <div className="d-exhead">
             <DemoRing shares={sharesAt(500)} size={58} stroke={7}>

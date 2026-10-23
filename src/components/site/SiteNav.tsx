@@ -6,9 +6,8 @@ import { PactLogo } from '../brand/PactLogo';
 import './site-nav.css';
 
 const links = [
+  { href: '/#moments', label: 'Moments' },
   { href: '/#story', label: 'How it works' },
-  { href: '/#what', label: 'What is PACT?' },
-  { href: '/#plans', label: 'Plans' },
   { href: '/#faq', label: 'FAQ' },
 ];
 

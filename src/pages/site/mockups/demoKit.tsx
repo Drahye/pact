@@ -124,6 +124,17 @@ export function DemoRing({ shares, size = 190, stroke = 18, children }: { shares
   );
 }
 
+/** The hero's words as the app sets them: a chip, the title, one line. Hidden in the classic look; the bold skin (.d-bold) shows it. */
+export function HeroCopy({ chip = 'Birthday · by you', title = 'Sarah’s Birthday', sub = '12 days left' }: { chip?: string; title?: string; sub?: string }) {
+  return (
+    <div className="d-herocopy">
+      <span className="d-herochip">{chip}</span>
+      <h3>{title}</h3>
+      <p>{sub}</p>
+    </div>
+  );
+}
+
 export type Tone = 'mint' | 'sun' | 'sky' | 'quiet' | 'coral';
 export const Chip = ({ tone, children }: { tone: Tone; children: ReactNode }) => <span className={`d-chip d-chip--${tone}`}>{children}</span>;
 

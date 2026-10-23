@@ -155,6 +155,8 @@ export function App() {
               <Route path="/" element={<LandingPage />} />
               <Route path="/authenticate" element={<AuthenticateScreen />} />
               <Route path="/download" element={<DownloadPage />} />
+              {/* The landing page used to be tried out here. */}
+              <Route path="/preview" element={<Navigate to="/" replace />} />
               <Route path="/styleguide" element={<StyleGuidePage />} />
               <Route path="/dev/templates" element={<TemplatesPreview />} />
               {/* The primitives gallery is for review: it exists in development builds only and nothing links to it. */}

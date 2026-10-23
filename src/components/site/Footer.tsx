@@ -10,21 +10,30 @@ export function Footer() {
       <div className="container footer__inner">
         <div className="footer__brand">
           <PactLogo size="md" />
-          <p>Money works better together.</p>
+          <p className="footer__line">Life is better when everyone shows up.</p>
+          <Link to="/app" className="footer__cta">
+            Start a Pact
+          </Link>
         </div>
-        <nav aria-label="Footer" className="footer__links">
-          <a href="/#story">How it works</a>
-          <a href="/#plans">Plans</a>
-          <a href="/#faq">FAQ</a>
-          <Link to="/download">Download</Link>
-          <Link to="/app">Open the web app</Link>
-          <Link to="/terms">Terms</Link>
-          <Link to="/privacy">Privacy</Link>
-          <Link to="/refunds">Refunds</Link>
-          <Link to="/cookies">Cookies</Link>
-          <button type="button" onClick={openCookieSettings}>
-            Cookie settings
-          </button>
+        <nav aria-label="Footer" className="footer__cols">
+          <div className="footer__col">
+            <p className="footer__head">Explore</p>
+            <a href="/#moments">Moments</a>
+            <a href="/#story">How it works</a>
+            <a href="/#faq">FAQ</a>
+            <Link to="/download">Download</Link>
+            <Link to="/app">Open the web app</Link>
+          </div>
+          <div className="footer__col">
+            <p className="footer__head">Legal</p>
+            <Link to="/terms">Terms</Link>
+            <Link to="/privacy">Privacy</Link>
+            <Link to="/refunds">Refunds</Link>
+            <Link to="/cookies">Cookies</Link>
+            <button type="button" onClick={openCookieSettings}>
+              Cookie settings
+            </button>
+          </div>
         </nav>
         <p className="footer__note">
           PACT is not a bank. Before real money moves, balances will be held with a licensed banking or payment partner.

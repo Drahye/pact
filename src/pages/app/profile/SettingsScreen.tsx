@@ -66,7 +66,7 @@ export function SettingsScreen() {
 
   return (
     <Screen className="settings xhero xhero--lite tint--lilac" topBar={<TopBar tone="transparent" backTo="/app/profile" title="Settings" collapse />}>
-      <PageHero tint="lilac" title="Settings" />
+      <PageHero tint="lilac" title="Settings" subtitle="Make PACT feel like yours." />
 
       <SettingsGroup id="st-account" title="Account">
         <SettingsRow to="/app/profile/account" icon={<UserRound />} title="Account and sign-in" sub={ways || 'How you sign in'} />

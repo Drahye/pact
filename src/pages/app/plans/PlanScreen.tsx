@@ -9,6 +9,8 @@ import { useAddTask, useDeleteTask, useHandOverPlan, useLinkAsk, usePatchTask, u
 import { PlanSkeleton } from '../../../components/app/DetailSkeletons';
 import { ErrorState, Notice } from '../../../components/app/States';
 import { statusLabel } from '../../../components/plan/PlanBits';
+import { Burst } from '../../../components/pact/Burst';
+import { coverOf } from '../../../lib/covers';
 import { ActivityRow, Hero, PlanDecisions, PlanHero, RsvpTrack, Sheet } from '../../../components/objects';
 import { AmountInput } from '../../../components/ui/AmountInput';
 import { Avatar } from '../../../components/ui/Avatar';
@@ -79,6 +81,10 @@ function activityText(a: PlanDTO['activity'][number], who: string, me: boolean) 
 }
 
 /** One plan, for the Circle's members: the answer first (are you in?), then what's known, what's to do, who is coming. */
+/** What a friend would say back when you answer: warm for yes, easy for maybe and no. */
+const rsvpLine = (answer: string, going: number) =>
+  answer === 'in' ? (going > 1 ? `You’re in. ${going} going now.` : 'You’re in. You’re the first.') : answer === 'maybe' ? 'Noted. We’ll keep a place for you.' : 'Thanks for telling us. We’ll miss you.';
+
 export function PlanScreen() {
   const { id = '' } = useParams();
   const [params] = useSearchParams();
@@ -100,6 +106,7 @@ export function PlanScreen() {
   const rsvpOpen = useSetRsvpOpen(id);
   const circleAsks = useCircleAsks(plan.data?.circleId);
   const [sheet, setSheet] = useState<Sheet>(null);
+  const [celebrate, setCelebrate] = useState(false);
   const [task, setTask] = useState('');
   const [ask, setAsk] = useState<{ body: Record<string, unknown>; message: string } | null>(null);
   const [draft, setDraft] = useState({ title: '', date: '', endDate: '', location: '', budget: 0 });
@@ -183,7 +190,7 @@ export function PlanScreen() {
         />
       }
     >
-      <Hero tint={p.pactId ? 'mint' : 'sun'} className="xh--plan">
+      <Hero tint={p.pactId ? 'mint' : 'sun'} photo={coverOf({ category: p.category, id: p.id })} className="xh--plan">
         <PlanHero
           title={p.title}
           date={p.date}
@@ -214,7 +221,23 @@ export function PlanScreen() {
           </Link>
         )}
 
-        {live && canAnswer && !p.pactId && p.status !== 'done' && <RsvpTrack value={p.mine ?? null} onChange={(a) => void act(() => rsvp.mutateAsync(a))} disabled={rsvp.isPending} />}
+        {live && canAnswer && !p.pactId && p.status !== 'done' && (
+          <div className="od-rsvp">
+            {celebrate && <Burst />}
+            <RsvpTrack
+              value={p.mine ?? null}
+              onChange={(a) =>
+                void act(() => rsvp.mutateAsync(a), rsvpLine(a, p.counts.in + (p.mine === 'in' ? 0 : 1))).then((ok) => {
+                  if (ok && a === 'in') {
+                    setCelebrate(true);
+                    window.setTimeout(() => setCelebrate(false), 1400);
+                  }
+                })
+              }
+              disabled={rsvp.isPending}
+            />
+          </div>
+        )}
         {p.asks.length > 0 && (
           <PlanDecisions decisions={p.asks.map((a) => ({ id: a.id, question: a.title, leading: a.status === 'closed' ? a.headline : a.responseCount ? a.headline : undefined, to: `/app/asks/${a.id}?from=circle`, mine: a.answered || a.status === 'closed' }))} />
         )}

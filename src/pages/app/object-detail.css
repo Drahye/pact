@@ -149,3 +149,7 @@
   outline: 3px solid var(--color-focus);
   outline-offset: -2px;
 }
+
+/* Where a small celebration lands: the answer buttons, and the "all settled" mark. */
+.od-rsvp,
+.od-split__done { position: relative; }

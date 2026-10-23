@@ -19,6 +19,10 @@ import '../object-detail.css';
 type Sheet = null | 'menu' | 'close' | 'reset';
 
 /** A question inside a Circle, for its members. */
+/** What comes back when you answer: how many have, and a warm word when that is everyone. */
+const thanks = (a: { type: string; memberCount: number }, answered: number) =>
+  answered >= a.memberCount ? 'That is everyone. The answer is in.' : a.type === 'attendance' ? `Noted, thank you. ${answered} of ${a.memberCount} have answered.` : `Your vote is in. ${answered} of ${a.memberCount} have answered.`;
+
 export function AskScreen() {
   const { id = '' } = useParams();
   const [params] = useSearchParams();
@@ -87,7 +91,7 @@ export function AskScreen() {
       {justCreated && a.status === 'open' && (
         <Notice tone="accent">Your question is live. Share it so people can answer.</Notice>
       )}
-      <AskView ask={a} meId={user?.id} busy={respond.isPending} onPick={(x) => act(() => respond.mutateAsync(x))} />
+      <AskView ask={a} meId={user?.id} busy={respond.isPending} onPick={(x) => act(() => respond.mutateAsync(x), thanks(a, a.responseCount + (a.answered ? 0 : 1)))} />
 
       <Modal open={sheet === 'menu'} onClose={() => setSheet(null)} title="This question">
         <div className="menu">

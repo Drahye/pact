@@ -27,6 +27,8 @@ import { getUser } from '../../data/users';
 import { formatNaira } from '../../lib/format';
 import { colorOf, joinedMembers, sharesOf, summarize } from '../../lib/pact';
 import { ease, spring } from '../../tokens/tokens';
+import { Burst } from '../../components/pact/Burst';
+import { coverOf } from '../../lib/covers';
 import { Screen } from './Screen';
 import './completed.css';
 import { useStartPactPath } from '../../lib/startPact';
@@ -97,6 +99,7 @@ export function CompletedScreen({ pact, activity = [] }: { pact: Pact; activity?
       <div className="completed__hero">
         <div className="completed__ring">
           {!reduce && <span className="completed__halo" aria-hidden />}
+          <Burst />
           <SegmentedRing shares={sharesOf(pact)} target={pact.target} size={168} stroke={16} delay={0.2} label="How the group funded this Pact">
             <motion.span
               className="completed__check"
@@ -131,6 +134,10 @@ export function CompletedScreen({ pact, activity = [] }: { pact: Pact; activity?
         </motion.div>
       </div>
 
+      <figure className="completed__polaroid">
+        <img src={coverOf(pact.category)} alt="" loading="lazy" decoding="async" />
+        <figcaption>{pact.title}</figcaption>
+      </figure>
       <span className="completed__float completed__float--a" aria-hidden />
       <span className="completed__float completed__float--b" aria-hidden />
       <span className="completed__float completed__float--c" aria-hidden />

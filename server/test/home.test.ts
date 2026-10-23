@@ -222,6 +222,7 @@ describe('Home', () => {
     assert.equal(p.detail.kind, 'plan');
     assert.deepEqual([p.detail.date, p.detail.endDate, p.detail.location], [day(9), day(10), 'Landmark']);
     assert.ok(p.detail.goingIds.includes(cleo.user.id), 'faces of those who are in');
+    assert.equal(typeof p.detail.category, 'string', 'the kind of plan, so the app can show its photograph');
 
     const sp = (await t.call('POST', `/circles/${circleId}/splits`, tok(ana), { title: 'Taxi', total: 30_000_00, participants: [{ userId: ana.user.id }, { userId: ben.user.id }, { userId: cleo.user.id }] })).body.data;
     const owe = (await home(ben)).needsYou.find((n: { sourceId: string }) => n.sourceId === sp.id);

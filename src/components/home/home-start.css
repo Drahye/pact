@@ -103,3 +103,63 @@
   outline-offset: 2px;
   border-radius: 12px;
 }
+
+/* Moments to start with: photographs, so the first thing Home offers is the people and the occasion, not a form. */
+.hm-start__moments {
+  display: flex;
+  gap: var(--space-3);
+  margin: var(--space-5) calc(var(--space-5) * -1) 0;
+  padding: 0 var(--space-5) var(--space-2);
+  overflow-x: auto;
+  list-style: none;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+}
+
+.hm-start__moments::-webkit-scrollbar { display: none; }
+
+.hm-moment {
+  position: relative;
+  display: block;
+  flex: 0 0 auto;
+  width: 148px;
+  aspect-ratio: 3 / 4;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: var(--radius-xl);
+  background: var(--forest-900);
+  scroll-snap-align: start;
+  cursor: pointer;
+  transition: transform var(--duration-fast) var(--ease-press);
+}
+
+.hm-moment:active { transform: scale(0.97); }
+
+.hm-moment img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.hm-moment::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 45%, color-mix(in srgb, var(--forest-900) 88%, transparent) 100%);
+}
+
+.hm-moment span {
+  position: absolute;
+  z-index: 1;
+  left: var(--space-3);
+  right: var(--space-3);
+  bottom: var(--space-3);
+  color: var(--white);
+  font-size: var(--t-lead-size);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-snug);
+  text-align: left;
+}

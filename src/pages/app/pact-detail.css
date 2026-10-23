@@ -135,3 +135,16 @@
 .od-pact__facts b {
   font-weight: var(--weight-semibold);
 }
+
+/* Who is in, in a sentence: the faces and what they have done, under the title. */
+.od-pact__circle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin: 0;
+  font-size: var(--t-support-size);
+  line-height: var(--t-support-line);
+}
+
+.od-pact__circle > span:last-child { min-width: 0; }
+.detail__ring { position: relative; }

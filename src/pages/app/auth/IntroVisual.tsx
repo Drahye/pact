@@ -18,7 +18,7 @@ export function IntroVisual() {
         <span className="intro-obj__kicker">
           <CalendarClock /> Plan
         </span>
-        <strong>Ghana in December ✨</strong>
+        <strong>Calabar in December ✨</strong>
         <span className="intro-obj__meta">Oct 3 to Dec 20 · 4 in</span>
         <span className="intro-obj__people">
           {people.map((p) => (
@@ -43,7 +43,7 @@ export function IntroVisual() {
         <span className="intro-obj__kicker">
           <Receipt /> Split
         </span>
-        <strong>Dinner, settled</strong>
+        <strong>Owambe, settled</strong>
         <span className="intro-obj__meta">Everyone’s in</span>
       </div>
     </div>

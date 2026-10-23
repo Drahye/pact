@@ -17,7 +17,7 @@ import type { PactCategory } from '../../data/types';
 import { getUser } from '../../data/users';
 import { addDaysIso, isoDay } from '../../lib/dates';
 import { clearDraft, pushRecent, readDraft, readRecents, useSaveDraft } from '../../lib/drafts';
-import { daysUntil, formatDate, formatDaysLeft, formatNaira, joinNames, parseAmount, formatAmountInput, toKobo } from '../../lib/format';
+import { daysUntil, formatDate, formatDaysLeft, formatNaira, formatNairaCompact, joinNames, parseAmount, formatAmountInput, toKobo } from '../../lib/format';
 import { PACT_TYPES, TEMPLATES } from '../../../shared/templates';
 import { inferCategory } from '../../lib/pact';
 import { CreateShell } from '../../components/create/CreateShell';
@@ -284,11 +284,15 @@ export function CreatePactScreen() {
     when: mode === 'orders' ? 'Items people can order, and the date they pay by.' : 'A rough number is fine, and the day it needs to be ready.',
     review: 'Check it over. Nothing is created until you say so.',
   }[step];
+  // The date people usually pick for this kind of Pact comes first, then the plain ones.
+  const usualDays = template.days;
+  const usualLabel = usualDays < 28 ? (usualDays % 7 === 0 ? `In ${usualDays / 7} weeks` : `In ${usualDays} days`) : usualDays < 45 ? 'In a month' : `In ${Math.round(usualDays / 30)} months`;
   const deadlineQuick = [
+    { label: usualLabel, value: addDaysIso(isoDay(new Date()), usualDays) },
     { label: 'In 1 week', value: addDaysIso(isoDay(new Date()), 7) },
     { label: 'In 2 weeks', value: addDaysIso(isoDay(new Date()), 14) },
     { label: 'In a month', value: addDaysIso(isoDay(new Date()), 30) },
-  ];
+  ].filter((q, i, all) => all.findIndex((x) => x.value === q.value) === i);
 
   return (
     <CreateShell
@@ -439,6 +443,15 @@ export function CreatePactScreen() {
         ) : mode === 'target' ? (
           <div className={`create__amount ${touched && errors.target ? 'has-error' : ''}`}>
             <AmountInput label="Target" hideLabel value={target} onChange={setTarget} placeholder="500,000" max={50_000_000} />
+            {template.goals.length > 0 && (
+              <div className="suggest" role="group" aria-label={`Usual goals for a ${template.label.toLowerCase()}`}>
+                {template.goals.map((g) => (
+                  <button key={g} type="button" className={`suggest__chip ${target === g ? 'is-on' : ''}`} aria-pressed={target === g} onClick={() => setTarget(target === g ? 0 : g)}>
+                    {formatNairaCompact(g)}
+                  </button>
+                ))}
+              </div>
+            )}
             {touched && errors.target && <p className="field__error">{errors.target}</p>}
           </div>
         ) : (

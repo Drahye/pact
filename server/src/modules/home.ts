@@ -180,8 +180,8 @@ async function addDetail(q: Queryable, userId: string, items: NeedsYouItem[]): P
   }
   if (planIds.length) {
     const [p, going] = await Promise.all([
-      q.query<{ id: string; date: string | null; end_date: string | null; location: string | null; n_in: number; n_maybe: number }>(
-        `SELECT p.id, p.date::text AS date, p.end_date::text AS end_date, p.location,
+      q.query<{ id: string; category: string; date: string | null; end_date: string | null; location: string | null; n_in: number; n_maybe: number }>(
+        `SELECT p.id, p.category, p.date::text AS date, p.end_date::text AS end_date, p.location,
                 (SELECT COUNT(*)::int FROM plan_rsvps r WHERE r.plan_id = p.id AND r.status = 'in') AS n_in,
                 (SELECT COUNT(*)::int FROM plan_rsvps r WHERE r.plan_id = p.id AND r.status = 'maybe') AS n_maybe
            FROM plans p WHERE p.id = ANY($1::uuid[])`,
@@ -192,7 +192,7 @@ async function addDetail(q: Queryable, userId: string, items: NeedsYouItem[]): P
     for (const x of p.rows) {
       const goingIds = going.rows.filter((g) => g.plan_id === x.id).map((g) => g.user_id).slice(0, 4);
       people.push(...goingIds);
-      detail.set(`plan:${x.id}`, { kind: 'plan', date: x.date, endDate: x.end_date, location: x.location, going: x.n_in, maybe: x.n_maybe, goingIds });
+      detail.set(`plan:${x.id}`, { kind: 'plan', date: x.date, endDate: x.end_date, location: x.location, going: x.n_in, maybe: x.n_maybe, goingIds, category: x.category });
     }
   }
   if (splitIds.length) {
@@ -212,8 +212,8 @@ async function addDetail(q: Queryable, userId: string, items: NeedsYouItem[]): P
     }
   }
   if (pactIds.length) {
-    const r = await q.query<{ id: string; raised: number; target: number; deadline: string }>(`SELECT id, raised_amount::float8 AS raised, target_amount::float8 AS target, deadline::text AS deadline FROM pacts WHERE id = ANY($1::uuid[])`, [pactIds]);
-    for (const x of r.rows) detail.set(`pact:${x.id}`, { kind: 'pact', raised: x.raised / 100, target: x.target / 100, percent: Math.min(100, Math.round((x.raised / Math.max(1, x.target)) * 100)), deadline: x.deadline });
+    const r = await q.query<{ id: string; category: string; raised: number; target: number; deadline: string }>(`SELECT id, category, raised_amount::float8 AS raised, target_amount::float8 AS target, deadline::text AS deadline FROM pacts WHERE id = ANY($1::uuid[])`, [pactIds]);
+    for (const x of r.rows) detail.set(`pact:${x.id}`, { kind: 'pact', raised: x.raised / 100, target: x.target / 100, percent: Math.min(100, Math.round((x.raised / Math.max(1, x.target)) * 100)), deadline: x.deadline, category: x.category });
   }
   for (const i of items) {
     const d = detail.get(`${i.objectType}:${i.sourceId}`);
@@ -261,8 +261,8 @@ async function comingUp(q: Queryable, userId: string, today: string): Promise<Co
     ),
   ]);
   const items: ComingUpItem[] = [
-    ...pl.rows.map<ComingUpItem>((p) => ({ kind: 'plan', id: p.id, title: p.title, emoji: CATEGORY_EMOJI[p.category] ?? '✨', date: p.date, endDate: p.end_date, text: `${p.n_in} in${p.n_maybe ? ` · ${p.n_maybe} maybe` : ''}`, url: `/app/plans/${p.id}?from=home` })),
-    ...pa.rows.map<ComingUpItem>((p) => ({ kind: 'pact', id: p.id, title: p.title, emoji: CATEGORY_EMOJI[p.category] ?? '✨', date: p.deadline, endDate: null, text: p.status === 'funded' ? 'Funded' : `${Math.min(100, Math.round((p.raised / Math.max(1, p.target)) * 100))}% funded`, url: `/app/pact/${p.id}` })),
+    ...pl.rows.map<ComingUpItem>((p) => ({ kind: 'plan', id: p.id, title: p.title, emoji: CATEGORY_EMOJI[p.category] ?? '✨', category: p.category, date: p.date, endDate: p.end_date, text: `${p.n_in} in${p.n_maybe ? ` · ${p.n_maybe} maybe` : ''}`, url: `/app/plans/${p.id}?from=home` })),
+    ...pa.rows.map<ComingUpItem>((p) => ({ kind: 'pact', id: p.id, title: p.title, emoji: CATEGORY_EMOJI[p.category] ?? '✨', category: p.category, date: p.deadline, endDate: null, text: p.status === 'funded' ? 'Funded' : `${Math.min(100, Math.round((p.raised / Math.max(1, p.target)) * 100))}% funded`, url: `/app/pact/${p.id}` })),
   ];
   return items.sort((a, b) => a.date.localeCompare(b.date)).slice(0, 5);
 }
@@ -372,8 +372,8 @@ async function recaps(q: Queryable, userId: string): Promise<RecapCardDTO[]> {
     ),
   ]);
   const all: RecapCardDTO[] = [
-    ...pl.rows.map<RecapCardDTO>((r) => ({ kind: 'plan', id: r.id, title: r.title, emoji: CATEGORY_EMOJI[r.category] ?? '✨', circleName: r.cname, completedAt: new Date(r.at).toISOString(), people: r.people, url: `/app/recap/plan/${r.id}` })),
-    ...pa.rows.map<RecapCardDTO>((r) => ({ kind: 'pact', id: r.id, title: r.title, emoji: CATEGORY_EMOJI[r.category] ?? '✨', circleName: r.cname, completedAt: new Date(r.at).toISOString(), people: r.people, url: `/app/recap/pact/${r.id}` })),
+    ...pl.rows.map<RecapCardDTO>((r) => ({ kind: 'plan', id: r.id, title: r.title, emoji: CATEGORY_EMOJI[r.category] ?? '✨', category: r.category, circleName: r.cname, completedAt: new Date(r.at).toISOString(), people: r.people, url: `/app/recap/plan/${r.id}` })),
+    ...pa.rows.map<RecapCardDTO>((r) => ({ kind: 'pact', id: r.id, title: r.title, emoji: CATEGORY_EMOJI[r.category] ?? '✨', category: r.category, circleName: r.cname, completedAt: new Date(r.at).toISOString(), people: r.people, url: `/app/recap/pact/${r.id}` })),
     ...sp.rows.map<RecapCardDTO>((r) => ({ kind: 'split', id: r.id, title: r.title, emoji: '🧾', circleName: r.cname, completedAt: new Date(r.at).toISOString(), people: r.people, url: `/app/recap/split/${r.id}` })),
   ];
   return all.sort((a, b) => b.completedAt.localeCompare(a.completedAt)).slice(0, 3);

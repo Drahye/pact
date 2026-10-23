@@ -220,9 +220,9 @@ export type HomeObject = 'ask' | 'plan' | 'split' | 'pact';
 /** What each kind of Needs You object shows about itself, so Home can draw it as the thing it is. Money here is in naira, ready to display. */
 export type NeedsDetail =
   | { kind: 'ask'; type: 'choice' | 'attendance'; options: { id: string; label: string; votes: number }[]; answered: number; of: number; closesAt: string | null }
-  | { kind: 'plan'; date: string | null; endDate: string | null; location: string | null; going: number; maybe: number; goingIds: string[] }
+  | { kind: 'plan'; date: string | null; endDate: string | null; location: string | null; going: number; maybe: number; goingIds: string[]; category?: string }
   | { kind: 'split'; owe: boolean; amount: number; payerId: string; payerName: string; settled: number; shares: number }
-  | { kind: 'pact'; raised: number; target: number; percent: number; deadline: string };
+  | { kind: 'pact'; raised: number; target: number; percent: number; deadline: string; category?: string };
 
 /** One thing the viewer can act on now. Several actions on the same object are one card. */
 export interface NeedsYouItem {
@@ -262,6 +262,8 @@ export interface ComingUpItem {
   id: string;
   title: string;
   emoji: string;
+  /** The kind of plan or Pact, for its photograph. */
+  category?: string;
   date: string;
   endDate: string | null;
   text: string;
@@ -282,6 +284,7 @@ export interface RecapCardDTO {
   id: string;
   title: string;
   emoji: string;
+  category?: string;
   circleName: string | null;
   completedAt: string;
   people: number;

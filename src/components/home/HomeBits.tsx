@@ -7,6 +7,7 @@ import { trackHome } from '../../api/home';
 import { formatDate } from '../../lib/format';
 import { dateRange } from '../../lib/planDates';
 import { transition } from '../../tokens/tokens';
+import { coverOf } from '../../lib/covers';
 import { peopleLine } from '../../lib/peopleLine';
 import { ActivityRow, AnimatedCount, AvatarStack, CircleTile, CompletionState, ComingUpRow, OBJECT_KINDS, ObjectArt } from '../objects';
 import { SectionHeading } from '../ui/SectionHeading';
@@ -36,7 +37,7 @@ export function NeedsYouSection({ items, total, circles = [], caughtUp }: { item
     return caughtUp ? (
       <section className="screen-section screen-section--first" aria-labelledby="needs-you-h">
         <SectionHeading id="needs-you-h" title="Needs you" />
-        <CompletionState size="sm" layout="row" title="You’re all caught up." line="Nothing is waiting on you." />
+        <CompletionState size="sm" layout="row" title="You’re all caught up." line="Nothing is waiting on you. Go plan something good." />
       </section>
     ) : null;
   const shown = all ? merged : merged.slice(0, VISIBLE);
@@ -118,7 +119,7 @@ const whenLabel = (date: string) => {
  * already holds, so it never disagrees with the list below it.
  */
 export function HomePulse({ total, next, recent = [], selfId }: { total: number; next?: ComingUpItem; recent?: RecentItem[]; selfId?: string }) {
-  const waiting = total === 0 ? 'Nothing is waiting on you.' : total === 1 ? 'One thing needs you.' : `${total} things need you.`;
+  const waiting = total === 0 ? 'You’re all caught up.' : total === 1 ? 'One thing needs you.' : `${total} things need you.`;
   const when = next ? whenLabel(next.date) : null;
   // Who has been doing things today: the people, not the events. Never you.
   const startOfDay = new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate()).getTime();
@@ -137,7 +138,7 @@ export function HomePulse({ total, next, recent = [], selfId }: { total: number;
     {active.length > 0 && (
       <p className="hv3-active">
         <AvatarStack userIds={active} total={active.length} size="sm" max={4} ring="bg" />
-        <span>{peopleLine(active, null, { names: 2 })} {active.length === 1 ? 'is' : 'are'} active today</span>
+        <span>{peopleLine(active, null, { names: 2 })} {active.length === 1 ? 'is' : 'are'} on it today</span>
       </p>
     )}
     </div>
@@ -183,6 +184,7 @@ export function ComingUpSection({ items }: { items: ComingUpItem[] }) {
                 today={when === 'Today'}
                 title={x.title}
                 emoji={x.emoji}
+                photo={coverOf(x.category)}
                 meta={`${x.kind === 'plan' && x.endDate ? `${dateRange(x.date, x.endDate)} · ` : ''}${x.text}`}
                 to={x.url}
                 onOpen={() => trackHome('coming_up_opened', { object_type: x.kind, section: 'coming_up' })}
@@ -260,6 +262,7 @@ export function MadeItHappenSection({ items, title = 'Made it happen' }: { items
         {items.map((r) => (
           <li key={`${r.kind}-${r.id}`}>
             <Link to={`${r.url}?from=home`} className="hv3-made__item" aria-label={`View recap: ${r.title}`}>
+              {r.kind !== 'split' && <img className="hv3-made__photo" src={coverOf(r.category)} alt="" aria-hidden loading="lazy" decoding="async" />}
               <CompletionState
                 layout="row"
                 announce={false}

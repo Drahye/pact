@@ -238,3 +238,43 @@
     animation: none;
   }
 }
+
+/* Behind the introduction: three moments in turn, under a green wash so the logo and the floating objects stay legible. */
+.welcome .xh--welcome { overflow: hidden; }
+
+.welcome__bgs {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+}
+
+.welcome__bgs::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--forest-900) 58%, transparent) 0%, color-mix(in srgb, var(--forest-900) 46%, transparent) 45%, color-mix(in srgb, var(--forest-900) 84%, transparent) 100%);
+}
+
+.welcome__bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: cover;
+  opacity: 0;
+  animation: welcome-slide 18s linear infinite;
+}
+
+@keyframes welcome-slide {
+  0% { opacity: 0; transform: scale(1.1); }
+  8% { opacity: 1; }
+  30% { opacity: 1; }
+  38% { opacity: 0; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .welcome__bg { animation: none; }
+  .welcome__bg:first-child { opacity: 1; transform: none; }
+}

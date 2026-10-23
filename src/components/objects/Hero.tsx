@@ -4,11 +4,14 @@ import { ObjectArt, type ArtKind } from './ObjectArt';
 
 /**
  * The top of a screen: one saturated colour (the thing's own), its title set large on it, and an object that belongs to it. The screen's
- * body then rises over it as a Sheet. Colour comes from the nearest tint class, so a Circle, a Plan, an Ask all commit to their own.
+ * body then rises over it as a Sheet. Colour comes from the nearest tint class, so a Circle, a Plan, an Ask all commit to their own. An optional photo sits
+ * under the colour, so the people the thing is about are felt before anything is read.
  */
-export function Hero({ tint, art, children, className = '' }: { tint?: CircleTint | string; art?: ArtKind; children: ReactNode; className?: string }) {
+export function Hero({ tint, art, photo, backdrop, children, className = '' }: { tint?: CircleTint | string; art?: ArtKind; photo?: string; backdrop?: ReactNode; children: ReactNode; className?: string }) {
   return (
     <header className={`xh ${tint ? `tint--${tint}` : ''} ${art ? 'xh--art' : ''} ${className}`}>
+      {photo && <img className="xh__photo" src={photo} alt="" aria-hidden loading="lazy" decoding="async" />}
+      {backdrop}
       {art && <ObjectArt kind={art} className="xh__art" />}
       <div className="xh__body">{children}</div>
     </header>

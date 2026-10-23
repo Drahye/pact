@@ -119,13 +119,13 @@ export function NotificationsScreen() {
         />
       }
     >
-      <PageHero tint="sun" title="Notifications" />
+      <PageHero tint="sun" title="Notifications" subtitle="Invitations, answers, and what needs you." />
       {notes.isLoading ? (
         <RowListSkeleton trailing={false} label="Loading notifications" />
       ) : notes.error ? (
         <ErrorState onRetry={() => notes.refetch()} />
       ) : !items.length ? (
-        <CompletionState size="sm" title="You’re all caught up." line="Invitations, answers and things that need you will show up here." />
+        <CompletionState size="sm" title="You’re all caught up." line="Nobody is waiting on you. New invitations and answers will land here." />
       ) : (
         <>
           <Section id="notes-new" title="New" items={fresh} onOpen={open} />

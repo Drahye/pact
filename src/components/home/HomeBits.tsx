@@ -7,7 +7,7 @@ import { trackHome } from '../../api/home';
 import { formatDate } from '../../lib/format';
 import { dateRange } from '../../lib/planDates';
 import { transition } from '../../tokens/tokens';
-import { coverOf } from '../../lib/covers';
+import { circleCover, coverOf } from '../../lib/covers';
 import { peopleLine } from '../../lib/peopleLine';
 import { ActivityRow, AnimatedCount, AvatarStack, CircleTile, CompletionState, ComingUpRow, OBJECT_KINDS, ObjectArt } from '../objects';
 import { SectionHeading } from '../ui/SectionHeading';
@@ -94,6 +94,7 @@ export function CirclesShelf({ circles }: { circles: HomeCircleDTO[] }) {
               live={c.signal.kind === 'needs_you'}
               alt={i % 2 === 1}
               to={`/app/circles/${c.id}`}
+              photo={circleCover(c.id)}
               onOpen={() => trackHome('circle_opened_from_home', { section: 'circles' })}
             />
           </li>

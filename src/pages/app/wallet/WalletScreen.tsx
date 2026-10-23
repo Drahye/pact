@@ -37,7 +37,7 @@ export function WalletScreen() {
 
   return (
     <Screen className="wallet xhero xhero--lite tint--sun" tabBar={<BottomNav />} topBar={<TopBar tone="transparent" leading="none" title="Wallet" collapse />}>
-      <PageHero tint="sun" title="Wallet" />
+      <PageHero tint="sun" title="Wallet" subtitle="Money that moves for the things you do together." />
       <SandboxNote />
       <WalletCard balance={wallet.data?.balance} tier={tier} />
 
@@ -97,7 +97,7 @@ export function WalletScreen() {
         ) : txns.error ? (
           <ErrorState onRetry={() => txns.refetch()} />
         ) : !items.length ? (
-          <Empty icon={<ReceiptText />} title="No transactions yet" body="Top-ups, contributions, refunds and withdrawals will show up here." />
+          <Empty icon={<ReceiptText />} title="Nothing here yet" body="When you add money, or put it into something with your people, it shows up here." />
         ) : (
           <>
             <div className="txn-list">

@@ -7,6 +7,7 @@ import { Button } from '../../../components/ui/Button';
 import { Input } from '../../../components/ui/Input';
 import { TopBar } from '../../../components/ui/TopBar';
 import { PageHero } from '../../../components/objects';
+import { coverUrl } from '../../../lib/covers';
 import { Screen } from '../Screen';
 import { pendingReturnTo, readFlow, writeFlow } from './flow';
 import { GoogleMark } from './GoogleMark';
@@ -67,6 +68,7 @@ export function AuthEntryScreen({ mode }: { mode: 'start' | 'signin' }) {
     <Screen topBar={<TopBar tone="transparent" backTo="/app/auth/welcome" />} className="auth auth--entry xhero xhero--lite tint--mint">
       <PageHero
         tint="mint"
+        photo={coverUrl(mode === 'signin' ? 'other-beach-hug' : 'wedding-aso-ebi')}
         title={handoff?.title ?? (mode === 'signin' ? 'Welcome back' : 'Let’s get you in')}
         subtitle={handoff?.line ?? (mode === 'signin' ? 'Sign in the way you did before.' : 'Pick whichever is quickest. No password to remember.')}
       />

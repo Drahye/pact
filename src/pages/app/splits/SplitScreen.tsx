@@ -1,5 +1,5 @@
 import { Ellipsis, Share2 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import type { SplitDTO, SplitShareDTO } from '../../../../shared/contracts';
 import { useAuth } from '../../../api/auth';
@@ -7,6 +7,7 @@ import { ApiError } from '../../../api/client';
 import { useCancelSplit, useHandOverSplit, useResetSplitLink, useSettleShare, useSplit } from '../../../api/splits';
 import { SplitSkeleton } from '../../../components/app/DetailSkeletons';
 import { ErrorState, Notice } from '../../../components/app/States';
+import { Burst } from '../../../components/pact/Burst';
 import { ActivityRow, CompletionState, SplitObject } from '../../../components/objects';
 import { Button } from '../../../components/ui/Button';
 import { IconButton } from '../../../components/ui/IconButton';
@@ -53,6 +54,19 @@ export function SplitScreen() {
   const from = params.get('from') === 'home' ? 'home' : params.get('from') === 'circle' ? 'circle' : undefined;
   const split = useSplit(id, from);
   const settle = useSettleShare(id);
+  // When the last share is settled while this screen is open, mark it: that is the moment nobody has to chase anyone any more.
+  const [burst, setBurst] = useState(false);
+  const prevStatus = useRef<string | undefined>(undefined);
+  const status = split.data?.status;
+  useEffect(() => {
+    const was = prevStatus.current;
+    prevStatus.current = status;
+    if (was && was !== 'settled' && status === 'settled') {
+      setBurst(true);
+      const t = window.setTimeout(() => setBurst(false), 1400);
+      return () => window.clearTimeout(t);
+    }
+  }, [status]);
   const cancel = useCancelSplit(id);
   const reset = useResetSplitLink(id);
   const handOver = useHandOverSplit(id);
@@ -110,7 +124,10 @@ export function SplitScreen() {
       <div className="od-split">
         {justCreated && s.status === 'open' && <Notice tone="accent">Your split is up. Share it so people can see their share.</Notice>}
         {s.status === 'settled' && (
-          <CompletionState tint="lilac" size="sm" title="All settled." line="Everyone is square." peopleIds={s.shares.map((x) => x.userId)} action={<Button variant="secondary" size="md" to={`/app/recap/split/${s.id}`}>View recap</Button>} />
+          <div className="od-split__done">
+          {burst && <Burst />}
+          <CompletionState tint="lilac" size="sm" title="All settled." line="Everyone is square. Nobody had to chase." peopleIds={s.shares.map((x) => x.userId)} action={<Button variant="secondary" size="md" to={`/app/recap/split/${s.id}`}>View recap</Button>} />
+          </div>
         )}
         <SplitObject
           heading
@@ -194,7 +211,7 @@ export function SplitScreen() {
               onClick={async () => {
                 if (!sheetShare) return;
                 const settled = !(typeof sheet === 'object' && sheet && 'undo' in sheet);
-                if (await act(() => settle.mutateAsync({ userId: sheetShare.userId, settled }), settled ? 'Marked settled' : 'Marked as unsettled')) close();
+                if (await act(() => settle.mutateAsync({ userId: sheetShare.userId, settled }), settled ? 'Marked settled. One less thing to chase.' : 'Marked as unsettled')) close();
               }}
             >
               {typeof sheet === 'object' && sheet && 'undo' in sheet ? 'Mark as unsettled' : 'Mark settled'}

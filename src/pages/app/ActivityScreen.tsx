@@ -15,13 +15,13 @@ export function ActivityScreen() {
   const feed = useFeed();
   return (
     <Screen className="xhero xhero--lite tint--sky" tabBar={<BottomNav />} topBar={<TopBar tone="transparent" leading="none" title="Activity" collapse />}>
-      <PageHero tint="sky" title="Activity" />
+      <PageHero tint="sky" title="Activity" subtitle="What your people have been up to." />
       {feed.isLoading ? (
         <RowListSkeleton count={7} label="Loading activity" />
       ) : feed.error ? (
         <ErrorState onRetry={() => feed.refetch()} />
       ) : !feed.data?.length ? (
-        <EmptyState kind="circle" title="Quiet for now." body="When your people start moving, you’ll see it here." />
+        <EmptyState kind="circle" title="Quiet for now." body="When your people start moving, who joined, who paid and who said yes, you’ll see it here." />
       ) : (
         <RecentList items={feed.data} />
       )}

@@ -10,6 +10,7 @@ import { TopBar } from '../../../components/ui/TopBar';
 import { deviceMemory } from '../../../lib/drafts';
 import { OTPInput } from '../../../components/objects';
 import { PageHero } from '../../../components/objects';
+import { coverUrl } from '../../../lib/covers';
 import { Screen } from '../Screen';
 import { clearFlow, readFlow, safeAppPath, setReturnTo, writeFlow } from './flow';
 import './auth.css';
@@ -62,7 +63,7 @@ export function PhoneScreen() {
       }
       className="auth xhero xhero--lite tint--mint"
     >
-      <PageHero tint="mint" title="What’s your number?" subtitle={<>We’ll text you a code. It’s how you sign in and how friends find you.</>} />
+      <PageHero tint="mint" photo={coverUrl('trip-group-car')} title="What’s your number?" subtitle={<>We’ll text you a code. It’s how you sign in and how friends find you.</>} />
       <form id="phone-form" className="auth__form" onSubmit={submit} noValidate>
         <div className={`phone-field ${error ? 'has-error' : ''}`}>
           <label className="field__label" htmlFor="phone">
@@ -201,7 +202,7 @@ export function CodeScreen() {
 
   return (
     <Screen topBar={<TopBar tone="transparent" backTo="/app/auth/phone" />} className="auth xhero xhero--lite tint--mint">
-      <PageHero tint="mint" title="Enter the code" subtitle={<>Sent to <strong className="num">{flow.displayPhone}</strong>. It expires in 5 minutes.</>} />
+      <PageHero tint="mint" photo={coverUrl('gift-open')} title="Enter the code" subtitle={<>Sent to <strong className="num">{flow.displayPhone}</strong>. It expires in 5 minutes.</>} />
 
       <OTPInput ref={input} id="otp" value={code} onChange={onChange} busy={busy} error={!!error} />
       {error && <p className="field__error auth__error">{error}</p>}
@@ -306,7 +307,7 @@ export function ProfileSetupScreen() {
       }
       className="auth xhero xhero--lite tint--mint"
     >
-      <PageHero tint="mint" title="Nice to meet you" subtitle={<>What should your people call you?</>} />
+      <PageHero tint="mint" photo={coverUrl('other-park')} title="Nice to meet you" subtitle={<>What should your people call you? They will see this when you join something together.</>} />
       <form id="profile-form" className="auth__form" onSubmit={submit} noValidate>
         <Input label="First name" value={first} onChange={(e) => setFirst(e.target.value)} autoComplete="given-name" maxLength={40} error={touched ? errors.first : undefined} autoFocus />
         <Input label="Last name" value={last} onChange={(e) => setLast(e.target.value)} autoComplete="family-name" maxLength={40} error={touched ? errors.last : undefined} />

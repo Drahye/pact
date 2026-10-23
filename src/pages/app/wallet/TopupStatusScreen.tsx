@@ -102,7 +102,7 @@ export function TopupStatusScreen() {
         >
           {ok ? <Check strokeWidth={3} /> : <X strokeWidth={3} />}
         </motion.span>
-        <h1 className="large-title">{ok ? (t.pactId ? 'You’re in.' : 'Money added') : 'Payment didn’t go through'}</h1>
+        <h1 className="large-title">{ok ? (t.pactId ? 'You came through.' : 'Money added') : 'Payment didn’t go through'}</h1>
         <p className="screen-lede">
           {ok ? (
             t.pactId ? (
@@ -111,7 +111,7 @@ export function TopupStatusScreen() {
               </>
             ) : (
               <>
-                <strong className="num">{formatNairaKobo(t.amount)}</strong> is in your wallet.
+                <strong className="num">{formatNairaKobo(t.amount)}</strong> is in your wallet. Go make something happen.
               </>
             )
           ) : (

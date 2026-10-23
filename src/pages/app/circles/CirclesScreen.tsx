@@ -2,6 +2,8 @@ import { Plus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useCircles } from '../../../api/circles';
 import { ErrorState } from '../../../components/app/States';
+import { circleCover } from '../../../lib/covers';
+import { MomentTiles } from '../../../components/home/MomentTiles';
 import { CircleTile, EmptyState, PageHero } from '../../../components/objects';
 import { PactListSkeleton } from '../../../components/app/Skeleton';
 import { BottomNav } from '../../../components/ui/BottomNav';
@@ -14,6 +16,14 @@ import '../../../components/circle/circle.css';
 const people = (n: number) => `${n} ${n === 1 ? 'person' : 'people'}`;
 
 /** The groups someone makes things happen with. */
+/** The kinds of people people keep together, as photographs: each one leads into starting a Circle. */
+const CIRCLE_KINDS = [
+  { key: 'dinner-women', label: 'The family' },
+  { key: 'trip-group-car', label: 'The crew' },
+  { key: 'event-graduates', label: 'Class of 2016' },
+  { key: 'other-park', label: 'Your people' },
+];
+
 export function CirclesScreen() {
   const circles = useCircles();
   const items = circles.data ?? [];
@@ -29,6 +39,7 @@ export function CirclesScreen() {
       ) : circles.error ? (
         <ErrorState onRetry={() => circles.refetch()} />
       ) : !items.length ? (
+        <>
         <EmptyState
           kind="circle"
           title="Start with the people you already plan with."
@@ -39,12 +50,14 @@ export function CirclesScreen() {
             </Button>
           }
         />
+        <MomentTiles to="/app/circles/new" items={CIRCLE_KINDS} />
+        </>
       ) : (
         <>
           <ul className="ch-tiles" aria-label="Your Circles">
             {items.map((c, i) => (
               <li key={c.id}>
-                <CircleTile name={c.name} emoji={c.emoji} tint={c.tint} peopleIds={c.memberIds} total={c.memberCount} signal={c.live ? c.live.text : people(c.memberCount)} live={!!c.live?.needsYou} alt={i % 2 === 1} to={`/app/circles/${c.id}`} />
+                <CircleTile name={c.name} emoji={c.emoji} tint={c.tint} peopleIds={c.memberIds} total={c.memberCount} signal={c.live ? c.live.text : people(c.memberCount)} live={!!c.live?.needsYou} alt={i % 2 === 1} to={`/app/circles/${c.id}`} photo={circleCover(c.id)} />
               </li>
             ))}
             <li>

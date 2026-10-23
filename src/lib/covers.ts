@@ -52,6 +52,10 @@ export const defaultCover = (category?: string | null, seed = ''): Cover => {
   return list[hash(seed) % list.length];
 };
 
+/** A Circle has no occasion of its own, so it wears one of the photographs of people simply together, chosen by its id. */
+const CIRCLE_POOL = ['other-park', 'other-beach-hug', 'dinner-women', 'event-dance', 'trip-group-car', 'gift-laugh'];
+export const circleCover = (id: string) => coverUrl(CIRCLE_POOL[hash(id) % CIRCLE_POOL.length]);
+
 export const coverUrl = (key: string) => `/covers/${key}.jpg`;
 
 /** The photograph to show: the one chosen for it, or the default for its kind. */

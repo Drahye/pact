@@ -14,6 +14,7 @@ import { Bone } from '../../../components/app/Skeleton';
 import { CircleSkeleton } from '../../../components/app/DetailSkeletons';
 import { CircleAsk, CirclePact, CirclePlan, CircleSplit } from '../../../components/circle/CircleObjects';
 import { EmojiPicker, TintPicker } from '../../../components/circle/IdentityPicker';
+import { circleCover } from '../../../lib/covers';
 import { ActivityRow, AvatarStack, ComingUpRow, Hero, Sheet, StatusIndicator } from '../../../components/objects';
 import { useCreateSheet } from '../../../components/create/CreateSheet';
 import { Avatar } from '../../../components/ui/Avatar';
@@ -154,7 +155,7 @@ export function CircleScreen() {
         />
       }
     >
-      <Hero tint={c.tint} className="xh--circle">
+      <Hero tint={c.tint} photo={circleCover(c.id)} className="xh--circle">
         <span className="xh__emoji" aria-hidden>
           {c.emoji}
         </span>

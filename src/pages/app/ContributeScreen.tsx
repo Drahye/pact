@@ -2,7 +2,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { Check, CreditCard, LockKeyhole, Wallet } from 'lucide-react';
 import { useAuth } from '../../api/auth';
 import { newIdempotencyKey } from '../../api/client';
-import { useContribute, usePact, useWallet } from '../../api/hooks';
+import { useContribute, useCover, usePact, useWallet } from '../../api/hooks';
 import { PinSheet } from '../../components/app/PinSheet';
 import { AmountSkeleton } from '../../components/app/Skeleton';
 import { SegmentedBar } from '../../components/pact/SegmentedBar';
@@ -22,7 +22,6 @@ import { sharesOf, summarize } from '../../lib/pact';
 import { ease, spring } from '../../tokens/tokens';
 import { PageHero } from '../../components/objects';
 import { Burst } from '../../components/pact/Burst';
-import { coverOf } from '../../lib/covers';
 import { circleLine, milestoneLine } from '../../lib/warmth';
 import { Screen } from './Screen';
 import './contribute.css';
@@ -40,6 +39,7 @@ export function ContributeScreen() {
   const navigate = useNavigate();
   const reduce = useReducedMotion();
   const pact = q.data?.pact;
+  const cover = useCover(pact ?? {});
   const [params] = useSearchParams();
   // "Cover the rest" and "Add your share" arrive with an amount.
   // A typed amount is remembered unless the link brought one.
@@ -210,7 +210,7 @@ export function ContributeScreen() {
       }
       className="contribute xhero xhero--lite tint--mint"
     >
-      <PageHero tint="mint" title={`Add to ${pact.title}`} photo={coverOf(pact)} subtitle={circleLine(pact, user?.id ?? '')?.text ?? 'Everyone in the Pact sees it.'} />
+      <PageHero tint="mint" title={`Add to ${pact.title}`} photo={cover} subtitle={circleLine(pact, user?.id ?? '')?.text ?? 'Everyone in the Pact sees it.'} />
 
       <div className="contribute__status">
         <div className="contribute__status-row">

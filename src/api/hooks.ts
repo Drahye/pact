@@ -22,6 +22,7 @@ import type {
 } from '../../shared/contracts';
 import { useAuth } from './auth';
 import { api, fetchPhoto, newIdempotencyKey, uploadPhoto } from './client';
+import { coverOf, isUploadKey } from '../lib/covers';
 import { register, toActivity, toPact, toThread } from './mappers';
 
 export const keys = {
@@ -258,6 +259,10 @@ export function usePactCommand(pactId: string) {
     accept: useMutation({ mutationFn: () => api<PactDetail>('POST', `/pacts/${pactId}/accept`, {}), onSuccess: (r) => (setPact(r), (qc.invalidateQueries({ queryKey: keys.pacts }), qc.invalidateQueries({ queryKey: ['home'] }))) }),
     leave: useMutation({ mutationFn: () => api('POST', `/pacts/${pactId}/leave`, {}), onSuccess: () => (qc.invalidateQueries({ queryKey: keys.pacts }), qc.invalidateQueries({ queryKey: ['home'] })) }),
     nudge: useMutation({ mutationFn: () => api<{ reminded: number }>('POST', `/pacts/${pactId}/nudge`, {}) }),
+    coverPhoto: useMutation({
+      mutationFn: (file: File) => uploadPhoto<PactDetail>(`/pacts/${pactId}/cover-photo`, file),
+      onSuccess: (r) => (setPact(r), qc.invalidateQueries({ queryKey: keys.pacts }), qc.invalidateQueries({ queryKey: ['home'] })),
+    }),
     cover: useMutation({
       mutationFn: (cover: string | null) => api<PactDetail>('PUT', `/pacts/${pactId}/cover`, { cover }),
       onSuccess: (r) => (setPact(r), qc.invalidateQueries({ queryKey: keys.pacts }), qc.invalidateQueries({ queryKey: ['home'] })),
@@ -429,6 +434,22 @@ export function useReceipt(pactId: string, payoutId: string | null, enabled: boo
     staleTime: Infinity,
     queryFn: async () => URL.createObjectURL(await fetchPhoto(`/pacts/${pactId}/payouts/${payoutId}/receipt`)),
   });
+}
+
+/**
+ * The cover to show for a Pact, Plan or Circle: a library photograph straight away, or an organiser's own upload once it has been fetched with the
+ * session (the default for its kind in the meantime, and for anyone who cannot see it).
+ */
+export function useCover(item: { category?: string | null; cover?: string | null; id?: string }) {
+  const upload = isUploadKey(item.cover) && !!item.id;
+  const q = useQuery({
+    queryKey: ['cover', item.id, item.cover],
+    enabled: upload,
+    staleTime: Infinity,
+    retry: false,
+    queryFn: async () => URL.createObjectURL(await fetchPhoto(`/pacts/${item.id}/cover-photo`)),
+  });
+  return (upload && q.data) || coverOf(item);
 }
 
 /** Photos are private: fetched with the session and shown from a local object URL. */

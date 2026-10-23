@@ -4,10 +4,9 @@ import { useState } from 'react';
 import { Navigate, useLocation, useParams } from 'react-router-dom';
 import { useAuth } from '../../api/auth';
 import { ApiError } from '../../api/client';
-import { usePact, usePactCommand } from '../../api/hooks';
+import { useCover, usePact, usePactCommand } from '../../api/hooks';
 import { FormSkeleton } from '../../components/app/Skeleton';
 import { Burst } from '../../components/pact/Burst';
-import { coverOf } from '../../lib/covers';
 import { joinedLine, useWelcomeJoiners } from '../../lib/useWelcome';
 import { Avatar } from '../../components/ui/Avatar';
 import { Button } from '../../components/ui/Button';
@@ -30,6 +29,7 @@ export function InviteScreen() {
   const phoneInvites = !!config?.auth?.phone;
   const q = usePact(id);
   const cmd = usePactCommand(id);
+  const cover = useCover(q.data?.pact ?? {});
   const toast = useToast();
   // Arriving straight from creating the Pact: this is the next step of setup, not an optional extra.
   const justCreated = !!(useLocation().state as { created?: boolean } | null)?.created;
@@ -105,10 +105,10 @@ export function InviteScreen() {
           <Check aria-hidden /> Your Pact is ready.
         </p>
       )}
-      <PageHero tint="mint" photo={coverOf(pact)} title={justCreated ? 'Now bring your people in.' : 'Bring your people in.'} subtitle={<>{justCreated ? 'Share the link in your group chat. Anyone with it can see what the Pact is for and join.' : 'Anyone with this link can see what the Pact is for and join it.'}</>} />
+      <PageHero tint="mint" photo={cover} title={justCreated ? 'Now bring your people in.' : 'Bring your people in.'} subtitle={<>{justCreated ? 'Share the link in your group chat. Anyone with it can see what the Pact is for and join.' : 'Anyone with this link can see what the Pact is for and join it.'}</>} />
 
       <div className="invite__card">
-        <img className="invite__cover" src={coverOf(pact)} alt="" loading="lazy" decoding="async" />
+        <img className="invite__cover" src={cover} alt="" loading="lazy" decoding="async" />
         <div>
           <p className="invite__card-title">{pact.title}</p>
           <p className="invite__card-meta num">

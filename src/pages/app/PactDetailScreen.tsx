@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../api/auth';
 import { ApiError } from '../../api/client';
-import { usePactAction, usePactCommand, usePactPlan } from '../../api/hooks';
+import { useCover, usePactAction, usePactCommand, usePactPlan } from '../../api/hooks';
 import { PinSheet } from '../../components/app/PinSheet';
 import { Notice } from '../../components/app/States';
 import { AnimatedNumber } from '../../components/pact/AnimatedNumber';
@@ -14,7 +14,6 @@ import { useFitText } from '../../lib/useFitText';
 import { Burst } from '../../components/pact/Burst';
 import { CoverSheet } from '../../components/pact/CoverSheet';
 import { AvatarStack } from '../../components/objects';
-import { coverOf } from '../../lib/covers';
 import { circleLine, milestoneLine } from '../../lib/warmth';
 import { joinedLine, useWelcomeJoiners } from '../../lib/useWelcome';
 import { SegmentedRing } from '../../components/pact/SegmentedRing';
@@ -82,6 +81,7 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
   const [completeOpen, setCompleteOpen] = useState(false);
   const [burst, setBurst] = useState(false);
   const [coverOpen, setCoverOpen] = useState(false);
+  const cover = useCover(pact);
   // A notification or push for a comment, update or pin opens straight onto its thread (?thread=<activity id>).
   const [search, setSearch] = useSearchParams();
   const [threadId, setThreadId] = useState<string | null>(search.get('thread'));
@@ -249,7 +249,7 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
       }
       className={`detail xhero tint--${categoryMeta[pact.category].tint}`}
     >
-      <Hero tint={categoryMeta[pact.category].tint} photo={coverOf(pact)} className="xh--pact od-pact__hero">
+      <Hero tint={categoryMeta[pact.category].tint} photo={cover} className="xh--pact od-pact__hero">
         <p className="od-pact__kicker">
           <CategoryChip category={pact.category} suffix={`by ${organizer}`} />
           {!executing && active && <span className="od-pact__due num">{s.daysLeft === 0 ? 'Due today' : `${s.daysLeft} ${s.daysLeft === 1 ? 'day' : 'days'} left`}</span>}
@@ -608,7 +608,8 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
         onClose={() => setCoverOpen(false)}
         category={pact.category}
         current={pact.cover}
-        busy={cmd.cover.isPending}
+        busy={cmd.cover.isPending || cmd.coverPhoto.isPending}
+        onUpload={(file) => void run(() => cmd.coverPhoto.mutateAsync(file).then(() => setCoverOpen(false)), 'Cover changed')}
         onPick={(key) => void run(() => cmd.cover.mutateAsync(key).then(() => setCoverOpen(false)), key ? 'Cover changed' : 'Back to the usual cover')}
       />
       <ParticipationSheet pact={pact} open={participationOpen} onClose={() => setParticipationOpen(false)} current={mine?.participation ?? null} />

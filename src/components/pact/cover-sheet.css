@@ -66,3 +66,23 @@
 }
 
 .cover-grid__item i svg { width: 14px; height: 14px; }
+
+.cover-upload {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  margin-bottom: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 0;
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: inset 0 0 0 1px var(--color-border);
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.cover-upload svg { flex: 0 0 auto; width: 22px; height: 22px; }
+.cover-upload strong { display: block; font-weight: var(--weight-semibold); }
+.cover-upload small { display: block; font-size: var(--t-support-size); color: var(--color-text-secondary); }

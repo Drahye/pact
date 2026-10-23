@@ -8,7 +8,7 @@ import { useRsvp } from '../../api/plans';
 import { daysUntil } from '../../lib/format';
 import { AskObject, OBJECT_KINDS, PactObject, PlanObject, SplitObject } from '../objects';
 import { useAuth } from '../../api/auth';
-import { coverOf } from '../../lib/covers';
+import { useCover } from '../../api/hooks';
 import { gaveLine } from '../../lib/warmth';
 import './needs-objects.css';
 
@@ -143,6 +143,7 @@ function SplitNeed({ n, d }: Common & { d: Extract<NeedsDetail, { kind: 'split' 
 function PactNeed({ n, d }: Common & { d: Extract<NeedsDetail, { kind: 'pact' }> }) {
   const { user } = useAuth();
   const selfId = user?.id;
+  const cover = useCover({ category: d.category, cover: d.cover, id: n.sourceId });
   const task = n.type === 'pact_task' || n.type === 'plan_task';
   const { lead, main } = splitContext(n.context);
   return (
@@ -154,7 +155,7 @@ function PactNeed({ n, d }: Common & { d: Extract<NeedsDetail, { kind: 'pact' }>
       target={d.target}
       daysLeft={daysUntil(d.deadline)}
       circleName={n.circle?.name}
-      photo={coverOf({ category: d.category, cover: d.cover, id: n.sourceId })}
+      photo={cover}
       gave={d.contributorIds?.length ? { ids: d.contributorIds, text: gaveLine(d.contributorIds, selfId) ?? '' } : null}
       assignment={task ? { label: main, assigneeId: '', lead } : undefined}
       need={task ? undefined : n.context.replace(/\.$/, '')}

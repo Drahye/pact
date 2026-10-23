@@ -64,6 +64,9 @@ const itemLine = z.object({
   stock: z.number().int().min(1).max(10_000).nullable().optional(),
 });
 
+/** A cover photograph from the library, by key. Never a URL, and never an upload marker: those are only set by the server. */
+const coverKey = z.string().regex(/^[a-z0-9-]{3,40}$/).refine((k) => !k.startsWith('upload'), 'Choose a photograph from the list.');
+
 export const CreatePactBody = z
   .object({
     title: text(1, 60),
@@ -86,7 +89,7 @@ export const CreatePactBody = z
     /** Optional: the Plan this Pact is made from. The server checks it is theirs and still free. */
     planId: z.string().uuid().optional(),
     /** Optional: a cover photograph from the library, by key. */
-    cover: z.string().regex(/^[a-z0-9-]{3,40}$/).optional(),
+    cover: coverKey.optional(),
   })
   .refine((b) => b.mode === 'orders' || b.budget.length > 0 || b.target !== undefined, { message: 'Set a target or add what the money covers.', path: ['target'] })
   .refine((b) => b.mode !== 'orders' || b.items.length > 0, { message: 'Add at least one item people can order.', path: ['items'] });
@@ -151,7 +154,7 @@ const emoji = z
   .max(16)
   .refine((v) => /[\p{Extended_Pictographic}\p{Regional_Indicator}]/u.test(v) && !/[A-Za-z0-9<>]/.test(v), 'Pick an emoji.');
 export const CreateCircleBody = z.object({ name: text(1, 40), emoji, tint: z.enum(CIRCLE_TINTS).default('mint') });
-export const UpdateCircleBody = z.object({ name: text(1, 40).optional(), emoji: emoji.optional(), tint: z.enum(CIRCLE_TINTS).optional(), cover: z.string().regex(/^[a-z0-9-]{3,40}$/).nullable().optional() }).refine((b) => Object.keys(b).length > 0, 'Nothing to change.');
+export const UpdateCircleBody = z.object({ name: text(1, 40).optional(), emoji: emoji.optional(), tint: z.enum(CIRCLE_TINTS).optional(), cover: coverKey.nullable().optional() }).refine((b) => Object.keys(b).length > 0, 'Nothing to change.');
 
 /* ---- Ask the group */
 export const ASK_TYPES = ['choice', 'attendance'] as const;
@@ -203,7 +206,7 @@ export const UpdatePlanBody = z
     location: optText(80),
     roughBudget: kobo(0).nullable().optional(),
     /** A cover photograph from the library, by key, or null for the default. */
-    cover: z.string().regex(/^[a-z0-9-]{3,40}$/).nullable().optional(),
+    cover: coverKey.nullable().optional(),
     /** Set once the organiser has agreed to a change that affects people who have already answered. */
     confirm: z.boolean().optional(),
   })
@@ -354,7 +357,7 @@ export const SplitSharedBody = z.object({ via: z.enum(['native', 'copy']) });
 export type CreatePactInput = z.input<typeof CreatePactBody>;
 
 /** Change a Pact's cover photograph: a key from the library, or null for the default of its kind. */
-export const SetCoverBody = z.object({ cover: z.string().regex(/^[a-z0-9-]{3,40}$/).nullable() });
+export const SetCoverBody = z.object({ cover: coverKey.nullable() });
 
 /* ==========================================================================
    Responses

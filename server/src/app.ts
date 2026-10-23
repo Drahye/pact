@@ -624,6 +624,10 @@ export async function buildApp({ config, db, provider, sms, email, google, stytc
           return pacts.inviteMore(ctx, req.userId, req.params.id, body.userIds, body.phones);
         });
         priv.put<{ Params: { id: string } }>('/pacts/:id/cover', strict(20), async (req) => pacts.setCover(ctx, req.userId, req.params.id, parse(C.SetCoverBody, req.body).cover));
+        priv.get<{ Params: { id: string } }>('/pacts/:id/cover-photo', async (req, reply) => {
+          const photo = await pacts.getCoverPhoto(ctx, req.userId, req.params.id);
+          return reply.header('Content-Type', photo.mime).header('Cache-Control', 'private, max-age=86400').header('Content-Disposition', 'inline').header('X-Content-Type-Options', 'nosniff').send(photo.data);
+        });
         priv.post<{ Params: { id: string } }>('/pacts/:id/accept', async (req) =>
           pacts.acceptInvite(ctx, req.userId, req.params.id, parse(C.ParticipationBody.partial(), req.body).participation ?? null),
         );
@@ -663,6 +667,7 @@ export async function buildApp({ config, db, provider, sms, email, google, stytc
         // Photo uploads: raw image bytes, only three image types, 8 MB before re-encoding.
         await priv.register(async (uploads) => {
           uploads.addContentTypeParser(['image/jpeg', 'image/png', 'image/webp'], { parseAs: 'buffer', bodyLimit: 8 * 1024 * 1024 }, (_req, body, done) => done(null, body));
+          uploads.post<{ Params: { id: string } }>('/pacts/:id/cover-photo', { bodyLimit: 8 * 1024 * 1024, ...strict(12, 10) }, async (req) => pacts.setCoverPhoto(ctx, req.userId, req.params.id, req.body as Buffer));
           uploads.post<{ Params: { id: string } }>('/pacts/:id/memory/photos', { bodyLimit: 8 * 1024 * 1024, ...strict(12, 10) }, async (req) =>
             pactPlan.addPhoto(ctx, req.userId, req.params.id, req.body as Buffer),
           );

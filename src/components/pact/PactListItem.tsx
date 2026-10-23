@@ -2,7 +2,7 @@ import { memo } from 'react';
 import type { Pact } from '../../data/types';
 import { cardStatus, phaseOf } from '../../lib/execution';
 import { daysUntil, formatDaysLeft } from '../../lib/format';
-import { coverOf } from '../../lib/covers';
+import { useCover } from '../../api/hooks';
 import { joinedMembers, summarize } from '../../lib/pact';
 import { useAuth } from '../../api/auth';
 import { gaveLine } from '../../lib/warmth';
@@ -15,6 +15,7 @@ import { categoryMeta } from './category';
  */
 function PactListItemBase({ pact, to, attention }: { pact: Pact; to: string; attention?: string }) {
   const { user } = useAuth();
+  const cover = useCover(pact);
   const s = summarize(pact);
   const paid = joinedMembers(pact).filter((m) => m.contributed > 0).sort((a, b) => b.contributed - a.contributed).map((m) => m.userId).slice(0, 4);
   const text = gaveLine(paid, user?.id);
@@ -31,7 +32,7 @@ function PactListItemBase({ pact, to, attention }: { pact: Pact; to: string; att
       daysLeft={running ? daysUntil(pact.deadline) : undefined}
       need={attention ?? (running ? undefined : line)}
       href={to}
-      photo={coverOf(pact)}
+      photo={cover}
       gave={text ? { ids: paid, text } : null}
     />
   );

@@ -185,7 +185,7 @@ export function ContributeScreen() {
 
   return (
     <Screen
-      topBar={<TopBar leading="close" backTo={base} title="Contribute" />}
+      topBar={<TopBar tone="transparent" leading="close" backTo={base} title="Contribute" />}
       footer={
         <>
           {capped < 100 ? (

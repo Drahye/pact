@@ -1466,3 +1466,11 @@
 }
 
 .ox-circle:not(.ox-circle--header) > :not(.ox-circle__photo) { position: relative; z-index: 1; }
+
+/* On the narrowest phones a settled share (name, amount, "Settled", "Undo") does not fit in one row: the state drops under the name instead of squeezing it. */
+.ox-share__amount { white-space: nowrap; }
+
+@media (max-width: 360px) {
+  .ox-share { grid-template-columns: auto minmax(0, 1fr); row-gap: var(--space-1); }
+  .ox-share > :last-child { grid-column: 2; justify-self: start; }
+}

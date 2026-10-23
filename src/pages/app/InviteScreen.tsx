@@ -103,7 +103,7 @@ export function InviteScreen() {
 
   return (
     <Screen
-      topBar={<TopBar backTo={`/app/pact/${pact.id}`} title={pact.title} />}
+      topBar={<TopBar tone="transparent" backTo={`/app/pact/${pact.id}`} title={pact.title} />}
       footer={
         <Button variant="secondary" fullWidth to={`/app/pact/${pact.id}`}>
           {justCreated ? 'Go to my Pact' : 'Done'}

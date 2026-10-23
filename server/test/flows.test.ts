@@ -49,6 +49,9 @@ describe('PACT end to end', () => {
     const preview = await t.call('GET', `/invites/${code}`);
     assert.equal(preview.body.title, 'Team dinner');
     assert.equal(preview.body.organizer.firstName, 'Abraham');
+    // The link shows a few faces of who is already in: first names, colours and photos, and never an id.
+    assert.deepEqual(preview.body.members.map((m: { firstName: string }) => m.firstName), ['Abraham']);
+    assert.ok(preview.body.members.every((m: Record<string, unknown>) => !('id' in m) && !('userId' in m)), 'no ids on a public link');
 
     // Wrong PIN is rejected and counted.
     const bad = await t.call('POST', `/pacts/${pactId}/contributions`, n.accessToken, { amount: 20_000_00, pin: '9753' });

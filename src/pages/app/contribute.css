@@ -219,3 +219,8 @@
   font-size: var(--t-support-size);
   line-height: var(--leading-sm);
 }
+
+.confirm__burst .burst { top: 0; left: 0; }
+
+/* The footer holds two actions on the confirmation: the main one, and a quiet nudge to bring someone else in. */
+.confirm .screen__footer { display: grid; gap: var(--space-2); }

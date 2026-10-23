@@ -505,6 +505,11 @@ export async function preview(ctx: Ctx, code: string): Promise<PactPreviewDTO & 
   );
   const p = r.rows[0];
   if (!p) throw notFound('Invite');
+  // A few faces of the people already in, so an invite shows people and not only a number. First names, colours and photos; never ids.
+  const faces = await ctx.db.query<{ first_name: string; color: string; photo_url: string | null }>(
+    `SELECT u.first_name, u.color, u.photo_url FROM pact_members m JOIN users u ON u.id = m.user_id WHERE m.pact_id = $1 AND m.status = 'joined' ORDER BY (m.user_id = $2) DESC, u.first_name LIMIT 5`,
+    [p.id, p.organizer_id],
+  );
   return {
     id: p.id,
     title: p.title,
@@ -516,6 +521,7 @@ export async function preview(ctx: Ctx, code: string): Promise<PactPreviewDTO & 
     mode: p.mode,
     memberCount: p.member_count,
     organizer: { firstName: p.first_name, color: p.color, photoUrl: p.photo_url },
+    members: faces.rows.map((f) => ({ firstName: f.first_name, color: f.color, photoUrl: f.photo_url })),
     // Anyone with the link can pay by transfer, app or not.
     bankAccount:
       p.account_number && (p.status === 'open' || p.status === 'funded')

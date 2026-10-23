@@ -1,12 +1,13 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { Check, Copy, Ellipsis, MessageCircle, MessageSquareText, Phone, Share2 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Navigate, useLocation, useParams } from 'react-router-dom';
 import { useAuth } from '../../api/auth';
 import { ApiError } from '../../api/client';
 import { usePact, usePactCommand } from '../../api/hooks';
 import { FormSkeleton } from '../../components/app/Skeleton';
-import { CategoryIcon } from '../../components/pact/category';
+import { Burst } from '../../components/pact/Burst';
+import { coverOf } from '../../lib/covers';
 import { Avatar } from '../../components/ui/Avatar';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
@@ -14,7 +15,7 @@ import { TopBar } from '../../components/ui/TopBar';
 import { useToast } from '../../components/ui/Toast';
 import { getUser } from '../../data/users';
 import { pushRecent } from '../../lib/drafts';
-import { formatNaira } from '../../lib/format';
+import { formatDate, formatNaira } from '../../lib/format';
 import { joinedMembers, summarize } from '../../lib/pact';
 import { spring } from '../../tokens/tokens';
 import { PageHero } from '../../components/objects';
@@ -34,6 +35,26 @@ export function InviteScreen() {
   const [copied, setCopied] = useState(false);
   const [phone, setPhone] = useState('');
   const [phoneError, setPhoneError] = useState<string>();
+  const [celebrate, setCelebrate] = useState(false);
+
+  // While this screen is open, someone arriving through the link is welcomed out loud: this is the moment the sender is waiting for.
+  const seen = useRef<Set<string> | null>(null);
+  const members = q.data?.pact ? joinedMembers(q.data.pact) : null;
+  useEffect(() => {
+    if (!members) return;
+    const ids = new Set(members.map((m) => m.userId));
+    if (seen.current) {
+      const fresh = [...ids].filter((id) => !seen.current!.has(id) && id !== user?.id);
+      if (fresh.length) {
+        toast(`${getUser(fresh[0]).name} just joined${fresh.length > 1 ? `, and ${fresh.length - 1} more` : ''}.`);
+        setCelebrate(true);
+        window.setTimeout(() => setCelebrate(false), 1400);
+      }
+    }
+    seen.current = ids;
+    // Only the set of people matters.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [members?.map((m) => m.userId).join(',')]);
 
   if (q.isLoading) return <Screen topBar={<TopBar tone="transparent" backTo={`/app/pact/${id}`} />}><FormSkeleton fields={2} label="Loading invite" /></Screen>;
   const pact = q.data?.pact;
@@ -42,7 +63,7 @@ export function InviteScreen() {
   const joined = joinedMembers(pact);
   const url = `${window.location.origin}/app/join/${pact.inviteCode}`;
   const shortUrl = url.replace(/^https?:\/\//, '');
-  const message = `Join "${pact.title}" on PACT. We’re putting ${formatNaira(summarize(pact).target)} together and everyone can see the progress: ${url}`;
+  const message = `I started “${pact.title}” on PACT so we can do it together. ${formatNaira(summarize(pact).target)} by ${formatDate(pact.deadline, { month: 'short', day: 'numeric' })}, and everyone can see how it is going. Come in: ${url}`;
 
   const copy = async () => {
     try {
@@ -95,10 +116,10 @@ export function InviteScreen() {
           <Check aria-hidden /> Your Pact is ready.
         </p>
       )}
-      <PageHero tint="mint" title={justCreated ? 'Now bring your people in.' : 'Bring your people in.'} subtitle={<>{justCreated ? 'Share the link in your group chat. Anyone with it can see what the Pact is for and join.' : 'Anyone with this link can see what the Pact is for and join it.'}</>} />
+      <PageHero tint="mint" photo={coverOf(pact.category)} title={justCreated ? 'Now bring your people in.' : 'Bring your people in.'} subtitle={<>{justCreated ? 'Share the link in your group chat. Anyone with it can see what the Pact is for and join.' : 'Anyone with this link can see what the Pact is for and join it.'}</>} />
 
       <div className="invite__card">
-        <CategoryIcon category={pact.category} size="lg" />
+        <img className="invite__cover" src={coverOf(pact.category)} alt="" loading="lazy" decoding="async" />
         <div>
           <p className="invite__card-title">{pact.title}</p>
           <p className="invite__card-meta num">
@@ -171,13 +192,14 @@ export function InviteScreen() {
       )}
 
       <section className="invite__joined" aria-live="polite">
+        {celebrate && <Burst />}
         <div className="invite__joined-head">
           <p>
             <strong className="num">{joined.length}</strong> {joined.length === 1 ? 'person has' : 'people have'} joined
           </p>
           {joined.length < 2 && (
             <span className="invite__waiting">
-              <span className="invite__pulse" aria-hidden /> Waiting for people
+              <span className="invite__pulse" aria-hidden /> Waiting for your first person
             </span>
           )}
         </div>

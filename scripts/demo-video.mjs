@@ -307,7 +307,7 @@ try {
   await tap(btn(/^Pay ₦/), 1400);
   await cap('Sandbox checkout. In production this is Paystack’s secure page.', 2200);
   await tap(btn('I’ve sent the money'), 1800);
-  await page.getByText('You’re in.').waitFor();
+  await page.getByText(/You came through\.|You made it happen\./).waitFor();
   await cap('Nothing counts until the payment processor confirms to our server.', 2800);
   await tap(btn('Back to the Pact'), 2200);
 
@@ -324,7 +324,7 @@ try {
   const holdBtn = page.getByRole('button', { name: /Hold to contribute|Hold/ }).first();
   await hold(holdBtn);
   await pin('1357');
-  await page.getByText('You’re in.').waitFor({ timeout: 15000 });
+  await page.getByText(/You came through\.|You made it happen\./).waitFor({ timeout: 15000 });
   await cap('And that completes the goal. Everyone is told.', 2600);
   await tap(btn(/See it complete|Back to/), 2600);
   await page.getByText('We did it.').waitFor();

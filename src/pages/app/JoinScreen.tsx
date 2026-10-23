@@ -6,7 +6,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../api/auth';
 import { ApiError } from '../../api/client';
 import { useInvitePreview, useJoinByCode } from '../../api/hooks';
-import { CategoryIcon } from '../../components/pact/category';
+import { coverOf } from '../../lib/covers';
 import { ErrorState, Notice } from '../../components/app/States';
 import { PactDetailSkeleton } from '../../components/app/Skeleton';
 import { ProgressBar } from '../../components/ui/ProgressBar';
@@ -18,6 +18,14 @@ import { setReturnTo } from './auth/flow';
 import { Screen } from './Screen';
 import './join.css';
 import './detail/money.css';
+
+/** "Tolu, Ada and 3 others": the first names shown, then the rest counted. */
+const peopleSentence = (names: string[], total: number) => {
+  const shown = names.slice(0, 2);
+  const rest = total - shown.length;
+  if (rest <= 0) return shown.length > 1 ? `${shown.slice(0, -1).join(', ')} and ${shown[shown.length - 1]}` : shown[0] ?? '';
+  return `${shown.join(', ')} and ${rest} ${rest === 1 ? 'other' : 'others'}`;
+};
 
 /** Where an invite link lands. Anyone can see what it's for; joining needs an account. */
 export function JoinScreen() {
@@ -48,6 +56,7 @@ export function JoinScreen() {
   const p = preview.data;
   const pct = p.target > 0 ? Math.min(100, (p.raised / p.target) * 100) : 0;
   const open = p.status === 'open';
+  const faces = p.members ?? [];
 
   const onJoin = async () => {
     if (status !== 'signedIn') {
@@ -86,10 +95,30 @@ export function JoinScreen() {
       }
       className="join"
     >
-      <p className="eyebrow">{p.organizer.firstName} invited you to</p>
+      <header className="join__hero">
+        <img className="join__photo" src={coverOf(p.category)} alt="" decoding="async" />
+        <div className="join__hero-body">
+          <p className="join__eyebrow">{p.organizer.firstName} invited you to</p>
+          <h1 className="join__title">{p.title}</h1>
+          {faces.length > 0 && (
+            <p className="join__people">
+              <span className="join__faces" aria-hidden>
+                {faces.map((f, i) =>
+                  f.photoUrl ? (
+                    <img key={i} src={f.photoUrl} alt="" style={{ ['--c' as string]: f.color }} />
+                  ) : (
+                    <span key={i} style={{ ['--c' as string]: f.color }}>
+                      {f.firstName.slice(0, 1)}
+                    </span>
+                  ),
+                )}
+              </span>
+              <span>{peopleSentence(faces.map((f) => f.firstName), p.memberCount)} {p.memberCount === 1 ? 'is' : 'are'} in.</span>
+            </p>
+          )}
+        </div>
+      </header>
       <div className="join__card">
-        <CategoryIcon category={p.category} size="lg" />
-        <h1 className="join__title">{p.title}</h1>
         {p.mode === 'orders' ? (
           <p className="join__amount num">
             {p.target ? <><strong>{formatNairaKobo(p.target)}</strong> ordered so far</> : 'Taking orders now'}

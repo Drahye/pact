@@ -815,6 +815,8 @@ export interface PactPreviewDTO {
   mode: 'goal' | 'orders';
   memberCount: number;
   organizer: { firstName: string; color: string; photoUrl: string | null };
+  /** A few of the people already in, as faces: first name, colour and photo. Never an id. */
+  members?: { firstName: string; color: string; photoUrl: string | null }[];
   /** Set while the Pact is taking money and has an account number: pay by transfer without the app. */
   bankAccount: { accountNumber: string; bankName: string; accountName: string } | null;
 }

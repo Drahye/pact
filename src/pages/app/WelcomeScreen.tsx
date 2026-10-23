@@ -8,8 +8,12 @@ import { Modal } from '../../components/ui/Modal';
 import { setReturnTo } from './auth/flow';
 import { IntroVisual } from './auth/IntroVisual';
 import { Hero, Sheet } from '../../components/objects';
+import { coverUrl } from '../../lib/covers';
 import { Screen } from './Screen';
 import './welcome.css';
+
+/** The moments people start with, one after another behind the hero. */
+const WELCOME_PHOTOS = ['wedding-aso-ebi', 'trip-beach', 'dinner-women'] as const;
 
 /** Accepts a full invite link, a path, or just the code. */
 export const parseInviteCode = (raw: string) => {
@@ -53,7 +57,16 @@ export function WelcomeScreen() {
         </div>
       }
     >
-      <Hero className="xh--home xh--welcome">
+      <Hero
+        className="xh--home xh--welcome"
+        backdrop={
+          <div className="welcome__bgs" aria-hidden>
+            {WELCOME_PHOTOS.map((name, i) => (
+              <img key={name} className="welcome__bg" style={{ animationDelay: `${i * 6 - 1}s` }} src={coverUrl(name)} alt="" decoding="async" />
+            ))}
+          </div>
+        }
+      >
         <div className="welcome__top">
           <PactLogo size="md" tone="light" />
         </div>
@@ -61,11 +74,9 @@ export function WelcomeScreen() {
       </Hero>
       <Sheet className="intro">
         <h1 className="intro__title">
-          Make things <span className="welcome__pill">happen</span>
-          <br />
-          with your people.
+          Life is better when <span className="welcome__pill">everyone</span> shows up.
         </h1>
-        <p className="intro__lede">Plans, decisions, splits and commitments, together.</p>
+        <p className="intro__lede">Plan the trip, the owambe, the gift and the dinner with your people, and actually make it happen.</p>
         <p className="intro__invite">
           <button type="button" className="link" onClick={() => setJoinOpen(true)}>
             Have an invite link?

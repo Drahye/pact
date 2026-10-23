@@ -24,6 +24,7 @@ export interface PactRow {
   title: string;
   note: string | null;
   category: PactDTO['category'];
+  cover: string | null;
   target_amount: number;
   raised_amount: number;
   deadline: string;
@@ -239,6 +240,7 @@ async function hydrate(q: Queryable, rows: PactRow[], viewerId: string): Promise
       title: p.title,
       note: p.note,
       category: p.category,
+      cover: p.cover,
       target: p.target_amount,
       raised: p.raised_amount,
       // The pool holds everything raised, less vendor payments, until it is released or refunded.
@@ -505,10 +507,16 @@ export async function preview(ctx: Ctx, code: string): Promise<PactPreviewDTO & 
   );
   const p = r.rows[0];
   if (!p) throw notFound('Invite');
+  // A few faces of the people already in, so an invite shows people and not only a number. First names, colours and photos; never ids.
+  const faces = await ctx.db.query<{ first_name: string; color: string; photo_url: string | null }>(
+    `SELECT u.first_name, u.color, u.photo_url FROM pact_members m JOIN users u ON u.id = m.user_id WHERE m.pact_id = $1 AND m.status = 'joined' ORDER BY (m.user_id = $2) DESC, u.first_name LIMIT 5`,
+    [p.id, p.organizer_id],
+  );
   return {
     id: p.id,
     title: p.title,
     category: p.category,
+    cover: p.cover,
     target: p.target_amount,
     raised: p.raised_amount,
     deadline: p.deadline,
@@ -516,6 +524,7 @@ export async function preview(ctx: Ctx, code: string): Promise<PactPreviewDTO & 
     mode: p.mode,
     memberCount: p.member_count,
     organizer: { firstName: p.first_name, color: p.color, photoUrl: p.photo_url },
+    members: faces.rows.map((f) => ({ firstName: f.first_name, color: f.color, photoUrl: f.photo_url })),
     // Anyone with the link can pay by transfer, app or not.
     bankAccount:
       p.account_number && (p.status === 'open' || p.status === 'funded')
@@ -565,10 +574,10 @@ export async function createPact(ctx: Ctx, userId: string, input: CreateInput, m
     const pactId = (await q.query<{ id: string }>('SELECT gen_random_uuid() AS id')).rows[0].id;
     const accountId = await createAccount(q, 'pact_pool', pactId);
     await q.query(
-      `INSERT INTO pacts (id, slug, invite_code, title, note, category, target_amount, deadline, organizer_id, account_id, missed_goal_policy, split_mode, mode, circle_id, plan_id)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
+      `INSERT INTO pacts (id, slug, invite_code, title, note, category, target_amount, deadline, organizer_id, account_id, missed_goal_policy, split_mode, mode, circle_id, plan_id, cover)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`,
       // People buy what they order, so an order Pact can pay its suppliers before every order is in.
-      [pactId, slug, randomCode(12), input.title.trim(), input.note?.trim() || null, input.category, target, input.deadline, userId, accountId, orders ? 'release' : input.missedGoalPolicy, input.splitMode, input.mode, circleId, plan?.id ?? null],
+      [pactId, slug, randomCode(12), input.title.trim(), input.note?.trim() || null, input.category, target, input.deadline, userId, accountId, orders ? 'release' : input.missedGoalPolicy, input.splitMode, input.mode, circleId, plan?.id ?? null, input.cover ?? null],
     );
     if (orders) await insertItems(q, pactId, userId, input.items);
     await q.query(
@@ -1111,6 +1120,16 @@ export async function cancel(ctx: Ctx, userId: string, pactId: string, pin: stri
  * Reminders that read like momentum, not debt collection: each person gets the most
  * useful line for where they stand. Rule-based and at most once a day per person.
  */
+/** The organiser or a co-organiser chooses what the Pact looks like. A key from the library, or null to go back to the default for its kind. */
+export async function setCover(ctx: Ctx, userId: string, pactId: string, cover: string | null) {
+  await ctx.db.tx(async (q) => {
+    const { member } = await loadVisible(q, pactId, userId, true);
+    if (!member || !['organizer', 'co_organizer'].includes(member.role)) throw forbidden('Only an organiser can change the cover.');
+    await q.query(`UPDATE pacts SET cover = $2 WHERE id = $1`, [pactId, cover]);
+  });
+  return getPact(ctx, userId, pactId);
+}
+
 export async function nudge(ctx: Ctx, userId: string, pactId: string) {
   return ctx.db.tx(async (q) => {
     const { pact, member } = await loadVisible(q, pactId, userId, true);

@@ -258,6 +258,10 @@ export function usePactCommand(pactId: string) {
     accept: useMutation({ mutationFn: () => api<PactDetail>('POST', `/pacts/${pactId}/accept`, {}), onSuccess: (r) => (setPact(r), (qc.invalidateQueries({ queryKey: keys.pacts }), qc.invalidateQueries({ queryKey: ['home'] }))) }),
     leave: useMutation({ mutationFn: () => api('POST', `/pacts/${pactId}/leave`, {}), onSuccess: () => (qc.invalidateQueries({ queryKey: keys.pacts }), qc.invalidateQueries({ queryKey: ['home'] })) }),
     nudge: useMutation({ mutationFn: () => api<{ reminded: number }>('POST', `/pacts/${pactId}/nudge`, {}) }),
+    cover: useMutation({
+      mutationFn: (cover: string | null) => api<PactDetail>('PUT', `/pacts/${pactId}/cover`, { cover }),
+      onSuccess: (r) => (setPact(r), qc.invalidateQueries({ queryKey: keys.pacts }), qc.invalidateQueries({ queryKey: ['home'] })),
+    }),
     invite: useMutation({
       mutationFn: (body: { userIds?: string[]; phones?: string[] }) => api<PactDetail>('POST', `/pacts/${pactId}/invites`, body),
       onSuccess: (r) => setPact(r),

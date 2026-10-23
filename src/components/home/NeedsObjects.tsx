@@ -7,6 +7,7 @@ import { useRespond } from '../../api/asks';
 import { useRsvp } from '../../api/plans';
 import { daysUntil } from '../../lib/format';
 import { AskObject, OBJECT_KINDS, PactObject, PlanObject, SplitObject } from '../objects';
+import { coverOf } from '../../lib/covers';
 import './needs-objects.css';
 
 /**
@@ -149,6 +150,7 @@ function PactNeed({ n, d }: Common & { d: Extract<NeedsDetail, { kind: 'pact' }>
       target={d.target}
       daysLeft={daysUntil(d.deadline)}
       circleName={n.circle?.name}
+      photo={coverOf({ category: d.category, cover: d.cover, id: n.sourceId })}
       assignment={task ? { label: main, assigneeId: '', lead } : undefined}
       need={task ? undefined : n.context.replace(/\.$/, '')}
       href={n.actionUrl}

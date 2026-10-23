@@ -1,13 +1,75 @@
-.join .eyebrow {
-  padding-top: var(--space-4);
+/* The invitation opens on the occasion itself: a photograph, who asked you, and who is already in. */
+.join__hero {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  min-height: 260px;
+  margin-top: var(--space-2);
+  overflow: hidden;
+  border-radius: var(--radius-2xl);
+  background: var(--forest-900);
+  color: var(--white);
 }
+
+.join__photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.join__hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--forest-900) 30%, transparent) 0%, color-mix(in srgb, var(--forest-900) 90%, transparent) 100%);
+}
+
+.join__hero-body {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-6) var(--space-5) var(--space-5);
+}
+
+.join__eyebrow { margin: 0; font-size: var(--t-support-size); }
+.join__hero .join__title { margin: 0; }
+
+.join__people {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin: var(--space-1) 0 0;
+  font-size: var(--t-support-size);
+}
+
+.join__faces { display: flex; }
+
+.join__faces > * {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 2px solid var(--forest-900);
+  border-radius: 50%;
+  background: var(--c);
+  box-shadow: 0 0 0 2px var(--c);
+  color: var(--ink-900);
+  font-size: var(--t-meta-size);
+  font-weight: var(--weight-semibold);
+  object-fit: cover;
+}
+
+.join__faces > * + * { margin-left: -8px; }
 
 .join__card {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
   margin: var(--space-3) 0 var(--space-5);
-  padding: var(--space-6);
+  padding: var(--space-5) var(--space-6);
   border-radius: var(--radius-2xl);
   background: var(--color-surface);
   box-shadow: inset 0 0 0 1px var(--color-border);

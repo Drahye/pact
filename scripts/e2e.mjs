@@ -120,7 +120,7 @@ try {
   await page.getByText('Confirm your PIN').waitFor();
   await shot('pin-confirm');
   await pin();
-  await page.getByText('You’re in.').waitFor();
+  await page.getByText(/You came through\.|You made it happen\./).waitFor();
   await shot('contribute-done');
 
   // Direct pay: finish the Pact straight from checkout, without touching the wallet

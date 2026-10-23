@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { useCreateSheet } from '../create/CreateSheet';
 import { OBJECT_KINDS, type ObjectKind } from '../objects';
 import { Button } from '../ui/Button';
+import { MomentTiles } from './MomentTiles';
 import './home-start.css';
 
 const WHAT: { kind: ObjectKind; title: string; body: string }[] = [
@@ -24,7 +25,7 @@ export function HomeStart({ variant }: { variant: 'new' | 'again' }) {
         <h2 id="hm-again-h" className="t-section">
           You’ve made things happen before.
         </h2>
-        <p className="t-support">Nothing is waiting on you. Start the next thing with your people.</p>
+        <p className="t-support">Nothing is waiting on you. Who do you want to do life with next?</p>
         <Button size="md" variant="ink" onClick={open}>
           Start something
         </Button>
@@ -34,9 +35,10 @@ export function HomeStart({ variant }: { variant: 'new' | 'again' }) {
   return (
     <section className="hm-start" aria-labelledby="hm-start-h">
       <h2 id="hm-start-h" className="t-page hm-start__title">
-        Things get better with people.
+        Life is better when everyone shows up.
       </h2>
-      <p className="t-body hm-start__lede">Start a Circle, or make something you want to happen together.</p>
+      <p className="t-body hm-start__lede">Pick a moment you want to happen with your people, or start a Circle first.</p>
+      <MomentTiles onPick={open} />
       <div className="hm-start__actions">
         <Button size="lg" onClick={open}>
           Start something

@@ -1419,3 +1419,31 @@
   background: var(--surface-quiet);
   box-shadow: var(--ring-quiet);
 }
+
+/* A photograph faint behind a compact Pact: clearer on the right, fading out where the words are. */
+.ox-pact--compact { position: relative; overflow: hidden; }
+
+.ox-pact__photo {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: cover;
+  opacity: 0.22;
+  pointer-events: none;
+  -webkit-mask-image: linear-gradient(90deg, transparent 48%, var(--black) 100%);
+  mask-image: linear-gradient(90deg, transparent 48%, var(--black) 100%);
+}
+
+.ox-pact--compact > :not(.ox-pact__photo) { position: relative; z-index: 1; }
+
+.ox-agenda.ox-agenda--photo { grid-template-columns: 88px minmax(0, 1fr) 44px auto; }
+
+.ox-agenda__photo {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  object-fit: cover;
+}

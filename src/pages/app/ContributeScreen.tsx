@@ -21,20 +21,14 @@ import { formatNaira, formatNairaCompact, formatNairaKobo, formatPercent, fromKo
 import { sharesOf, summarize } from '../../lib/pact';
 import { ease, spring } from '../../tokens/tokens';
 import { PageHero } from '../../components/objects';
+import { Burst } from '../../components/pact/Burst';
+import { coverOf } from '../../lib/covers';
+import { circleLine, milestoneLine } from '../../lib/warmth';
 import { Screen } from './Screen';
 import './contribute.css';
 
 const PRESETS = [5_000, 10_000, 25_000];
 
-/** A restrained burst: six shapes in friends' colours, once. */
-const burst = [
-  { x: -120, y: -70, r: 40, c: '#ffc53d', k: 'circle' },
-  { x: 118, y: -84, r: -30, c: '#4da3ff', k: 'square' },
-  { x: -140, y: 40, r: 60, c: '#ff6fb5', k: 'square' },
-  { x: 136, y: 30, r: 20, c: '#9b7bff', k: 'circle' },
-  { x: -60, y: -120, r: -45, c: '#ff7a5c', k: 'pill' },
-  { x: 70, y: -128, r: 35, c: '#22b8a6', k: 'pill' },
-];
 type Choice = '5000' | '10000' | '25000' | 'custom';
 
 export function ContributeScreen() {
@@ -119,28 +113,28 @@ export function ContributeScreen() {
 
   if (phase === 'done') {
     const completed = before + given >= pact.target;
+    const mark = milestoneLine((before / Math.max(1, pact.target)) * 100, ((before + given) / Math.max(1, pact.target)) * 100);
+    const others = circleLine(pact, user?.id ?? '');
     return (
       <Screen
         tone="mint"
         className="confirm"
         footer={
-          <Button fullWidth onClick={() => navigate(base, { replace: true, state: { fromRaised: before } })}>
-            {completed ? 'See it complete' : `Back to ${pact.title}`}
-          </Button>
+          <>
+            <Button fullWidth onClick={() => navigate(base, { replace: true, state: { fromRaised: before } })}>
+              {completed ? 'See it complete' : `Back to ${pact.title}`}
+            </Button>
+            {!completed && (
+              <Button fullWidth variant="secondary" to={`${base}/invite`}>
+                Tell someone who should be in
+              </Button>
+            )}
+          </>
         }
       >
         <div className="confirm__body">
           <div className="confirm__burst" aria-hidden>
-            {burst.map((b, i) => (
-              <motion.span
-                key={i}
-                className={`confirm__shape confirm__shape--${b.k}`}
-                style={{ background: b.c }}
-                initial={reduce ? false : { x: 0, y: 0, scale: 0, rotate: 0, opacity: 1 }}
-                animate={{ x: b.x, y: b.y, scale: 1, rotate: b.r, opacity: reduce ? 1 : [1, 1, 0.9] }}
-                transition={{ duration: 1.1, ease: ease.out, delay: 0.1 }}
-              />
-            ))}
+            {!reduce && <Burst />}
           </div>
           <SegmentedRing shares={sharesOf(pact)} target={pact.target} size={176} stroke={16} delay={0.2} label={`${pact.title} progress`}>
             <motion.span
@@ -158,10 +152,10 @@ export function ContributeScreen() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: ease.out, delay: 0.15 }}
           >
-            <h1 className="confirm__title">You’re in.</h1>
+            <h1 className="confirm__title">{completed ? 'You made it happen.' : 'You came through.'}</h1>
             <p className="confirm__line">
               <strong className="num">{formatNaira(given)}</strong> added to {pact.title}.
-              {completed && ' That completed the goal.'}
+              {completed ? ' That completed the goal.' : mark ? ` ${mark.line}` : others && others.text !== 'Everyone has come through.' ? ' Your people can see it now.' : ''}
             </p>
           </motion.div>
           <motion.div
@@ -216,7 +210,7 @@ export function ContributeScreen() {
       }
       className="contribute xhero xhero--lite tint--mint"
     >
-      <PageHero tint="mint" title={`Add to ${pact.title}`} />
+      <PageHero tint="mint" title={`Add to ${pact.title}`} photo={coverOf(pact)} subtitle={circleLine(pact, user?.id ?? '')?.text ?? 'Everyone in the Pact sees it.'} />
 
       <div className="contribute__status">
         <div className="contribute__status-row">

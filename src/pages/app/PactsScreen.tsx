@@ -14,6 +14,7 @@ import { IconButton } from '../../components/ui/IconButton';
 import type { Pact } from '../../data/types';
 import { countByTab, defaultTab, lifecycleOf, matchesTitle, MAX_SEARCH, normalizeQuery, readView, sortForTab, tabLabel, writeView, type Lifecycle, type PactTab } from '../../lib/lifecycle';
 import { attentionFor } from '../../lib/plan';
+import { MomentTiles } from '../../components/home/MomentTiles';
 import { Screen } from './Screen';
 import './pacts-screen.css';
 import { useStartPactPath } from '../../lib/startPact';
@@ -124,6 +125,11 @@ export function PactsScreen() {
     }
   }, [loading, mine.length]);
 
+  // One warm line under the title: what is running, and what has been finished together.
+  const running = counts.active ?? 0;
+  const done = counts.completed ?? 0;
+  const heroLine = loading || !mine.length ? undefined : running ? `${running} running${done ? `, ${done} made happen` : ''}. Your people are counting on you.` : done ? `${done} made happen. Who is next?` : undefined;
+
   const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
   const clear = () => setQuery('');
 
@@ -134,12 +140,15 @@ export function PactsScreen() {
     body = <ErrorState message={offline || paused ? 'You’re offline. Reconnect and try again.' : undefined} onRetry={() => void pacts.refetch()} />;
   } else if (!mine.length) {
     body = (
-      <EmptyState
-        kind="pact"
-        title="Turn a plan into something everyone can commit to."
-        body="Start a Pact for a trip, a gift or a shared bill, or join one with an invite link."
-        action={<Button to={startPath()}>Start a Pact</Button>}
-      />
+      <>
+        <EmptyState
+          kind="pact"
+          title="Start with the day your people keep talking about."
+          body="A trip, an owambe, a gift or a shared bill: pick the moment, and everyone gets a clear way to show up. Or join one with an invite link."
+          action={<Button to={startPath()}>Start a Pact</Button>}
+        />
+        <MomentTiles to={startPath()} />
+      </>
     );
   } else if (!tabItems.length) {
     body = <EmptyState kind="pact" compact title={emptyCopy[tab as Lifecycle] ?? 'Nothing here yet.'} body={tab === 'active' ? 'Start one, or join with an invite link.' : tab === 'completed' ? 'When a Pact finishes, it lands here.' : 'Pacts that were called off or refunded show up here.'} action={tab === 'active' ? <Button variant="secondary" to={startPath()}>Start a Pact</Button> : undefined} />;
@@ -171,7 +180,7 @@ export function PactsScreen() {
 
   return (
     <Screen className="xhero xhero--lite tint--mint" tabBar={<BottomNav />} topBar={<TopBar tone="transparent" leading="none" title="Pacts" collapse trailing={<IconButton label="Create a Pact" icon={<Plus />} to={startPath()} />} />}>
-      <PageHero tint="mint" title="Your Pacts" />
+      <PageHero tint="mint" title="Your Pacts" subtitle={heroLine} />
       <div ref={root} aria-busy={loading || pacts.isFetching ? true : undefined}>
         {showControls && (
           <>

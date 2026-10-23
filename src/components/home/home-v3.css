@@ -70,7 +70,9 @@
 
 .hv3-made__item {
   position: relative;
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
   color: inherit;
   text-decoration: none;
   transition: transform var(--motion-micro) var(--ease-press), filter var(--motion-micro) var(--ease-soft);
@@ -194,3 +196,19 @@
   font-size: var(--t-support-size);
   line-height: 1.35;
 }
+
+/* A finished thing keeps its photograph, pinned like a print: the memory first, the count second. */
+.hv3-made__photo {
+  flex: 0 0 auto;
+  width: 52px;
+  height: 52px;
+  padding: 3px;
+  border-radius: var(--radius-xs);
+  background: var(--white);
+  box-shadow: 0 6px 12px -6px var(--shade-5);
+  object-fit: cover;
+  transform: rotate(-4deg);
+}
+
+.hv3-made__item > :not(.hv3-made__photo):not(.hv3-made__go) { flex: 1; min-width: 0; }
+.hv3-made__item { padding-right: 36px; }

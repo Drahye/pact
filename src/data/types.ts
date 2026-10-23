@@ -129,6 +129,8 @@ export interface Pact {
   slug: string;        // invite link: pact.app/<slug>
   title: string;
   category: PactCategory;
+  /** The cover photograph chosen for it (a library key); absent for the default of its kind. */
+  cover?: string | null;
   target: number;      // naira
   deadline: string;    // ISO date
   createdAt: string;   // ISO date

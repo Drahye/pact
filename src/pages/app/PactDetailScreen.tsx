@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { BellRing, CheckCheck, Megaphone, ChevronRight, Divide, Ellipsis, LogOut, RotateCcw, Scale, Share, ShieldCheck, Store, UserPlus, XCircle } from 'lucide-react';
+import { BellRing, CheckCheck, Image as ImageIcon, Megaphone, ChevronRight, Divide, Ellipsis, LogOut, RotateCcw, Scale, Share, ShieldCheck, Store, UserPlus, XCircle } from 'lucide-react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../api/auth';
@@ -11,6 +11,11 @@ import { AnimatedNumber } from '../../components/pact/AnimatedNumber';
 import { CategoryChip, categoryMeta } from '../../components/pact/category';
 import { AttentionCard, BudgetList, NextStep, OrganizerProgress, TaskList } from '../../components/pact/Plan';
 import { useFitText } from '../../lib/useFitText';
+import { Burst } from '../../components/pact/Burst';
+import { CoverSheet } from '../../components/pact/CoverSheet';
+import { AvatarStack } from '../../components/objects';
+import { coverOf } from '../../lib/covers';
+import { circleLine, milestoneLine } from '../../lib/warmth';
 import { SegmentedRing } from '../../components/pact/SegmentedRing';
 import { ActivityItem } from '../../components/ui/ActivityItem';
 import { Avatar } from '../../components/ui/Avatar';
@@ -74,6 +79,8 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
   const [payOpen, setPayOpen] = useState(false);
   const [payLine, setPayLine] = useState<BudgetLine | null>(null);
   const [completeOpen, setCompleteOpen] = useState(false);
+  const [burst, setBurst] = useState(false);
+  const [coverOpen, setCoverOpen] = useState(false);
   // A notification or push for a comment, update or pin opens straight onto its thread (?thread=<activity id>).
   const [search, setSearch] = useSearchParams();
   const [threadId, setThreadId] = useState<string | null>(search.get('thread'));
@@ -122,6 +129,22 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
   // The first useful prompt leads the page as the Next step; the rest stay under "Needs attention".
   const next = stage === 'invited' || stage === 'closed' ? null : nextStepFor(pact, me);
   const checkpoints = isOrganizer ? checkpointsFor(pact) : [];
+  const circle = stage === 'invited' || stage === 'closed' ? null : circleLine(pact, me);
+
+  // Arriving from adding money: if that crossed a quarter, half, three quarters or the goal, say so once, like a friend would.
+  const marked = useRef(false);
+  useEffect(() => {
+    if (marked.current || fromRaised === undefined || !pact.target) return;
+    marked.current = true;
+    const hit = milestoneLine((fromRaised / pact.target) * 100, s.percent);
+    if (!hit) return;
+    toast(hit.line);
+    setBurst(true);
+    const t = window.setTimeout(() => setBurst(false), 1400);
+    return () => window.clearTimeout(t);
+    // Once for the address we arrived on.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const run = async (fn: () => Promise<unknown>, ok: string) => {
     setMenuOpen(false);
@@ -218,7 +241,7 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
       }
       className={`detail xhero tint--${categoryMeta[pact.category].tint}`}
     >
-      <Hero tint={categoryMeta[pact.category].tint} className="xh--pact od-pact__hero">
+      <Hero tint={categoryMeta[pact.category].tint} photo={coverOf(pact)} className="xh--pact od-pact__hero">
         <p className="od-pact__kicker">
           <CategoryChip category={pact.category} suffix={`by ${organizer}`} />
           {!executing && active && <span className="od-pact__due num">{s.daysLeft === 0 ? 'Due today' : `${s.daysLeft} ${s.daysLeft === 1 ? 'day' : 'days'} left`}</span>}
@@ -227,6 +250,12 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
           {pact.title}
         </h1>
         {pact.note && <p className="detail__note">“{pact.note}”</p>}
+        {circle && (
+          <p className="od-pact__circle">
+            <AvatarStack userIds={circle.faces} total={circle.faces.length} size="sm" max={5} ring="bg" />
+            <span>{circle.text}</span>
+          </p>
+        )}
       <div className="detail__ring" data-state={pact.status === 'funded' || s.percent >= 100 ? 'funded' : s.raised > 0 ? 'progressing' : 'started'}>
         <SegmentedRing
           shares={sharesOf(pact)}
@@ -273,6 +302,7 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
             )}
           </AnimatePresence>
         </SegmentedRing>
+        {burst && <Burst />}
         {s.raised > 0 && <p className="detail__ring-hint">{picked ? 'Tap the centre to see the total' : 'Tap a colour or a name to see who gave it'}</p>}
       </div>
 
@@ -537,6 +567,15 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
               </span>
             </button>
           )}
+          {runsMoney && (
+            <button type="button" className="menu__row" onClick={() => { setMenuOpen(false); setCoverOpen(true); }}>
+              <span className="menu__icon tint--lilac"><ImageIcon /></span>
+              <span className="menu__text">
+                <span className="menu__title">Change cover</span>
+                <span className="menu__sub">Pick the photograph this Pact wears</span>
+              </span>
+            </button>
+          )}
           {isOrganizer ? (
             <button type="button" className="menu__row menu__row--danger" onClick={() => { setMenuOpen(false); setCancelOpen(true); }}>
               <span className="menu__icon tint--coral"><XCircle /></span>
@@ -556,6 +595,14 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
         </div>
       </Modal>
 
+      <CoverSheet
+        open={coverOpen}
+        onClose={() => setCoverOpen(false)}
+        category={pact.category}
+        current={pact.cover}
+        busy={cmd.cover.isPending}
+        onPick={(key) => void run(() => cmd.cover.mutateAsync(key).then(() => setCoverOpen(false)), key ? 'Cover changed' : 'Back to the usual cover')}
+      />
       <ParticipationSheet pact={pact} open={participationOpen} onClose={() => setParticipationOpen(false)} current={mine?.participation ?? null} />
       <TaskSheet pact={pact} task={task ? tasks.find((t) => t.id === task.id) ?? null : null} meId={me} onClose={() => setTask(null)} />
       <AddTaskSheet pact={pact} meId={me} open={addTaskOpen} onClose={() => setAddTaskOpen(false)} />

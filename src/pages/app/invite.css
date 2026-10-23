@@ -216,3 +216,18 @@
 .invite__primary {
   margin: var(--space-4) 0;
 }
+
+/* The photograph of what it is for, pinned like a print beside the title. */
+.invite__cover {
+  flex: 0 0 auto;
+  width: 64px;
+  height: 64px;
+  padding: 3px;
+  border-radius: var(--radius-xs);
+  background: var(--white);
+  box-shadow: 0 8px 14px -8px var(--shade-5);
+  object-fit: cover;
+  transform: rotate(-3deg);
+}
+
+.invite__joined { position: relative; }

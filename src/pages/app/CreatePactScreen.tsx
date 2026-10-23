@@ -6,6 +6,8 @@ import { useCreatePact, useRecentPeople } from '../../api/hooks';
 import { usePactDraft, usePlan } from '../../api/plans';
 import { Notice } from '../../components/app/States';
 import { categoryMeta } from '../../components/pact/category';
+import { CoverSheet } from '../../components/pact/CoverSheet';
+import { coverOf } from '../../lib/covers';
 import { AmountInput } from '../../components/ui/AmountInput';
 import { Avatar } from '../../components/ui/Avatar';
 import { AvatarGroup } from '../../components/ui/AvatarGroup';
@@ -17,7 +19,7 @@ import type { PactCategory } from '../../data/types';
 import { getUser } from '../../data/users';
 import { addDaysIso, isoDay } from '../../lib/dates';
 import { clearDraft, pushRecent, readDraft, readRecents, useSaveDraft } from '../../lib/drafts';
-import { daysUntil, formatDate, formatDaysLeft, formatNaira, joinNames, parseAmount, formatAmountInput, toKobo } from '../../lib/format';
+import { daysUntil, formatDate, formatDaysLeft, formatNaira, formatNairaCompact, joinNames, parseAmount, formatAmountInput, toKobo } from '../../lib/format';
 import { PACT_TYPES, TEMPLATES } from '../../../shared/templates';
 import { inferCategory } from '../../lib/pact';
 import { CreateShell } from '../../components/create/CreateShell';
@@ -134,6 +136,9 @@ export function CreatePactScreen() {
   const [error, setError] = useState<string>();
   const [key] = useState(newIdempotencyKey);
   const [mode, setMode] = useState<'target' | 'budget' | 'orders'>(saved?.mode ?? 'target');
+  // The photograph this Pact wears; null until chosen, which means the default for its kind.
+  const [cover, setCover] = useState<string | null>(null);
+  const [coverOpen, setCoverOpen] = useState(false);
   const [items, setItems] = useState<ItemDraft[]>(saved?.items ?? []);
   const addItem = () => setItems((l) => [...l, { key: lineKey++, name: '', price: 0, options: '', stock: '' }]);
   const setItem = (key: number, patch: Partial<ItemDraft>) => setItems((all) => all.map((x) => (x.key === key ? { ...x, ...patch } : x)));
@@ -250,6 +255,7 @@ export function CreatePactScreen() {
           inviteUserIds: invitees,
           invitePhones: phones,
           ...(planId ? { planId } : circleId ? { circleId } : {}),
+          ...(cover ? { cover } : {}),
         },
       });
       clearDraft(DRAFT_KEY);
@@ -284,11 +290,15 @@ export function CreatePactScreen() {
     when: mode === 'orders' ? 'Items people can order, and the date they pay by.' : 'A rough number is fine, and the day it needs to be ready.',
     review: 'Check it over. Nothing is created until you say so.',
   }[step];
+  // The date people usually pick for this kind of Pact comes first, then the plain ones.
+  const usualDays = template.days;
+  const usualLabel = usualDays < 28 ? (usualDays % 7 === 0 ? `In ${usualDays / 7} weeks` : `In ${usualDays} days`) : usualDays < 45 ? 'In a month' : `In ${Math.round(usualDays / 30)} months`;
   const deadlineQuick = [
+    { label: usualLabel, value: addDaysIso(isoDay(new Date()), usualDays) },
     { label: 'In 1 week', value: addDaysIso(isoDay(new Date()), 7) },
     { label: 'In 2 weeks', value: addDaysIso(isoDay(new Date()), 14) },
     { label: 'In a month', value: addDaysIso(isoDay(new Date()), 30) },
-  ];
+  ].filter((q, i, all) => all.findIndex((x) => x.value === q.value) === i);
 
   return (
     <CreateShell
@@ -439,6 +449,15 @@ export function CreatePactScreen() {
         ) : mode === 'target' ? (
           <div className={`create__amount ${touched && errors.target ? 'has-error' : ''}`}>
             <AmountInput label="Target" hideLabel value={target} onChange={setTarget} placeholder="500,000" max={50_000_000} />
+            {template.goals.length > 0 && (
+              <div className="suggest" role="group" aria-label={`Usual goals for a ${template.label.toLowerCase()}`}>
+                {template.goals.map((g) => (
+                  <button key={g} type="button" className={`suggest__chip ${target === g ? 'is-on' : ''}`} aria-pressed={target === g} onClick={() => setTarget(target === g ? 0 : g)}>
+                    {formatNairaCompact(g)}
+                  </button>
+                ))}
+              </div>
+            )}
             {touched && errors.target && <p className="field__error">{errors.target}</p>}
           </div>
         ) : (
@@ -526,6 +545,10 @@ export function CreatePactScreen() {
       {step === 'review' && (
         <>
           <section className={`create__summary tint--${categoryMeta[category].tint}`} aria-label="Your Pact">
+            <button type="button" className="create__cover" onClick={() => setCoverOpen(true)} aria-label="Change the cover photograph">
+              <img src={coverOf({ category, cover, id: title.trim() })} alt="" decoding="async" />
+              <span>Change cover</span>
+            </button>
             <p className="create__summary-kind">
               {categoryMeta[category].icon} {TEMPLATES[category].label}
             </p>
@@ -712,6 +735,7 @@ export function CreatePactScreen() {
           </>
         )}
       </Modal>
+      <CoverSheet open={coverOpen} onClose={() => setCoverOpen(false)} category={category} current={cover} onPick={(key) => (setCover(key), setCoverOpen(false))} />
     </CreateShell>
   );
 }

@@ -598,3 +598,38 @@
   background: var(--glass);
   font-size: var(--t-support-size);
 }
+
+/* The cover photograph on the review: the thing the Pact will look like, one tap to change. */
+.create__cover {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  margin-bottom: var(--space-4);
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: var(--radius-xl);
+  background: var(--forest-900);
+  cursor: pointer;
+}
+
+.create__cover img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.create__cover span {
+  position: absolute;
+  right: var(--space-3);
+  bottom: var(--space-3);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-full);
+  background: var(--white);
+  color: var(--ink-900);
+  font-size: var(--t-support-size);
+  font-weight: var(--weight-semibold);
+}

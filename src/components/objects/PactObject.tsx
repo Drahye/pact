@@ -35,6 +35,7 @@ export function PactObject({
   circleName,
   need,
   action,
+  photo,
 }: {
   title: string;
   tint?: string;
@@ -60,6 +61,8 @@ export function PactObject({
   need?: string;
   /** A contextual action that goes somewhere, in place of Mark done. */
   action?: ObjectAction;
+  /** A photograph of what it is for, faint behind the compact card, so the people and the occasion are felt before the words. */
+  photo?: string;
 }) {
   const id = useId();
   const people = contributorIds ?? [];
@@ -69,6 +72,7 @@ export function PactObject({
   if (density === 'compact' && !completed) {
     return (
       <article className={`ox-pact ox-pact--compact tint--${tint} ${disabled ? 'is-disabled' : ''}`} aria-labelledby={`${id}-t`}>
+        {photo && <img className="ox-pact__photo" src={photo} alt="" aria-hidden loading="lazy" decoding="async" />}
         <ProgressRing value={pct} size={56} stroke={6} label={`${title} is ${pct}% funded`}>
           <span className="ox-pact__pct num">{pct}%</span>
         </ProgressRing>

@@ -179,4 +179,17 @@ describe('Circles', () => {
     assert.equal(mine.rows.filter((r) => r.name === 'circle_invite_shared').length, 1);
     assert.deepEqual(mine.rows.find((r) => r.name === 'universal_create_opened')!.props, { from: 'nav' }, 'the Circle name is dropped');
   });
+
+  it('only the owner can choose a Circle cover photograph', async () => {
+    const c = (await t.call('POST', '/circles', as(ana), { name: 'Cover crew', emoji: '🌴' })).body.data;
+    assert.equal(c.cover, null);
+    const link = (await t.call('POST', `/circles/${c.id}/invites`, as(ana), {})).body.data.invite.token;
+    await t.call('POST', `/circle-invites/${link}/join`, as(ben), {});
+    assert.equal((await t.call('PATCH', `/circles/${c.id}`, as(ben), { cover: 'other-park' })).status, 403, 'a member cannot');
+    assert.equal((await t.call('PATCH', `/circles/${c.id}`, as(ana), { cover: 'other-park' })).body.data.cover, 'other-park');
+    assert.equal((await t.call('PATCH', `/circles/${c.id}`, as(ana), { cover: 'bad key!' })).status, 400);
+    assert.equal((await t.call('PATCH', `/circles/${c.id}`, as(ana), { cover: null })).body.data.cover, null, 'back to the default');
+    const list = await t.call('GET', '/circles', as(ana));
+    assert.ok(list.body.data.every((x: { cover: unknown }) => 'cover' in x), 'the list carries it too');
+  });
 });

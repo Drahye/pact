@@ -52,7 +52,7 @@ const longC = await circle(L, 'The Extended Cousins and Friends Club', '🌍', [
 const quiet = await circle(A, 'Quiet Corner', '🌱', [Q]);
 const fin = await circle(F, 'Done Deal', '🤝', [V]);
 
-const ghana = (await api('POST', `/circles/${boys.id}/plans`, D.token, { title: 'Ghana in December', date: day(14), endDate: day(18), location: 'Accra', roughBudget: 650_000_00 })).b.data;
+const ghana = (await api('POST', `/circles/${boys.id}/plans`, D.token, { title: 'Calabar in December', date: day(14), endDate: day(18), location: 'Calabar', roughBudget: 650_000_00 })).b.data;
 const ghanaAsk = (await api('POST', `/circles/${boys.id}/asks`, D.token, { type: 'choice', title: 'Where should we stay?', options: ['Labadi', 'Osu', 'Airbnb in East Legon'], planId: ghana.id })).b.data;
 await api('POST', `/plans/${ghana.id}/tasks`, D.token, { title: 'Pick hotel', assigneeId: A.id });
 await api('PUT', `/plans/${ghana.id}/rsvp`, S.token, { status: 'in' });

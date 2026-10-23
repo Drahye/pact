@@ -54,6 +54,17 @@ describe('Plans', () => {
     assert.equal((await t.call('POST', `/circles/${circleId}/plans`, undefined, { title: 'x' })).status, 401);
   });
 
+  it('the organiser can choose a cover photograph for a plan, and no one else', async () => {
+    const p = (await create(ana, circleId, { title: 'Cover plan', category: 'trip' })).body.data;
+    assert.equal(p.cover, null, 'the default for its kind until chosen');
+    assert.equal((await t.call('PATCH', `/plans/${p.id}`, tok(ben), { cover: 'trip-beach' })).status, 403, 'a member cannot');
+    const set = await t.call('PATCH', `/plans/${p.id}`, tok(ana), { cover: 'trip-beach' });
+    assert.equal(set.body.data.cover, 'trip-beach');
+    assert.equal((await t.call('PATCH', `/plans/${p.id}`, tok(ana), { title: 'Cover plan, renamed' })).body.data.cover, 'trip-beach', 'editing something else keeps the cover');
+    assert.equal((await t.call('PATCH', `/plans/${p.id}`, tok(ana), { cover: 'https://example.com/x.jpg' })).status, 400, 'a key, never a URL');
+    assert.equal((await t.call('PATCH', `/plans/${p.id}`, tok(ana), { cover: null })).body.data.cover, null, 'back to the default');
+  });
+
   it('only Circle members can read a plan; guessed ids look like nothing', async () => {
     assert.equal((await t.call('GET', `/plans/${plan.id}`, tok(cleo))).status, 404);
     assert.equal((await t.call('GET', `/circles/${circleId}/plans`, tok(cleo))).status, 404);

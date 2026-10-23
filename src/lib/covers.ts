@@ -56,6 +56,9 @@ export const defaultCover = (category?: string | null, seed = ''): Cover => {
 const CIRCLE_POOL = ['other-park', 'other-beach-hug', 'dinner-women', 'event-dance', 'trip-group-car', 'gift-laugh'];
 export const circleCover = (id: string) => coverUrl(CIRCLE_POOL[hash(id) % CIRCLE_POOL.length]);
 
+/** A Circle's cover: the one its owner chose, or one of the photographs of people together picked by its id. */
+export const circleCoverOf = (c: { id: string; cover?: string | null }) => (isCoverKey(c.cover) ? coverUrl(c.cover) : circleCover(c.id));
+
 export const coverUrl = (key: string) => `/covers/${key}.jpg`;
 
 /** The photograph to show: the one chosen for it, or the default for its kind. */

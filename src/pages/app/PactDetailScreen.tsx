@@ -16,6 +16,7 @@ import { CoverSheet } from '../../components/pact/CoverSheet';
 import { AvatarStack } from '../../components/objects';
 import { coverOf } from '../../lib/covers';
 import { circleLine, milestoneLine } from '../../lib/warmth';
+import { joinedLine, useWelcomeJoiners } from '../../lib/useWelcome';
 import { SegmentedRing } from '../../components/pact/SegmentedRing';
 import { ActivityItem } from '../../components/ui/ActivityItem';
 import { Avatar } from '../../components/ui/Avatar';
@@ -130,6 +131,13 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
   const next = stage === 'invited' || stage === 'closed' ? null : nextStepFor(pact, me);
   const checkpoints = isOrganizer ? checkpointsFor(pact) : [];
   const circle = stage === 'invited' || stage === 'closed' ? null : circleLine(pact, me);
+
+  // Someone joining while you are looking at the Pact is worth a hello.
+  useWelcomeJoiners(pact, me, (names) => {
+    toast(joinedLine(names));
+    setBurst(true);
+    window.setTimeout(() => setBurst(false), 1400);
+  });
 
   // Arriving from adding money: if that crossed a quarter, half, three quarters or the goal, say so once, like a friend would.
   const marked = useRef(false);

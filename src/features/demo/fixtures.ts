@@ -129,7 +129,7 @@ export const DEMOS: Record<DemoId, DemoPact> = {
     category: 'trip',
     date: '2025-12-20',
     organizer: 'david',
-    note: 'Six friends, one long weekend in Cape Town.',
+    note: 'Six friends, one long weekend in Abuja.',
     purpose: 'A long weekend away for six friends.',
     organizerNote: 'David booked and tracked everything.',
     people: [['david', 130_000], ['maya', 130_000], ['kemi', 130_000], ['femi', 130_000], ['zara', 130_000], ['daniel', 130_000]],

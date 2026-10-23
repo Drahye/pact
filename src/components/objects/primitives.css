@@ -1474,3 +1474,13 @@
   .ox-share { grid-template-columns: auto minmax(0, 1fr); row-gap: var(--space-1); }
   .ox-share > :last-child { grid-column: 2; justify-self: start; }
 }
+
+/* Who has put in, under a compact Pact's numbers: faces first, then the sentence. */
+.ox-pact__gave {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: var(--space-1) 0 0;
+}
+
+.ox-pact__gave > span:last-child { min-width: 0; }

@@ -27,6 +27,7 @@ interface CircleRow {
   name: string;
   emoji: string;
   tint: CircleTint;
+  cover: string | null;
   created_by: string;
   created_at: Date;
 }
@@ -56,7 +57,7 @@ const requireOwner = (member: MemberRow) => {
 };
 
 function summary(c: CircleRow, role: 'owner' | 'member', ids: string[], count: number): CircleSummaryDTO {
-  return { id: c.id, name: c.name, emoji: c.emoji, tint: c.tint, memberCount: count, memberIds: ids.slice(0, AVATARS), role, live: null };
+  return { id: c.id, name: c.name, emoji: c.emoji, tint: c.tint, memberCount: count, memberIds: ids.slice(0, AVATARS), role, cover: c.cover, live: null };
 }
 
 /* ------------------------------------------------------------------ reads */
@@ -138,11 +139,13 @@ export async function createCircle(ctx: Ctx, userId: string, input: { name: stri
   return getCircle(ctx, userId, id);
 }
 
-export async function updateCircle(ctx: Ctx, userId: string, circleId: string, patch: { name?: string; emoji?: string; tint?: CircleTint }, meta: ReqMeta) {
+export async function updateCircle(ctx: Ctx, userId: string, circleId: string, patch: { name?: string; emoji?: string; tint?: CircleTint; cover?: string | null }, meta: ReqMeta) {
   await ctx.db.tx(async (q) => {
     const { member } = await loadAsMember(q, circleId, userId, true);
     requireOwner(member);
     await q.query('UPDATE circles SET name = COALESCE($2, name), emoji = COALESCE($3, emoji), tint = COALESCE($4, tint), updated_at = now() WHERE id = $1', [circleId, patch.name ?? null, patch.emoji ?? null, patch.tint ?? null]);
+    // The cover can be cleared, so it is set on its own: a key, or null for the default.
+    if ('cover' in patch) await q.query('UPDATE circles SET cover = $2 WHERE id = $1', [circleId, patch.cover ?? null]);
     await audit(q, { actorId: userId, action: 'circle.updated', targetType: 'circle', targetId: circleId, ip: meta.ip });
   });
   return getCircle(ctx, userId, circleId);

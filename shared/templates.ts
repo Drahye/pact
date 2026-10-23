@@ -15,6 +15,8 @@ export interface PactTemplate {
   goals: number[];
   /** How far ahead people usually set the date, in days. */
   days: number;
+  /** How people usually split this kind of Pact; only ever offered as a suggestion. */
+  split: 'equal' | 'flexible';
 }
 
 export const TEMPLATES: Record<Category, PactTemplate> = {
@@ -25,6 +27,7 @@ export const TEMPLATES: Record<Category, PactTemplate> = {
     tasks: ['Book the venue', 'Order the cake', 'Buy the gift', 'Find a photographer'],
     goals: [50_000, 150_000, 300_000],
     days: 21,
+    split: 'flexible',
   },
   trip: {
     label: 'Trip',
@@ -33,6 +36,7 @@ export const TEMPLATES: Record<Category, PactTemplate> = {
     tasks: ['Book the flights', 'Choose the accommodation', 'Plan the activities'],
     goals: [300_000, 800_000, 1_500_000],
     days: 60,
+    split: 'equal',
   },
   wedding: {
     label: 'Wedding',
@@ -41,6 +45,7 @@ export const TEMPLATES: Record<Category, PactTemplate> = {
     tasks: ['Choose the gift', 'Collect notes for the card', 'Book transport'],
     goals: [100_000, 300_000, 600_000],
     days: 45,
+    split: 'flexible',
   },
   gift: {
     label: 'Gift',
@@ -49,6 +54,7 @@ export const TEMPLATES: Record<Category, PactTemplate> = {
     tasks: ['Choose the gift', 'Write the card'],
     goals: [30_000, 80_000, 200_000],
     days: 14,
+    split: 'flexible',
   },
   event: {
     label: 'Event',
@@ -57,6 +63,7 @@ export const TEMPLATES: Record<Category, PactTemplate> = {
     tasks: ['Book the venue', 'Sort the food', 'Send the reminders'],
     goals: [200_000, 500_000, 1_000_000],
     days: 45,
+    split: 'flexible',
   },
   dinner: {
     label: 'Dinner',
@@ -65,6 +72,7 @@ export const TEMPLATES: Record<Category, PactTemplate> = {
     tasks: ['Book the table'],
     goals: [40_000, 100_000, 250_000],
     days: 10,
+    split: 'equal',
   },
   household: {
     label: 'Home',
@@ -73,6 +81,7 @@ export const TEMPLATES: Record<Category, PactTemplate> = {
     tasks: ['Sign the lease', 'Book movers', 'Set up internet'],
     goals: [500_000, 1_500_000, 3_000_000],
     days: 60,
+    split: 'equal',
   },
   fund: {
     label: 'Fund',
@@ -81,6 +90,7 @@ export const TEMPLATES: Record<Category, PactTemplate> = {
     tasks: [],
     goals: [50_000, 200_000, 500_000],
     days: 30,
+    split: 'flexible',
   },
   other: {
     label: 'Other',
@@ -89,6 +99,7 @@ export const TEMPLATES: Record<Category, PactTemplate> = {
     tasks: [],
     goals: [50_000, 200_000, 500_000],
     days: 30,
+    split: 'flexible',
   },
 };
 

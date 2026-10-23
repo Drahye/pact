@@ -2,12 +2,13 @@ import { Check, ChevronDown, ChevronRight, History, Phone, Plus, RotateCcw, Scal
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ApiError, newIdempotencyKey } from '../../api/client';
-import { useCreatePact, useRecentPeople } from '../../api/hooks';
+import { useCreatePact, usePacts, useRecentPeople } from '../../api/hooks';
 import { usePactDraft, usePlan } from '../../api/plans';
 import { Notice } from '../../components/app/States';
 import { categoryMeta } from '../../components/pact/category';
 import { CoverSheet } from '../../components/pact/CoverSheet';
 import { coverOf } from '../../lib/covers';
+import { suggestedPeople } from '../../lib/warmth';
 import { AmountInput } from '../../components/ui/AmountInput';
 import { Avatar } from '../../components/ui/Avatar';
 import { AvatarGroup } from '../../components/ui/AvatarGroup';
@@ -266,6 +267,8 @@ export function CreatePactScreen() {
     }
   };
 
+  const allPacts = usePacts();
+  const suggested = suggestedPeople(allPacts.data ?? [], category, user?.id ?? '', circleMembers);
   const toggle = (id: string) => setInvitees((list) => (list.includes(id) ? list.filter((x) => x !== id) : [...list, id]));
   const addPhone = () => {
     const p = normalizePhone(phoneDraft);
@@ -354,6 +357,18 @@ export function CreatePactScreen() {
 
       {step === 'who' && (
         <>
+          {suggested.ids.length > 0 && (
+            <div className="create__suggested">
+              <p className="field__label">{suggested.sameKind ? `Often in a ${template.label.toLowerCase()} with you` : 'People you do things with'}</p>
+              <div className="suggest" role="group" aria-label="Suggested people">
+                {suggested.ids.map((id) => (
+                  <button key={id} type="button" className={`suggest__chip ${invitees.includes(id) ? 'is-on' : ''}`} aria-pressed={invitees.includes(id)} onClick={() => toggle(id)}>
+                    <Avatar userId={id} size="xs" label={false} /> {getUser(id).name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           {circleMembers.length > 0 && <PeoplePicker label="People in your Circle" ids={circleMembers} selected={invitees} onToggle={toggle} nameOf={(id) => getUser(id).name} />}
           <button type="button" className="create__invite" onClick={() => setPickerOpen(true)}>
             {phones.length || invitees.some((id) => !circleMembers.includes(id)) ? (
@@ -588,6 +603,15 @@ export function CreatePactScreen() {
                 {policy === 'refund' ? 'everyone gets their money back.' : 'the organiser keeps what was raised.'}{' '}
                 <strong>Contributions:</strong>{' '}
                 {split === 'equal' && goal >= 1000 ? `equal shares of ${formatNaira(goal)}.` : split === 'equal' ? 'equal shares.' : 'everyone chooses what they can add.'}
+                {split !== template.split && template.split === 'equal' && (
+                  <>
+                    {' '}
+                    Most {template.label.toLowerCase()}s are split equally.{' '}
+                    <button type="button" className="link" onClick={() => setSplit('equal')}>
+                      Split equally
+                    </button>
+                  </>
+                )}
               </span>
               <button type="button" className="link" aria-expanded={rulesOpen} onClick={() => setRulesOpen((o) => !o)}>
                 {rulesOpen ? 'Done' : 'Change'}

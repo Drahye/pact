@@ -32,6 +32,7 @@ interface PlanRow {
   circle_id: string;
   title: string;
   category: PlanSummaryDTO['category'];
+  cover: string | null;
   description: string | null;
   date: string | null;
   end_date: string | null;
@@ -48,7 +49,7 @@ interface PlanRow {
   ctint: CircleTint;
 }
 
-const SELECT = `SELECT p.id, p.circle_id, p.title, p.category, p.description, p.date::text AS date, p.end_date::text AS end_date, p.location,
+const SELECT = `SELECT p.id, p.circle_id, p.title, p.category, p.cover, p.description, p.date::text AS date, p.end_date::text AS end_date, p.location,
                        p.rough_budget, p.status, p.created_by, p.pact_id, p.rsvp_open, p.share_token, p.created_at,
                        c.name AS cname, c.emoji AS cemoji, c.tint AS ctint
                   FROM plans p JOIN circles c ON c.id = p.circle_id`;
@@ -126,6 +127,7 @@ async function build(ctx: Ctx, q: Queryable, rows: PlanRow[], viewerId: string |
       circle: { name: p.cname, emoji: p.cemoji, tint: p.ctint },
       title: p.title,
       category: p.category,
+      cover: p.cover,
       date: p.date,
       endDate: p.end_date,
       location: p.location,
@@ -167,6 +169,7 @@ const summary = (d: PlanDTO): PlanSummaryDTO => ({
   circle: d.circle,
   title: d.title,
   category: d.category,
+  cover: d.cover,
   date: d.date,
   endDate: d.endDate,
   location: d.location,
@@ -316,8 +319,8 @@ export async function updatePlan(ctx: Ctx, userId: string, planId: string, patch
     const p = await loadForMember(q, planId, userId, true);
     if (p.created_by !== userId) throw forbidden('Only the person who made the plan can change it.');
     if (!isOpen(p)) throw new AppError(409, 'plan_closed', 'This plan is finished, so it can’t be changed.');
-    const next = { title: p.title, category: p.category, description: p.description, date: p.date, end_date: p.end_date, location: p.location, rough_budget: p.rough_budget } as Record<string, unknown>;
-    const map: Record<string, string> = { title: 'title', category: 'category', description: 'description', date: 'date', endDate: 'end_date', location: 'location', roughBudget: 'rough_budget' };
+    const next = { title: p.title, category: p.category, cover: p.cover, description: p.description, date: p.date, end_date: p.end_date, location: p.location, rough_budget: p.rough_budget } as Record<string, unknown>;
+    const map: Record<string, string> = { title: 'title', category: 'category', description: 'description', date: 'date', endDate: 'end_date', location: 'location', roughBudget: 'rough_budget', cover: 'cover' };
     for (const [k, col] of Object.entries(map)) if (k in patch) next[col] = patch[k] ?? null;
     const today = lagosToday(ctx.now());
     if (next.date && next.date !== p.date && (next.date as string) < today) throw badRequest('invalid_date', 'Choose a date that hasn’t passed.');
@@ -333,8 +336,8 @@ export async function updatePlan(ctx: Ctx, userId: string, planId: string, patch
       }
     }
     await q.query(
-      `UPDATE plans SET title = $2, category = $3, description = $4, date = $5, end_date = $6, location = $7, rough_budget = $8, updated_at = now() WHERE id = $1`,
-      [planId, next.title, next.category, next.description, next.date, next.end_date, next.location, next.rough_budget],
+      `UPDATE plans SET title = $2, category = $3, description = $4, date = $5, end_date = $6, location = $7, rough_budget = $8, cover = $9, updated_at = now() WHERE id = $1`,
+      [planId, next.title, next.category, next.description, next.date, next.end_date, next.location, next.rough_budget, next.cover ?? null],
     );
     await audit(q, { actorId: userId, action: 'plan.updated', targetType: 'plan', targetId: planId, ip: meta.ip });
     // Only meaningful changes leave a trace: not a fixed typo or a tweaked description.

@@ -17,8 +17,8 @@ export const scenarios: Scenario[] = [
   {
     id: 'trip',
     label: 'Trip',
-    title: 'Weekend in Cape Town',
-    line: '₦1.2m for Cape Town',
+    title: 'Weekend in Abuja',
+    line: '₦1.2m for Abuja',
     category: 'trip',
     target: 1_200_000,
     raised: 780_000,

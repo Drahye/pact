@@ -39,7 +39,7 @@ const work = (await call('POST', '/circles', T.abraham, { name: 'Work crew', emo
 await join(work.id, 'abraham', ['maya', 'tolu']);
 
 // Needs Abraham: an RSVP, a vote, a share he owes.
-const ghana = (await call('POST', `/circles/${boys.id}/plans`, T.sarah, { title: 'Ghana in December', category: 'trip', date: day(70), endDate: day(76), location: 'Accra' })).data;
+const ghana = (await call('POST', `/circles/${boys.id}/plans`, T.sarah, { title: 'Calabar in December', category: 'trip', date: day(70), endDate: day(76), location: 'Calabar' })).data;
 await call('PUT', `/plans/${ghana.id}/rsvp`, T.david, { status: 'in' });
 await call('PUT', `/plans/${ghana.id}/rsvp`, T.maya, { status: 'in' });
 const ask = (await call('POST', `/circles/${boys.id}/asks`, T.david, { type: 'choice', title: 'Which date works?', options: ['Dec 18', 'Dec 20', 'Dec 22'] })).data;

@@ -434,7 +434,7 @@ export function StyleGuidePage() {
 
         <Section id="screens" title="Hero and sheet" lede="Every screen has this shape: a hero in the object's colour that runs up under the top bar, the title set large on it in ink, and the body rising over it as a rounded sheet. The hero stays bright in both themes; the sheet follows the theme.">
           <div className="sg-screens">
-            {([['sky', 'Which date works?', 'Ask'], ['sun', 'Bali Trip', 'Plan'], ['lilac', 'Airport taxi', 'Split'], ['mint', 'Sarah’s Birthday', 'Pact'], ['coral', 'The Boys', 'Circle']] as const).map(([tint, title, kind]) => (
+            {([['sky', 'Which date works?', 'Ask'], ['sun', 'Obudu Trip', 'Plan'], ['lilac', 'Airport taxi', 'Split'], ['mint', 'Sarah’s Birthday', 'Pact'], ['coral', 'The Boys', 'Circle']] as const).map(([tint, title, kind]) => (
               <div key={tint} className="sg-screen">
                 <Hero tint={tint}>
                   <p className="xh__meta">{kind}</p>
@@ -519,7 +519,7 @@ export function StyleGuidePage() {
             <Spec name="Input · default / filled / error">
               <div className="sg-col">
                 <Input label="What’s the money for?" placeholder="Sarah’s Birthday" />
-                <Input label="What’s the money for?" defaultValue="Weekend in Cape Town" hint="23 days left" />
+                <Input label="What’s the money for?" defaultValue="Weekend in Abuja" hint="23 days left" />
                 <Input label="When do you need it?" defaultValue="" error="Pick a date." />
               </div>
             </Spec>

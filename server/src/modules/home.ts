@@ -180,8 +180,8 @@ async function addDetail(q: Queryable, userId: string, items: NeedsYouItem[]): P
   }
   if (planIds.length) {
     const [p, going] = await Promise.all([
-      q.query<{ id: string; category: string; date: string | null; end_date: string | null; location: string | null; n_in: number; n_maybe: number }>(
-        `SELECT p.id, p.category, p.date::text AS date, p.end_date::text AS end_date, p.location,
+      q.query<{ id: string; category: string; cover: string | null; date: string | null; end_date: string | null; location: string | null; n_in: number; n_maybe: number }>(
+        `SELECT p.id, p.category, p.cover, p.date::text AS date, p.end_date::text AS end_date, p.location,
                 (SELECT COUNT(*)::int FROM plan_rsvps r WHERE r.plan_id = p.id AND r.status = 'in') AS n_in,
                 (SELECT COUNT(*)::int FROM plan_rsvps r WHERE r.plan_id = p.id AND r.status = 'maybe') AS n_maybe
            FROM plans p WHERE p.id = ANY($1::uuid[])`,
@@ -192,7 +192,7 @@ async function addDetail(q: Queryable, userId: string, items: NeedsYouItem[]): P
     for (const x of p.rows) {
       const goingIds = going.rows.filter((g) => g.plan_id === x.id).map((g) => g.user_id).slice(0, 4);
       people.push(...goingIds);
-      detail.set(`plan:${x.id}`, { kind: 'plan', date: x.date, endDate: x.end_date, location: x.location, going: x.n_in, maybe: x.n_maybe, goingIds, category: x.category });
+      detail.set(`plan:${x.id}`, { kind: 'plan', date: x.date, endDate: x.end_date, location: x.location, going: x.n_in, maybe: x.n_maybe, goingIds, category: x.category, cover: x.cover });
     }
   }
   if (splitIds.length) {
@@ -213,7 +213,15 @@ async function addDetail(q: Queryable, userId: string, items: NeedsYouItem[]): P
   }
   if (pactIds.length) {
     const r = await q.query<{ id: string; category: string; cover: string | null; raised: number; target: number; deadline: string }>(`SELECT id, category, cover, raised_amount::float8 AS raised, target_amount::float8 AS target, deadline::text AS deadline FROM pacts WHERE id = ANY($1::uuid[])`, [pactIds]);
-    for (const x of r.rows) detail.set(`pact:${x.id}`, { kind: 'pact', raised: x.raised / 100, target: x.target / 100, percent: Math.min(100, Math.round((x.raised / Math.max(1, x.target)) * 100)), deadline: x.deadline, category: x.category, cover: x.cover });
+    const gave = await q.query<{ pact_id: string; user_id: string }>(
+      `SELECT pact_id, user_id FROM pact_members WHERE pact_id = ANY($1::uuid[]) AND status = 'joined' AND contributed > 0 ORDER BY contributed DESC, joined_at`,
+      [pactIds],
+    );
+    for (const x of r.rows) {
+      const contributorIds = gave.rows.filter((g) => g.pact_id === x.id).map((g) => g.user_id).slice(0, 4);
+      people.push(...contributorIds);
+      detail.set(`pact:${x.id}`, { kind: 'pact', contributorIds, raised: x.raised / 100, target: x.target / 100, percent: Math.min(100, Math.round((x.raised / Math.max(1, x.target)) * 100)), deadline: x.deadline, category: x.category, cover: x.cover });
+    }
   }
   for (const i of items) {
     const d = detail.get(`${i.objectType}:${i.sourceId}`);
@@ -236,7 +244,7 @@ async function circlesShelf(ctx: Ctx, userId: string, needs: NeedsYouItem[]): Pr
     const n = pacts.find((x) => x.circle_id === c.id)?.n ?? 0;
     // One signal: something for me, then what is coming up or active, then a Pact, then quiet.
     const signal: HomeCircleDTO['signal'] = c.live?.needsYou ? { text: c.live.text, kind: 'needs_you' } : mine ? { text: `${mine} ${mine === 1 ? 'thing needs' : 'things need'} your response`, kind: 'needs_you' } : c.live ? { text: c.live.text, kind: /unsettled/.test(c.live.text) ? 'split' : /starts/.test(c.live.text) ? 'soon' : 'plan' } : n ? { text: `${n} active ${n === 1 ? 'Pact' : 'Pacts'}`, kind: 'pact' } : { text: 'No action needed', kind: 'quiet' };
-    return { id: c.id, name: c.name, emoji: c.emoji, tint: c.tint, memberCount: c.memberCount, memberIds: c.memberIds.slice(0, 3), signal };
+    return { id: c.id, name: c.name, emoji: c.emoji, tint: c.tint, cover: c.cover, memberCount: c.memberCount, memberIds: c.memberIds.slice(0, 3), signal };
   });
   list.sort((a, b) => Number(b.signal.kind === 'needs_you') - Number(a.signal.kind === 'needs_you'));
   return { list: list.slice(0, 6), people: r.people };
@@ -245,8 +253,8 @@ async function circlesShelf(ctx: Ctx, userId: string, needs: NeedsYouItem[]): Pr
 async function comingUp(q: Queryable, userId: string, today: string): Promise<ComingUpItem[]> {
   const until = addDays(today, 30);
   const [pl, pa] = await Promise.all([
-    q.query<{ id: string; title: string; category: string; date: string; end_date: string | null; n_in: number; n_maybe: number }>(
-      `SELECT p.id, p.title, p.category, p.date::text AS date, p.end_date::text AS end_date,
+    q.query<{ id: string; title: string; category: string; cover: string | null; date: string; end_date: string | null; n_in: number; n_maybe: number }>(
+      `SELECT p.id, p.title, p.category, p.cover, p.date::text AS date, p.end_date::text AS end_date,
               (SELECT COUNT(*)::int FROM plan_rsvps r WHERE r.plan_id = p.id AND r.status = 'in') AS n_in,
               (SELECT COUNT(*)::int FROM plan_rsvps r WHERE r.plan_id = p.id AND r.status = 'maybe') AS n_maybe
          FROM plans p JOIN circle_members me ON me.circle_id = p.circle_id AND me.user_id = $1 AND me.status = 'joined'
@@ -261,7 +269,7 @@ async function comingUp(q: Queryable, userId: string, today: string): Promise<Co
     ),
   ]);
   const items: ComingUpItem[] = [
-    ...pl.rows.map<ComingUpItem>((p) => ({ kind: 'plan', id: p.id, title: p.title, emoji: CATEGORY_EMOJI[p.category] ?? '✨', category: p.category, date: p.date, endDate: p.end_date, text: `${p.n_in} in${p.n_maybe ? ` · ${p.n_maybe} maybe` : ''}`, url: `/app/plans/${p.id}?from=home` })),
+    ...pl.rows.map<ComingUpItem>((p) => ({ kind: 'plan', id: p.id, title: p.title, emoji: CATEGORY_EMOJI[p.category] ?? '✨', category: p.category, cover: p.cover, date: p.date, endDate: p.end_date, text: `${p.n_in} in${p.n_maybe ? ` · ${p.n_maybe} maybe` : ''}`, url: `/app/plans/${p.id}?from=home` })),
     ...pa.rows.map<ComingUpItem>((p) => ({ kind: 'pact', id: p.id, title: p.title, emoji: CATEGORY_EMOJI[p.category] ?? '✨', category: p.category, cover: p.cover, date: p.deadline, endDate: null, text: p.status === 'funded' ? 'Funded' : `${Math.min(100, Math.round((p.raised / Math.max(1, p.target)) * 100))}% funded`, url: `/app/pact/${p.id}` })),
   ];
   return items.sort((a, b) => a.date.localeCompare(b.date)).slice(0, 5);
@@ -352,8 +360,8 @@ export async function getFeed(ctx: Ctx, userId: string) {
 async function recaps(q: Queryable, userId: string): Promise<RecapCardDTO[]> {
   const win = `now() - interval '60 days'`;
   const [pl, pa, sp] = await Promise.all([
-    q.query<{ id: string; title: string; category: string; at: Date; people: number; cname: string }>(
-      `SELECT p.id, p.title, p.category, p.updated_at AS at, GREATEST(1, (SELECT COUNT(*)::int FROM plan_rsvps r WHERE r.plan_id = p.id AND r.status = 'in')) AS people, c.name AS cname
+    q.query<{ id: string; title: string; category: string; cover: string | null; at: Date; people: number; cname: string }>(
+      `SELECT p.id, p.title, p.category, p.cover, p.updated_at AS at, GREATEST(1, (SELECT COUNT(*)::int FROM plan_rsvps r WHERE r.plan_id = p.id AND r.status = 'in')) AS people, c.name AS cname
          FROM plans p JOIN circles c ON c.id = p.circle_id JOIN circle_members me ON me.circle_id = p.circle_id AND me.user_id = $1 AND me.status = 'joined'
         WHERE p.status = 'done' AND p.updated_at > ${win} ORDER BY p.updated_at DESC LIMIT 3`,
       [userId],
@@ -372,7 +380,7 @@ async function recaps(q: Queryable, userId: string): Promise<RecapCardDTO[]> {
     ),
   ]);
   const all: RecapCardDTO[] = [
-    ...pl.rows.map<RecapCardDTO>((r) => ({ kind: 'plan', id: r.id, title: r.title, emoji: CATEGORY_EMOJI[r.category] ?? '✨', category: r.category, circleName: r.cname, completedAt: new Date(r.at).toISOString(), people: r.people, url: `/app/recap/plan/${r.id}` })),
+    ...pl.rows.map<RecapCardDTO>((r) => ({ kind: 'plan', id: r.id, title: r.title, emoji: CATEGORY_EMOJI[r.category] ?? '✨', category: r.category, cover: r.cover, circleName: r.cname, completedAt: new Date(r.at).toISOString(), people: r.people, url: `/app/recap/plan/${r.id}` })),
     ...pa.rows.map<RecapCardDTO>((r) => ({ kind: 'pact', id: r.id, title: r.title, emoji: CATEGORY_EMOJI[r.category] ?? '✨', category: r.category, cover: r.cover, circleName: r.cname, completedAt: new Date(r.at).toISOString(), people: r.people, url: `/app/recap/pact/${r.id}` })),
     ...sp.rows.map<RecapCardDTO>((r) => ({ kind: 'split', id: r.id, title: r.title, emoji: '🧾', circleName: r.cname, completedAt: new Date(r.at).toISOString(), people: r.people, url: `/app/recap/split/${r.id}` })),
   ];

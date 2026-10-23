@@ -53,7 +53,7 @@ export const useCreateCircle = () => {
   const keyFor = useRef(intentKeys()).current;
   return useCircleWrite((b: { name: string; emoji: string; tint: CircleTint }) => api('POST', '/circles', b, { idempotencyKey: keyFor(b) }));
 };
-export const useUpdateCircle = (id: string) => useCircleWrite((b: Partial<{ name: string; emoji: string; tint: CircleTint }>) => api('PATCH', `/circles/${id}`, b));
+export const useUpdateCircle = (id: string) => useCircleWrite((b: Partial<{ name: string; emoji: string; tint: CircleTint; cover: string | null }>) => api('PATCH', `/circles/${id}`, b));
 export const useEnsureInvite = (id: string) => useCircleWrite((_: void) => api('POST', `/circles/${id}/invites`, {}));
 export const useResetInvite = (id: string) => useCircleWrite((_: void) => api('POST', `/circles/${id}/invites/reset`, {}));
 export const useRemoveMember = (id: string) => useCircleWrite((userId: string) => api('DELETE', `/circles/${id}/members/${userId}`));

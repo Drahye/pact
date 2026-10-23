@@ -96,7 +96,7 @@ export function JoinScreen() {
       className="join"
     >
       <header className="join__hero">
-        <img className="join__photo" src={coverOf(p.category)} alt="" decoding="async" />
+        <img className="join__photo" src={coverOf({ category: p.category, cover: p.cover, id: code })} alt="" decoding="async" />
         <div className="join__hero-body">
           <p className="join__eyebrow">{p.organizer.firstName} invited you to</p>
           <h1 className="join__title">{p.title}</h1>

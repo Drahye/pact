@@ -10,6 +10,7 @@ export function toPact(p: PactDTO): Pact {
     slug: p.slug,
     title: p.title,
     category: p.category,
+    cover: p.cover,
     target: fromKobo(p.target),
     deadline: p.deadline,
     createdAt: p.createdAt,

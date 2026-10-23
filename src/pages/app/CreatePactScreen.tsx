@@ -6,6 +6,8 @@ import { useCreatePact, useRecentPeople } from '../../api/hooks';
 import { usePactDraft, usePlan } from '../../api/plans';
 import { Notice } from '../../components/app/States';
 import { categoryMeta } from '../../components/pact/category';
+import { CoverSheet } from '../../components/pact/CoverSheet';
+import { coverOf } from '../../lib/covers';
 import { AmountInput } from '../../components/ui/AmountInput';
 import { Avatar } from '../../components/ui/Avatar';
 import { AvatarGroup } from '../../components/ui/AvatarGroup';
@@ -134,6 +136,9 @@ export function CreatePactScreen() {
   const [error, setError] = useState<string>();
   const [key] = useState(newIdempotencyKey);
   const [mode, setMode] = useState<'target' | 'budget' | 'orders'>(saved?.mode ?? 'target');
+  // The photograph this Pact wears; null until chosen, which means the default for its kind.
+  const [cover, setCover] = useState<string | null>(null);
+  const [coverOpen, setCoverOpen] = useState(false);
   const [items, setItems] = useState<ItemDraft[]>(saved?.items ?? []);
   const addItem = () => setItems((l) => [...l, { key: lineKey++, name: '', price: 0, options: '', stock: '' }]);
   const setItem = (key: number, patch: Partial<ItemDraft>) => setItems((all) => all.map((x) => (x.key === key ? { ...x, ...patch } : x)));
@@ -250,6 +255,7 @@ export function CreatePactScreen() {
           inviteUserIds: invitees,
           invitePhones: phones,
           ...(planId ? { planId } : circleId ? { circleId } : {}),
+          ...(cover ? { cover } : {}),
         },
       });
       clearDraft(DRAFT_KEY);
@@ -539,6 +545,10 @@ export function CreatePactScreen() {
       {step === 'review' && (
         <>
           <section className={`create__summary tint--${categoryMeta[category].tint}`} aria-label="Your Pact">
+            <button type="button" className="create__cover" onClick={() => setCoverOpen(true)} aria-label="Change the cover photograph">
+              <img src={coverOf({ category, cover, id: title.trim() })} alt="" decoding="async" />
+              <span>Change cover</span>
+            </button>
             <p className="create__summary-kind">
               {categoryMeta[category].icon} {TEMPLATES[category].label}
             </p>
@@ -725,6 +735,7 @@ export function CreatePactScreen() {
           </>
         )}
       </Modal>
+      <CoverSheet open={coverOpen} onClose={() => setCoverOpen(false)} category={category} current={cover} onPick={(key) => (setCover(key), setCoverOpen(false))} />
     </CreateShell>
   );
 }

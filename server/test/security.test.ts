@@ -106,8 +106,10 @@ describe('security: authorization, RLS, payments, uploads, abuse', () => {
     assert.ok(!/pin_hash|pinHash|scrypt\$/.test(text), 'PIN hash leaked');
     assert.ok(!/balance/i.test(text.replace(/poolBalance/g, '')), 'wallet balance leaked');
     const preview = await t.call('GET', `/invites/${r.body.data.pact.inviteCode}`);
-    // Public by design: the Pact's account number (so anyone can pay by transfer), and nothing personal.
-    assert.deepEqual(Object.keys(preview.body).sort(), ['bankAccount', 'category', 'deadline', 'memberCount', 'mode', 'organizer', 'raised', 'status', 'target', 'title']);
+    // Public by design: the Pact's account number (so anyone can pay by transfer), its cover photograph's key, and a few faces of who is in
+    // (first name, colour, photo: never an id, a surname or a phone number), and nothing else personal.
+    assert.deepEqual(Object.keys(preview.body).sort(), ['bankAccount', 'category', 'cover', 'deadline', 'memberCount', 'members', 'mode', 'organizer', 'raised', 'status', 'target', 'title']);
+    for (const m of preview.body.members) assert.deepEqual(Object.keys(m).sort(), ['color', 'firstName', 'photoUrl'], 'a face is a first name, a colour and a photo');
     assert.equal(preview.body.bankAccount, null, 'no account number until an organiser sets one up');
   });
 

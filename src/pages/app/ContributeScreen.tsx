@@ -210,7 +210,7 @@ export function ContributeScreen() {
       }
       className="contribute xhero xhero--lite tint--mint"
     >
-      <PageHero tint="mint" title={`Add to ${pact.title}`} photo={coverOf(pact.category)} subtitle={circleLine(pact, user?.id ?? '')?.text ?? 'Everyone in the Pact sees it.'} />
+      <PageHero tint="mint" title={`Add to ${pact.title}`} photo={coverOf(pact)} subtitle={circleLine(pact, user?.id ?? '')?.text ?? 'Everyone in the Pact sees it.'} />
 
       <div className="contribute__status">
         <div className="contribute__status-row">

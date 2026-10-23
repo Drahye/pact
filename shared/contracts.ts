@@ -85,6 +85,8 @@ export const CreatePactBody = z
     circleId: z.string().uuid().optional(),
     /** Optional: the Plan this Pact is made from. The server checks it is theirs and still free. */
     planId: z.string().uuid().optional(),
+    /** Optional: a cover photograph from the library, by key. */
+    cover: z.string().regex(/^[a-z0-9-]{3,40}$/).optional(),
   })
   .refine((b) => b.mode === 'orders' || b.budget.length > 0 || b.target !== undefined, { message: 'Set a target or add what the money covers.', path: ['target'] })
   .refine((b) => b.mode !== 'orders' || b.items.length > 0, { message: 'Add at least one item people can order.', path: ['items'] });
@@ -222,7 +224,7 @@ export type NeedsDetail =
   | { kind: 'ask'; type: 'choice' | 'attendance'; options: { id: string; label: string; votes: number }[]; answered: number; of: number; closesAt: string | null }
   | { kind: 'plan'; date: string | null; endDate: string | null; location: string | null; going: number; maybe: number; goingIds: string[]; category?: string }
   | { kind: 'split'; owe: boolean; amount: number; payerId: string; payerName: string; settled: number; shares: number }
-  | { kind: 'pact'; raised: number; target: number; percent: number; deadline: string; category?: string };
+  | { kind: 'pact'; raised: number; target: number; percent: number; deadline: string; category?: string; cover?: string | null };
 
 /** One thing the viewer can act on now. Several actions on the same object are one card. */
 export interface NeedsYouItem {
@@ -264,6 +266,7 @@ export interface ComingUpItem {
   emoji: string;
   /** The kind of plan or Pact, for its photograph. */
   category?: string;
+  cover?: string | null;
   date: string;
   endDate: string | null;
   text: string;
@@ -285,6 +288,7 @@ export interface RecapCardDTO {
   title: string;
   emoji: string;
   category?: string;
+  cover?: string | null;
   circleName: string | null;
   completedAt: string;
   people: number;
@@ -345,6 +349,9 @@ export const SplitSettleBody = z.object({ settled: z.boolean(), afterAuth: z.boo
 export const SplitSharedBody = z.object({ via: z.enum(['native', 'copy']) });
 
 export type CreatePactInput = z.input<typeof CreatePactBody>;
+
+/** Change a Pact's cover photograph: a key from the library, or null for the default of its kind. */
+export const SetCoverBody = z.object({ cover: z.string().regex(/^[a-z0-9-]{3,40}$/).nullable() });
 
 /* ==========================================================================
    Responses
@@ -773,6 +780,8 @@ export interface PactDTO {
   title: string;
   note: string | null;
   category: (typeof categories)[number];
+  /** The cover photograph chosen for it (a library key), or null for the default of its kind. */
+  cover: string | null;
   target: number;
   raised: number;
   poolBalance: number;
@@ -808,6 +817,7 @@ export interface PactDTO {
 export interface PactPreviewDTO {
   title: string;
   category: PactDTO['category'];
+  cover?: string | null;
   target: number;
   raised: number;
   deadline: string;

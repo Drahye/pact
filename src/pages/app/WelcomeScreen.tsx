@@ -8,11 +8,12 @@ import { Modal } from '../../components/ui/Modal';
 import { setReturnTo } from './auth/flow';
 import { IntroVisual } from './auth/IntroVisual';
 import { Hero, Sheet } from '../../components/objects';
+import { coverUrl } from '../../lib/covers';
 import { Screen } from './Screen';
 import './welcome.css';
 
 /** The moments people start with, one after another behind the hero. */
-const WELCOME_PHOTOS = ['wedding', 'trip', 'dinner'] as const;
+const WELCOME_PHOTOS = ['wedding-aso-ebi', 'trip-beach', 'dinner-women'] as const;
 
 /** Accepts a full invite link, a path, or just the code. */
 export const parseInviteCode = (raw: string) => {
@@ -61,7 +62,7 @@ export function WelcomeScreen() {
         backdrop={
           <div className="welcome__bgs" aria-hidden>
             {WELCOME_PHOTOS.map((name, i) => (
-              <img key={name} className="welcome__bg" style={{ animationDelay: `${i * 6 - 1}s` }} src={`/covers/${name}.jpg`} alt="" decoding="async" />
+              <img key={name} className="welcome__bg" style={{ animationDelay: `${i * 6 - 1}s` }} src={coverUrl(name)} alt="" decoding="async" />
             ))}
           </div>
         }

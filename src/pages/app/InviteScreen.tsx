@@ -116,10 +116,10 @@ export function InviteScreen() {
           <Check aria-hidden /> Your Pact is ready.
         </p>
       )}
-      <PageHero tint="mint" photo={coverOf(pact.category)} title={justCreated ? 'Now bring your people in.' : 'Bring your people in.'} subtitle={<>{justCreated ? 'Share the link in your group chat. Anyone with it can see what the Pact is for and join.' : 'Anyone with this link can see what the Pact is for and join it.'}</>} />
+      <PageHero tint="mint" photo={coverOf(pact)} title={justCreated ? 'Now bring your people in.' : 'Bring your people in.'} subtitle={<>{justCreated ? 'Share the link in your group chat. Anyone with it can see what the Pact is for and join.' : 'Anyone with this link can see what the Pact is for and join it.'}</>} />
 
       <div className="invite__card">
-        <img className="invite__cover" src={coverOf(pact.category)} alt="" loading="lazy" decoding="async" />
+        <img className="invite__cover" src={coverOf(pact)} alt="" loading="lazy" decoding="async" />
         <div>
           <p className="invite__card-title">{pact.title}</p>
           <p className="invite__card-meta num">

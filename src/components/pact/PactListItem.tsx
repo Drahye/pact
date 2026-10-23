@@ -26,7 +26,7 @@ function PactListItemBase({ pact, to, attention }: { pact: Pact; to: string; att
       daysLeft={running ? daysUntil(pact.deadline) : undefined}
       need={attention ?? (running ? undefined : line)}
       href={to}
-      photo={coverOf(pact.category)}
+      photo={coverOf(pact)}
     />
   );
 }

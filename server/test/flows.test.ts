@@ -174,6 +174,23 @@ describe('PACT end to end', () => {
     assert.ok((await reconcile(t.db)).ok);
   });
 
+  it('lets an organiser choose a cover photograph, and no one else', async () => {
+    const org = await t.signIn('08010000001');
+    const m = await t.signIn('08036660000', { firstName: 'Cover', lastName: 'Tester', pin: '2468' });
+    const created = await t.call('POST', '/pacts', org.accessToken, { title: 'Cover trip', category: 'trip', target: 200_000_00, deadline: lagosDay(20), cover: 'trip-beach' });
+    assert.equal(created.body.data.pact.cover, 'trip-beach', 'chosen while creating');
+    const id = created.body.data.pact.id;
+    const code = created.body.data.pact.inviteCode;
+    assert.equal((await t.call('GET', `/invites/${code}`)).body.cover, 'trip-beach', 'the invite shows it');
+    await t.call('POST', `/invites/${code}/join`, m.accessToken, {});
+    assert.equal((await t.call('PUT', `/pacts/${id}/cover`, m.accessToken, { cover: 'trip-road' })).status, 403, 'a member cannot');
+    const changed = await t.call('PUT', `/pacts/${id}/cover`, org.accessToken, { cover: 'trip-road' });
+    assert.equal(changed.body.data.pact.cover, 'trip-road');
+    assert.equal((await t.call('PUT', `/pacts/${id}/cover`, org.accessToken, { cover: 'https://example.com/x.jpg' })).status, 400, 'a key, never a URL');
+    const reset = await t.call('PUT', `/pacts/${id}/cover`, org.accessToken, { cover: null });
+    assert.equal(reset.body.data.pact.cover, null, 'back to the default for its kind');
+  });
+
   it('refunds every contributor when an organizer cancels', async () => {
     const org = await t.signIn('08010000001');
     const m = await t.signIn('08037770000', { firstName: 'Refund', lastName: 'Tester', pin: '2468' });

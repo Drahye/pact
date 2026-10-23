@@ -623,6 +623,7 @@ export async function buildApp({ config, db, provider, sms, email, google, stytc
           const body = parse(C.InviteBody, req.body);
           return pacts.inviteMore(ctx, req.userId, req.params.id, body.userIds, body.phones);
         });
+        priv.put<{ Params: { id: string } }>('/pacts/:id/cover', strict(20), async (req) => pacts.setCover(ctx, req.userId, req.params.id, parse(C.SetCoverBody, req.body).cover));
         priv.post<{ Params: { id: string } }>('/pacts/:id/accept', async (req) =>
           pacts.acceptInvite(ctx, req.userId, req.params.id, parse(C.ParticipationBody.partial(), req.body).participation ?? null),
         );

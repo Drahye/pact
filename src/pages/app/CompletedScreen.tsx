@@ -135,7 +135,7 @@ export function CompletedScreen({ pact, activity = [] }: { pact: Pact; activity?
       </div>
 
       <figure className="completed__polaroid">
-        <img src={coverOf(pact.category)} alt="" loading="lazy" decoding="async" />
+        <img src={coverOf(pact)} alt="" loading="lazy" decoding="async" />
         <figcaption>{pact.title}</figcaption>
       </figure>
       <span className="completed__float completed__float--a" aria-hidden />

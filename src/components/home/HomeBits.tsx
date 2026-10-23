@@ -184,7 +184,7 @@ export function ComingUpSection({ items }: { items: ComingUpItem[] }) {
                 today={when === 'Today'}
                 title={x.title}
                 emoji={x.emoji}
-                photo={coverOf(x.category)}
+                photo={coverOf({ category: x.category, cover: x.cover, id: x.id })}
                 meta={`${x.kind === 'plan' && x.endDate ? `${dateRange(x.date, x.endDate)} · ` : ''}${x.text}`}
                 to={x.url}
                 onOpen={() => trackHome('coming_up_opened', { object_type: x.kind, section: 'coming_up' })}
@@ -262,7 +262,7 @@ export function MadeItHappenSection({ items, title = 'Made it happen' }: { items
         {items.map((r) => (
           <li key={`${r.kind}-${r.id}`}>
             <Link to={`${r.url}?from=home`} className="hv3-made__item" aria-label={`View recap: ${r.title}`}>
-              {r.kind !== 'split' && <img className="hv3-made__photo" src={coverOf(r.category)} alt="" aria-hidden loading="lazy" decoding="async" />}
+              {r.kind !== 'split' && <img className="hv3-made__photo" src={coverOf({ category: r.category, cover: r.cover, id: r.id })} alt="" aria-hidden loading="lazy" decoding="async" />}
               <CompletionState
                 layout="row"
                 announce={false}

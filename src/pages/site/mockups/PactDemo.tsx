@@ -2,7 +2,7 @@ import { CalendarDays, Target, Users } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useInView, useReducedMotion } from 'framer-motion';
 import { gsap } from '../../../lib/gsap';
-import { ActivityRow, AppBar, clamp, DemoRing, kobo, lerp, NextStepCard, seg, sharesAt, StatusBar, Swap, TARGET_K, TaskRow } from './demoKit';
+import { ActivityRow, AppBar, clamp, DemoRing, HeroCopy, kobo, lerp, NextStepCard, seg, sharesAt, StatusBar, Swap, TARGET_K, TaskRow } from './demoKit';
 import { PhoneFrame } from './PhoneFrame';
 
 export interface DetailState {
@@ -23,6 +23,7 @@ export function PactDetail({ s }: { s: DetailState }) {
     <div className="d-screen">
       <StatusBar />
       <AppBar title="Sarah’s Birthday" right />
+      <HeroCopy />
       <div className="d-detail">
         <div className="d-ringwrap">
           <DemoRing shares={sharesAt(s.raisedK)} size={156} stroke={16}>
@@ -32,6 +33,9 @@ export function PactDetail({ s }: { s: DetailState }) {
               <span className={`d-pill ${s.funded ? 'is-funded' : ''}`}>{s.funded ? 'Funded' : `${pct}% funded`}</span>
             </Swap>
           </DemoRing>
+          <p className="d-dialsub num">
+            {s.people} people · {toGo ? `${kobo(toGo).replace(',000', 'k')} to go` : 'goal reached'} · by Nov 3
+          </p>
         </div>
         <ul className="d-stats">
           <li className="d-stat d-stat--sun">

@@ -1,0 +1,832 @@
+/* ==========================================================================
+   The landing page, led by people and moments instead of product screens.
+   Scoped under .lp2 so nothing here touches the current landing. Mobile first (390), wider from 760 and 1024.
+   Not part of the product design lint (see scripts/design-lint.mjs): it is an experiment with its own display sizes.
+   ========================================================================== */
+
+.lp2 {
+  --lp2-ink: var(--ink-900);
+  --lp2-radius: 28px;
+  overflow-x: clip;
+  background: var(--color-bg);
+  color: var(--lp2-ink);
+}
+
+.lp2-wrap {
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+}
+
+.lp2-ph {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.lp2-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 var(--space-4);
+  margin: 0 0 var(--space-4);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  box-shadow: inset 0 0 0 1px var(--color-border);
+  font-size: 0.8125rem;
+  font-weight: var(--weight-semibold);
+}
+
+.lp2-h2 {
+  max-width: 18ch;
+  margin: 0;
+  font-size: clamp(1.875rem, 7.2vw, 3.25rem);
+  line-height: 1.06;
+  font-weight: var(--weight-bold);
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+}
+
+.lp2-chip {
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  color: var(--lp2-ink);
+  font-size: 0.8125rem;
+  font-weight: var(--weight-semibold);
+  white-space: nowrap;
+  box-shadow: 0 6px 16px -8px var(--shade-4);
+}
+
+.lp2-chip--sky { box-shadow: inset 0 0 0 2px var(--sky-400), 0 6px 16px -8px var(--shade-4); }
+.lp2-chip--mint { box-shadow: inset 0 0 0 2px var(--green-500), 0 6px 16px -8px var(--shade-4); }
+.lp2-chip--pink { box-shadow: inset 0 0 0 2px var(--pink-400), 0 6px 16px -8px var(--shade-4); }
+.lp2-chip--coral { box-shadow: inset 0 0 0 2px var(--coral-400), 0 6px 16px -8px var(--shade-4); }
+.lp2-chip--sun { box-shadow: inset 0 0 0 2px var(--sun-400), 0 6px 16px -8px var(--shade-4); }
+
+.lp2-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  font-weight: var(--weight-semibold);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.lp2-link svg {
+  width: 18px;
+  height: 18px;
+}
+
+.lp2-eyebrow--dark {
+  background: var(--veil-2);
+  color: var(--white);
+  box-shadow: inset 0 0 0 1px var(--veil-3);
+}
+
+/* ---- Hero: the whole screen --------------------------------------------------------------------------------------------- */
+/* The hero and the next section share a curtain: the hero holds still at the top while the next section rises over it. */
+.lp2-curtain { position: relative; }
+
+.lp2-hero {
+  position: sticky;
+  top: 0;
+  z-index: 0;
+  display: grid;
+  place-items: center;
+  height: 100svh;
+  min-height: 560px;
+  overflow: hidden;
+  background: var(--forest-900);
+  color: var(--white);
+}
+
+.lp2-hero__bgs { position: absolute; inset: 0; }
+
+/* A slow slideshow, in CSS so it never waits for script: four moments, each held for a few seconds and easing out of a gentle zoom. */
+.lp2-hero__bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: cover;
+  opacity: 0;
+  animation: lp2-slide 22s linear infinite;
+}
+
+@keyframes lp2-slide {
+  0% { opacity: 0; transform: scale(1.14); }
+  6% { opacity: 1; }
+  27% { opacity: 1; }
+  33% { opacity: 0; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1); }
+}
+
+/* Solid ramps keep white words legible on any of the four photographs. */
+.lp2-hero__scrim {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--forest-900) 58%, transparent) 0%, color-mix(in srgb, var(--forest-900) 40%, transparent) 38%, color-mix(in srgb, var(--forest-900) 78%, transparent) 100%);
+}
+
+.lp2-hero__veil {
+  position: absolute;
+  inset: 0;
+  background: var(--forest-900);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.lp2-hero__content {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  justify-items: center;
+  max-width: 1100px;
+  padding: 96px var(--gutter) 150px;
+  text-align: center;
+}
+
+.lp2-hero__title {
+  max-width: 16ch;
+  margin: var(--space-4) 0 0;
+  font-size: clamp(2.5rem, min(9.4vw, 12.5vh), 6.25rem);
+  line-height: 1;
+  font-weight: var(--weight-bold);
+  letter-spacing: -0.045em;
+  text-wrap: balance;
+}
+
+.lp2-hero__lede {
+  max-width: 36ch;
+  margin: var(--space-5) 0 0;
+  font-size: clamp(1.0625rem, 4.4vw, 1.375rem);
+  line-height: 1.45;
+  color: var(--white);
+}
+
+.lp2-hero__ctas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3) var(--space-6);
+  margin-top: var(--space-8);
+}
+
+.lp2-magnet { display: inline-block; }
+.lp2-link--light { color: var(--white); }
+
+.lp2-hero__faces .avatar { --avatar-size: clamp(34px, 7.4vw, 78px); }
+
+/* Three moments peek up from the bottom edge, as the product's own screens do on a pitch deck: a promise of what is below. */
+.lp2-peeks {
+  position: absolute;
+  z-index: 3;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  pointer-events: none;
+  transform: translateY(34%);
+}
+
+.lp2-peek {
+  position: relative;
+  flex: 0 0 auto;
+  width: clamp(150px, 34vw, 380px);
+  aspect-ratio: 4 / 3;
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 0 0 4px var(--veil-3), 0 30px 50px -24px var(--shade-6);
+}
+
+.lp2-peek--0 { transform: rotate(-4deg) translateY(14px); }
+.lp2-peek--2 { transform: rotate(4deg) translateY(14px); }
+.lp2-peek--1 { margin-bottom: 18px; }
+.lp2-peek__label {
+  position: absolute;
+  left: var(--space-3);
+  top: var(--space-3);
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  background: var(--white);
+  color: var(--ink-900);
+  font-size: 0.75rem;
+  font-weight: var(--weight-semibold);
+}
+
+@media (min-width: 760px) {
+  .lp2-hero__content { padding-bottom: 170px; }
+  .lp2-peek { border-radius: 30px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lp2-hero__bg { animation: none; }
+  .lp2-hero__bg:first-child { opacity: 1; }
+}
+
+/* ---- We should: the problem, felt ---------------------------------------------------------------------------------------- */
+.lp2-should {
+  position: relative;
+  z-index: 1;
+  padding: var(--space-16) 0 0;
+  border-radius: 40px 40px 0 0;
+  background: var(--sun-100);
+  box-shadow: 0 -30px 60px -30px var(--shade-5);
+}
+
+.lp2-should .lp2-wrap { padding-bottom: var(--space-12); }
+
+.lp2-should__title {
+  max-width: 20ch;
+  margin: 0;
+  font-size: clamp(1.875rem, 7.6vw, 3.5rem);
+  line-height: 1.08;
+  font-weight: var(--weight-bold);
+  letter-spacing: -0.04em;
+  text-wrap: balance;
+}
+
+.lp2-should__row {
+  display: grid;
+  gap: var(--space-8);
+  margin-top: var(--space-8);
+  align-items: center;
+}
+
+.lp2-should__stage { position: relative; }
+
+.lp2-should__photo {
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  border-radius: var(--lp2-radius);
+  box-shadow: 0 24px 40px -26px var(--shade-5);
+}
+
+/* A group chat, drawn: the three messages every plan starts with, popping in one by one. */
+.lp2-chat {
+  position: absolute;
+  left: var(--space-3);
+  bottom: var(--space-3);
+  display: grid;
+  justify-items: start;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lp2-bubble {
+  max-width: 250px;
+  padding: 8px 14px;
+  border-radius: 18px 18px 18px 5px;
+  background: var(--white);
+  color: var(--ink-900);
+  font-size: 0.8125rem;
+  line-height: 1.35;
+  box-shadow: 0 10px 20px -10px var(--shade-5);
+}
+
+.lp2-bubble b { display: block; font-size: 0.6875rem; font-weight: var(--weight-semibold); color: var(--shade-6); }
+.lp2-bubble.is-mine { justify-self: end; border-radius: 18px 18px 5px 18px; background: var(--brand); transform-origin: right bottom; }
+.lp2-bubble.is-mine b { color: var(--ink-900); }
+
+.lp2-should__text p {
+  max-width: 36ch;
+  margin: 0;
+  font-size: clamp(1.0625rem, 4.4vw, 1.25rem);
+  line-height: 1.5;
+  color: var(--shade-6);
+}
+
+.lp2-should__text .lp2-should__strong {
+  margin-top: var(--space-4);
+  color: var(--ink-900);
+  font-weight: var(--weight-bold);
+  font-size: clamp(1.25rem, 5.2vw, 1.625rem);
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+}
+
+@media (min-width: 900px) {
+  .lp2-should { padding: var(--space-32) 0 0; border-radius: 56px 56px 0 0; }
+  .lp2-should .lp2-wrap { padding-bottom: var(--space-20); }
+  .lp2-should__row { grid-template-columns: 1.1fr 1fr; gap: var(--space-16); margin-top: var(--space-16); }
+  .lp2-bubble { font-size: 0.9375rem; max-width: 300px; }
+  .lp2-should__title { max-width: 22ch; font-size: clamp(3rem, 5vw, 4.75rem); }
+  .lp2-should__text p { max-width: 30ch; font-size: 1.5rem; }
+  .lp2-should__text .lp2-should__strong { margin-top: var(--space-6); font-size: 2.25rem; }
+}
+
+/* ---- Theatre: a dark room of four moments --------------------------------------------------------------------------------- */
+.lp2-theatre {
+  position: relative;
+  z-index: 2;
+  background: var(--forest-900);
+  color: var(--white);
+}
+
+.lp2-theatre__pin { padding: var(--space-16) 0 var(--space-20); }
+.lp2-theatre__head { padding: 0 var(--gutter); }
+.lp2-theatre__head .lp2-h2 { color: var(--white); }
+.lp2-theatre__hint { display: none; }
+
+.lp2-theatre__cards {
+  display: grid;
+  gap: var(--space-4);
+  margin: var(--space-8) 0 0;
+  padding: 0 var(--gutter);
+  list-style: none;
+}
+
+.lp2-moment {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  height: 460px;
+  overflow: hidden;
+  border-radius: var(--lp2-radius);
+  background: var(--forest-800);
+  box-shadow: 0 24px 40px -28px var(--shade-6);
+}
+
+.lp2-moment__img {
+  position: absolute;
+  left: 0;
+  top: -8%;
+  width: 100%;
+  height: 116%;
+}
+
+/* A solid colour ramp, not a blur: the bottom is dark enough that white text always has its contrast. */
+.lp2-moment__scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 28%, color-mix(in srgb, var(--forest-900) 62%, transparent) 62%, color-mix(in srgb, var(--forest-900) 94%, transparent) 100%);
+}
+
+.lp2-moment::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(260px circle at var(--mx, 50%) var(--my, 50%), var(--veil-2), transparent 70%);
+  opacity: 0;
+  transition: opacity 300ms var(--ease-out);
+  pointer-events: none;
+}
+
+@media (hover: hover) { .lp2-moment:hover::after { opacity: 1; } }
+
+.lp2-theatre__count { display: none; }
+
+.lp2-moment__icon {
+  position: absolute;
+  top: var(--space-4);
+  left: var(--space-4);
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  color: var(--ink-900);
+  box-shadow: 0 8px 18px -8px var(--shade-5);
+}
+
+.lp2-moment__icon svg { width: 22px; height: 22px; }
+.lp2-tint--sky { background: var(--sky-400); }
+.lp2-tint--pink { background: var(--pink-400); }
+.lp2-tint--coral { background: var(--coral-400); }
+.lp2-tint--sun { background: var(--sun-400); }
+
+.lp2-moment__text {
+  position: relative;
+  display: grid;
+  justify-items: start;
+  gap: var(--space-2);
+  padding: var(--space-5);
+}
+
+.lp2-moment__title {
+  margin: 0;
+  font-size: clamp(1.375rem, 5.8vw, 1.875rem);
+  line-height: 1.1;
+  font-weight: var(--weight-bold);
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+}
+
+.lp2-moment__line {
+  max-width: 34ch;
+  margin: 0 0 var(--space-2);
+  font-size: 0.9375rem;
+  line-height: 1.45;
+  color: var(--white);
+}
+
+/* The sideways walk only exists where the page can pin and scrub; everywhere else the same cards stack. */
+@media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
+  .lp2-theatre__pin {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    height: 100vh;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .lp2-theatre__track {
+    display: flex;
+    align-items: center;
+    gap: 5vw;
+    width: max-content;
+    padding: 0 8vw;
+    will-change: transform;
+  }
+
+  .lp2-theatre__head { flex: 0 0 min(32vw, 440px); padding: 0; }
+  .lp2-theatre__cards { display: flex; gap: 3vw; margin: 0; padding: 0; }
+  .lp2-moment { flex: 0 0 min(56vw, 800px); height: min(66vh, 600px); }
+  .lp2-moment__img { left: -10%; top: 0; width: 120%; max-width: none; height: 100%; }
+  .lp2-moment__text { padding: var(--space-8); }
+
+  .lp2-theatre__count {
+    display: block;
+    position: absolute;
+    left: 8vw;
+    bottom: 6vh;
+    margin: 0;
+    color: var(--white);
+    font-size: 0.875rem;
+    font-weight: var(--weight-semibold);
+    letter-spacing: 0.08em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .lp2-theatre__hint {
+    display: block;
+    margin: var(--space-6) 0 0;
+    color: var(--green-300);
+    font-size: 0.875rem;
+    font-weight: var(--weight-semibold);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+}
+
+
+/* ---- Band: the promise in a calm dark room --------------------------------------------------------------------------------- */
+.lp2-band {
+  position: relative;
+  background: var(--forest-900);
+  color: var(--white);
+}
+
+.lp2-band__inner {
+  display: grid;
+  justify-items: center;
+  padding-top: var(--space-24);
+  padding-bottom: var(--space-24);
+  text-align: center;
+}
+
+.lp2-band__eyebrow { margin: 0 0 var(--space-5); font-size: 0.9375rem; color: var(--white); }
+
+.lp2-band__title {
+  max-width: 16ch;
+  margin: 0;
+  font-size: clamp(2.25rem, 9vw, 5rem);
+  line-height: 1.02;
+  font-weight: var(--weight-bold);
+  letter-spacing: -0.045em;
+  text-wrap: balance;
+}
+
+.lp2-stats {
+  display: grid;
+  gap: var(--space-10);
+  width: 100%;
+  margin: var(--space-20) 0 0;
+  padding: var(--space-10) 0 0;
+  border-top: 1px solid var(--veil-3);
+  list-style: none;
+}
+
+.lp2-stat { display: grid; justify-items: center; gap: var(--space-1); }
+
+.lp2-band__num {
+  font-size: clamp(3.5rem, 15vw, 6.5rem);
+  line-height: 1;
+  font-weight: var(--weight-bold);
+  letter-spacing: -0.05em;
+  font-variant-numeric: tabular-nums;
+}
+
+.lp2-band__of { font-size: 0.45em; letter-spacing: -0.03em; color: var(--white); }
+.lp2-stat__label { margin-top: var(--space-2); font-size: 1.0625rem; font-weight: var(--weight-semibold); }
+.lp2-stat__note { font-size: 0.9375rem; color: var(--green-500); }
+
+.lp2-band__people { display: flex; margin-top: var(--space-16); }
+.lp2-band__people > span { display: inline-flex; border-radius: 50%; box-shadow: 0 0 0 3px var(--c); }
+.lp2-band__people > span + span { margin-left: -10px; }
+.lp2-band__people .avatar { --avatar-size: 52px; border: 3px solid var(--forest-900); }
+.lp2-band__cta { margin-top: var(--space-8); }
+
+@media (min-width: 900px) {
+  .lp2-band__inner { padding-top: var(--space-32); padding-bottom: var(--space-32); }
+  .lp2-stats { grid-template-columns: repeat(3, 1fr); margin-top: var(--space-24); }
+  .lp2-band__people .avatar { --avatar-size: 64px; }
+}
+
+/* ---- FAQ: the parent's questions, held in one card so the section is a room and not a gap ----------------------------------- */
+.lp2 .faq { padding-top: var(--space-12); padding-bottom: var(--space-12); }
+.lp2 .faq__list { padding: var(--space-2) var(--space-5); border-radius: var(--lp2-radius); background: var(--color-surface); box-shadow: 0 24px 40px -30px var(--shade-5); }
+
+@media (min-width: 900px) {
+  .lp2 .faq { padding-top: var(--space-24); padding-bottom: var(--space-16); }
+  .lp2 .faq__inner > :first-child { position: sticky; top: 120px; align-self: start; }
+  .lp2 .faq__list { padding: var(--space-4) var(--space-8); }
+}
+
+/* ---- Final: memories pinned around the invitation ------------------------------------------------------------------------- */
+.lp2-final {
+  position: relative;
+  padding: var(--space-16) 0 var(--space-20);
+}
+
+.lp2-polaroids {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  justify-content: center;
+  gap: var(--space-2);
+  margin: 0 0 -36px;
+  padding: 0;
+  list-style: none;
+  pointer-events: none;
+}
+
+.lp2-polaroid {
+  width: 22vw;
+  max-width: 150px;
+  padding: 6px 6px 18px;
+  background: var(--white);
+  box-shadow: 0 16px 28px -14px var(--shade-5);
+  transform: rotate(var(--r));
+}
+
+.lp2-polaroid .lp2-ph { aspect-ratio: 1; }
+.lp2-polaroid span { display: block; margin-top: 4px; text-align: center; color: var(--shade-6); font-size: 0.6875rem; font-weight: var(--weight-semibold); }
+
+.lp2-final__panel {
+  position: relative;
+  overflow: hidden;
+  border-radius: 40px;
+  background: var(--sun-100);
+}
+
+.lp2-final__shape {
+  position: absolute;
+  border-radius: 50%;
+}
+
+.lp2-final__shape--a { top: -70px; right: -50px; width: 180px; height: 180px; border: 2px dashed var(--coral-400); }
+.lp2-final__shape--b { bottom: -40px; left: -30px; width: 110px; height: 110px; background: var(--pink-100); }
+
+.lp2-final__copy {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: var(--space-3);
+  padding: var(--space-16) var(--space-6) var(--space-12);
+  text-align: center;
+}
+
+.lp2-final__mark { width: 32px; height: 32px; color: var(--coral-400); }
+
+.lp2-final__people { display: flex; margin-bottom: var(--space-2); }
+.lp2-final__people > span { display: inline-flex; border-radius: 50%; box-shadow: 0 0 0 3px var(--c); }
+.lp2-final__people > span + span { margin-left: -10px; }
+.lp2-final__people .avatar { --avatar-size: 48px; border: 3px solid var(--sun-100); }
+
+.lp2-final__title {
+  margin: 0;
+  font-size: clamp(2.25rem, 10vw, 4rem);
+  line-height: 1;
+  font-weight: var(--weight-bold);
+  letter-spacing: -0.045em;
+}
+
+.lp2-final__lede {
+  max-width: 32ch;
+  margin: 0 0 var(--space-3);
+  font-size: 1.0625rem;
+  line-height: 1.5;
+  color: var(--shade-6);
+}
+
+.lp2-final__note { margin: 0; font-size: 0.875rem; color: var(--shade-6); }
+.lp2-final__note a { text-decoration: underline; text-underline-offset: 3px; }
+
+@media (min-width: 1024px) {
+  .lp2-final { padding: var(--space-16) 0 var(--space-32); }
+  .lp2-polaroids { position: absolute; inset: 0; display: block; margin: 0; }
+  .lp2-polaroid { position: absolute; width: 190px; max-width: none; padding: 8px 8px 24px; }
+  .lp2-polaroid span { font-size: 0.8125rem; }
+  .lp2-polaroid--a { left: 1%; top: 6%; }
+  .lp2-polaroid--b { right: 1%; top: 2%; }
+  .lp2-polaroid--c { left: 4%; bottom: 6%; }
+  .lp2-polaroid--d { right: 3%; bottom: 4%; }
+  .lp2-final__panel { margin: 0 150px; }
+  .lp2-final__copy { gap: var(--space-4); padding: var(--space-32) var(--space-8); }
+  .lp2-final__title { font-size: clamp(3.5rem, 6vw, 5.5rem); }
+}
+
+/* On a phone the footer leaves room for the sticky one-button bar. */
+@media (max-width: 899px) { .lp2 ~ .footer { padding-bottom: calc(var(--space-20) + 24px); } }
+
+/* ---- Ribbons: the parent page's pills, at the foot of the first section ------------------------------------------------------ */
+.lp2-ribbons {
+  padding: var(--space-8) 0 var(--space-12);
+  border-top: 1px solid var(--shade-1);
+}
+
+/* ---- Story: the product, held --------------------------------------------------------------------------------------------- */
+.lp2-story {
+  position: relative;
+  background: var(--forest-900);
+  color: var(--white);
+}
+
+.lp2-story__sticky {
+  position: sticky;
+  top: 0;
+  display: grid;
+  align-items: center;
+  height: 100svh;
+  overflow: hidden;
+}
+
+.lp2-story__bg {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 900ms var(--ease-out);
+}
+
+.lp2-story__bg.is-on { opacity: 1; }
+.lp2-story__bg .lp2-ph { transform: scale(1.12); transition: transform 7s var(--ease-out); }
+.lp2-story__bg.is-on .lp2-ph { transform: scale(1); }
+
+/* The photograph is a mood, not a subject: it is dimmed hard enough that the words and the phone own the room. */
+.lp2-story__scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--forest-900) 90%, transparent) 0%, color-mix(in srgb, var(--forest-900) 76%, transparent) 100%);
+}
+
+.lp2-story__grid {
+  position: relative;
+  display: grid;
+  gap: var(--space-4);
+  justify-items: center;
+  padding-top: 76px;
+  padding-bottom: var(--space-4);
+}
+
+.lp2-story__stage { position: relative; order: -1; }
+
+.lp2-story__tilt { position: relative; will-change: transform; }
+.lp2-story__phone { --phone-w: min(190px, 25svh); }
+
+.lp2-story__layer { position: absolute; inset: 0; will-change: opacity, transform; }
+
+.lp2-story__copy { position: relative; width: 100%; min-height: 230px; }
+
+.lp2-story__block {
+  position: absolute;
+  inset: 0 0 auto 0;
+  opacity: 0;
+  transform: translateY(22px);
+  pointer-events: none;
+  transition: opacity 600ms var(--ease-out), transform 700ms var(--ease-out);
+}
+
+.lp2-story__block.is-on { opacity: 1; transform: none; pointer-events: auto; transition-delay: 160ms; }
+
+.lp2-story__kicker {
+  display: inline-flex;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-3);
+  color: var(--green-300);
+  font-size: 0.8125rem;
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.lp2-story__title {
+  max-width: 18ch;
+  margin: 0;
+  font-size: clamp(1.75rem, 7vw, 3.25rem);
+  line-height: 1.05;
+  font-weight: var(--weight-bold);
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+}
+
+.lp2-story__body {
+  max-width: 38ch;
+  margin: var(--space-3) 0 0;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--veil-7);
+}
+
+.lp2-story__points { display: none; margin: var(--space-5) 0 0; padding: 0; list-style: none; }
+.lp2-story__points li { display: flex; align-items: center; gap: var(--space-3); padding: 6px 0; color: var(--white); font-weight: var(--weight-medium); }
+.lp2-story__points svg { flex: 0 0 auto; width: 22px; height: 22px; padding: 4px; border-radius: 50%; background: var(--brand); color: var(--ink-900); }
+
+/* Callouts: small notes that pop beside the phone, one or two per scene, like labels pinned to the screen. */
+.lp2-call {
+  position: absolute;
+  padding: 7px 14px;
+  border-radius: var(--radius-full);
+  background: var(--white);
+  color: var(--ink-900);
+  font-size: 0.8125rem;
+  font-weight: var(--weight-semibold);
+  white-space: nowrap;
+  box-shadow: 0 14px 26px -12px var(--shade-6);
+  opacity: 0;
+  scale: 0.5;
+  transition: opacity 300ms var(--ease-out), scale 500ms var(--ease-press);
+}
+
+.lp2-call.is-on { opacity: 1; scale: 1; }
+.lp2-call--l { right: 78%; transform-origin: right center; }
+.lp2-call--r { left: 78%; transform-origin: left center; }
+
+.lp2-story__dots { display: none; }
+
+@media (min-width: 900px) {
+  .lp2-story__grid { grid-template-columns: 1fr auto; gap: var(--space-24); justify-items: stretch; align-items: center; padding-top: 0; }
+  .lp2-story__stage { order: 0; margin-right: var(--space-12); }
+  .lp2-story__phone { --phone-w: min(250px, 34svh); }
+  .lp2-story__copy { min-height: 420px; }
+  .lp2-story__block { position: absolute; inset: 50% 0 auto 0; transform: translateY(calc(-50% + 22px)); }
+  .lp2-story__block.is-on { transform: translateY(-50%); }
+  .lp2-story__title { max-width: 14ch; font-size: clamp(3rem, 4.6vw, 4.5rem); }
+  .lp2-story__body { max-width: 34ch; font-size: 1.375rem; }
+  .lp2-story__points li { font-size: 1.125rem; }
+  .lp2-story__points { display: block; }
+  .lp2-story__scrim { background: linear-gradient(90deg, color-mix(in srgb, var(--forest-900) 90%, transparent) 0%, color-mix(in srgb, var(--forest-900) 58%, transparent) 55%, color-mix(in srgb, var(--forest-900) 34%, transparent) 100%); }
+  .lp2-story__dots { position: absolute; right: calc(var(--space-12) * -1); top: 50%; display: grid; gap: var(--space-2); margin: 0; padding: 0; list-style: none; translate: 0 -50%; }
+  .lp2-story__dots li { width: 8px; height: 8px; border-radius: 50%; background: var(--veil-3); transition: background-color 300ms, scale 300ms var(--ease-press); }
+  .lp2-story__dots li.is-on { background: var(--white); scale: 1.5; }
+}
+
+.lp2-story--still { padding: var(--space-16) 0; }
+.lp2-story__card { display: grid; gap: var(--space-8); justify-items: center; padding: var(--space-8) 0; text-align: center; }
+.lp2-story--still .lp2-story__phone { --phone-w: min(240px, 64vw); }
+
+/* ---- Phone: a bar with the one action ------------------------------------------------------------------------------------- */
+.lp2-sticky-cta {
+  position: fixed;
+  z-index: 45;
+  left: var(--space-3);
+  right: var(--space-3);
+  bottom: calc(var(--space-3) + env(safe-area-inset-bottom));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  height: 52px;
+  border-radius: var(--radius-full);
+  background: var(--ink-900);
+  color: var(--white);
+  font-weight: var(--weight-semibold);
+  box-shadow: 0 16px 30px -14px var(--shade-6);
+  transform: translateY(160%);
+  transition: transform 500ms var(--ease-out);
+}
+
+.lp2-sticky-cta.is-on { transform: none; }
+.lp2-sticky-cta svg { width: 18px; height: 18px; }
+@media (min-width: 900px) { .lp2-sticky-cta { display: none; } }

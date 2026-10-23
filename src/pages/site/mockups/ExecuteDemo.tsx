@@ -1,6 +1,6 @@
 import { Bus, Cake, Landmark } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { ActivityRow, AppBar, Chip, DemoRing, kobo, NextStepCard, seg, sharesAt, StatusBar, Swap, TARGET_K, type Tone } from './demoKit';
+import { ActivityRow, AppBar, Chip, DemoRing, HeroCopy, kobo, NextStepCard, seg, sharesAt, StatusBar, Swap, TARGET_K, type Tone } from './demoKit';
 
 type Line = { name: string; k: number; icon: ReactNode; status: 'none' | 'pending' | 'paid'; pressed: boolean };
 
@@ -37,6 +37,7 @@ export function ExecuteDemo({ t }: { t: number }) {
     <div className="d-screen">
       <StatusBar />
       <AppBar title="Sarah’s Birthday" right />
+      <HeroCopy sub="Funded and in motion" />
       <div className="d-detail">
         <div className="d-exhead">
           <DemoRing shares={sharesAt(500)} size={58} stroke={7}>

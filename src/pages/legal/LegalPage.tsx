@@ -204,30 +204,47 @@ export function LegalPage({ doc }: { doc: Doc }) {
   return (
     <div className="legal">
       <SiteNav />
-      <main className="legal__main">
-        <p className="legal__updated">Last updated {UPDATED}</p>
-        <h1 className="legal__title">{c.title}</h1>
-        <p className="legal__intro">{c.intro}</p>
-        <nav className="legal__nav" aria-label="Legal">
-          {(['terms', 'privacy', 'refunds', 'cookies'] as Doc[]).map((d) => (
-            <Link key={d} to={`/${d}`} aria-current={d === doc ? 'page' : undefined}>
-              {content[d].title}
-            </Link>
-          ))}
-        </nav>
-        {c.sections.map((s) => (
-          <section key={s.h}>
-            <h2>{s.h}</h2>
-            {s.p.map((p, i) => (
-              <p key={i}>{p}</p>
+      <header className="legal__hero">
+        <div className="legal__wrap">
+          <p className="legal__updated">Last updated {UPDATED}</p>
+          <h1 className="legal__title">{c.title}</h1>
+          <p className="legal__intro">{c.intro}</p>
+          <nav className="legal__nav" aria-label="Legal">
+            {(['terms', 'privacy', 'refunds', 'cookies'] as Doc[]).map((d) => (
+              <Link key={d} to={`/${d}`} aria-current={d === doc ? 'page' : undefined}>
+                {content[d].title}
+              </Link>
             ))}
-          </section>
-        ))}
-        <section>
-          <h2>Contact</h2>
-          <p>Support: support@pact.africa · Privacy: privacy@pact.africa · Security: security@pact.africa</p>
-          <p>Company details (registered name, number and address) will be published here before PACT handles real money.</p>
-        </section>
+          </nav>
+        </div>
+      </header>
+      <main className="legal__main">
+        <div className="legal__wrap legal__layout">
+          <nav className="legal__toc" aria-label="On this page">
+            <p>On this page</p>
+            {c.sections.map((s, i) => (
+              <a key={s.h} href={`#s${i + 1}`}>
+                {s.h}
+              </a>
+            ))}
+            <a href="#contact">Contact</a>
+          </nav>
+          <article className="legal__card">
+            {c.sections.map((s, i) => (
+              <section key={s.h} id={`s${i + 1}`}>
+                <h2>{s.h}</h2>
+                {s.p.map((p, j) => (
+                  <p key={j}>{p}</p>
+                ))}
+              </section>
+            ))}
+            <section id="contact">
+              <h2>Contact</h2>
+              <p>Support: support@pact.africa · Privacy: privacy@pact.africa · Security: security@pact.africa</p>
+              <p>Company details (registered name, number and address) will be published here before PACT handles real money.</p>
+            </section>
+          </article>
+        </div>
       </main>
       <Footer />
     </div>

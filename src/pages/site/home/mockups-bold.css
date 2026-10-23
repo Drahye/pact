@@ -1,0 +1,192 @@
+/* ==========================================================================
+   The phone screens, in the app's current look. Everything is scoped under .d-bold, which only the preview page sets, so the classic
+   mockups (the current landing page) are untouched. Laid out at the phone's own 360 x 740, so sizes are design pixels.
+   The app is a tinted hero over a rounded sheet; actions are ink pills with a green arrow capsule; cards have depth, not outlines.
+   The tint comes from the nearest .tint--* (mint for a Pact, coral for Birthdays).
+   ========================================================================== */
+
+.d-bold {
+  --d-card: 0 0 0 1px rgba(15, 23, 19, 0.06), 0 1px 2px rgba(15, 23, 19, 0.06), 0 18px 30px -22px rgba(15, 23, 19, 0.3);
+  --d-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%230f1713' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12h14M13 6l6 6-6 6'/%3E%3C/svg%3E");
+}
+
+/* ---- The hero: the tint runs up under the status bar and bar ---- */
+.d-bold .d-screen::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 262px;
+  background: radial-gradient(90% 70% at 100% 40%, rgba(255, 255, 255, 0.4), transparent 62%), linear-gradient(168deg, color-mix(in srgb, var(--tint-solid) 70%, #fff) 0%, var(--tint-solid) 60%, var(--tint-solid) 100%);
+}
+
+.d-bold .d-layer:not(.d-done)::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 262px;
+  background: radial-gradient(90% 70% at 100% 40%, rgba(255, 255, 255, 0.4), transparent 62%), linear-gradient(168deg, color-mix(in srgb, var(--tint-solid) 70%, #fff) 0%, var(--tint-solid) 60%, var(--tint-solid) 100%);
+}
+
+.d-bold :is(.d-status, .d-bar, .d-herocopy, .d-form, .d-invite, .d-detail, .d-foot) {
+  position: relative;
+  z-index: 1;
+}
+
+.d-bold .d-bar { height: 46px; }
+.d-bold .d-bar__btn { box-shadow: 0 1px 2px rgba(15, 23, 19, 0.08), 0 8px 14px -8px rgba(15, 23, 19, 0.3); }
+.d-bold .d-bar__btn--ghost { box-shadow: none; }
+.d-bold .d-bar__title { font-weight: var(--weight-bold); }
+
+/* The hero's words: a chip, the title, one line. */
+.d-bold .d-herocopy {
+  display: grid;
+  justify-items: start;
+  gap: 4px;
+  padding: 2px 20px 20px;
+}
+
+.d-bold .d-herochip {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 11px;
+  border-radius: 999px;
+  background: var(--ink-900);
+  color: var(--paper-50);
+  font-size: 0.6875rem;
+  font-weight: var(--weight-semibold);
+}
+
+.d-bold .d-herocopy h3 {
+  margin: 0;
+  font-size: 1.75rem;
+  line-height: 32px;
+  font-weight: var(--weight-bold);
+  letter-spacing: -0.035em;
+  color: var(--ink-900);
+}
+
+.d-bold .d-herocopy p { margin: 0; font-size: 0.8125rem; font-weight: var(--weight-medium); color: var(--shade-6); }
+
+/* ---- The sheet: the page colour, rising over the hero with a rounded top ---- */
+.d-bold :is(.d-form, .d-invite, .d-detail) {
+  isolation: isolate;
+  padding-top: 0;
+}
+
+.d-bold :is(.d-form, .d-invite, .d-detail)::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  left: 0;
+  right: 0;
+  top: var(--d-sheet-top, 0);
+  bottom: -60px;
+  border-radius: 28px 28px 0 0;
+  background: var(--paper-100);
+  box-shadow: 0 -12px 28px -22px rgba(15, 23, 19, 0.4);
+}
+
+.d-bold .d-form { --d-sheet-top: 64px; padding: 4px 16px 0; }
+.d-bold .d-invite { --d-sheet-top: 86px; padding: 4px 16px 0; }
+.d-bold .d-detail { padding: 18px 16px 0; gap: 10px; }
+
+.d-bold .d-form__h { margin: 0; font-size: 1.75rem; line-height: 32px; font-weight: var(--weight-bold); letter-spacing: -0.035em; color: var(--ink-900); }
+.d-bold .d-form__sub { margin: 2px 0 30px; font-size: 0.8125rem; font-weight: var(--weight-medium); color: var(--shade-6); }
+.d-bold .d-label { margin: 12px 0 6px; color: var(--ink-900); font-weight: var(--weight-semibold); }
+
+/* ---- Cards: depth, not outlines ---- */
+.d-bold :is(.d-list, .d-lines, .d-joined, .d-receipt, .d-linkcard) {
+  border-radius: 24px;
+  background: var(--white);
+  box-shadow: var(--d-card);
+}
+
+.d-bold .d-input { border-radius: 18px; box-shadow: inset 0 0 0 1px var(--ink-100), 0 1px 2px rgba(15, 23, 19, 0.05); }
+.d-bold .d-input.is-focus { box-shadow: inset 0 0 0 2px var(--ink-900); }
+.d-bold .d-input--big { font-weight: var(--weight-bold); }
+
+.d-bold .d-cat { box-shadow: inset 0 0 0 1px var(--ink-100); font-weight: var(--weight-semibold); }
+.d-bold .d-cat.is-on.is-coral { background: var(--coral-100); color: var(--tone-coral-fg); }
+
+/* The dial lives on a card of its own, with one line under it, as in the app. */
+.d-bold .d-ringwrap {
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 0 12px;
+  border-radius: 28px;
+  background: var(--white);
+  box-shadow: var(--d-card);
+}
+
+.d-bold .d-dialsub { display: block; margin: 0; font-size: 0.75rem; font-weight: var(--weight-medium); color: var(--ink-600); }
+.d-bold .d-ring__amt { font-weight: var(--weight-bold); }
+.d-bold .d-stats { display: none; }
+.d-bold .d-pill { font-weight: var(--weight-semibold); }
+
+/* Next step: the Pact's own green, a bold line, an ink action. */
+.d-bold .d-next {
+  gap: 2px;
+  padding: 14px 16px 14px;
+  border-radius: 24px;
+  background: linear-gradient(165deg, var(--green-300), var(--green-500));
+  box-shadow: 0 18px 28px -22px rgba(19, 122, 74, 0.7);
+}
+
+.d-bold .d-next .d-eyebrow { color: var(--ink-900); }
+.d-bold .d-next__text b { font-size: 1.0625rem; font-weight: var(--weight-bold); }
+.d-bold .d-next__text span { color: var(--shade-6); font-weight: var(--weight-medium); }
+.d-bold .d-next--ink { background: var(--ink-900); box-shadow: none; }
+.d-bold .d-next--ink .d-eyebrow { color: var(--green-300); }
+
+.d-bold .d-pool { border-radius: 24px; background: var(--ink-900); }
+.d-bold .d-pool__v { font-weight: var(--weight-bold); }
+
+.d-bold .d-h { margin-top: 6px; font-size: 1.0625rem; font-weight: var(--weight-bold); letter-spacing: -0.03em; }
+
+/* Actions: an ink pill with a green arrow capsule, one per screen. Small ones are plain ink. */
+.d-bold .d-btn { background: var(--ink-900); color: var(--paper-50); font-weight: var(--weight-semibold); }
+.d-bold .d-btn.is-pressed { transform: scale(0.96); box-shadow: 0 0 0 5px rgba(15, 23, 19, 0.12); }
+
+.d-bold :is(.d-btn--block, .d-next .d-btn) { position: relative; justify-content: flex-start; padding-left: 20px; padding-right: 52px; }
+
+.d-bold .d-btn--block { justify-content: center; padding: 0 56px; height: 54px; }
+
+.d-bold :is(.d-btn--block, .d-next .d-btn)::after {
+  content: '';
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  width: 40px;
+  height: 40px;
+  translate: 0 -50%;
+  border-radius: 50%;
+  background: var(--green-500) var(--d-arrow) center / 18px no-repeat;
+}
+
+.d-bold .d-next .d-btn { height: 40px; padding: 0 52px 0 18px; }
+.d-bold .d-next .d-btn::after { width: 30px; height: 30px; background-size: 15px; }
+
+.d-bold .d-btn--sm.is-done { background: var(--green-500); color: var(--ink-900); }
+.d-bold .d-btn.is-off { background: var(--paper-200); color: var(--ink-600); }
+.d-bold .d-btn.is-off::after { background-color: var(--ink-200); }
+.d-bold .d-btn--ghost { background: var(--white); color: var(--ink-900); box-shadow: 0 1px 2px rgba(15, 23, 19, 0.08), 0 10px 18px -12px rgba(15, 23, 19, 0.3); }
+.d-bold .d-btn--ghost::after { display: none; }
+
+/* Chips and rows */
+.d-bold .d-chip { font-weight: var(--weight-semibold); }
+.d-bold .d-task__name b, .d-bold .d-line__name b { font-weight: var(--weight-semibold); }
+.d-bold .d-task + .d-task, .d-bold .d-line + .d-line, .d-bold .d-act + .d-act { border-top-color: var(--ink-100); }
+.d-bold .d-person b { font-weight: var(--weight-semibold); }
+.d-bold .d-share i { box-shadow: 0 8px 14px -8px rgba(15, 23, 19, 0.4); }
+
+/* ---- Completed: soft green, one big promise ---- */
+.d-bold .d-done__h { font-size: 2rem; line-height: 36px; font-weight: var(--weight-bold); letter-spacing: -0.04em; }
+.d-bold .d-done__badge { font-weight: var(--weight-bold); }
+.d-bold .d-receipt { box-shadow: var(--d-card); }
+.d-bold .d-memory .m1, .d-bold .d-memory .m2, .d-bold .d-memory .m3 { box-shadow: 0 10px 16px -10px rgba(15, 23, 19, 0.4); }

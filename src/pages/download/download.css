@@ -1,7 +1,13 @@
+/* The install page: the landing page's dark room, a white card for the controls, and the phones held on rings. */
 .dl__hero {
   position: relative;
   padding: 128px 0 var(--space-24);
   overflow: hidden;
+  background:
+    radial-gradient(60% 60% at 100% 0%, color-mix(in srgb, var(--green-500) 40%, transparent), transparent 64%),
+    radial-gradient(50% 50% at 0% 100%, color-mix(in srgb, var(--sky-400) 18%, transparent), transparent 64%),
+    linear-gradient(172deg, var(--forest-700) 0%, var(--forest-900) 100%);
+  color: var(--white);
 }
 
 .dl__grid {
@@ -11,9 +17,9 @@
 }
 
 .dl__title {
-  font-size: clamp(2.375rem, 5.4vw, 5rem);
+  font-size: clamp(var(--text-h2), 6vw, var(--text-display));
   line-height: 0.98;
-  letter-spacing: -0.055em;
+  letter-spacing: var(--tracking-display);
 }
 
 /* two lines, always: each phrase stays whole */
@@ -24,15 +30,10 @@
 
 .dl__lede {
   margin-top: var(--space-5);
-  max-width: 36ch;
-  font-size: clamp(1.0625rem, 1.5vw, 1.25rem);
-  line-height: 1.5;
-  color: var(--color-text-secondary);
-}
-
-.dl__platform {
-  max-width: 320px;
-  margin: var(--space-8) 0 var(--space-4);
+  max-width: 34ch;
+  font-size: clamp(var(--text-body), 1.6vw, var(--text-title));
+  line-height: 1.45;
+  color: var(--white);
 }
 
 .dl__perks {
@@ -55,46 +56,58 @@
   width: 26px;
   height: 26px;
   border-radius: 50%;
-  background: var(--color-accent);
+  background: var(--brand);
+  color: var(--ink-900);
 }
 
-.dl__perks svg {
-  width: 14px;
-  height: 14px;
+.dl__perks svg { width: 14px; height: 14px; }
+
+/* The controls sit in one white card so they stay legible on the dark room. */
+.dl__card {
+  display: grid;
+  gap: var(--space-5);
+  max-width: 480px;
+  margin-top: var(--space-10);
+  padding: var(--space-6);
+  border-radius: 32px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: 0 30px 60px -30px rgba(0, 0, 0, 0.5);
+}
+
+.dl__platform { max-width: 320px; }
+
+.dl__install {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.dl__install-note {
+  max-width: 44ch;
+  color: var(--color-text-secondary);
 }
 
 .dl__qr {
   display: none;
   align-items: center;
   gap: var(--space-5);
-  max-width: 420px;
-  margin-top: var(--space-10);
-  padding: var(--space-4);
-  border-radius: var(--radius-xl);
-  background: var(--color-surface);
-  box-shadow: inset 0 0 0 1px var(--color-border);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--color-border);
 }
 
 .dl__qr img {
-  width: 104px;
-  height: 104px;
+  width: 96px;
+  height: 96px;
   border-radius: var(--radius-sm);
 }
 
-.dl__qr-title {
-  font-weight: var(--weight-semibold);
-}
-
-.dl__qr-body {
-  margin-top: 2px;
-  font-size: var(--text-sm);
-  color: var(--color-text-secondary);
-}
+.dl__qr-title { font-weight: var(--weight-semibold); }
+.dl__qr-body { margin-top: 2px; font-size: var(--text-sm); color: var(--color-text-secondary); }
 
 @media (min-width: 1024px) {
-  .dl__qr {
-    display: flex;
-  }
+  .dl__qr { display: flex; }
 }
 
 /* phones */
@@ -113,70 +126,86 @@
   transform-style: preserve-3d;
 }
 
-.dl__phone {
+.dl__phone { position: absolute; inset: 0; }
+.dl__phone .phone3 { --phone-w: 100%; }
+.dl__phone--back { transform: translate3d(42%, -6%, -120px) rotate(8deg); opacity: 0.95; }
+.dl__phone--front { transform: translate3d(-18%, 4%, 40px) rotate(-5deg); }
+
+/* Two rings turning slowly behind the phones, the landing page's circle of people without the people. */
+.dl__ring {
   position: absolute;
-  inset: 0;
+  top: 50%;
+  left: 50%;
+  border-radius: 50%;
+  translate: -50% -50%;
 }
 
-.dl__phone .phone3 {
-  --phone-w: 100%;
-}
-
-.dl__phone--back {
-  transform: translate3d(42%, -6%, -120px) rotate(8deg);
-  opacity: 0.95;
-}
-
-.dl__phone--front {
-  transform: translate3d(-18%, 4%, 40px) rotate(-5deg);
-}
-
-.dl__shape {
-  position: absolute;
-  z-index: -1;
-}
-
-.dl__shape--sun { width: 240px; height: 240px; border-radius: 50%; background: var(--sun-400); left: 4%; top: 10%; }
-.dl__shape--sky { width: 170px; height: 170px; border-radius: 40px; background: var(--sky-400); right: 2%; bottom: 8%; }
-.dl__shape--pink { width: 110px; height: 110px; border-radius: 50% 50% 50% 10px; background: var(--pink-400); right: 18%; top: 4%; }
+.dl__ring--a { width: min(86vw, 560px); aspect-ratio: 1; border: 1px dashed var(--veil-4); }
+.dl__ring--b { width: min(60vw, 400px); aspect-ratio: 1; border: 1px solid var(--veil-3); }
 
 @media (min-width: 1024px) {
-  .dl__grid {
-    grid-template-columns: repeat(12, 1fr);
-    column-gap: var(--grid-gap);
-  }
-
-  .dl__copy {
-    grid-column: 1 / span 6;
-  }
-
-  .dl__visual {
-    grid-column: 7 / span 6;
-    min-height: 720px;
-  }
-
-  .dl__stack {
-    width: 280px;
-  }
+  .dl__grid { grid-template-columns: repeat(12, 1fr); column-gap: var(--grid-gap); }
+  .dl__copy { grid-column: 1 / span 6; }
+  .dl__visual { grid-column: 7 / span 6; min-height: 720px; }
+  .dl__stack { width: 280px; }
 }
 
 @media (max-width: 767px) {
-  .dl__hero {
-    padding-top: 108px;
-  }
-
-  .dl__visual {
-    min-height: 480px;
-  }
-
-  .dl__shape--sun { width: 160px; height: 160px; }
-  .dl__shape--sky { width: 110px; height: 110px; }
-  .dl__shape--pink { display: none; }
+  .dl__hero { padding-top: 108px; }
+  .dl__visual { min-height: 480px; }
 }
 
-.dl__try {
-  padding: 0 0 var(--space-24);
+/* Steps: the same three beats as the landing page's story, on the page's own paper. */
+.dl__steps { padding: var(--space-20) 0 var(--space-12); }
+
+.dl__steps-title {
+  max-width: 18ch;
+  font-size: clamp(var(--text-h3), 5vw, var(--text-h1));
+  line-height: 1.04;
+  letter-spacing: var(--tracking-tight);
+  text-wrap: balance;
 }
+
+.dl__steps-list {
+  display: grid;
+  gap: var(--space-4);
+  margin: var(--space-10) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dl__step {
+  position: relative;
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-8) var(--space-6);
+  border-radius: 32px;
+  background: var(--color-surface);
+  box-shadow: 0 24px 40px -30px var(--shade-5);
+}
+
+.dl__step svg { width: 28px; height: 28px; color: var(--green-600, var(--ink-900)); }
+.dl__step h3 { margin: var(--space-2) 0 0; font-size: var(--text-title); line-height: 1.15; letter-spacing: var(--tracking-snug); }
+.dl__step p { margin: 0; color: var(--color-text-secondary); line-height: 1.5; }
+
+.dl__step-n {
+  position: absolute;
+  top: var(--space-5);
+  right: var(--space-6);
+  font-size: var(--text-h1);
+  line-height: 1;
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-display);
+  color: var(--sun-300);
+}
+
+@media (min-width: 900px) {
+  .dl__steps { padding: var(--space-32) 0 var(--space-16); }
+  .dl__steps-list { grid-template-columns: repeat(3, 1fr); }
+}
+
+/* The close: a dark panel, as on the landing page. */
+.dl__try { padding: var(--space-8) 0 var(--space-24); }
 
 .dl__try-inner {
   display: flex;
@@ -184,42 +213,13 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--space-6);
+  padding: var(--space-10) var(--space-8);
+  border-radius: 40px;
+  background: linear-gradient(172deg, var(--forest-700) 0%, var(--forest-900) 100%);
+  color: var(--white);
 }
 
-.dl__try-inner p {
-  max-width: 56ch;
-  padding: var(--space-6) 0;
-  font-size: var(--text-lg);
-  color: var(--color-text-secondary);
-}
-
-.dl__try-inner strong {
-  color: var(--color-text);
-}
-
-.dl__try-inner > * {
-  flex-shrink: 0;
-}
-
-.dl__try-inner p {
-  flex-shrink: 1;
-}
-
-.dl__try-inner {
-  padding: var(--space-6) var(--space-8);
-  border-radius: var(--radius-3xl);
-  background: var(--color-surface);
-  box-shadow: inset 0 0 0 1px var(--color-border);
-}
-
-.dl__install {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--space-3);
-}
-
-.dl__install-note {
-  max-width: 44ch;
-  color: var(--color-text-secondary);
-}
+.dl__try-inner p { max-width: 48ch; font-size: var(--text-lg); line-height: 1.4; }
+.dl__try-inner strong { display: block; font-size: clamp(var(--text-title), 3vw, var(--text-h2)); letter-spacing: var(--tracking-tight); }
+.dl__try-inner > * { flex-shrink: 0; }
+.dl__try-inner p { flex-shrink: 1; }

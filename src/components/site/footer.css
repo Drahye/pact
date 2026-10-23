@@ -1,72 +1,105 @@
+/* The foot of every marketing page: the landing page's dark room, one last invitation, and the small print. */
 .footer {
-  border-top: var(--border-hairline);
-  padding: var(--space-12) 0 var(--space-10);
+  padding: var(--space-16) 0 var(--space-10);
+  background: var(--forest-900);
+  color: var(--white);
 }
 
 .footer__inner {
   display: grid;
-  gap: var(--space-8);
+  gap: var(--space-10);
 }
 
 .footer__brand {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
+  align-items: flex-start;
+  gap: var(--space-4);
 }
 
-.footer__brand p {
-  color: var(--color-text-secondary);
+.footer__line {
+  max-width: 14ch;
+  margin: 0;
+  font-size: clamp(var(--text-h3), 6vw, var(--text-h1));
+  line-height: 1.04;
+  font-weight: var(--weight-bold);
+  letter-spacing: var(--tracking-display);
+  text-wrap: balance;
 }
 
-.footer__links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2) var(--space-6);
-}
-
-.footer__links a,
-.footer__links button {
+.footer__cta {
   display: inline-flex;
   align-items: center;
   min-height: var(--tap-min);
-  font-size: var(--text-sm);
-  font-weight: var(--weight-medium);
-  color: var(--color-text-secondary);
+  padding: 0 var(--space-6);
+  border-radius: var(--radius-full);
+  background: var(--brand);
+  color: var(--ink-900);
+  font-weight: var(--weight-semibold);
 }
 
-.footer__links a:hover,
-.footer__links button:hover {
-  color: var(--color-text);
+.footer__cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-8);
+}
+
+.footer__col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.footer__head {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-caption);
+  font-weight: var(--weight-semibold);
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--green-500);
+}
+
+.footer__col a,
+.footer__col button {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap-min);
+  font-size: var(--text-body);
+  font-weight: var(--weight-medium);
+  color: var(--white);
+}
+
+.footer__col a:hover,
+.footer__col button:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
 }
 
 .footer__note,
 .footer__copy {
   max-width: 60ch;
+  margin: 0;
   font-size: var(--text-caption);
-  line-height: 18px;
-  color: var(--color-text-tertiary);
+  line-height: 1.5;
+  color: var(--white);
+}
+
+.footer__note {
+  padding-top: var(--space-8);
+  border-top: 1px solid var(--veil-3);
 }
 
 @media (min-width: 1024px) {
+  .footer { padding: var(--space-24) 0 var(--space-12); }
+
   .footer__inner {
     grid-template-columns: repeat(12, 1fr);
     column-gap: var(--grid-gap);
     align-items: start;
   }
 
-  .footer__brand {
-    grid-column: 1 / span 4;
-  }
-
-  .footer__links {
-    grid-column: 5 / span 4;
-  }
-
-  .footer__note {
-    grid-column: 9 / span 4;
-  }
-
-  .footer__copy {
-    grid-column: 1 / -1;
-  }
+  .footer__brand { grid-column: 1 / span 6; }
+  .footer__cols { grid-column: 8 / span 5; }
+  .footer__note { grid-column: 1 / span 6; }
+  .footer__copy { grid-column: 8 / span 5; align-self: end; }
 }

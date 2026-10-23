@@ -147,6 +147,12 @@
   to { opacity: 1; transform: none; }
 }
 
+/* New in the bold skin only: the hero's words and the dial's summary line. Not shown in the classic look. */
+.d-herocopy,
+.d-dialsub {
+  display: none;
+}
+
 /* chips and buttons */
 .d-chip {
   display: inline-flex;

@@ -20,6 +20,26 @@ export function circleLine(pact: Pact, meId: string): { faces: string[]; text: s
   return { faces, text: parts.join(' ') };
 }
 
+/**
+ * People worth suggesting for a new Pact of a kind: the ones who were in your earlier Pacts of the same kind (or, failing that, of any kind), most often
+ * first. Never yourself, and never anyone already shown or chosen. Computed on the device from Pacts it already holds.
+ */
+export function suggestedPeople(pacts: Pact[], category: string, meId: string, exclude: string[], limit = 4): { ids: string[]; sameKind: boolean } {
+  const count = (list: Pact[]) => {
+    const n = new Map<string, number>();
+    for (const p of list) for (const m of joinedMembers(p)) if (m.userId !== meId && !exclude.includes(m.userId)) n.set(m.userId, (n.get(m.userId) ?? 0) + 1);
+    return [...n.entries()].sort((a, b) => b[1] - a[1]).map(([id]) => id).slice(0, limit);
+  };
+  const same = count(pacts.filter((p) => p.category === category));
+  return same.length ? { ids: same, sameKind: true } : { ids: count(pacts), sameKind: false };
+}
+
+/** "You and Sarah have put in." / "Maya has put in." for the people who have given, or null when nobody has. */
+export function gaveLine(ids: string[], meId?: string | null): string | null {
+  if (!ids.length) return null;
+  return `${peopleLine(ids, meId, { names: 2 })} ${ids.length === 1 && ids[0] !== meId ? 'has' : 'have'} put in`;
+}
+
 const MILESTONES = [
   { at: 100, line: 'Fully funded. Everyone came through.' },
   { at: 75, line: 'Three quarters there. Nearly done.' },

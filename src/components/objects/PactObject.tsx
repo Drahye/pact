@@ -36,6 +36,7 @@ export function PactObject({
   need,
   action,
   photo,
+  gave,
 }: {
   title: string;
   tint?: string;
@@ -63,6 +64,8 @@ export function PactObject({
   action?: ObjectAction;
   /** A photograph of what it is for, faint behind the compact card, so the people and the occasion are felt before the words. */
   photo?: string;
+  /** Who has put money in, as faces and a short sentence, so a card is about people and not only a percentage. */
+  gave?: { ids: string[]; text: string } | null;
 }) {
   const id = useId();
   const people = contributorIds ?? [];
@@ -99,6 +102,12 @@ export function PactObject({
             {formatNaira(raised)} of {formatNaira(target)}
             {daysLeft !== undefined && ` · ${daysLeft === 0 ? 'due today' : `${daysLeft} ${daysLeft === 1 ? 'day' : 'days'} left`}`}
           </p>
+          {gave && (
+            <p className="ox-pact__gave">
+              <AvatarStack userIds={gave.ids} size="xs" max={3} />
+              <span>{gave.text}</span>
+            </p>
+          )}
         </ObjectLink>
         {action && (
           <div className="ox-pact__action">

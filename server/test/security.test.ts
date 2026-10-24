@@ -346,6 +346,38 @@ describe('security: authorization, RLS, payments, uploads, abuse', () => {
     assert.equal((await upload(abraham.accessToken, jpeg)).statusCode, 400);
   });
 
+  it('lets an organiser upload a cover photo: real images only, metadata stripped, visible to the Pact and no one else', async () => {
+    const created = await t.call('POST', '/pacts', abraham.accessToken, { title: 'Cover upload', category: 'trip', deadline: future(5), target: 100000 });
+    const id = created.body.data.pact.id;
+    const code = created.body.data.pact.inviteCode;
+    await t.call('POST', `/invites/${code}/join`, sarah.accessToken, {});
+    const jpeg = await sharp({ create: { width: 64, height: 48, channels: 3, background: '#3dd68c' } }).jpeg().withMetadata({ exif: { IFD0: { Copyright: 'secret location' } } }).toBuffer();
+    const upload = (token: string, body: Buffer, type = 'image/jpeg') =>
+      t.app.inject({ method: 'POST', url: `/api/pacts/${id}/cover-photo`, headers: { authorization: `Bearer ${token}`, 'content-type': type }, payload: body });
+    const fetchIt = (token?: string) => t.app.inject({ method: 'GET', url: `/api/pacts/${id}/cover-photo`, headers: token ? { authorization: `Bearer ${token}` } : {} });
+
+    assert.equal((await upload(abraham.accessToken, Buffer.from('MZ\x90\x00 not an image'), 'image/png')).statusCode, 415);
+    assert.equal((await upload(sarah.accessToken, jpeg)).statusCode, 403, 'a member cannot');
+    assert.equal((await fetchIt(sarah.accessToken)).statusCode, 404, 'nothing until one is uploaded');
+
+    const ok = await upload(abraham.accessToken, jpeg);
+    assert.equal(ok.statusCode, 200, ok.body);
+    const cover = JSON.parse(ok.body).data.pact.cover as string;
+    assert.match(cover, /^upload-[a-z0-9]+$/);
+    const got = await fetchIt(sarah.accessToken);
+    assert.equal(got.statusCode, 200);
+    assert.equal(got.headers['content-type'], 'image/webp');
+    assert.equal((await sharp(got.rawPayload).metadata()).exif, undefined, 'EXIF metadata survived');
+    assert.equal((await fetchIt(outsider.accessToken)).statusCode, 404, 'outsiders cannot see it');
+    assert.equal((await fetchIt()).statusCode, 401, 'signed-out visitors cannot see it');
+    assert.equal((await t.call('GET', `/invites/${code}`)).body.cover, null, 'the invite link shows the default for its kind, not the upload');
+    assert.equal((await t.call('PUT', `/pacts/${id}/cover`, abraham.accessToken, { cover: 'upload-abc123' })).status, 400, 'the upload marker cannot be set by hand');
+
+    // Choosing a library photograph lets go of the upload.
+    assert.equal((await t.call('PUT', `/pacts/${id}/cover`, abraham.accessToken, { cover: 'trip-beach' })).body.data.pact.cover, 'trip-beach');
+    assert.equal((await fetchIt(sarah.accessToken)).statusCode, 404);
+  });
+
   /* ---------------- abuse, enumeration, admin ---------------- */
 
   it('answers the same for new and existing numbers (no account enumeration)', async () => {

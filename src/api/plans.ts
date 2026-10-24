@@ -2,7 +2,7 @@ import { useRef } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { PactDraftDTO, PersonDTO, PlanDTO, PlanNeedDTO, PlanStatus, PlanSummaryDTO, WithPeople, Attendance } from '../../shared/contracts';
 import { askKeys } from './asks';
-import { api, intentKeys } from './client';
+import { api, intentKeys, uploadPhoto } from './client';
 import { circleKeys } from './circles';
 import { homeKeys } from './home';
 import { register } from './mappers';
@@ -89,6 +89,7 @@ export function useCreatePlan(circleId: string) {
 }
 
 export const useUpdatePlan = (id: string) => usePlanWrite(id, (b: Record<string, unknown>) => api('PATCH', `/plans/${id}`, b));
+export const useUploadPlanCover = (id: string) => usePlanWrite(id, (file: File) => uploadPhoto<Single>(`/plans/${id}/cover-photo`, file));
 export const useSetPlanStatus = (id: string) => usePlanWrite(id, (status: PlanStatus) => api('POST', `/plans/${id}/status`, { status }));
 export const useRsvp = (id: string) => usePlanWrite(id, (status: Attendance) => api('PUT', `/plans/${id}/rsvp`, { status }));
 export const useSetRsvpOpen = (id: string) => usePlanWrite(id, (open: boolean) => api('PUT', `/plans/${id}/rsvp-open`, { open }));

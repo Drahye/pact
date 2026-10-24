@@ -61,7 +61,7 @@ const pactsSeed: {
     participation: { maya: 'both', tolu: 'both' },
   },
   {
-    title: 'Weekend in Cape Town',
+    title: 'Weekend in Abuja',
     category: 'trip',
     target: 1_200_000,
     days: 77,

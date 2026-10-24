@@ -72,7 +72,7 @@ async function signInNew(page, name) {
   ok('plan: the sheet says RSVP in words', (await page.getByRole('dialog').innerText()).includes('RSVP stays with you'));
   await page.getByRole('button', { name: 'Continue' }).click();
   await page.waitForURL(/\/app\/auth\/start/);
-  ok('plan: sign-in screen shows the plan and the choice', (await page.getByText('Bali Trip').count()) > 0 && (await page.getByText('Maybe').count()) > 0);
+  ok('plan: sign-in screen shows the plan and the choice', (await page.getByText('Obudu Trip').count()) > 0 && (await page.getByText('Maybe').count()) > 0);
   await signInNew(page, 'Bola');
   await page.waitForTimeout(3500);
   ok('plan: lands on the Plan', page.url().includes(`/p/${T.plan}`), page.url().replace(T.plan, '<token>'));

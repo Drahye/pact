@@ -16,7 +16,7 @@ import { CreateShell } from '../../../components/create/CreateShell';
 import '../../../components/ask/ask.css';
 
 type Step = 'title' | 'when' | 'where' | 'circle';
-const EXAMPLES = ['Ghana in December', 'Dinner on Friday', 'Beach Day', 'Sarah’s birthday'];
+const EXAMPLES = ['Calabar in December', 'Dinner on Friday', 'Beach Day', 'Sarah’s birthday'];
 
 /** What are we doing, when and where (all optional), and which Circle if it is not already clear. */
 export function CreatePlanScreen() {
@@ -103,7 +103,7 @@ export function CreatePlanScreen() {
     >
       {step === 'title' && (
         <>
-          <Input label="Plan name" value={title} maxLength={80} autoFocus autoComplete="off" placeholder="Ghana in December" enterKeyHint="next" onChange={(e) => setTitle(e.target.value)} onBlur={() => setTitleSeen(true)} onKeyDown={(e) => e.key === 'Enter' && title.trim() && next()} />
+          <Input label="Plan name" value={title} maxLength={80} autoFocus autoComplete="off" placeholder="Calabar in December" enterKeyHint="next" onChange={(e) => setTitle(e.target.value)} onBlur={() => setTitleSeen(true)} onKeyDown={(e) => e.key === 'Enter' && title.trim() && next()} />
           <StepHint show={titleSeen && !title.trim()}>Name your plan to continue.</StepHint>
           <div className="ca__chips" aria-label="Ideas">
             {EXAMPLES.map((x) => (

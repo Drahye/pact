@@ -4,6 +4,7 @@
  */
 import assert from 'node:assert/strict';
 import { after, before, describe, it } from 'node:test';
+import sharp from 'sharp';
 import { planPseudo } from '../src/lib/events.js';
 import { addDays, lagosToday } from '../src/lib/time.js';
 import { setup } from './helpers.js';
@@ -52,6 +53,39 @@ describe('Plans', () => {
     assert.equal((await create(ana, circleId, { title: '<b>x</b>' })).status, 400);
     assert.equal((await create(cleo, circleId, { title: 'Sneaky' })).status, 404, 'not in the Circle');
     assert.equal((await t.call('POST', `/circles/${circleId}/plans`, undefined, { title: 'x' })).status, 401);
+  });
+
+  it('the organiser can choose a cover photograph for a plan, and no one else', async () => {
+    const p = (await create(ana, circleId, { title: 'Cover plan', category: 'trip' })).body.data;
+    assert.equal(p.cover, null, 'the default for its kind until chosen');
+    assert.equal((await t.call('PATCH', `/plans/${p.id}`, tok(ben), { cover: 'trip-beach' })).status, 403, 'a member cannot');
+    const set = await t.call('PATCH', `/plans/${p.id}`, tok(ana), { cover: 'trip-beach' });
+    assert.equal(set.body.data.cover, 'trip-beach');
+    assert.equal((await t.call('PATCH', `/plans/${p.id}`, tok(ana), { title: 'Cover plan, renamed' })).body.data.cover, 'trip-beach', 'editing something else keeps the cover');
+    assert.equal((await t.call('PATCH', `/plans/${p.id}`, tok(ana), { cover: 'https://example.com/x.jpg' })).status, 400, 'a key, never a URL');
+    assert.equal((await t.call('PATCH', `/plans/${p.id}`, tok(ana), { cover: null })).body.data.cover, null, 'back to the default');
+  });
+
+  it('the organiser can upload their own plan cover: real images only, seen by the Circle, never on the public link', async () => {
+    const p = (await create(ana, circleId, { title: 'Upload plan', category: 'dinner' })).body.data;
+    const jpeg = await sharp({ create: { width: 64, height: 48, channels: 3, background: '#3dd68c' } }).jpeg().withMetadata({ exif: { IFD0: { Copyright: 'secret location' } } }).toBuffer();
+    const up = (u: U, body: Buffer, type = 'image/jpeg') => t.app.inject({ method: 'POST', url: `/api/plans/${p.id}/cover-photo`, headers: { authorization: `Bearer ${tok(u)}`, 'content-type': type }, payload: body });
+    const get = (u?: U) => t.app.inject({ method: 'GET', url: `/api/plans/${p.id}/cover-photo`, headers: u ? { authorization: `Bearer ${tok(u)}` } : {} });
+    assert.equal((await up(ana, Buffer.from('MZ\x90\x00 not an image'), 'image/png')).statusCode, 415);
+    assert.equal((await up(ben, jpeg)).statusCode, 403, 'a member cannot');
+    assert.equal((await get(ben)).statusCode, 404, 'nothing until one is uploaded');
+    const ok = await up(ana, jpeg);
+    assert.equal(ok.statusCode, 200, ok.body);
+    assert.match(JSON.parse(ok.body).data.cover, /^upload-[a-z0-9]+$/);
+    const got = await get(ben);
+    assert.equal(got.statusCode, 200);
+    assert.equal((await sharp(got.rawPayload).metadata()).exif, undefined, 'EXIF metadata survived');
+    assert.equal((await get(cleo)).statusCode, 404, 'outsiders cannot see it');
+    assert.equal((await get()).statusCode, 401, 'signed-out visitors cannot see it');
+    const link = (await t.call('GET', `/plans/${p.id}`, tok(ana))).body.data.shareToken;
+    assert.equal((await t.call('GET', `/plan-links/${link}`)).body.data.cover, null, 'the public link shows the default');
+    assert.equal((await t.call('PATCH', `/plans/${p.id}`, tok(ana), { cover: 'dinner-table' })).body.data.cover, 'dinner-table');
+    assert.equal((await get(ben)).statusCode, 404, 'a library photograph lets go of the upload');
   });
 
   it('only Circle members can read a plan; guessed ids look like nothing', async () => {

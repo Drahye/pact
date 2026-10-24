@@ -38,7 +38,7 @@ const asks = (await call('GET', `/circles/${boys.id}/asks`, T.abraham)).data;
 ids.askOpen = asks.find((a) => a.title === 'Which date works?').id;
 
 // An open Plan: date, place, people in, tasks, a linked Ask
-const bali = (await call('POST', `/circles/${boys.id}/plans`, T.abraham, { title: 'Bali Trip', category: 'trip', date: day(48), endDate: day(55), location: 'Ubud, Bali', description: 'A week away. Villa, scooters, no laptops.' })).data;
+const bali = (await call('POST', `/circles/${boys.id}/plans`, T.abraham, { title: 'Obudu Trip', category: 'trip', date: day(48), endDate: day(55), location: 'Obudu Ranch', description: 'A week away. Villa, scooters, no laptops.' })).data;
 for (const k of ['sarah', 'david', 'maya']) await call('PUT', `/plans/${bali.id}/rsvp`, T[k], { status: 'in' });
 await call('PUT', `/plans/${bali.id}/rsvp`, T.tolu, { status: 'maybe' });
 await call('POST', `/plans/${bali.id}/tasks`, T.abraham, { title: 'Book the villa', assigneeId: me.id });

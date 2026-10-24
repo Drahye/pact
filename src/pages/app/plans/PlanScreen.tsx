@@ -5,12 +5,13 @@ import type { Attendance, PlanDTO, PlanStatus } from '../../../../shared/contrac
 import { useAuth } from '../../../api/auth';
 import { useCircleAsks } from '../../../api/asks';
 import { ApiError } from '../../../api/client';
-import { useAddTask, useDeleteTask, useHandOverPlan, useLinkAsk, usePatchTask, usePlan, useResetPlanLink, useRsvp, useSetRsvpOpen, useSetPlanStatus, useUpdatePlan } from '../../../api/plans';
+import { useAddTask, useDeleteTask, useHandOverPlan, useLinkAsk, usePatchTask, usePlan, useResetPlanLink, useRsvp, useUploadPlanCover, useSetRsvpOpen, useSetPlanStatus, useUpdatePlan } from '../../../api/plans';
 import { PlanSkeleton } from '../../../components/app/DetailSkeletons';
 import { ErrorState, Notice } from '../../../components/app/States';
 import { statusLabel } from '../../../components/plan/PlanBits';
 import { Burst } from '../../../components/pact/Burst';
-import { coverOf } from '../../../lib/covers';
+import { CoverSheet } from '../../../components/pact/CoverSheet';
+import { useCover } from '../../../api/hooks';
 import { ActivityRow, Hero, PlanDecisions, PlanHero, RsvpTrack, Sheet } from '../../../components/objects';
 import { AmountInput } from '../../../components/ui/AmountInput';
 import { Avatar } from '../../../components/ui/Avatar';
@@ -31,7 +32,7 @@ import '../../../components/plan/plan.css';
 import '../object-detail.css';
 import './plan-detail.css';
 
-type Sheet = null | 'menu' | 'edit' | 'link' | 'pact' | 'cancel' | 'reset' | 'sure' | 'hand';
+type Sheet = null | 'menu' | 'edit' | 'link' | 'pact' | 'cancel' | 'reset' | 'sure' | 'hand' | 'cover';
 const attLabel: Record<Attendance, string> = { in: 'In', maybe: 'Maybe', out: 'Can’t' };
 
 /** "Sarah is in", "Daniel changed to Maybe", "Tobi completed “Pick hotel”". Plain words; no chat. */
@@ -95,6 +96,8 @@ export function PlanScreen() {
   const from = params.get('from') === 'home' ? 'home' : params.get('from') === 'circle' ? 'circle' : undefined;
   const plan = usePlan(id, from);
   const rsvp = useRsvp(id);
+  const uploadCover = useUploadPlanCover(id);
+  const cover = useCover({ category: plan.data?.category, cover: plan.data?.cover, id: plan.data?.id }, 'plan');
   const status = useSetPlanStatus(id);
   const update = useUpdatePlan(id);
   const addTask = useAddTask(id);
@@ -190,7 +193,7 @@ export function PlanScreen() {
         />
       }
     >
-      <Hero tint={p.pactId ? 'mint' : 'sun'} photo={coverOf({ category: p.category, id: p.id })} className="xh--plan">
+      <Hero tint={p.pactId ? 'mint' : 'sun'} photo={cover} className="xh--plan">
         <PlanHero
           title={p.title}
           date={p.date}
@@ -431,8 +434,21 @@ export function PlanScreen() {
         )}
       </Sheet>
 
+      <CoverSheet
+        open={sheet === 'cover'}
+        onClose={close}
+        category={p.category}
+        current={p.cover}
+        busy={update.isPending || uploadCover.isPending}
+        who="Circle"
+        onUpload={(file) => void act(() => uploadCover.mutateAsync(file), 'Cover changed').then((ok) => ok && close())}
+        onPick={(key) => void act(() => update.mutateAsync({ cover: key }), key ? 'Cover changed' : 'Back to the usual cover').then((ok) => ok && close())}
+      />
       <Modal open={sheet === 'menu'} onClose={close} title={p.title}>
         <div className="menu">
+          <button type="button" className="menu__row" onClick={() => setSheet('cover')}>
+            <span className="menu__text"><span className="menu__title">Change cover</span><span className="menu__sub">Pick the photograph this Plan wears</span></span>
+          </button>
           <button type="button" className="menu__row" onClick={openEdit}>
             <span className="menu__text"><span className="menu__title">Edit Plan</span><span className="menu__sub">Name, dates, place and rough budget</span></span>
           </button>

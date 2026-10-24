@@ -1,7 +1,7 @@
 import { useRef } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { CircleDTO, CircleInvitePreviewDTO, CircleSummaryDTO, CircleTint, WithPeople } from '../../shared/contracts';
-import { api, intentKeys } from './client';
+import { api, intentKeys, uploadPhoto } from './client';
 import { register } from './mappers';
 
 export const circleKeys = {
@@ -53,7 +53,8 @@ export const useCreateCircle = () => {
   const keyFor = useRef(intentKeys()).current;
   return useCircleWrite((b: { name: string; emoji: string; tint: CircleTint }) => api('POST', '/circles', b, { idempotencyKey: keyFor(b) }));
 };
-export const useUpdateCircle = (id: string) => useCircleWrite((b: Partial<{ name: string; emoji: string; tint: CircleTint }>) => api('PATCH', `/circles/${id}`, b));
+export const useUpdateCircle = (id: string) => useCircleWrite((b: Partial<{ name: string; emoji: string; tint: CircleTint; cover: string | null }>) => api('PATCH', `/circles/${id}`, b));
+export const useUploadCircleCover = (id: string) => useCircleWrite((file: File) => uploadPhoto<WithPeople<CircleDTO>>(`/circles/${id}/cover-photo`, file));
 export const useEnsureInvite = (id: string) => useCircleWrite((_: void) => api('POST', `/circles/${id}/invites`, {}));
 export const useResetInvite = (id: string) => useCircleWrite((_: void) => api('POST', `/circles/${id}/invites/reset`, {}));
 export const useRemoveMember = (id: string) => useCircleWrite((userId: string) => api('DELETE', `/circles/${id}/members/${userId}`));

@@ -34,7 +34,7 @@ export function BankAccountsScreen() {
       {accounts.isLoading ? (
         <RowListSkeleton count={3} trailing={false} label="Loading bank accounts" />
       ) : !accounts.data?.length ? (
-        <Empty icon={<Landmark />} title="No bank accounts yet" body="Add an account in your name to withdraw from your wallet." />
+        <Empty icon={<Landmark />} title="No bank accounts yet" body="Add an account in your name, so money you are owed can come home." />
       ) : (
         <div className="menu" style={{ marginTop: 16 }}>
           {accounts.data.map((a) => (

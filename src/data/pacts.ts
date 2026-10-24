@@ -30,7 +30,7 @@ export const seedPacts: Pact[] = [
   {
     id: 'cape-town',
     slug: 'weekend-cape-town',
-    title: 'Weekend in Cape Town',
+    title: 'Weekend in Abuja',
     category: 'trip',
     target: 1_200_000,
     deadline: '2026-12-11',

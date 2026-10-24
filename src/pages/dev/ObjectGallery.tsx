@@ -296,7 +296,7 @@ function Rows() {
         <Pair>
           {() => (
             <div className="gal-list">
-              <ActivityRow actorId="abraham" kind="plan" text="Abraham joined Bali Trip" at={ago(3)} />
+              <ActivityRow actorId="abraham" kind="plan" text="Abraham joined Obudu Trip" at={ago(3)} />
               <ActivityRow actorId="daniel" kind="split" text="Daniel settled ₦14,000" at={ago(48)} to="#activity" />
               <ActivityRow actorId="sarah" kind="ask" text="Sarah voted Friday" at={ago(60 * 5)} />
               <ActivityRow actorId={null} kind="pact" text="Menu marked done" at={ago(60 * 30)} />
@@ -308,7 +308,7 @@ function Rows() {
         <Pair>
           {() => (
             <div className="gal-list">
-              <ComingUpRow when="Today" today title="Ghana in December" emoji="✨" meta="Oct 3 – Dec 20 · 2 in" to="#a" />
+              <ComingUpRow when="Today" today title="Calabar in December" emoji="✨" meta="Oct 3 – Dec 20 · 2 in" to="#a" />
               <ComingUpRow when="Tomorrow" title="Team lunch" emoji="🍽️" meta="3 in" to="#b" />
               <ComingUpRow when="Saturday" title="Beach day" emoji="✈️" meta="2 in · 1 maybe" to="#c" />
               <ComingUpRow when="Oct 16" title="Sarah’s Birthday" emoji="🎉" meta="64% funded" disabled />
@@ -390,7 +390,7 @@ function Plans() {
         {() => (
           <div className="gal-stack">
             <State name="Default → selected (interactive)">
-              <PlanObject title="Bali Trip" date={day(48)} endDate={day(55)} location="Ubud, Bali" goingIds={['sarah', 'david', 'maya']} going={4} maybe={1} rsvp={r} onRsvp={setR} linkedAsk={{ question: 'Villa or hotel?', leading: 'Villa leads' }} />
+              <PlanObject title="Obudu Trip" date={day(48)} endDate={day(55)} location="Obudu Ranch" goingIds={['sarah', 'david', 'maya']} going={4} maybe={1} rsvp={r} onRsvp={setR} linkedAsk={{ question: 'Villa or hotel?', leading: 'Villa leads' }} />
             </State>
             <State name="Going">
               <PlanObject title="Beach weekend in Lekki" date={day(21)} endDate={day(23)} location="Lekki, Lagos" goingIds={['david', 'maya', 'tolu']} going={3} rsvp="in" />
@@ -471,7 +471,7 @@ function Pacts() {
               )}
             </State>
             <State name="Active · nothing assigned">
-              <PactObject title="Weekend in Cape Town" tint="sky" raised={780000} target={1200000} shares={shares(780000)} daysLeft={77} contributorIds={['david', 'maya', 'tolu']} />
+              <PactObject title="Weekend in Abuja" tint="sky" raised={780000} target={1200000} shares={shares(780000)} daysLeft={77} contributorIds={['david', 'maya', 'tolu']} />
             </State>
             <State name="Completed">
               <PactObject title="Wedding gift" tint="pink" raised={250000} target={250000} shares={shares(250000)} contributorIds={['sarah', 'abraham', 'maya', 'david']} completed onRecap={() => undefined} />

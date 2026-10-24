@@ -7,7 +7,7 @@ import { trackHome } from '../../api/home';
 import { formatDate } from '../../lib/format';
 import { dateRange } from '../../lib/planDates';
 import { transition } from '../../tokens/tokens';
-import { circleCover, coverOf } from '../../lib/covers';
+import { useCover } from '../../api/hooks';
 import { peopleLine } from '../../lib/peopleLine';
 import { ActivityRow, AnimatedCount, AvatarStack, CircleTile, CompletionState, ComingUpRow, OBJECT_KINDS, ObjectArt } from '../objects';
 import { SectionHeading } from '../ui/SectionHeading';
@@ -94,7 +94,7 @@ export function CirclesShelf({ circles }: { circles: HomeCircleDTO[] }) {
               live={c.signal.kind === 'needs_you'}
               alt={i % 2 === 1}
               to={`/app/circles/${c.id}`}
-              photo={circleCover(c.id)}
+              cover={c}
               onOpen={() => trackHome('circle_opened_from_home', { section: 'circles' })}
             />
           </li>
@@ -169,30 +169,42 @@ export function HomeShortcuts() {
 }
 
 /** An agenda: when on the left, what and how it is going on the right. One ruled list, no boxes. */
+/** One Coming up row. A component of its own so a Pact's own photograph can be fetched for it. */
+function SoonRow({ x }: { x: ComingUpItem }) {
+  const when = whenLabel(x.date);
+  const coverSrc = useCover({ category: x.category, cover: x.cover, id: x.id }, x.kind === 'plan' ? 'plan' : 'pact');
+  return (
+    <ComingUpRow
+      when={when}
+      date={x.date}
+      today={when === 'Today'}
+      title={x.title}
+      emoji={x.emoji}
+      photo={coverSrc}
+      meta={`${x.kind === 'plan' && x.endDate ? `${dateRange(x.date, x.endDate)} · ` : ''}${x.text}`}
+      to={x.url}
+      onOpen={() => trackHome('coming_up_opened', { object_type: x.kind, section: 'coming_up' })}
+    />
+  );
+}
+
+/** A finished thing's photograph, pinned like a print beside it. */
+function MadePhoto({ r }: { r: RecapCardDTO }) {
+  const src = useCover({ category: r.category, cover: r.cover, id: r.id }, r.kind === 'plan' ? 'plan' : 'pact');
+  return <img className="hv3-made__photo" src={src} alt="" aria-hidden loading="lazy" decoding="async" />;
+}
+
 export function ComingUpSection({ items }: { items: ComingUpItem[] }) {
   if (!items.length) return null;
   return (
     <section className="screen-section" aria-labelledby="hv2-soon-h">
       <SectionHeading id="hv2-soon-h" title="Coming up" />
       <ul className="hv2-list hv2-list--ruled">
-        {items.map((x) => {
-          const when = whenLabel(x.date);
-          return (
-            <li key={`${x.kind}-${x.id}`}>
-              <ComingUpRow
-                when={when}
-                date={x.date}
-                today={when === 'Today'}
-                title={x.title}
-                emoji={x.emoji}
-                photo={coverOf({ category: x.category, cover: x.cover, id: x.id })}
-                meta={`${x.kind === 'plan' && x.endDate ? `${dateRange(x.date, x.endDate)} · ` : ''}${x.text}`}
-                to={x.url}
-                onOpen={() => trackHome('coming_up_opened', { object_type: x.kind, section: 'coming_up' })}
-              />
-            </li>
-          );
-        })}
+        {items.map((x) => (
+          <li key={`${x.kind}-${x.id}`}>
+            <SoonRow x={x} />
+          </li>
+        ))}
       </ul>
     </section>
   );
@@ -263,7 +275,7 @@ export function MadeItHappenSection({ items, title = 'Made it happen' }: { items
         {items.map((r) => (
           <li key={`${r.kind}-${r.id}`}>
             <Link to={`${r.url}?from=home`} className="hv3-made__item" aria-label={`View recap: ${r.title}`}>
-              {r.kind !== 'split' && <img className="hv3-made__photo" src={coverOf({ category: r.category, cover: r.cover, id: r.id })} alt="" aria-hidden loading="lazy" decoding="async" />}
+              {r.kind !== 'split' && <MadePhoto r={r} />}
               <CompletionState
                 layout="row"
                 announce={false}

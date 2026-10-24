@@ -75,7 +75,7 @@ export function AccountScreen() {
 
   return (
     <Screen className="xhero xhero--lite tint--lilac" topBar={<TopBar tone="transparent" backTo="/app/profile" title="Account and sign-in" collapse />}>
-      <PageHero tint="lilac" title="Account and sign-in" />
+      <PageHero tint="lilac" title="Account and sign-in" subtitle="How you get in, and how your people find you." />
       {account.isLoading || !a ? (
         <RowListSkeleton count={3} label="Loading your account" />
       ) : (

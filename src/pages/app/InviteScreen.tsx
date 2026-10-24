@@ -1,13 +1,13 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { Check, Copy, Ellipsis, MessageCircle, MessageSquareText, Phone, Share2 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { Navigate, useLocation, useParams } from 'react-router-dom';
 import { useAuth } from '../../api/auth';
 import { ApiError } from '../../api/client';
-import { usePact, usePactCommand } from '../../api/hooks';
+import { useCover, usePact, usePactCommand } from '../../api/hooks';
 import { FormSkeleton } from '../../components/app/Skeleton';
 import { Burst } from '../../components/pact/Burst';
-import { coverOf } from '../../lib/covers';
+import { joinedLine, useWelcomeJoiners } from '../../lib/useWelcome';
 import { Avatar } from '../../components/ui/Avatar';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
@@ -29,6 +29,7 @@ export function InviteScreen() {
   const phoneInvites = !!config?.auth?.phone;
   const q = usePact(id);
   const cmd = usePactCommand(id);
+  const cover = useCover(q.data?.pact ?? {});
   const toast = useToast();
   // Arriving straight from creating the Pact: this is the next step of setup, not an optional extra.
   const justCreated = !!(useLocation().state as { created?: boolean } | null)?.created;
@@ -38,23 +39,11 @@ export function InviteScreen() {
   const [celebrate, setCelebrate] = useState(false);
 
   // While this screen is open, someone arriving through the link is welcomed out loud: this is the moment the sender is waiting for.
-  const seen = useRef<Set<string> | null>(null);
-  const members = q.data?.pact ? joinedMembers(q.data.pact) : null;
-  useEffect(() => {
-    if (!members) return;
-    const ids = new Set(members.map((m) => m.userId));
-    if (seen.current) {
-      const fresh = [...ids].filter((id) => !seen.current!.has(id) && id !== user?.id);
-      if (fresh.length) {
-        toast(`${getUser(fresh[0]).name} just joined${fresh.length > 1 ? `, and ${fresh.length - 1} more` : ''}.`);
-        setCelebrate(true);
-        window.setTimeout(() => setCelebrate(false), 1400);
-      }
-    }
-    seen.current = ids;
-    // Only the set of people matters.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [members?.map((m) => m.userId).join(',')]);
+  useWelcomeJoiners(q.data?.pact, user?.id, (names) => {
+    toast(joinedLine(names));
+    setCelebrate(true);
+    window.setTimeout(() => setCelebrate(false), 1400);
+  });
 
   if (q.isLoading) return <Screen topBar={<TopBar tone="transparent" backTo={`/app/pact/${id}`} />}><FormSkeleton fields={2} label="Loading invite" /></Screen>;
   const pact = q.data?.pact;
@@ -103,7 +92,7 @@ export function InviteScreen() {
 
   return (
     <Screen
-      topBar={<TopBar backTo={`/app/pact/${pact.id}`} title={pact.title} />}
+      topBar={<TopBar tone="transparent" backTo={`/app/pact/${pact.id}`} title={pact.title} />}
       footer={
         <Button variant="secondary" fullWidth to={`/app/pact/${pact.id}`}>
           {justCreated ? 'Go to my Pact' : 'Done'}
@@ -116,10 +105,10 @@ export function InviteScreen() {
           <Check aria-hidden /> Your Pact is ready.
         </p>
       )}
-      <PageHero tint="mint" photo={coverOf(pact)} title={justCreated ? 'Now bring your people in.' : 'Bring your people in.'} subtitle={<>{justCreated ? 'Share the link in your group chat. Anyone with it can see what the Pact is for and join.' : 'Anyone with this link can see what the Pact is for and join it.'}</>} />
+      <PageHero tint="mint" photo={cover} title={justCreated ? 'Now bring your people in.' : 'Bring your people in.'} subtitle={<>{justCreated ? 'Share the link in your group chat. Anyone with it can see what the Pact is for and join.' : 'Anyone with this link can see what the Pact is for and join it.'}</>} />
 
       <div className="invite__card">
-        <img className="invite__cover" src={coverOf(pact)} alt="" loading="lazy" decoding="async" />
+        <img className="invite__cover" src={cover} alt="" loading="lazy" decoding="async" />
         <div>
           <p className="invite__card-title">{pact.title}</p>
           <p className="invite__card-meta num">

@@ -64,6 +64,9 @@ const itemLine = z.object({
   stock: z.number().int().min(1).max(10_000).nullable().optional(),
 });
 
+/** A cover photograph from the library, by key. Never a URL, and never an upload marker: those are only set by the server. */
+const coverKey = z.string().regex(/^[a-z0-9-]{3,40}$/).refine((k) => !k.startsWith('upload'), 'Choose a photograph from the list.');
+
 export const CreatePactBody = z
   .object({
     title: text(1, 60),
@@ -86,7 +89,7 @@ export const CreatePactBody = z
     /** Optional: the Plan this Pact is made from. The server checks it is theirs and still free. */
     planId: z.string().uuid().optional(),
     /** Optional: a cover photograph from the library, by key. */
-    cover: z.string().regex(/^[a-z0-9-]{3,40}$/).optional(),
+    cover: coverKey.optional(),
   })
   .refine((b) => b.mode === 'orders' || b.budget.length > 0 || b.target !== undefined, { message: 'Set a target or add what the money covers.', path: ['target'] })
   .refine((b) => b.mode !== 'orders' || b.items.length > 0, { message: 'Add at least one item people can order.', path: ['items'] });
@@ -151,7 +154,7 @@ const emoji = z
   .max(16)
   .refine((v) => /[\p{Extended_Pictographic}\p{Regional_Indicator}]/u.test(v) && !/[A-Za-z0-9<>]/.test(v), 'Pick an emoji.');
 export const CreateCircleBody = z.object({ name: text(1, 40), emoji, tint: z.enum(CIRCLE_TINTS).default('mint') });
-export const UpdateCircleBody = z.object({ name: text(1, 40).optional(), emoji: emoji.optional(), tint: z.enum(CIRCLE_TINTS).optional() }).refine((b) => Object.keys(b).length > 0, 'Nothing to change.');
+export const UpdateCircleBody = z.object({ name: text(1, 40).optional(), emoji: emoji.optional(), tint: z.enum(CIRCLE_TINTS).optional(), cover: coverKey.nullable().optional() }).refine((b) => Object.keys(b).length > 0, 'Nothing to change.');
 
 /* ---- Ask the group */
 export const ASK_TYPES = ['choice', 'attendance'] as const;
@@ -202,6 +205,8 @@ export const UpdatePlanBody = z
     endDate: isoDate.nullable().optional(),
     location: optText(80),
     roughBudget: kobo(0).nullable().optional(),
+    /** A cover photograph from the library, by key, or null for the default. */
+    cover: coverKey.nullable().optional(),
     /** Set once the organiser has agreed to a change that affects people who have already answered. */
     confirm: z.boolean().optional(),
   })
@@ -222,9 +227,9 @@ export type HomeObject = 'ask' | 'plan' | 'split' | 'pact';
 /** What each kind of Needs You object shows about itself, so Home can draw it as the thing it is. Money here is in naira, ready to display. */
 export type NeedsDetail =
   | { kind: 'ask'; type: 'choice' | 'attendance'; options: { id: string; label: string; votes: number }[]; answered: number; of: number; closesAt: string | null }
-  | { kind: 'plan'; date: string | null; endDate: string | null; location: string | null; going: number; maybe: number; goingIds: string[]; category?: string }
+  | { kind: 'plan'; date: string | null; endDate: string | null; location: string | null; going: number; maybe: number; goingIds: string[]; category?: string; cover?: string | null }
   | { kind: 'split'; owe: boolean; amount: number; payerId: string; payerName: string; settled: number; shares: number }
-  | { kind: 'pact'; raised: number; target: number; percent: number; deadline: string; category?: string; cover?: string | null };
+  | { kind: 'pact'; raised: number; target: number; percent: number; deadline: string; category?: string; cover?: string | null; /** Up to four people who have put money in, most first, so a card can say who. */ contributorIds?: string[] };
 
 /** One thing the viewer can act on now. Several actions on the same object are one card. */
 export interface NeedsYouItem {
@@ -255,6 +260,7 @@ export interface HomeCircleDTO {
   tint: CircleTint;
   memberCount: number;
   memberIds: string[];
+  cover?: string | null;
   /** One live line. */
   signal: { text: string; kind: 'needs_you' | 'soon' | 'plan' | 'split' | 'pact' | 'recent' | 'quiet' };
 }
@@ -351,7 +357,7 @@ export const SplitSharedBody = z.object({ via: z.enum(['native', 'copy']) });
 export type CreatePactInput = z.input<typeof CreatePactBody>;
 
 /** Change a Pact's cover photograph: a key from the library, or null for the default of its kind. */
-export const SetCoverBody = z.object({ cover: z.string().regex(/^[a-z0-9-]{3,40}$/).nullable() });
+export const SetCoverBody = z.object({ cover: coverKey.nullable() });
 
 /* ==========================================================================
    Responses
@@ -372,6 +378,7 @@ export interface PlanSummaryDTO {
   circle: { name: string; emoji: string; tint: CircleTint };
   title: string;
   category: (typeof categories)[number];
+  cover?: string | null;
   date: string | null;
   endDate: string | null;
   location: string | null;
@@ -560,6 +567,7 @@ export interface CircleSummaryDTO {
   /** A few member ids for the avatar stack. */
   memberIds: string[];
   role: 'owner' | 'member';
+  cover?: string | null;
   /** One useful live line, if the Circle has something going on. */
   live: { text: string; needsYou: boolean } | null;
 }

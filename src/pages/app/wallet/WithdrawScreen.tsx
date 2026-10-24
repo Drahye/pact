@@ -101,7 +101,7 @@ export function WithdrawScreen() {
       }
       className="topup xhero xhero--lite tint--sun"
     >
-      <PageHero tint="sun" title="Withdraw to bank" subtitle={<>Available <span className="num">{formatNairaKobo(balance)}</span></>} />
+      <PageHero tint="sun" title="Withdraw to bank" subtitle={<>Available <span className="num">{formatNairaKobo(balance)}</span>. Take what is yours home.</>} />
       <PhoneRequired what="withdraw" />
 
       <div className="topup__amount">

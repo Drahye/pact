@@ -27,6 +27,7 @@ interface CircleRow {
   name: string;
   emoji: string;
   tint: CircleTint;
+  cover: string | null;
   created_by: string;
   created_at: Date;
 }
@@ -56,7 +57,7 @@ const requireOwner = (member: MemberRow) => {
 };
 
 function summary(c: CircleRow, role: 'owner' | 'member', ids: string[], count: number): CircleSummaryDTO {
-  return { id: c.id, name: c.name, emoji: c.emoji, tint: c.tint, memberCount: count, memberIds: ids.slice(0, AVATARS), role, live: null };
+  return { id: c.id, name: c.name, emoji: c.emoji, tint: c.tint, memberCount: count, memberIds: ids.slice(0, AVATARS), role, cover: c.cover, live: null };
 }
 
 /* ------------------------------------------------------------------ reads */
@@ -138,14 +139,42 @@ export async function createCircle(ctx: Ctx, userId: string, input: { name: stri
   return getCircle(ctx, userId, id);
 }
 
-export async function updateCircle(ctx: Ctx, userId: string, circleId: string, patch: { name?: string; emoji?: string; tint?: CircleTint }, meta: ReqMeta) {
+export async function updateCircle(ctx: Ctx, userId: string, circleId: string, patch: { name?: string; emoji?: string; tint?: CircleTint; cover?: string | null }, meta: ReqMeta) {
   await ctx.db.tx(async (q) => {
     const { member } = await loadAsMember(q, circleId, userId, true);
     requireOwner(member);
     await q.query('UPDATE circles SET name = COALESCE($2, name), emoji = COALESCE($3, emoji), tint = COALESCE($4, tint), updated_at = now() WHERE id = $1', [circleId, patch.name ?? null, patch.emoji ?? null, patch.tint ?? null]);
+    // The cover can be cleared, so it is set on its own: a key, or null for the default.
+    if ('cover' in patch) {
+      await q.query('UPDATE circles SET cover = $2 WHERE id = $1', [circleId, patch.cover ?? null]);
+      // Choosing a library photograph (or the default) lets go of an uploaded one.
+      await q.query('DELETE FROM circle_cover_photos WHERE circle_id = $1', [circleId]);
+    }
     await audit(q, { actorId: userId, action: 'circle.updated', targetType: 'circle', targetId: circleId, ip: meta.ip });
   });
   return getCircle(ctx, userId, circleId);
+}
+
+/** The owner uploads their own cover: re-encoded to WebP with metadata stripped, one per Circle, readable only by its members. */
+export async function setCoverPhoto(ctx: Ctx, userId: string, circleId: string, body: Buffer) {
+  const { reencodePhoto } = await import('./pactPlan.js');
+  const { data, info } = await reencodePhoto(body);
+  await ctx.db.tx(async (q) => {
+    const { member } = await loadAsMember(q, circleId, userId, true);
+    requireOwner(member);
+    await q.query('DELETE FROM circle_cover_photos WHERE circle_id = $1', [circleId]);
+    await q.query(`INSERT INTO circle_cover_photos (circle_id, data, mime, bytes, width, height, uploaded_by) VALUES ($1, $2, 'image/webp', $3, $4, $5, $6)`, [circleId, data, data.length, info.width, info.height, userId]);
+    await q.query('UPDATE circles SET cover = $2, updated_at = now() WHERE id = $1', [circleId, `upload-${Date.now().toString(36)}`]);
+  });
+  return getCircle(ctx, userId, circleId);
+}
+
+/** Served only through the API, to the Circle's members. */
+export async function getCoverPhoto(ctx: Ctx, userId: string, circleId: string) {
+  await loadAsMember(ctx.db, circleId, userId);
+  const r = await ctx.db.query<{ data: Uint8Array; mime: string }>('SELECT data, mime FROM circle_cover_photos WHERE circle_id = $1', [circleId]);
+  if (!r.rows[0]) throw notFound('Photo');
+  return { data: Buffer.from(r.rows[0].data), mime: r.rows[0].mime };
 }
 
 /**

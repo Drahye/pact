@@ -71,7 +71,7 @@ export function SecurityScreen() {
 
   return (
     <Screen className="xhero xhero--lite tint--sky" topBar={<TopBar tone="transparent" backTo="/app/profile" title="PIN and devices" collapse />}>
-      <PageHero tint="sky" title="PIN and devices" />
+      <PageHero tint="sky" title="PIN and devices" subtitle="Your money stays yours. This is who can reach it." />
       <p className="menu-label">PIN</p>
       <div className="menu">
         {user && !user.hasPin ? (

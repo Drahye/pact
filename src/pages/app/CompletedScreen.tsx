@@ -28,13 +28,14 @@ import { formatNaira } from '../../lib/format';
 import { colorOf, joinedMembers, sharesOf, summarize } from '../../lib/pact';
 import { ease, spring } from '../../tokens/tokens';
 import { Burst } from '../../components/pact/Burst';
-import { coverOf } from '../../lib/covers';
+import { useCover } from '../../api/hooks';
 import { Screen } from './Screen';
 import './completed.css';
 import { useStartPactPath } from '../../lib/startPact';
 
 export function CompletedScreen({ pact, activity = [] }: { pact: Pact; activity?: Activity[] }) {
   const startPath = useStartPactPath();
+  const cover = useCover(pact);
   const reduce = useReducedMotion();
   const { user } = useAuth();
   const toast = useToast();
@@ -135,7 +136,7 @@ export function CompletedScreen({ pact, activity = [] }: { pact: Pact; activity?
       </div>
 
       <figure className="completed__polaroid">
-        <img src={coverOf(pact)} alt="" loading="lazy" decoding="async" />
+        <img src={cover} alt="" loading="lazy" decoding="async" />
         <figcaption>{pact.title}</figcaption>
       </figure>
       <span className="completed__float completed__float--a" aria-hidden />

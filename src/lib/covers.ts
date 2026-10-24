@@ -35,6 +35,9 @@ export const COVERS: Cover[] = [
 const byKey = new Map(COVERS.map((c) => [c.key, c]));
 export const isCoverKey = (key?: string | null): key is string => !!key && byKey.has(key);
 
+/** An organiser's own photograph: kept on the server and shown only to people in the Pact. */
+export const isUploadKey = (key?: string | null): key is string => !!key && key.startsWith('upload-');
+
 /** A small stable number from a string, so the same Pact always gets the same default. */
 const hash = (s: string) => {
   let h = 0;
@@ -56,7 +59,10 @@ export const defaultCover = (category?: string | null, seed = ''): Cover => {
 const CIRCLE_POOL = ['other-park', 'other-beach-hug', 'dinner-women', 'event-dance', 'trip-group-car', 'gift-laugh'];
 export const circleCover = (id: string) => coverUrl(CIRCLE_POOL[hash(id) % CIRCLE_POOL.length]);
 
+/** A Circle's cover: the one its owner chose, or one of the photographs of people together picked by its id. */
+export const circleCoverOf = (c: { id: string; cover?: string | null }) => (isCoverKey(c.cover) ? coverUrl(c.cover) : circleCover(c.id));
+
 export const coverUrl = (key: string) => `/covers/${key}.jpg`;
 
-/** The photograph to show: the one chosen for it, or the default for its kind. */
+/** The photograph to show: the one chosen for it, or the default for its kind. An uploaded one needs `useCover` (it is fetched with the session); here it falls back to the default. */
 export const coverOf = (item: { category?: string | null; cover?: string | null; id?: string }) => coverUrl(isCoverKey(item.cover) ? item.cover : defaultCover(item.category, item.id).key);

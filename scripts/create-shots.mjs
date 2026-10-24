@@ -239,7 +239,7 @@ for (const width of widths) {
   await page.goto(`${BASE}/app/create?plan=${ids.planOpen}`, { waitUntil: 'load' });
   await page.waitForTimeout(1800);
   await shot('plan-to-pact-1');
-  ok('plan to pact: the name is already there', (await page.getByLabel('Name').inputValue()) === 'Bali Trip');
+  ok('plan to pact: the name is already there', (await page.getByLabel('Name').inputValue()) === 'Obudu Trip');
   ok('plan to pact: says where it came from', (await page.getByText(/From your plan/).count()) === 1);
   console.log(errors.length ? `   page errors: ${[...new Set(errors)].slice(0, 3).join(' | ')}` : '   no page errors');
   state = await ctx.storageState();

@@ -516,7 +516,8 @@ export async function preview(ctx: Ctx, code: string): Promise<PactPreviewDTO & 
     id: p.id,
     title: p.title,
     category: p.category,
-    cover: p.cover,
+    // An uploaded cover is for people in the Pact; the link shows the default for its kind.
+    cover: p.cover?.startsWith('upload') ? null : p.cover,
     target: p.target_amount,
     raised: p.raised_amount,
     deadline: p.deadline,
@@ -1126,8 +1127,35 @@ export async function setCover(ctx: Ctx, userId: string, pactId: string, cover: 
     const { member } = await loadVisible(q, pactId, userId, true);
     if (!member || !['organizer', 'co_organizer'].includes(member.role)) throw forbidden('Only an organiser can change the cover.');
     await q.query(`UPDATE pacts SET cover = $2 WHERE id = $1`, [pactId, cover]);
+    // Choosing a library photograph (or the default) lets go of an uploaded one.
+    await q.query(`DELETE FROM pact_cover_photos WHERE pact_id = $1`, [pactId]);
   });
   return getPact(ctx, userId, pactId);
+}
+
+/** An organiser uploads their own cover: re-encoded to WebP with metadata stripped, one per Pact, readable only by people in the Pact. */
+export async function setCoverPhoto(ctx: Ctx, userId: string, pactId: string, body: Buffer) {
+  const { reencodePhoto } = await import('./pactPlan.js');
+  const { data, info } = await reencodePhoto(body);
+  await ctx.db.tx(async (q) => {
+    const { member } = await loadVisible(q, pactId, userId, true);
+    if (!member || !['organizer', 'co_organizer'].includes(member.role)) throw forbidden('Only an organiser can change the cover.');
+    await q.query(`DELETE FROM pact_cover_photos WHERE pact_id = $1`, [pactId]);
+    await q.query(`INSERT INTO pact_cover_photos (pact_id, data, mime, bytes, width, height, uploaded_by) VALUES ($1, $2, 'image/webp', $3, $4, $5, $6)`, [pactId, data, data.length, info.width, info.height, userId]);
+    // The key carries a version, so every device fetches the new picture instead of a cached old one.
+    await q.query(`UPDATE pacts SET cover = $2 WHERE id = $1`, [pactId, `upload-${Date.now().toString(36)}`]);
+  });
+  return getPact(ctx, userId, pactId);
+}
+
+/** Served only through the API, to people in the Pact. */
+export async function getCoverPhoto(ctx: Ctx, userId: string, pactId: string) {
+  if (!UUID.test(pactId)) throw notFound('Photo');
+  return ctx.db.asUser(userId, async (q) => {
+    const r = await q.query<{ data: Uint8Array; mime: string }>('SELECT data, mime FROM pact_cover_photos WHERE pact_id = $1', [pactId]);
+    if (!r.rows[0]) throw notFound('Photo');
+    return { data: Buffer.from(r.rows[0].data), mime: r.rows[0].mime };
+  });
 }
 
 export async function nudge(ctx: Ctx, userId: string, pactId: string) {

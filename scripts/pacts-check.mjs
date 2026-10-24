@@ -28,7 +28,7 @@ const day = new Date(Date.now() + 20 * 86400000).toISOString().slice(0, 10);
 await api('POST', '/pacts', tok.accessToken, { title: 'Base Pact', category: 'trip', target: 100000_00, deadline: day, tasks: [{ title: 'Book the flights' }] });
 const real = await api('GET', '/pacts', tok.accessToken);
 const base = real.data[0];
-const LONG = 'The Very Long Weekend Trip To Cape Town With The Whole Family 2026'.slice(0, 60);
+const LONG = 'The Very Long Weekend Trip To Abuja With The Whole Family 2026'.slice(0, 60);
 const dto = (i, status, title) => ({ ...base, id: `00000000-0000-4000-8000-${String(i).padStart(12, '0')}`, slug: `p-${i}`, inviteCode: `CODE${String(i).padStart(4, '0')}`, title, status });
 const set = (spec) => {
   let n = 1;

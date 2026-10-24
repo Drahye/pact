@@ -32,6 +32,7 @@ interface PlanRow {
   circle_id: string;
   title: string;
   category: PlanSummaryDTO['category'];
+  cover: string | null;
   description: string | null;
   date: string | null;
   end_date: string | null;
@@ -48,7 +49,7 @@ interface PlanRow {
   ctint: CircleTint;
 }
 
-const SELECT = `SELECT p.id, p.circle_id, p.title, p.category, p.description, p.date::text AS date, p.end_date::text AS end_date, p.location,
+const SELECT = `SELECT p.id, p.circle_id, p.title, p.category, p.cover, p.description, p.date::text AS date, p.end_date::text AS end_date, p.location,
                        p.rough_budget, p.status, p.created_by, p.pact_id, p.rsvp_open, p.share_token, p.created_at,
                        c.name AS cname, c.emoji AS cemoji, c.tint AS ctint
                   FROM plans p JOIN circles c ON c.id = p.circle_id`;
@@ -126,6 +127,7 @@ async function build(ctx: Ctx, q: Queryable, rows: PlanRow[], viewerId: string |
       circle: { name: p.cname, emoji: p.cemoji, tint: p.ctint },
       title: p.title,
       category: p.category,
+      cover: p.cover,
       date: p.date,
       endDate: p.end_date,
       location: p.location,
@@ -167,6 +169,7 @@ const summary = (d: PlanDTO): PlanSummaryDTO => ({
   circle: d.circle,
   title: d.title,
   category: d.category,
+  cover: d.cover,
   date: d.date,
   endDate: d.endDate,
   location: d.location,
@@ -316,8 +319,8 @@ export async function updatePlan(ctx: Ctx, userId: string, planId: string, patch
     const p = await loadForMember(q, planId, userId, true);
     if (p.created_by !== userId) throw forbidden('Only the person who made the plan can change it.');
     if (!isOpen(p)) throw new AppError(409, 'plan_closed', 'This plan is finished, so it can’t be changed.');
-    const next = { title: p.title, category: p.category, description: p.description, date: p.date, end_date: p.end_date, location: p.location, rough_budget: p.rough_budget } as Record<string, unknown>;
-    const map: Record<string, string> = { title: 'title', category: 'category', description: 'description', date: 'date', endDate: 'end_date', location: 'location', roughBudget: 'rough_budget' };
+    const next = { title: p.title, category: p.category, cover: p.cover, description: p.description, date: p.date, end_date: p.end_date, location: p.location, rough_budget: p.rough_budget } as Record<string, unknown>;
+    const map: Record<string, string> = { title: 'title', category: 'category', description: 'description', date: 'date', endDate: 'end_date', location: 'location', roughBudget: 'rough_budget', cover: 'cover' };
     for (const [k, col] of Object.entries(map)) if (k in patch) next[col] = patch[k] ?? null;
     const today = lagosToday(ctx.now());
     if (next.date && next.date !== p.date && (next.date as string) < today) throw badRequest('invalid_date', 'Choose a date that hasn’t passed.');
@@ -333,9 +336,11 @@ export async function updatePlan(ctx: Ctx, userId: string, planId: string, patch
       }
     }
     await q.query(
-      `UPDATE plans SET title = $2, category = $3, description = $4, date = $5, end_date = $6, location = $7, rough_budget = $8, updated_at = now() WHERE id = $1`,
-      [planId, next.title, next.category, next.description, next.date, next.end_date, next.location, next.rough_budget],
+      `UPDATE plans SET title = $2, category = $3, description = $4, date = $5, end_date = $6, location = $7, rough_budget = $8, cover = $9, updated_at = now() WHERE id = $1`,
+      [planId, next.title, next.category, next.description, next.date, next.end_date, next.location, next.rough_budget, next.cover ?? null],
     );
+    // Choosing a library photograph (or the default) lets go of an uploaded one.
+    if ('cover' in patch) await q.query('DELETE FROM plan_cover_photos WHERE plan_id = $1', [planId]);
     await audit(q, { actorId: userId, action: 'plan.updated', targetType: 'plan', targetId: planId, ip: meta.ip });
     // Only meaningful changes leave a trace: not a fixed typo or a tweaked description.
     // And only once someone else has engaged: before that the organiser is just shaping the plan.
@@ -551,6 +556,8 @@ async function loadByToken(q: Queryable, token: string): Promise<PlanRow> {
 export async function previewLink(ctx: Ctx, token: string, req: ReqMeta) {
   const p = await loadByToken(ctx.db, token);
   const [b] = await build(ctx, ctx.db, [p], null, () => false, true, true);
+  // An uploaded cover is for people in the Circle; a link shows the default for its kind.
+  if (b.dto.cover?.startsWith('upload')) b.dto.cover = null;
   // Signed out: totals and the organiser's first name only. No names of who is coming.
   b.dto.rsvps = [];
   b.peopleIds = [p.created_by];
@@ -565,6 +572,7 @@ export async function myLinkState(ctx: Ctx, userId: string, token: string) {
   const member = await isMember(ctx.db, p.circle_id, userId);
   const [b] = await build(ctx, ctx.db, [p], userId, () => member, true, !member);
   if (!member) {
+    if (b.dto.cover?.startsWith('upload')) b.dto.cover = null;
     // Someone who has answered may see who else is in (first names). Someone who has not sees totals, like a signed-out visitor.
     b.dto.rsvps = b.dto.mine ? b.dto.rsvps.filter((r) => r.status === 'in' || r.userId === userId) : [];
     b.peopleIds = [p.created_by, ...b.dto.rsvps.map((r) => r.userId)];
@@ -601,6 +609,29 @@ export async function recordLinkShared(ctx: Ctx, userId: string, token: string, 
   const p = await loadByToken(ctx.db, token);
   await track(ctx.db, ctx.config, 'plan_shared', { userId, planId: p.id, key: `psd:${userId}:${p.id}:${ctx.now().toISOString().slice(0, 10)}`, props: { via } });
   return { ok: true };
+}
+
+/** The organiser uploads their own cover: re-encoded to WebP with metadata stripped, one per Plan, readable only by people in the Circle. */
+export async function setCoverPhoto(ctx: Ctx, userId: string, planId: string, body: Buffer) {
+  const { reencodePhoto } = await import('./pactPlan.js');
+  const { data, info } = await reencodePhoto(body);
+  await ctx.db.tx(async (q) => {
+    const p = await loadForMember(q, planId, userId, true);
+    if (p.created_by !== userId) throw forbidden('Only the person who made the plan can change it.');
+    if (!isOpen(p)) throw new AppError(409, 'plan_closed', 'This plan is finished, so it can’t be changed.');
+    await q.query('DELETE FROM plan_cover_photos WHERE plan_id = $1', [planId]);
+    await q.query(`INSERT INTO plan_cover_photos (plan_id, data, mime, bytes, width, height, uploaded_by) VALUES ($1, $2, 'image/webp', $3, $4, $5, $6)`, [planId, data, data.length, info.width, info.height, userId]);
+    await q.query('UPDATE plans SET cover = $2, updated_at = now() WHERE id = $1', [planId, `upload-${Date.now().toString(36)}`]);
+  });
+  return getPlan(ctx, userId, planId);
+}
+
+/** Served only through the API, to people in the Circle. */
+export async function getCoverPhoto(ctx: Ctx, userId: string, planId: string) {
+  const p = await loadForMember(ctx.db, planId, userId);
+  const r = await ctx.db.query<{ data: Uint8Array; mime: string }>('SELECT data, mime FROM plan_cover_photos WHERE plan_id = $1', [p.id]);
+  if (!r.rows[0]) throw notFound('Photo');
+  return { data: Buffer.from(r.rows[0].data), mime: r.rows[0].mime };
 }
 
 export async function handOver(ctx: Ctx, userId: string, planId: string, toId: string, meta: ReqMeta) {

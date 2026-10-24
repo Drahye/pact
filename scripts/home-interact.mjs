@@ -45,7 +45,7 @@ async function signIn(page) {
   check('each kind of thing is its own object', (await page.locator('.ox-plan, .ox-ask, .ox-split, .ox-pact').count()) >= 3);
 
   // Inline RSVP: the pill moves, the card holds a beat, then leaves
-  const card = page.locator('.ox-plan', { hasText: 'Ghana in December' });
+  const card = page.locator('.ox-plan', { hasText: 'Calabar in December' });
   check('the RSVP is right there, no extra tap', (await card.getByRole('radio').count()) === 3);
   await page.screenshot({ path: `${out}/rsvp-open.png` });
   await card.getByRole('radio', { name: 'I’m in' }).click();
@@ -54,7 +54,7 @@ async function signIn(page) {
   await page.screenshot({ path: `${out}/rsvp-done.png` });
   await page.waitForTimeout(2200);
   const after = Number((await heading.innerText()).replace(/\D/g, ''));
-  check(`the card resolves and the count goes from ${before} to ${before - 1}`, after === before - 1 && (await page.locator('.ox-plan', { hasText: 'Ghana in December' }).count()) === 0, `(count ${after})`);
+  check(`the card resolves and the count goes from ${before} to ${before - 1}`, after === before - 1 && (await page.locator('.ox-plan', { hasText: 'Calabar in December' }).count()) === 0, `(count ${after})`);
 
   const more = page.getByRole('button', { name: /Show \d+ more/ });
   if (await more.count()) await more.click();

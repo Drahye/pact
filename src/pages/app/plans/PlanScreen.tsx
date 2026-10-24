@@ -5,13 +5,13 @@ import type { Attendance, PlanDTO, PlanStatus } from '../../../../shared/contrac
 import { useAuth } from '../../../api/auth';
 import { useCircleAsks } from '../../../api/asks';
 import { ApiError } from '../../../api/client';
-import { useAddTask, useDeleteTask, useHandOverPlan, useLinkAsk, usePatchTask, usePlan, useResetPlanLink, useRsvp, useSetRsvpOpen, useSetPlanStatus, useUpdatePlan } from '../../../api/plans';
+import { useAddTask, useDeleteTask, useHandOverPlan, useLinkAsk, usePatchTask, usePlan, useResetPlanLink, useRsvp, useUploadPlanCover, useSetRsvpOpen, useSetPlanStatus, useUpdatePlan } from '../../../api/plans';
 import { PlanSkeleton } from '../../../components/app/DetailSkeletons';
 import { ErrorState, Notice } from '../../../components/app/States';
 import { statusLabel } from '../../../components/plan/PlanBits';
 import { Burst } from '../../../components/pact/Burst';
 import { CoverSheet } from '../../../components/pact/CoverSheet';
-import { coverOf } from '../../../lib/covers';
+import { useCover } from '../../../api/hooks';
 import { ActivityRow, Hero, PlanDecisions, PlanHero, RsvpTrack, Sheet } from '../../../components/objects';
 import { AmountInput } from '../../../components/ui/AmountInput';
 import { Avatar } from '../../../components/ui/Avatar';
@@ -96,6 +96,8 @@ export function PlanScreen() {
   const from = params.get('from') === 'home' ? 'home' : params.get('from') === 'circle' ? 'circle' : undefined;
   const plan = usePlan(id, from);
   const rsvp = useRsvp(id);
+  const uploadCover = useUploadPlanCover(id);
+  const cover = useCover({ category: plan.data?.category, cover: plan.data?.cover, id: plan.data?.id }, 'plan');
   const status = useSetPlanStatus(id);
   const update = useUpdatePlan(id);
   const addTask = useAddTask(id);
@@ -191,7 +193,7 @@ export function PlanScreen() {
         />
       }
     >
-      <Hero tint={p.pactId ? 'mint' : 'sun'} photo={coverOf({ category: p.category, cover: p.cover, id: p.id })} className="xh--plan">
+      <Hero tint={p.pactId ? 'mint' : 'sun'} photo={cover} className="xh--plan">
         <PlanHero
           title={p.title}
           date={p.date}
@@ -437,7 +439,9 @@ export function PlanScreen() {
         onClose={close}
         category={p.category}
         current={p.cover}
-        busy={update.isPending}
+        busy={update.isPending || uploadCover.isPending}
+        who="Circle"
+        onUpload={(file) => void act(() => uploadCover.mutateAsync(file), 'Cover changed').then((ok) => ok && close())}
         onPick={(key) => void act(() => update.mutateAsync({ cover: key }), key ? 'Cover changed' : 'Back to the usual cover').then((ok) => ok && close())}
       />
       <Modal open={sheet === 'menu'} onClose={close} title={p.title}>

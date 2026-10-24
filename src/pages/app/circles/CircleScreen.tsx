@@ -1,7 +1,7 @@
 import { ChevronRight, Ellipsis, Image as ImageIcon, LogOut, Pencil, Plus, RefreshCw, Settings2, Share2 } from 'lucide-react';
 import { useState, type ReactNode } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { useCircle, useEnsureInvite, useLeaveCircle, useRemoveMember, useResetInvite, useUpdateCircle } from '../../../api/circles';
+import { useCircle, useEnsureInvite, useLeaveCircle, useRemoveMember, useResetInvite, useUpdateCircle, useUploadCircleCover } from '../../../api/circles';
 import { ApiError } from '../../../api/client';
 import { usePacts } from '../../../api/hooks';
 import { goingText } from '../../../lib/planDates';
@@ -14,7 +14,7 @@ import { Bone } from '../../../components/app/Skeleton';
 import { CircleSkeleton } from '../../../components/app/DetailSkeletons';
 import { CircleAsk, CirclePact, CirclePlan, CircleSplit } from '../../../components/circle/CircleObjects';
 import { EmojiPicker, TintPicker } from '../../../components/circle/IdentityPicker';
-import { circleCoverOf } from '../../../lib/covers';
+import { useCover } from '../../../api/hooks';
 import { CoverSheet } from '../../../components/pact/CoverSheet';
 import { ActivityRow, AvatarStack, ComingUpRow, Hero, Sheet, StatusIndicator } from '../../../components/objects';
 import { useCreateSheet } from '../../../components/create/CreateSheet';
@@ -62,6 +62,8 @@ export function CircleScreen() {
   const ensure = useEnsureInvite(id);
   const reset = useResetInvite(id);
   const update = useUpdateCircle(id);
+  const uploadCover = useUploadCircleCover(id);
+  const cover = useCover({ id, cover: circle.data?.cover }, 'circle');
   const leave = useLeaveCircle(id);
   const remove = useRemoveMember(id);
   const [sheet, setSheet] = useState<Sheet>(null);
@@ -156,7 +158,7 @@ export function CircleScreen() {
         />
       }
     >
-      <Hero tint={c.tint} photo={circleCoverOf(c)} className="xh--circle">
+      <Hero tint={c.tint} photo={cover} className="xh--circle">
         <span className="xh__emoji" aria-hidden>
           {c.emoji}
         </span>
@@ -295,7 +297,9 @@ export function CircleScreen() {
         onClose={close}
         category="other"
         current={c.cover}
-        busy={update.isPending}
+        busy={update.isPending || uploadCover.isPending}
+        who="Circle"
+        onUpload={(file) => void uploadCover.mutateAsync(file).then(() => (toast('Cover changed'), close())).catch((e) => toast((e as { message?: string }).message ?? 'Couldn’t save that.', 'neutral'))}
         onPick={(key) => void update.mutateAsync({ cover: key }).then(() => (toast(key ? 'Cover changed' : 'Back to the usual cover'), close())).catch((e) => toast((e as { message?: string }).message ?? 'Couldn’t save that.', 'neutral'))}
       />
       <Modal open={sheet === 'menu'} onClose={close} title={c.name}>

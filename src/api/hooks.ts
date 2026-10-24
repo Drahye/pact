@@ -22,7 +22,7 @@ import type {
 } from '../../shared/contracts';
 import { useAuth } from './auth';
 import { api, fetchPhoto, newIdempotencyKey, uploadPhoto } from './client';
-import { coverOf, isUploadKey } from '../lib/covers';
+import { circleCoverOf, coverOf, isUploadKey } from '../lib/covers';
 import { register, toActivity, toPact, toThread } from './mappers';
 
 export const keys = {
@@ -440,16 +440,17 @@ export function useReceipt(pactId: string, payoutId: string | null, enabled: boo
  * The cover to show for a Pact, Plan or Circle: a library photograph straight away, or an organiser's own upload once it has been fetched with the
  * session (the default for its kind in the meantime, and for anyone who cannot see it).
  */
-export function useCover(item: { category?: string | null; cover?: string | null; id?: string }) {
+export function useCover(item: { category?: string | null; cover?: string | null; id?: string }, kind: 'pact' | 'plan' | 'circle' = 'pact') {
   const upload = isUploadKey(item.cover) && !!item.id;
   const q = useQuery({
-    queryKey: ['cover', item.id, item.cover],
+    queryKey: ['cover', kind, item.id, item.cover],
     enabled: upload,
     staleTime: Infinity,
     retry: false,
-    queryFn: async () => URL.createObjectURL(await fetchPhoto(`/pacts/${item.id}/cover-photo`)),
+    queryFn: async () => URL.createObjectURL(await fetchPhoto(`/${kind}s/${item.id}/cover-photo`)),
   });
-  return (upload && q.data) || coverOf(item);
+  // A Circle with no cover of its own wears one of the photographs of people together.
+  return (upload && q.data) || (kind === 'circle' && item.id ? circleCoverOf({ id: item.id, cover: item.cover }) : coverOf(item));
 }
 
 /** Photos are private: fetched with the session and shown from a local object URL. */

@@ -4,6 +4,7 @@
  */
 import assert from 'node:assert/strict';
 import { after, before, describe, it } from 'node:test';
+import sharp from 'sharp';
 import { personId } from '../src/lib/events.js';
 import { lagosDay, setup } from './helpers.js';
 
@@ -191,5 +192,24 @@ describe('Circles', () => {
     assert.equal((await t.call('PATCH', `/circles/${c.id}`, as(ana), { cover: null })).body.data.cover, null, 'back to the default');
     const list = await t.call('GET', '/circles', as(ana));
     assert.ok(list.body.data.every((x: { cover: unknown }) => 'cover' in x), 'the list carries it too');
+  });
+
+  it('the owner can upload a Circle cover: real images only, seen by members, nobody else', async () => {
+    const c = (await t.call('POST', '/circles', as(ana), { name: 'Upload crew', emoji: '📸' })).body.data;
+    const link = (await t.call('POST', `/circles/${c.id}/invites`, as(ana), {})).body.data.invite.token;
+    await t.call('POST', `/circle-invites/${link}/join`, as(ben), {});
+    const jpeg = await sharp({ create: { width: 64, height: 48, channels: 3, background: '#3dd68c' } }).jpeg().toBuffer();
+    const up = (u: typeof ana, body: Buffer, type = 'image/jpeg') => t.app.inject({ method: 'POST', url: `/api/circles/${c.id}/cover-photo`, headers: { authorization: `Bearer ${as(u)}`, 'content-type': type }, payload: body });
+    const get = (u?: typeof ana) => t.app.inject({ method: 'GET', url: `/api/circles/${c.id}/cover-photo`, headers: u ? { authorization: `Bearer ${as(u)}` } : {} });
+    assert.equal((await up(ana, Buffer.from('#!/bin/sh'), 'image/png')).statusCode, 415);
+    assert.equal((await up(ben, jpeg)).statusCode, 403, 'a member cannot');
+    const ok = await up(ana, jpeg);
+    assert.equal(ok.statusCode, 200, ok.body);
+    assert.match(JSON.parse(ok.body).data.cover, /^upload-[a-z0-9]+$/);
+    assert.equal((await get(ben)).statusCode, 200);
+    assert.equal((await get(cleo)).statusCode, 404, 'outsiders cannot see it');
+    assert.equal((await get()).statusCode, 401);
+    assert.equal((await t.call('PATCH', `/circles/${c.id}`, as(ana), { cover: 'other-park' })).body.data.cover, 'other-park');
+    assert.equal((await get(ben)).statusCode, 404, 'a library photograph lets go of the upload');
   });
 });

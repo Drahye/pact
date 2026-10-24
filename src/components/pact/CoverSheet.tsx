@@ -9,18 +9,18 @@ import './cover-sheet.css';
  * Choose what a Pact looks like: twenty photographs, the ones that suit this kind of occasion first. Picking one applies it at once; "Use the
  * usual one" goes back to the default for its kind.
  */
-export function CoverSheet({ open, onClose, category, current, onPick, onUpload, busy }: { open: boolean; onClose: () => void; category: string; current: string | null | undefined; onPick: (key: string | null) => void; /** When given, the person can use a photo of their own. */ onUpload?: (file: File) => void; busy?: boolean }) {
+export function CoverSheet({ open, onClose, category, current, onPick, onUpload, who = 'Pact', busy }: { open: boolean; onClose: () => void; category: string; current: string | null | undefined; onPick: (key: string | null) => void; /** When given, the person can use a photo of their own. */ onUpload?: (file: File) => void; /** Who will see an upload: "Pact" or "Circle". */ who?: string; busy?: boolean }) {
   const list = coversFor(category);
   const file = useRef<HTMLInputElement>(null);
   return (
-    <Modal open={open} onClose={onClose} title="Choose a cover" description="A photograph for this Pact. Everyone in it sees it." footer={<Button variant="secondary" fullWidth onClick={() => onPick(null)} disabled={busy || !current}>Use the usual one</Button>}>
+    <Modal open={open} onClose={onClose} title="Choose a cover" description={`A photograph for this ${who}. Everyone in it sees it.`} footer={<Button variant="secondary" fullWidth onClick={() => onPick(null)} disabled={busy || !current}>Use the usual one</Button>}>
       {onUpload && (
         <>
           <button type="button" className="cover-upload" disabled={busy} onClick={() => file.current?.click()}>
             <Camera aria-hidden />
             <span>
               <strong>Use your own photo</strong>
-              <small>Only people in the Pact will see it.</small>
+              <small>Only people in the {who} will see it.</small>
             </span>
           </button>
           <input

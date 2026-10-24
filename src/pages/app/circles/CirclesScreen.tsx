@@ -2,7 +2,6 @@ import { Plus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useCircles } from '../../../api/circles';
 import { ErrorState } from '../../../components/app/States';
-import { circleCoverOf } from '../../../lib/covers';
 import { MomentTiles } from '../../../components/home/MomentTiles';
 import { CircleTile, EmptyState, PageHero } from '../../../components/objects';
 import { PactListSkeleton } from '../../../components/app/Skeleton';
@@ -57,7 +56,7 @@ export function CirclesScreen() {
           <ul className="ch-tiles" aria-label="Your Circles">
             {items.map((c, i) => (
               <li key={c.id}>
-                <CircleTile name={c.name} emoji={c.emoji} tint={c.tint} peopleIds={c.memberIds} total={c.memberCount} signal={c.live ? c.live.text : people(c.memberCount)} live={!!c.live?.needsYou} alt={i % 2 === 1} to={`/app/circles/${c.id}`} photo={circleCoverOf(c)} />
+                <CircleTile name={c.name} emoji={c.emoji} tint={c.tint} peopleIds={c.memberIds} total={c.memberCount} signal={c.live ? c.live.text : people(c.memberCount)} live={!!c.live?.needsYou} alt={i % 2 === 1} to={`/app/circles/${c.id}`} cover={c} />
               </li>
             ))}
             <li>

@@ -339,6 +339,8 @@ export async function updatePlan(ctx: Ctx, userId: string, planId: string, patch
       `UPDATE plans SET title = $2, category = $3, description = $4, date = $5, end_date = $6, location = $7, rough_budget = $8, cover = $9, updated_at = now() WHERE id = $1`,
       [planId, next.title, next.category, next.description, next.date, next.end_date, next.location, next.rough_budget, next.cover ?? null],
     );
+    // Choosing a library photograph (or the default) lets go of an uploaded one.
+    if ('cover' in patch) await q.query('DELETE FROM plan_cover_photos WHERE plan_id = $1', [planId]);
     await audit(q, { actorId: userId, action: 'plan.updated', targetType: 'plan', targetId: planId, ip: meta.ip });
     // Only meaningful changes leave a trace: not a fixed typo or a tweaked description.
     // And only once someone else has engaged: before that the organiser is just shaping the plan.
@@ -554,6 +556,8 @@ async function loadByToken(q: Queryable, token: string): Promise<PlanRow> {
 export async function previewLink(ctx: Ctx, token: string, req: ReqMeta) {
   const p = await loadByToken(ctx.db, token);
   const [b] = await build(ctx, ctx.db, [p], null, () => false, true, true);
+  // An uploaded cover is for people in the Circle; a link shows the default for its kind.
+  if (b.dto.cover?.startsWith('upload')) b.dto.cover = null;
   // Signed out: totals and the organiser's first name only. No names of who is coming.
   b.dto.rsvps = [];
   b.peopleIds = [p.created_by];
@@ -568,6 +572,7 @@ export async function myLinkState(ctx: Ctx, userId: string, token: string) {
   const member = await isMember(ctx.db, p.circle_id, userId);
   const [b] = await build(ctx, ctx.db, [p], userId, () => member, true, !member);
   if (!member) {
+    if (b.dto.cover?.startsWith('upload')) b.dto.cover = null;
     // Someone who has answered may see who else is in (first names). Someone who has not sees totals, like a signed-out visitor.
     b.dto.rsvps = b.dto.mine ? b.dto.rsvps.filter((r) => r.status === 'in' || r.userId === userId) : [];
     b.peopleIds = [p.created_by, ...b.dto.rsvps.map((r) => r.userId)];
@@ -604,6 +609,29 @@ export async function recordLinkShared(ctx: Ctx, userId: string, token: string, 
   const p = await loadByToken(ctx.db, token);
   await track(ctx.db, ctx.config, 'plan_shared', { userId, planId: p.id, key: `psd:${userId}:${p.id}:${ctx.now().toISOString().slice(0, 10)}`, props: { via } });
   return { ok: true };
+}
+
+/** The organiser uploads their own cover: re-encoded to WebP with metadata stripped, one per Plan, readable only by people in the Circle. */
+export async function setCoverPhoto(ctx: Ctx, userId: string, planId: string, body: Buffer) {
+  const { reencodePhoto } = await import('./pactPlan.js');
+  const { data, info } = await reencodePhoto(body);
+  await ctx.db.tx(async (q) => {
+    const p = await loadForMember(q, planId, userId, true);
+    if (p.created_by !== userId) throw forbidden('Only the person who made the plan can change it.');
+    if (!isOpen(p)) throw new AppError(409, 'plan_closed', 'This plan is finished, so it can’t be changed.');
+    await q.query('DELETE FROM plan_cover_photos WHERE plan_id = $1', [planId]);
+    await q.query(`INSERT INTO plan_cover_photos (plan_id, data, mime, bytes, width, height, uploaded_by) VALUES ($1, $2, 'image/webp', $3, $4, $5, $6)`, [planId, data, data.length, info.width, info.height, userId]);
+    await q.query('UPDATE plans SET cover = $2, updated_at = now() WHERE id = $1', [planId, `upload-${Date.now().toString(36)}`]);
+  });
+  return getPlan(ctx, userId, planId);
+}
+
+/** Served only through the API, to people in the Circle. */
+export async function getCoverPhoto(ctx: Ctx, userId: string, planId: string) {
+  const p = await loadForMember(ctx.db, planId, userId);
+  const r = await ctx.db.query<{ data: Uint8Array; mime: string }>('SELECT data, mime FROM plan_cover_photos WHERE plan_id = $1', [p.id]);
+  if (!r.rows[0]) throw notFound('Photo');
+  return { data: Buffer.from(r.rows[0].data), mime: r.rows[0].mime };
 }
 
 export async function handOver(ctx: Ctx, userId: string, planId: string, toId: string, meta: ReqMeta) {

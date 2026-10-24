@@ -667,6 +667,8 @@ export async function buildApp({ config, db, provider, sms, email, google, stytc
         // Photo uploads: raw image bytes, only three image types, 8 MB before re-encoding.
         await priv.register(async (uploads) => {
           uploads.addContentTypeParser(['image/jpeg', 'image/png', 'image/webp'], { parseAs: 'buffer', bodyLimit: 8 * 1024 * 1024 }, (_req, body, done) => done(null, body));
+          uploads.post<{ Params: { id: string } }>('/plans/:id/cover-photo', { bodyLimit: 8 * 1024 * 1024, ...strict(12, 10) }, async (req) => plans.setCoverPhoto(ctx, req.userId, req.params.id, req.body as Buffer));
+          uploads.post<{ Params: { id: string } }>('/circles/:id/cover-photo', { bodyLimit: 8 * 1024 * 1024, ...strict(12, 10) }, async (req) => circles.setCoverPhoto(ctx, req.userId, req.params.id, req.body as Buffer));
           uploads.post<{ Params: { id: string } }>('/pacts/:id/cover-photo', { bodyLimit: 8 * 1024 * 1024, ...strict(12, 10) }, async (req) => pacts.setCoverPhoto(ctx, req.userId, req.params.id, req.body as Buffer));
           uploads.post<{ Params: { id: string } }>('/pacts/:id/memory/photos', { bodyLimit: 8 * 1024 * 1024, ...strict(12, 10) }, async (req) =>
             pactPlan.addPhoto(ctx, req.userId, req.params.id, req.body as Buffer),
@@ -765,6 +767,14 @@ export async function buildApp({ config, db, provider, sms, email, google, stytc
         /* ---------- Circles */
         priv.get('/circles', async (req) => circles.listCircles(ctx, req.userId));
         priv.post('/circles', strict(10), async (req, reply) => idempotentIfKeyed(req, reply, 'create_circle', () => circles.createCircle(ctx, req.userId, parse(C.CreateCircleBody, req.body), meta(req))));
+        priv.get<{ Params: { id: string } }>('/plans/:id/cover-photo', async (req, reply) => {
+          const photo = await plans.getCoverPhoto(ctx, req.userId, req.params.id);
+          return reply.header('Content-Type', photo.mime).header('Cache-Control', 'private, max-age=86400').header('Content-Disposition', 'inline').header('X-Content-Type-Options', 'nosniff').send(photo.data);
+        });
+        priv.get<{ Params: { id: string } }>('/circles/:id/cover-photo', async (req, reply) => {
+          const photo = await circles.getCoverPhoto(ctx, req.userId, req.params.id);
+          return reply.header('Content-Type', photo.mime).header('Cache-Control', 'private, max-age=86400').header('Content-Disposition', 'inline').header('X-Content-Type-Options', 'nosniff').send(photo.data);
+        });
         priv.get<{ Params: { id: string } }>('/circles/:id', async (req) => circles.getCircle(ctx, req.userId, req.params.id));
         priv.patch<{ Params: { id: string } }>('/circles/:id', strict(30), async (req) => circles.updateCircle(ctx, req.userId, req.params.id, parse(C.UpdateCircleBody, req.body), meta(req)));
         priv.post<{ Params: { id: string } }>('/circles/:id/leave', strict(20), async (req) => circles.leaveCircle(ctx, req.userId, req.params.id, meta(req)));

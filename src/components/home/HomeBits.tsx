@@ -8,7 +8,6 @@ import { formatDate } from '../../lib/format';
 import { dateRange } from '../../lib/planDates';
 import { transition } from '../../tokens/tokens';
 import { useCover } from '../../api/hooks';
-import { circleCoverOf } from '../../lib/covers';
 import { peopleLine } from '../../lib/peopleLine';
 import { ActivityRow, AnimatedCount, AvatarStack, CircleTile, CompletionState, ComingUpRow, OBJECT_KINDS, ObjectArt } from '../objects';
 import { SectionHeading } from '../ui/SectionHeading';
@@ -95,7 +94,7 @@ export function CirclesShelf({ circles }: { circles: HomeCircleDTO[] }) {
               live={c.signal.kind === 'needs_you'}
               alt={i % 2 === 1}
               to={`/app/circles/${c.id}`}
-              photo={circleCoverOf(c)}
+              cover={c}
               onOpen={() => trackHome('circle_opened_from_home', { section: 'circles' })}
             />
           </li>
@@ -173,7 +172,7 @@ export function HomeShortcuts() {
 /** One Coming up row. A component of its own so a Pact's own photograph can be fetched for it. */
 function SoonRow({ x }: { x: ComingUpItem }) {
   const when = whenLabel(x.date);
-  const coverSrc = useCover({ category: x.category, cover: x.cover, id: x.id });
+  const coverSrc = useCover({ category: x.category, cover: x.cover, id: x.id }, x.kind === 'plan' ? 'plan' : 'pact');
   return (
     <ComingUpRow
       when={when}
@@ -191,7 +190,7 @@ function SoonRow({ x }: { x: ComingUpItem }) {
 
 /** A finished thing's photograph, pinned like a print beside it. */
 function MadePhoto({ r }: { r: RecapCardDTO }) {
-  const src = useCover({ category: r.category, cover: r.cover, id: r.id });
+  const src = useCover({ category: r.category, cover: r.cover, id: r.id }, r.kind === 'plan' ? 'plan' : 'pact');
   return <img className="hv3-made__photo" src={src} alt="" aria-hidden loading="lazy" decoding="async" />;
 }
 

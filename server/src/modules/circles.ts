@@ -145,10 +145,36 @@ export async function updateCircle(ctx: Ctx, userId: string, circleId: string, p
     requireOwner(member);
     await q.query('UPDATE circles SET name = COALESCE($2, name), emoji = COALESCE($3, emoji), tint = COALESCE($4, tint), updated_at = now() WHERE id = $1', [circleId, patch.name ?? null, patch.emoji ?? null, patch.tint ?? null]);
     // The cover can be cleared, so it is set on its own: a key, or null for the default.
-    if ('cover' in patch) await q.query('UPDATE circles SET cover = $2 WHERE id = $1', [circleId, patch.cover ?? null]);
+    if ('cover' in patch) {
+      await q.query('UPDATE circles SET cover = $2 WHERE id = $1', [circleId, patch.cover ?? null]);
+      // Choosing a library photograph (or the default) lets go of an uploaded one.
+      await q.query('DELETE FROM circle_cover_photos WHERE circle_id = $1', [circleId]);
+    }
     await audit(q, { actorId: userId, action: 'circle.updated', targetType: 'circle', targetId: circleId, ip: meta.ip });
   });
   return getCircle(ctx, userId, circleId);
+}
+
+/** The owner uploads their own cover: re-encoded to WebP with metadata stripped, one per Circle, readable only by its members. */
+export async function setCoverPhoto(ctx: Ctx, userId: string, circleId: string, body: Buffer) {
+  const { reencodePhoto } = await import('./pactPlan.js');
+  const { data, info } = await reencodePhoto(body);
+  await ctx.db.tx(async (q) => {
+    const { member } = await loadAsMember(q, circleId, userId, true);
+    requireOwner(member);
+    await q.query('DELETE FROM circle_cover_photos WHERE circle_id = $1', [circleId]);
+    await q.query(`INSERT INTO circle_cover_photos (circle_id, data, mime, bytes, width, height, uploaded_by) VALUES ($1, $2, 'image/webp', $3, $4, $5, $6)`, [circleId, data, data.length, info.width, info.height, userId]);
+    await q.query('UPDATE circles SET cover = $2, updated_at = now() WHERE id = $1', [circleId, `upload-${Date.now().toString(36)}`]);
+  });
+  return getCircle(ctx, userId, circleId);
+}
+
+/** Served only through the API, to the Circle's members. */
+export async function getCoverPhoto(ctx: Ctx, userId: string, circleId: string) {
+  await loadAsMember(ctx.db, circleId, userId);
+  const r = await ctx.db.query<{ data: Uint8Array; mime: string }>('SELECT data, mime FROM circle_cover_photos WHERE circle_id = $1', [circleId]);
+  if (!r.rows[0]) throw notFound('Photo');
+  return { data: Buffer.from(r.rows[0].data), mime: r.rows[0].mime };
 }
 
 /**

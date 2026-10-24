@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
+import { useCover } from '../../api/hooks';
 import type { CircleTint } from '../../../shared/contracts';
 import { AvatarStack } from './AvatarStack';
 import { StatusIndicator } from './StatusIndicator';
@@ -40,7 +41,7 @@ export function CircleTile({
   children,
   density = 'tile',
   meta,
-  photo,
+  cover,
 }: {
   name: string;
   emoji: string;
@@ -59,9 +60,10 @@ export function CircleTile({
   density?: 'tile' | 'header';
   /** Header only: who is in it as a sentence ("You, Maya and 3 others"), under the name. */
   meta?: string;
-  /** A faint photograph of people together behind the tile. */
-  photo?: string;
+  /** The Circle's own cover (its id and chosen key): a faint photograph behind the tile. */
+  cover?: { id: string; cover?: string | null };
 }) {
+  const photo = useCover(cover ?? {}, 'circle');
   const pulse = usePulseOnce(!!live);
   const cls = `ox-circle tint--${tint} ${alt ? 'is-alt' : ''} ${live ? 'is-live' : ''} ${pulse ? 'is-pulsing' : ''} ${selected ? 'is-selected' : ''} ${disabled ? 'is-disabled' : ''}`;
   if (density === 'header') {
@@ -88,7 +90,7 @@ export function CircleTile({
   }
   const body = (
     <>
-      {photo && <img className="ox-circle__photo" src={photo} alt="" aria-hidden loading="lazy" decoding="async" />}
+      {cover && <img className="ox-circle__photo" src={photo} alt="" aria-hidden loading="lazy" decoding="async" />}
       <span className="ox-circle__emoji" aria-hidden>
         {emoji}
       </span>

@@ -103,7 +103,7 @@
   height: 100svh;
   min-height: 560px;
   overflow: hidden;
-  background: var(--forest-900);
+  background: var(--black);
   color: var(--white);
 }
 
@@ -134,13 +134,13 @@
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--forest-900) 58%, transparent) 0%, color-mix(in srgb, var(--forest-900) 40%, transparent) 38%, color-mix(in srgb, var(--forest-900) 78%, transparent) 100%);
+    linear-gradient(180deg, color-mix(in srgb, var(--black) 58%, transparent) 0%, color-mix(in srgb, var(--black) 40%, transparent) 38%, color-mix(in srgb, var(--black) 78%, transparent) 100%);
 }
 
 .lp2-hero__veil {
   position: absolute;
   inset: 0;
-  background: var(--forest-900);
+  background: var(--black);
   opacity: 0;
   pointer-events: none;
 }

@@ -1,42 +1,22 @@
-import { useId, useState } from 'react';
 import { CIRCLE_TINTS, type CircleTint } from '../../../shared/contracts';
+import { Glyph } from '../ui/Glyph';
 import './circle.css';
 
 export const SUGGESTED_EMOJI = ['🍻', '❤️', '💐', '⚡', '🏠', '⚽', '🎓', '✈️', '🎉', '💼', '🍕', '🌍', '🙏🏾', '🎶', '👑', '🔥'];
+const ICON_NAME: Record<string, string> = { '🍻': 'Drinks', '❤️': 'Heart', '💐': 'Flowers', '⚡': 'Lightning', '🏠': 'Home', '⚽': 'Football', '🎓': 'Graduation', '✈️': 'Travel', '🎉': 'Celebration', '💼': 'Work', '🍕': 'Pizza', '🌍': 'World', '🙏🏾': 'Prayer', '🎶': 'Music', '👑': 'Crown', '🔥': 'Fire', '🙂': 'Smile' };
 const TINT_NAME: Record<CircleTint, string> = { mint: 'Green', sun: 'Yellow', sky: 'Blue', lilac: 'Purple', pink: 'Pink', coral: 'Orange' };
 
-const isEmoji = (v: string) => /[\p{Extended_Pictographic}\p{Regional_Indicator}]/u.test(v) && !/[A-Za-z0-9<>]/.test(v);
-
-/** Pick an emoji from a short list, or type your own. */
+/** Pick what the Circle looks like from a short list of icons. */
 export function EmojiPicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-  const id = useId();
-  const [custom, setCustom] = useState('');
   return (
     <div className="idpick">
-      <div role="radiogroup" aria-label="Emoji" className="idpick__grid">
+      <div role="radiogroup" aria-label="Icon" className="idpick__grid">
         {SUGGESTED_EMOJI.map((e) => (
-          <button key={e} type="button" role="radio" aria-checked={value === e} aria-label={`Use ${e}`} className={`idpick__emoji ${value === e ? 'is-on' : ''}`} onClick={() => onChange(e)}>
-            <span aria-hidden>{e}</span>
+          <button key={e} type="button" role="radio" aria-checked={value === e} aria-label={ICON_NAME[e] ?? 'Icon'} className={`idpick__emoji ${value === e ? 'is-on' : ''}`} onClick={() => onChange(e)}>
+            <Glyph emoji={e} />
           </button>
         ))}
       </div>
-      <label htmlFor={id} className="idpick__label">
-        Or type your own
-      </label>
-      <input
-        id={id}
-        className="idpick__input"
-        value={custom}
-        maxLength={8}
-        inputMode="text"
-        placeholder="🙂"
-        autoComplete="off"
-        onChange={(e) => {
-          const v = e.target.value.trim();
-          setCustom(e.target.value);
-          if (v && isEmoji(v)) onChange(v);
-        }}
-      />
     </div>
   );
 }

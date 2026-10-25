@@ -1,4 +1,4 @@
-import { Plus, X } from 'lucide-react';
+import { PlusIcon, XIcon } from '@phosphor-icons/react';
 import { useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useCircles } from '../../../api/circles';
@@ -134,13 +134,13 @@ export function CreateAskScreen() {
                     else if (valid) void go();
                   }}
                 />
-                {options.length > 2 && <IconButton label={`Remove option ${i + 1}`} icon={<X />} onClick={() => setOptions(options.filter((_, j) => j !== i))} />}
+                {options.length > 2 && <IconButton label={`Remove option ${i + 1}`} icon={<XIcon />} onClick={() => setOptions(options.filter((_, j) => j !== i))} />}
               </li>
             ))}
           </ul>
           {options.length < 6 && (
             <button type="button" className="act act--tonal tint--sky" onClick={() => (setFocusIdx(options.length), setOptions([...options, '']))}>
-              <Plus aria-hidden /> Add an option
+              <PlusIcon aria-hidden /> Add an option
             </button>
           )}
           <StepHint show={cleaned.length < 2}>Add at least two options.</StepHint>

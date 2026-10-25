@@ -1,4 +1,4 @@
-import { ArrowRight } from 'lucide-react';
+import { ArrowRightIcon } from '@phosphor-icons/react';
 import { Button } from '../ui/Button';
 import type { Cta } from './model';
 
@@ -6,7 +6,7 @@ import type { Cta } from './model';
 export function CommunicationCta({ primary, secondary }: { primary: Cta; secondary?: Cta }) {
   return (
     <div className="comm__cta">
-      <Button to={primary.to} fullWidth iconRight={<ArrowRight />}>
+      <Button to={primary.to} fullWidth iconRight={<ArrowRightIcon />}>
         {primary.label}
       </Button>
       {secondary && (

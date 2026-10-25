@@ -1,4 +1,4 @@
-import { Check, Copy, Share2 } from 'lucide-react';
+import { CheckIcon, CopyIcon, ShareNetworkIcon } from '@phosphor-icons/react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { CircleTint } from '../../../../shared/contracts';
@@ -67,7 +67,7 @@ export function CreateCircleScreen() {
     else if (r === 'failed') toast('Couldn’t share. Try again.', 'neutral');
   };
 
-  const heading = { name: 'Name your Circle', emoji: 'Pick an emoji', color: 'Pick a colour', invite: 'Invite your people' }[step];
+  const heading = { name: 'Name your Circle', emoji: 'Pick an icon', color: 'Pick a colour', invite: 'Invite your people' }[step];
   const sub = {
     name: 'The group you plan things with. Like “The Boys” or “Family”.',
     emoji: 'It’s how the Circle shows up everywhere.',
@@ -81,7 +81,7 @@ export function CreateCircleScreen() {
       footer={
         step === 'invite' ? (
           <>
-            <Button fullWidth iconLeft={<Share2 />} onClick={share} loading={ensure.isPending}>
+            <Button fullWidth iconLeft={<ShareNetworkIcon />} onClick={share} loading={ensure.isPending}>
               Share invite link
             </Button>
             <Button fullWidth variant="ghost" onClick={() => navigate(`/app/circles/${made!.id}`, { replace: true })}>
@@ -122,10 +122,10 @@ export function CreateCircleScreen() {
         {step === 'invite' && (
           <div className="cc__ready">
             <p className="cc__ready-title">
-              <Check aria-hidden /> Your Circle is ready.
+              <CheckIcon aria-hidden /> Your Circle is ready.
             </p>
             {made?.token && (
-              <Button variant="secondary" fullWidth iconLeft={<Copy />} onClick={async () => (await shareCircle(made.token!, trimmed)) === 'copied' && toast('Link copied')}>
+              <Button variant="secondary" fullWidth iconLeft={<CopyIcon />} onClick={async () => (await shareCircle(made.token!, trimmed)) === 'copied' && toast('Link copied')}>
                 Copy link
               </Button>
             )}

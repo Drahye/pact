@@ -1,4 +1,4 @@
-import { BellRing, X } from 'lucide-react';
+import { BellRingingIcon, XIcon } from '@phosphor-icons/react';
 import { useState } from 'react';
 import { dismissPrompt, promptDismissed } from '../../lib/push';
 import { usePush } from '../../lib/usePush';
@@ -42,7 +42,7 @@ export function PushPrompt({ hasPact }: { hasPact: boolean }) {
   return (
     <section className="strip" aria-labelledby="push-prompt-title">
       <span className="strip__icon" aria-hidden>
-        <BellRing />
+        <BellRingingIcon />
       </span>
       <div className="strip__text">
         <h2 id="push-prompt-title" className="strip__title">
@@ -53,7 +53,7 @@ export function PushPrompt({ hasPact }: { hasPact: boolean }) {
       <button type="button" className="act act--solid" aria-label="Turn on notifications" onClick={turnOn} disabled={busy}>
         {busy ? 'Turning on' : state === 'error' ? 'Try again' : 'Turn on'}
       </button>
-      <IconButton label="Not now" variant="ghost" icon={<X />} onClick={later} disabled={busy} />
+      <IconButton label="Not now" variant="ghost" icon={<XIcon />} onClick={later} disabled={busy} />
     </section>
   );
 }

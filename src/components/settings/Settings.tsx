@@ -1,4 +1,4 @@
-import { ChevronRight } from 'lucide-react';
+import { CaretRightIcon } from '@phosphor-icons/react';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import '../app/app-ui.css';
@@ -44,7 +44,7 @@ export function SettingsRow({ icon, tint = 'sky', title, sub, to, href, onClick,
         <span className="menu__title">{title}</span>
         {sub && <span className="menu__sub">{sub}</span>}
       </span>
-      <span className="menu__end">{end ?? (to || href || onClick ? <ChevronRight aria-hidden /> : null)}</span>
+      <span className="menu__end">{end ?? (to || href || onClick ? <CaretRightIcon aria-hidden /> : null)}</span>
     </>
   );
   const cls = `menu__row ${danger ? 'menu__row--danger' : ''}`;

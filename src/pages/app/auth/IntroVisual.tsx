@@ -1,4 +1,4 @@
-import { CalendarClock, MessagesSquare, Receipt } from 'lucide-react';
+import { CalendarDotsIcon, ChatsIcon, ReceiptIcon } from '@phosphor-icons/react';
 
 const people = [
   { i: 'A', c: 'var(--coral-400)' },
@@ -16,7 +16,7 @@ export function IntroVisual() {
       <span className="intro-visual__glow" />
       <div className="intro-obj intro-obj--plan tint--sun">
         <span className="intro-obj__kicker">
-          <CalendarClock /> Plan
+          <CalendarDotsIcon /> Plan
         </span>
         <strong>Calabar in December ✨</strong>
         <span className="intro-obj__meta">Oct 3 to Dec 20 · 4 in</span>
@@ -31,7 +31,7 @@ export function IntroVisual() {
       </div>
       <div className="intro-obj intro-obj--ask tint--sky">
         <span className="intro-obj__kicker">
-          <MessagesSquare /> Question
+          <ChatsIcon /> Question
         </span>
         <strong>Which date works?</strong>
         <span className="intro-obj__bars">
@@ -41,7 +41,7 @@ export function IntroVisual() {
       </div>
       <div className="intro-obj intro-obj--split tint--lilac">
         <span className="intro-obj__kicker">
-          <Receipt /> Split
+          <ReceiptIcon /> Split
         </span>
         <strong>Owambe, settled</strong>
         <span className="intro-obj__meta">Everyone’s in</span>

@@ -1,4 +1,4 @@
-import { FlaskConical } from 'lucide-react';
+import { EnvelopeIcon, FlaskIcon } from '@phosphor-icons/react';
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../../api/auth';
@@ -94,7 +94,7 @@ export function AuthEntryScreen({ mode }: { mode: 'start' | 'signin' }) {
           </div>
         )}
 
-        <form className="entry__form" onSubmit={sendCode} noValidate>
+        <form className="entry__form entry__email" onSubmit={sendCode} noValidate>
           <Input
             label="Email address"
             type="email"
@@ -106,6 +106,7 @@ export function AuthEntryScreen({ mode }: { mode: 'start' | 'signin' }) {
             spellCheck={false}
             enterKeyHint="send"
             placeholder="you@example.com"
+            leading={<EnvelopeIcon />}
             value={email}
             onChange={(e) => {
               setEmail(e.target.value);
@@ -128,7 +129,7 @@ export function AuthEntryScreen({ mode }: { mode: 'start' | 'signin' }) {
         <div className="entry__foot">
           {config?.deployEnv === 'staging' && (
             <p className="entry__sandbox">
-              <FlaskConical aria-hidden /> Sandbox beta. No real money moves.
+              <FlaskIcon aria-hidden /> Sandbox beta. No real money moves.
             </p>
           )}
           <p className="auth__fine">

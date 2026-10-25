@@ -1,4 +1,4 @@
-import { CalendarDays, ChevronRight, Gift, Heart, Plane, Sparkles } from 'lucide-react';
+import { AirplaneIcon, CalendarDotsIcon, CaretRightIcon, GiftIcon, HeartIcon, SparkleIcon } from '@phosphor-icons/react';
 import { AppBar, Face, lin, seg, StatusBar } from './demoKit';
 
 const NAME = 'Sarah’s Birthday';
@@ -28,16 +28,16 @@ export function CreateDemo({ t }: { t: number }) {
         </div>
         <div className="d-cats">
           <span className={`d-cat ${gift ? 'is-on is-coral' : ''}`}>
-            <Gift /> Gift
+            <GiftIcon /> Gift
           </span>
           <span className="d-cat">
-            <Plane /> Trip
+            <AirplaneIcon /> Trip
           </span>
           <span className="d-cat">
-            <Sparkles /> Event
+            <SparkleIcon /> Event
           </span>
           <span className="d-cat">
-            <Heart /> Wedding
+            <HeartIcon /> Wedding
           </span>
         </div>
 
@@ -52,7 +52,7 @@ export function CreateDemo({ t }: { t: number }) {
         <p className="d-label">When do you need it?</p>
         <div className="d-input d-input--row">
           <span className={date ? '' : 'is-muted'}>{date ? '07/10/2026' : 'dd/mm/yyyy'}</span>
-          <CalendarDays />
+          <CalendarDotsIcon />
         </div>
         <p className={`d-hint ${date ? 'is-on' : ''}`}>Oct 7, 2026 · 12 days left</p>
 
@@ -64,7 +64,7 @@ export function CreateDemo({ t }: { t: number }) {
             <Face id="maya" size="xs" />
           </span>
           <span>Sarah, David and 1 other</span>
-          <ChevronRight />
+          <CaretRightIcon />
         </div>
       </div>
       <div className="d-foot">

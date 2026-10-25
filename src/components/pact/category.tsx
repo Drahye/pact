@@ -1,19 +1,19 @@
-import { Cake, Gift, Heart, House, PartyPopper, Plane, ShieldPlus, Sparkles, UtensilsCrossed } from 'lucide-react';
+import { AirplaneIcon, CakeIcon, ConfettiIcon, ForkKnifeIcon, GiftIcon, HeartIcon, HouseIcon, ShieldPlusIcon, SparkleIcon } from '@phosphor-icons/react';
 import type { ReactNode } from 'react';
 import type { PactCategory } from '../../data/types';
 import { categoryLabel } from '../../lib/pact';
 import './category.css';
 
 export const categoryMeta: Record<PactCategory, { tint: string; icon: ReactNode }> = {
-  birthday: { tint: 'coral', icon: <Cake /> },
-  gift: { tint: 'pink', icon: <Gift /> },
-  dinner: { tint: 'sun', icon: <UtensilsCrossed /> },
-  trip: { tint: 'sky', icon: <Plane /> },
-  event: { tint: 'lilac', icon: <PartyPopper /> },
-  household: { tint: 'sun', icon: <House /> },
-  wedding: { tint: 'pink', icon: <Heart /> },
-  fund: { tint: 'mint', icon: <ShieldPlus /> },
-  other: { tint: 'mint', icon: <Sparkles /> },
+  birthday: { tint: 'coral', icon: <CakeIcon /> },
+  gift: { tint: 'pink', icon: <GiftIcon /> },
+  dinner: { tint: 'sun', icon: <ForkKnifeIcon /> },
+  trip: { tint: 'sky', icon: <AirplaneIcon /> },
+  event: { tint: 'lilac', icon: <ConfettiIcon /> },
+  household: { tint: 'sun', icon: <HouseIcon /> },
+  wedding: { tint: 'pink', icon: <HeartIcon /> },
+  fund: { tint: 'mint', icon: <ShieldPlusIcon /> },
+  other: { tint: 'mint', icon: <SparkleIcon /> },
 };
 
 /** Tinted icon tile for a Pact's category. */

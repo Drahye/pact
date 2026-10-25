@@ -1,4 +1,4 @@
-import { ArrowRight, Check, ChevronRight, Ellipsis, Link2, Plus, Share2 } from 'lucide-react';
+import { ArrowRightIcon, CaretRightIcon, CheckIcon, DotsThreeIcon, LinkIcon, PlusIcon, ShareNetworkIcon } from '@phosphor-icons/react';
 import { useState } from 'react';
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import type { Attendance, PlanDTO, PlanStatus } from '../../../../shared/contracts';
@@ -186,8 +186,8 @@ export function PlanScreen() {
           title={p.circle.name}
           trailing={
             <span className="detail__top-actions">
-              <IconButton label="Share" icon={<Share2 />} onClick={share} />
-              {(p.canEdit || p.canHandOver) && <IconButton label="More" icon={<Ellipsis />} onClick={() => setSheet(p.canEdit ? 'menu' : 'hand')} />}
+              <IconButton label="Share" icon={<ShareNetworkIcon />} onClick={share} />
+              {(p.canEdit || p.canHandOver) && <IconButton label="More" icon={<DotsThreeIcon />} onClick={() => setSheet(p.canEdit ? 'menu' : 'hand')} />}
             </span>
           }
         />
@@ -212,14 +212,14 @@ export function PlanScreen() {
           <Link to={`/app/pact/${p.pactId}`} className="od-handoff tint--mint">
             <span className="od-handoff__flow" aria-hidden>
               <span>Plan</span>
-              <ArrowRight />
+              <ArrowRightIcon />
               <span>Pact</span>
             </span>
             <strong>{p.status === 'done' ? 'Completed. You made it happen.' : 'This is a Pact now'}</strong>
             <span className="od-handoff__line">{p.status === 'done' ? 'See what the group did together.' : 'Money, tasks and the deadline live there. This Plan stays as the record.'}</span>
             <span className="act act--solid od-handoff__go">
               Open Pact
-              <ChevronRight aria-hidden />
+              <CaretRightIcon aria-hidden />
             </span>
           </Link>
         )}
@@ -270,11 +270,11 @@ export function PlanScreen() {
         {live && (
           <div className="od-plan__asks">
             <Link className="act act--tonal tint--sky" to={`/app/asks/new?circle=${p.circleId}&plan=${p.id}`}>
-              <Plus aria-hidden /> Ask the group
+              <PlusIcon aria-hidden /> Ask the group
             </Link>
             {loose.length > 0 && (
               <button type="button" className="act act--text" onClick={() => setSheet('link')}>
-                <Link2 aria-hidden /> Link a question
+                <LinkIcon aria-hidden /> Link a question
               </button>
             )}
           </div>
@@ -353,7 +353,7 @@ export function PlanScreen() {
                         disabled={!canFinish}
                         onClick={() => void act(() => patchTask.mutateAsync({ taskId: t.id, status: t.status === 'done' ? 'open' : 'done' }))}
                       >
-                        <span>{t.status === 'done' && <Check strokeWidth={3} aria-hidden />}</span>
+                        <span>{t.status === 'done' && <CheckIcon weight="bold" aria-hidden />}</span>
                       </button>
                       <span className="plan-task__text">
                         {t.title}
@@ -424,7 +424,7 @@ export function PlanScreen() {
           <section className="od-handoff od-handoff--offer tint--mint" aria-labelledby="pact-h">
             <span className="od-handoff__flow" aria-hidden>
               <span>Plan</span>
-              <ArrowRight />
+              <ArrowRightIcon />
               <span>Pact</span>
             </span>
             <strong id="pact-h">Ready to make this real?</strong>

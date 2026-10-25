@@ -1,4 +1,4 @@
-import { AlertTriangle, Check, CheckCircle2, ChevronRight, Copy, FlaskConical, ImagePlus, Landmark, Receipt, Share2, ShieldCheck, Store } from 'lucide-react';
+import { BankIcon, CaretRightIcon, CheckCircleIcon, CheckIcon, CopyIcon, FlaskIcon, ImageSquareIcon, ReceiptIcon, ShareNetworkIcon, ShieldCheckIcon, StorefrontIcon, WarningIcon } from '@phosphor-icons/react';
 import { useEffect, useRef, useState } from 'react';
 import { ApiError, newIdempotencyKey } from '../../../api/client';
 import { resolveVendor, useBanks, usePactMoney, useReceipt } from '../../../api/hooks';
@@ -68,13 +68,13 @@ export function PayByTransfer({ pact, meId }: { pact: Pact; meId: string }) {
     return (
       <button type="button" className="pay-transfer-cta" onClick={() => run(() => money.openAccount.mutateAsync(undefined), 'The Pact has its own account number')} disabled={money.openAccount.isPending}>
         <span className="pay-transfer__icon tint--mint" aria-hidden>
-          <Landmark />
+          <BankIcon />
         </span>
         <span className="pay-transfer-cta__text">
           <strong>Get an account number for this Pact</strong>
           <span>Friends pay from any bank app. No download needed.</span>
         </span>
-        <ChevronRight aria-hidden />
+        <CaretRightIcon aria-hidden />
       </button>
     );
   }
@@ -96,7 +96,7 @@ export function PayByTransfer({ pact, meId }: { pact: Pact; meId: string }) {
     <section className="pay-transfer" aria-labelledby="pay-transfer-title">
       <div className="pay-transfer__head">
         <span className="pay-transfer__icon tint--mint" aria-hidden>
-          <Landmark />
+          <BankIcon />
         </span>
         <div>
           <h2 id="pay-transfer-title" className="pay-transfer__title">
@@ -107,17 +107,17 @@ export function PayByTransfer({ pact, meId }: { pact: Pact; meId: string }) {
       </div>
       <button type="button" className="pay-transfer__number" onClick={() => navigator.clipboard?.writeText(acct.accountNumber).then(() => toast('Account number copied'))} aria-label={`Copy account number ${acct.accountNumber}`}>
         <span className="num">{spaced(acct.accountNumber)}</span>
-        <Copy aria-hidden />
+        <CopyIcon aria-hidden />
       </button>
       <p className="pay-transfer__meta">
         {acct.bankName} · {acct.accountName}
       </p>
       <div className="pay-transfer__actions">
-        <Button size="md" variant="secondary" iconLeft={<Share2 />} onClick={share}>
+        <Button size="md" variant="secondary" iconLeft={<ShareNetworkIcon />} onClick={share}>
           Share
         </Button>
         {config?.sandbox && (
-          <Button size="md" variant="ghost" iconLeft={<FlaskConical />} onClick={() => setTestOpen(true)}>
+          <Button size="md" variant="ghost" iconLeft={<FlaskIcon />} onClick={() => setTestOpen(true)}>
             Test a transfer
           </Button>
         )}
@@ -141,7 +141,7 @@ function TestTransferSheet({ pact, accountNumber, open, onClose }: { pact: Pact;
       title="Test a transfer"
       description={
         <span className="sandbox-tag">
-          <FlaskConical aria-hidden /> Sandbox · no real money
+          <FlaskIcon aria-hidden /> Sandbox · no real money
         </span>
       }
       footer={
@@ -263,7 +263,7 @@ export function PaidFromPact({ pact, meId, onPay, onOpen, hidePayCta = false }: 
               <li key={p.id}>
                 <button type="button" className="paid__row" onClick={() => onOpen(p)}>
                   <span className="paid__icon tint--sun" aria-hidden>
-                    <Receipt />
+                    <ReceiptIcon />
                   </span>
                   <span className="paid__text">
                     <span className="paid__title">{p.purpose ?? 'Payment'}</span>
@@ -283,13 +283,13 @@ export function PaidFromPact({ pact, meId, onPay, onOpen, hidePayCta = false }: 
         (canPayVendors(pact) ? (
           <button type="button" className="pay-transfer-cta paid__cta" onClick={onPay}>
             <span className="pay-transfer__icon tint--sun" aria-hidden>
-              <Store />
+              <StorefrontIcon />
             </span>
             <span className="pay-transfer-cta__text">
               <strong>Pay someone from the Pact</strong>
               <span>Straight to their bank. Everyone sees what it was for.</span>
             </span>
-            <ChevronRight aria-hidden />
+            <CaretRightIcon aria-hidden />
           </button>
         ) : (
           <p className="paid__note">The Pact can pay for the plan once the goal is reached, because everyone was promised a refund if it isn’t.</p>
@@ -389,12 +389,12 @@ export function PayoutSheet({ pact, payout, meId, onClose }: { pact: Pact; payou
           </div>
         </div>
         {live.status === 'failed' && live.failureReason && (
-          <Notice tone="danger" icon={<AlertTriangle />}>
+          <Notice tone="danger" icon={<WarningIcon />}>
             {live.failureReason}. The money went back to the Pact.
           </Notice>
         )}
         {waiting && !canDecide && !mine && (
-          <Notice tone="sun" icon={<ShieldCheck />}>
+          <Notice tone="sun" icon={<ShieldCheckIcon />}>
             Waiting for {who(live.requestedBy === pact.organizerId ? coOrganizerOf(pact) : pact.organizerId) ?? 'a co-organiser'} to approve.
           </Notice>
         )}
@@ -417,7 +417,7 @@ export function PayoutSheet({ pact, payout, meId, onClose }: { pact: Pact; payou
                 }}
               />
               <button type="button" className="plan-add payout__add-receipt" onClick={() => file.current?.click()} disabled={money.addReceipt.isPending}>
-                <ImagePlus aria-hidden /> {money.addReceipt.isPending ? 'Adding…' : 'Add a receipt photo'}
+                <ImageSquareIcon aria-hidden /> {money.addReceipt.isPending ? 'Adding…' : 'Add a receipt photo'}
               </button>
             </>
           )
@@ -574,7 +574,7 @@ export function PayVendorSheet({ pact, open, onClose, onChooseCoOrganizer, prese
                       if (on && !purpose.trim()) setPurpose(l.name);
                     }}
                   >
-                    {lineId === l.id && <Check aria-hidden />} {l.name}
+                    {lineId === l.id && <CheckIcon aria-hidden />} {l.name}
                   </button>
                 ))}
               </div>
@@ -599,7 +599,7 @@ export function PayVendorSheet({ pact, open, onClose, onChooseCoOrganizer, prese
                       setNumber(v.number);
                     }}
                   >
-                    <Landmark aria-hidden /> {v.name}
+                    <BankIcon aria-hidden /> {v.name}
                   </button>
                 ))}
               </div>
@@ -631,18 +631,18 @@ export function PayVendorSheet({ pact, open, onClose, onChooseCoOrganizer, prese
             hint={number.length && number.length < 10 ? `${10 - number.length} more digits` : undefined}
           />
           {resolved && (
-            <Notice tone="accent" icon={<CheckCircle2 />}>
+            <Notice tone="accent" icon={<CheckCircleIcon />}>
               The bank says this account belongs to <strong>{resolved}</strong>. Members will see this name.
             </Notice>
           )}
           {error && <Notice tone="danger">{error}</Notice>}
           {over &&
             (co ? (
-              <Notice tone="sun" icon={<ShieldCheck />}>
+              <Notice tone="sun" icon={<ShieldCheckIcon />}>
                 More than {formatNaira(APPROVAL_OVER)} in a day, so {getUser(co).name} approves this before it’s sent. The money is set aside now.
               </Notice>
             ) : (
-              <Notice tone="danger" icon={<ShieldCheck />}>
+              <Notice tone="danger" icon={<ShieldCheckIcon />}>
                 More than {formatNaira(APPROVAL_OVER)} in a day needs a co-organiser to approve.{' '}
                 <button type="button" className="link-button" onClick={onChooseCoOrganizer}>
                   Choose one
@@ -692,7 +692,7 @@ export function CoOrganizerSheet({ pact, open, onClose }: { pact: Pact; open: bo
                 <Avatar userId={m.userId} size="md" accent accentColor={colorOf(pact, m.userId)} label={false} />
                 <span className="contact__name">{getUser(m.userId).fullName}</span>
                 <span className="contact__check" aria-hidden>
-                  {current === m.userId && <Check strokeWidth={3} />}
+                  {current === m.userId && <CheckIcon weight="bold" />}
                 </span>
               </button>
             </li>
@@ -722,7 +722,7 @@ function ReleaseApproval({ pact, requestedBy }: { pact: Pact; requestedBy: strin
   return (
     <div className="approval approval--release">
       <span className="pay-transfer__icon tint--sun" aria-hidden>
-        <ShieldCheck />
+        <ShieldCheckIcon />
       </span>
       <span className="approval__text">
         <strong>Your approval, please</strong>
@@ -767,7 +767,7 @@ export function ApprovalCards({ pact, meId, onOpen }: { pact: Pact; meId: string
       {waiting.map((p) => (
         <button key={p.id} type="button" className="approval" onClick={() => onOpen(p)}>
           <span className="pay-transfer__icon tint--sun" aria-hidden>
-            <ShieldCheck />
+            <ShieldCheckIcon />
           </span>
           <span className="approval__text">
             <strong>Your approval, please</strong>
@@ -775,7 +775,7 @@ export function ApprovalCards({ pact, meId, onOpen }: { pact: Pact; meId: string
               {p.requestedBy ? getUser(p.requestedBy).name : 'An organiser'} wants to pay <span className="num">{formatNaira(p.amount)}</span> to {p.accountName} for {p.purpose ?? 'the plan'}.
             </span>
           </span>
-          <ChevronRight aria-hidden />
+          <CaretRightIcon aria-hidden />
         </button>
       ))}
     </div>

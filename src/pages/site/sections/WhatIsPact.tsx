@@ -1,4 +1,4 @@
-import { ArrowDown } from 'lucide-react';
+import { ArrowDownIcon } from '@phosphor-icons/react';
 import { useRef } from 'react';
 import { planTypes } from '../../../data/landing';
 import { gsap, MQ, SplitText, useGSAP } from '../../../lib/gsap';
@@ -67,7 +67,7 @@ export function WhatIsPact() {
         </h2>
         <p className="what__support">From the first invite to the final payment, PACT keeps everyone aligned on what has happened, what is left and who is doing what.</p>
         <a className="what__more" href="#story">
-          See how PACT works <ArrowDown aria-hidden />
+          See how PACT works <ArrowDownIcon aria-hidden />
         </a>
       </div>
     </section>

@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { Check, Copy, Ellipsis, MessageCircle, MessageSquareText, Phone, Share2 } from 'lucide-react';
+import { ChatCircleIcon, ChatTextIcon, CheckIcon, CopyIcon, DotsThreeIcon, PhoneIcon, ShareNetworkIcon } from '@phosphor-icons/react';
 import { useState } from 'react';
 import { Navigate, useLocation, useParams } from 'react-router-dom';
 import { useAuth } from '../../api/auth';
@@ -102,7 +102,7 @@ export function InviteScreen() {
     >
       {justCreated && (
         <p className="invite__ready">
-          <Check aria-hidden /> Your Pact is ready.
+          <CheckIcon aria-hidden /> Your Pact is ready.
         </p>
       )}
       <PageHero tint="mint" photo={cover} title={justCreated ? 'Now bring your people in.' : 'Bring your people in.'} subtitle={<>{justCreated ? 'Share the link in your group chat. Anyone with it can see what the Pact is for and join.' : 'Anyone with this link can see what the Pact is for and join it.'}</>} />
@@ -117,13 +117,13 @@ export function InviteScreen() {
         </div>
       </div>
 
-      <Button fullWidth size="lg" iconLeft={<Share2 />} onClick={more} className="invite__primary">
+      <Button fullWidth size="lg" iconLeft={<ShareNetworkIcon />} onClick={more} className="invite__primary">
         Share Pact
       </Button>
 
       <div className="invite__link">
         <span className="invite__url num">{shortUrl}</span>
-        <Button size="md" onClick={copy} iconLeft={copied ? <Check /> : <Copy />} aria-label="Copy invite link">
+        <Button size="md" onClick={copy} iconLeft={copied ? <CheckIcon /> : <CopyIcon />} aria-label="Copy invite link">
           {copied ? 'Copied' : 'Copy link'}
         </Button>
       </div>
@@ -132,7 +132,7 @@ export function InviteScreen() {
         <li>
           <a href={`https://wa.me/?text=${encodeURIComponent(message)}`} target="_blank" rel="noopener noreferrer">
             <span className="invite__share-icon invite__share-icon--whatsapp">
-              <MessageCircle />
+              <ChatCircleIcon />
             </span>
             WhatsApp
           </a>
@@ -140,7 +140,7 @@ export function InviteScreen() {
         <li>
           <a href={`sms:?&body=${encodeURIComponent(message)}`}>
             <span className="invite__share-icon invite__share-icon--messages">
-              <MessageSquareText />
+              <ChatTextIcon />
             </span>
             Messages
           </a>
@@ -148,7 +148,7 @@ export function InviteScreen() {
         <li>
           <button type="button" onClick={more}>
             <span className="invite__share-icon invite__share-icon--ink">
-              <Ellipsis />
+              <DotsThreeIcon />
             </span>
             More
           </button>
@@ -170,7 +170,7 @@ export function InviteScreen() {
             setPhone(e.target.value);
             setPhoneError(undefined);
           }}
-          leading={<Phone />}
+          leading={<PhoneIcon />}
           error={phoneError}
           hint={pact.pendingPhoneInvites ? `${pact.pendingPhoneInvites} invited by text, waiting to sign up` : 'People not on PACT yet get a text with the link.'}
         />

@@ -1,4 +1,4 @@
-import { BadgeCheck, ChevronRight, Mail, Phone, ShieldCheck } from 'lucide-react';
+import { CaretRightIcon, EnvelopeIcon, PhoneIcon, SealCheckIcon, ShieldCheckIcon } from '@phosphor-icons/react';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAccount, useAccountActions } from '../../../api/account';
@@ -84,10 +84,10 @@ export function AccountScreen() {
           <p className="menu-label">Sign-in methods</p>
           <div className="menu">
             <button type="button" className="menu__row" onClick={() => setSheet('email')}>
-              <span className="menu__icon tint--sky"><Mail /></span>
+              <span className="menu__icon tint--sky"><EnvelopeIcon /></span>
               <span className="menu__text">
                 <span className="menu__title">Email</span>
-                <span className="menu__sub">{a.email ? <>{a.email.address} · <span className="acct__ok"><BadgeCheck aria-hidden /> Verified</span></> : 'Not added'}</span>
+                <span className="menu__sub">{a.email ? <>{a.email.address} · <span className="acct__ok"><SealCheckIcon aria-hidden /> Verified</span></> : 'Not added'}</span>
               </span>
               <span className="menu__end">{a.email ? 'Change' : 'Add email'}</span>
             </button>
@@ -115,20 +115,20 @@ export function AccountScreen() {
           {(a.phone || config?.auth?.phone) && (
           <div className="menu">
             <button type="button" className="menu__row" onClick={() => (a.phone ? setSheet({ disconnect: 'phone' }) : setSheet('phone'))} disabled={!!a.phone && a.signInMethods <= 1}>
-              <span className={`menu__icon ${a.phone ? 'tint--mint' : 'tint--sun'}`}>{a.phone ? <ShieldCheck /> : <Phone />}</span>
+              <span className={`menu__icon ${a.phone ? 'tint--mint' : 'tint--sun'}`}>{a.phone ? <ShieldCheckIcon /> : <PhoneIcon />}</span>
               <span className="menu__text">
                 <span className="menu__title">Phone</span>
                 <span className="menu__sub">
                   {a.phone ? (
                     <>
-                      <span className="num">{formatPhone(a.phone.number)}</span> · <span className="acct__ok"><BadgeCheck aria-hidden /> Verified</span>
+                      <span className="num">{formatPhone(a.phone.number)}</span> · <span className="acct__ok"><SealCheckIcon aria-hidden /> Verified</span>
                     </>
                   ) : (
                     'Not verified. Needed to withdraw, add a bank account or verify your identity.'
                   )}
                 </span>
               </span>
-              <span className="menu__end">{a.phone ? <ChevronRight /> : 'Verify phone'}</span>
+              <span className="menu__end">{a.phone ? <CaretRightIcon /> : 'Verify phone'}</span>
             </button>
           </div>
           )}

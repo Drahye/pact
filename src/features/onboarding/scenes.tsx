@@ -1,4 +1,4 @@
-import { Check, Link2 } from 'lucide-react';
+import { CheckIcon, LinkIcon } from '@phosphor-icons/react';
 import { SegmentedRing } from '../../components/pact/SegmentedRing';
 import { CategoryIcon } from '../../components/pact/category';
 import { Avatar } from '../../components/ui/Avatar';
@@ -64,7 +64,7 @@ export function HowScene() {
           <strong>Invite your people</strong>
           <div className="ob-steps__vis">
             <AvatarGroup userIds={['david', 'maya', 'kemi', 'femi']} max={4} size="sm" total={4} />
-            <span className="ob-chip"><Link2 aria-hidden /> One link</span>
+            <span className="ob-chip"><LinkIcon aria-hidden /> One link</span>
           </div>
         </div>
       </li>
@@ -93,7 +93,7 @@ export function HowScene() {
         <div>
           <strong>Finish the Pact together</strong>
           <div className="ob-steps__vis">
-            <span className="ob-chip ob-chip--done"><Check aria-hidden strokeWidth={3} /> Completed</span>
+            <span className="ob-chip ob-chip--done"><CheckIcon aria-hidden weight="bold" /> Completed</span>
             <span className="ob-steps__note">We made it happen</span>
           </div>
         </div>

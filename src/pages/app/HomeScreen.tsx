@@ -1,4 +1,4 @@
-import { Bell, Plus } from 'lucide-react';
+import { BellIcon, PlusIcon } from '@phosphor-icons/react';
 import { useEffect, useRef } from 'react';
 import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../../api/auth';
@@ -79,7 +79,7 @@ export function HomeScreen() {
           trailing={
             <span className="home__header-actions">
               <Link to="/app/notifications" className="icon-btn icon-btn--surface bell" aria-label={unread ? `Notifications, ${unread > 99 ? 'more than 99' : unread} unread` : 'Notifications'}>
-                <Bell />
+                <BellIcon />
                 {unread > 0 && <span className="bell__dot num">{unread > 99 ? '99+' : unread}</span>}
               </Link>
               <Link to="/app/profile" aria-label="Your profile" className="home__me">
@@ -137,7 +137,7 @@ export function HomeScreen() {
             <section className="screen-section" aria-label="Circles">
               <Link to="/app/circles/new" className="hm-circle-cta">
                 <span className="icon-btn icon-btn--surface" aria-hidden>
-                  <Plus />
+                  <PlusIcon />
                 </span>
                 <span>
                   <strong>Start a Circle</strong>

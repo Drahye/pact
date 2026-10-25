@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { BellRing, CheckCheck, Image as ImageIcon, Megaphone, ChevronRight, Divide, Ellipsis, LogOut, RotateCcw, Scale, Share, ShieldCheck, Store, UserPlus, XCircle } from 'lucide-react';
+import { ArrowCounterClockwiseIcon, BellRingingIcon, CaretRightIcon, ChecksIcon, DivideIcon, DotsThreeIcon, ExportIcon, ImageIcon, MegaphoneIcon, ScalesIcon, ShieldCheckIcon, SignOutIcon, StorefrontIcon, UserPlusIcon, XCircleIcon } from '@phosphor-icons/react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../api/auth';
@@ -197,7 +197,7 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
         return {
           primary: <Button to={`${base}/contribute?amount=${Math.ceil(s.remaining)}`} fullWidth>Cover the rest · {formatNairaCompact(s.remaining)}</Button>,
           secondary: isOrganizer ? (
-            <Button variant="secondary" fullWidth iconLeft={<Divide />} onClick={() => setSplitOpen(true)}>Split the rest</Button>
+            <Button variant="secondary" fullWidth iconLeft={<DivideIcon />} onClick={() => setSplitOpen(true)}>Split the rest</Button>
           ) : (
             <Button to={`${base}/contribute`} variant="secondary" fullWidth>Another amount</Button>
           ),
@@ -240,8 +240,8 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
           trailing={
             stage !== 'invited' && active ? (
               <span className="detail__top-actions">
-                <IconButton label="Share invite link" icon={<Share />} to={`${base}/invite`} />
-                <IconButton label="More" icon={<Ellipsis />} onClick={() => setMenuOpen(true)} />
+                <IconButton label="Share invite link" icon={<ExportIcon />} to={`${base}/invite`} />
+                <IconButton label="More" icon={<DotsThreeIcon />} onClick={() => setMenuOpen(true)} />
               </span>
             ) : undefined
           }
@@ -353,7 +353,7 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
       )}
 
       {stage === 'closed' && (
-        <Notice tone="neutral" icon={<RotateCcw />}>
+        <Notice tone="neutral" icon={<ArrowCounterClockwiseIcon />}>
           {pact.status === 'cancelled' ? 'The organiser closed this Pact.' : 'The goal wasn’t reached by the deadline.'} What was left went back to where it came from: wallets for members, bank accounts for guests.
         </Notice>
       )}
@@ -380,7 +380,7 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
 
       <ApprovalCards pact={pact} meId={me} onOpen={setPayout} />
       {stage === 'past-deadline' && (
-        <Notice tone="sun" icon={<Scale />}>
+        <Notice tone="sun" icon={<ScalesIcon />}>
           The deadline has passed. Within {MISSED_GOAL_GRACE_DAYS} days the Pact’s rule runs: {pact.missedGoalPolicy === 'refund' ? 'everyone is refunded' : 'what was raised goes to the organiser'}.
         </Notice>
       )}
@@ -392,7 +392,7 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
             <strong>{mine.participation ? participationLabel[mine.participation].long : 'Tell the group how you’re showing up'}</strong>
             <span className="num">{mine.contributed ? `${formatNaira(mine.contributed)} in so far` : 'Nothing added yet'}</span>
           </span>
-          <ChevronRight aria-hidden />
+          <CaretRightIcon aria-hidden />
         </button>
       )}
 
@@ -413,7 +413,7 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
             <BudgetList lines={budget} editable={isOrganizer && isOpen} onEdit={(l) => { setLine(l); setLineOpen(true); }} onAdd={() => { setLine(null); setLineOpen(true); }} />
           ) : (
             <button type="button" className="detail__plan-empty" onClick={() => { setLine(null); setLineOpen(true); }}>
-              Break the target into what it covers <ChevronRight aria-hidden />
+              Break the target into what it covers <CaretRightIcon aria-hidden />
             </button>
           )}
         </section>
@@ -486,7 +486,7 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
 
       {isOpen && (
         <div className="detail__rule">
-          <Scale aria-hidden />
+          <ScalesIcon aria-hidden />
           <p>
             <strong>{orders ? 'Pay-by date' : 'If the goal isn’t reached'}</strong>{' '}
             {orders
@@ -502,7 +502,7 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
         <div className="activity-head">
           <SectionHeading id="pact-activity" title="Activity" />
           {runsMoney && active && (
-            <Button size="sm" variant="secondary" iconLeft={<Megaphone />} onClick={() => setUpdateOpen(true)}>
+            <Button size="sm" variant="secondary" iconLeft={<MegaphoneIcon />} onClick={() => setUpdateOpen(true)}>
               Post update
             </Button>
           )}
@@ -527,12 +527,12 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
       <Modal open={menuOpen} onClose={() => setMenuOpen(false)} title={pact.title}>
         <div className="menu">
           <button type="button" className="menu__row" onClick={() => navigate(`${base}/invite`)}>
-            <span className="menu__icon tint--sky"><UserPlus /></span>
+            <span className="menu__icon tint--sky"><UserPlusIcon /></span>
             <span className="menu__text"><span className="menu__title">Invite people</span></span>
           </button>
           {isOrganizer && s.remaining > 0 && !orders && (
             <button type="button" className="menu__row" onClick={() => { setMenuOpen(false); setSplitOpen(true); }}>
-              <span className="menu__icon tint--mint"><Divide /></span>
+              <span className="menu__icon tint--mint"><DivideIcon /></span>
               <span className="menu__text">
                 <span className="menu__title">Split the rest</span>
                 <span className="menu__sub">Ask everyone contributing for an equal share of what’s left</span>
@@ -541,7 +541,7 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
           )}
           {runsMoney && canPayVendors(pact) && (
             <button type="button" className="menu__row" onClick={() => { setMenuOpen(false); openPay(null); }}>
-              <span className="menu__icon tint--sun"><Store /></span>
+              <span className="menu__icon tint--sun"><StorefrontIcon /></span>
               <span className="menu__text">
                 <span className="menu__title">Pay someone</span>
                 <span className="menu__sub">Straight from the Pact to their bank</span>
@@ -550,7 +550,7 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
           )}
           {isOrganizer && executing && (
             <button type="button" className="menu__row" onClick={() => { setMenuOpen(false); setCompleteOpen(true); }}>
-              <span className="menu__icon tint--mint"><CheckCheck /></span>
+              <span className="menu__icon tint--mint"><ChecksIcon /></span>
               <span className="menu__text">
                 <span className="menu__title">Complete this Pact</span>
                 <span className="menu__sub">Say the plan happened and decide what to do with what’s left</span>
@@ -559,7 +559,7 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
           )}
           {isOrganizer && (
             <button type="button" className="menu__row" onClick={() => { setMenuOpen(false); setCoOpen(true); }}>
-              <span className="menu__icon tint--lilac"><ShieldCheck /></span>
+              <span className="menu__icon tint--lilac"><ShieldCheckIcon /></span>
               <span className="menu__text">
                 <span className="menu__title">Co-organiser</span>
                 <span className="menu__sub">{`Payments over ${formatNaira(VENDOR_APPROVAL_THRESHOLD / NGN)} need them to approve`}</span>
@@ -568,7 +568,7 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
           )}
           {isOrganizer && (
             <button type="button" className="menu__row" onClick={() => run(() => cmd.nudge.mutateAsync(), 'Reminder sent')}>
-              <span className="menu__icon tint--sun"><BellRing /></span>
+              <span className="menu__icon tint--sun"><BellRingingIcon /></span>
               <span className="menu__text">
                 <span className="menu__title">Remind people</span>
                 <span className="menu__sub">Everyone who hasn’t added anything yet</span>
@@ -586,7 +586,7 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
           )}
           {isOrganizer ? (
             <button type="button" className="menu__row menu__row--danger" onClick={() => { setMenuOpen(false); setCancelOpen(true); }}>
-              <span className="menu__icon tint--coral"><XCircle /></span>
+              <span className="menu__icon tint--coral"><XCircleIcon /></span>
               <span className="menu__text">
                 <span className="menu__title">Close and refund everyone</span>
                 <span className="menu__sub">What’s in the Pact goes back to whoever paid it</span>
@@ -595,7 +595,7 @@ export function PactDetailScreen({ pact, activity }: { pact: Pact; activity: Act
           ) : (
             (mine?.contributed ?? 0) === 0 && (
               <button type="button" className="menu__row menu__row--danger" onClick={() => run(() => cmd.leave.mutateAsync().then(() => navigate('/app/home')), 'You left the Pact')}>
-                <span className="menu__icon tint--coral"><LogOut /></span>
+                <span className="menu__icon tint--coral"><SignOutIcon /></span>
                 <span className="menu__text"><span className="menu__title">Leave this Pact</span></span>
               </button>
             )

@@ -1,4 +1,4 @@
-import { ArrowRight } from 'lucide-react';
+import { ArrowRightIcon } from '@phosphor-icons/react';
 import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '../ui/Button';
@@ -34,7 +34,7 @@ export function SiteNav() {
             </a>
           ))}
         </nav>
-        <Button to="/app" size="sm" className="site-nav__cta" iconRight={<ArrowRight />}>
+        <Button to="/app" size="sm" className="site-nav__cta" iconRight={<ArrowRightIcon />}>
           Start a Pact
         </Button>
       </div>

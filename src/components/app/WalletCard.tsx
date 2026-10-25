@@ -1,4 +1,4 @@
-import { ArrowDownToLine, Eye, EyeOff, Plus } from 'lucide-react';
+import { ArrowLineDownIcon, EyeIcon, EyeSlashIcon, PlusIcon } from '@phosphor-icons/react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { formatNairaKobo } from '../../lib/format';
@@ -46,15 +46,15 @@ export function WalletCard({ balance, tier = 1, compact }: Props) {
           {balance === undefined ? <span className="skeleton skeleton--num" /> : hidden ? '₦ ••••••' : formatNairaKobo(balance)}
         </p>
         <button type="button" className="wallet-card__eye" onClick={toggle} aria-label={hidden ? 'Show balance' : 'Hide balance'} aria-pressed={hidden}>
-          {hidden ? <Eye /> : <EyeOff />}
+          {hidden ? <EyeIcon /> : <EyeSlashIcon />}
         </button>
       </div>
       <div className="wallet-card__actions">
         <Link to="/app/wallet/topup" className="wallet-card__action wallet-card__action--primary">
-          <Plus aria-hidden /> Top up
+          <PlusIcon aria-hidden /> Top up
         </Link>
         <Link to="/app/wallet/withdraw" className="wallet-card__action">
-          <ArrowDownToLine aria-hidden /> Withdraw
+          <ArrowLineDownIcon aria-hidden /> Withdraw
         </Link>
       </div>
     </section>
@@ -70,7 +70,7 @@ export function WalletStrip({ balance }: { balance: number | undefined }) {
         <span className="wallet-strip__balance num">{balance === undefined ? '…' : formatNairaKobo(balance)}</span>
       </Link>
       <Link to="/app/wallet/topup" className="wallet-strip__action">
-        <Plus aria-hidden /> Top up
+        <PlusIcon aria-hidden /> Top up
       </Link>
     </div>
   );

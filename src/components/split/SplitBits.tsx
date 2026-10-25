@@ -1,4 +1,4 @@
-import { Check } from 'lucide-react';
+import { CheckIcon } from '@phosphor-icons/react';
 import '../ask/ask.css';
 import './split.css';
 
@@ -7,7 +7,7 @@ export function ShareStatus({ status, payer }: { status: 'not_applicable' | 'owe
   if (payer || status === 'not_applicable') return <span className="split-status split-status--paid">Paid originally</span>;
   return status === 'settled' ? (
     <span className="split-status split-status--settled">
-      Settled <Check aria-hidden strokeWidth={3} />
+      Settled <CheckIcon aria-hidden weight="bold" />
     </span>
   ) : (
     <span className="split-status split-status--owed">Owes</span>

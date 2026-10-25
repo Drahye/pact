@@ -1,4 +1,4 @@
-import { AlertCircle, RefreshCw } from 'lucide-react';
+import { ArrowsClockwiseIcon, WarningCircleIcon } from '@phosphor-icons/react';
 import type { ReactNode } from 'react';
 import { Button } from '../ui/Button';
 import { loaderClass, loaderSvg } from '../brand/loaderMarkup';
@@ -21,12 +21,12 @@ export function ErrorState({ message, onRetry }: { message?: string; onRetry?: (
   return (
     <div className="state" role="alert">
       <span className="state__icon" aria-hidden>
-        <AlertCircle />
+        <WarningCircleIcon />
       </span>
       <p className="state__title">That didn’t load</p>
       <p className="state__body">{message ?? 'Check your connection and try again.'}</p>
       {onRetry && (
-        <Button variant="secondary" size="md" iconLeft={<RefreshCw />} onClick={onRetry}>
+        <Button variant="secondary" size="md" iconLeft={<ArrowsClockwiseIcon />} onClick={onRetry}>
           Try again
         </Button>
       )}

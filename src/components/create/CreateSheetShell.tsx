@@ -1,4 +1,4 @@
-import { X } from 'lucide-react';
+import { XIcon } from '@phosphor-icons/react';
 import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { OBJECT_KINDS as K, type ObjectKind } from '../objects/kinds';
@@ -140,7 +140,7 @@ function CreateSheetPanel({ open, origin, onClose, children, title, inline }: { 
             <h2 id={titleId} className="csheet__title">
               {title}
             </h2>
-            <IconButton label="Close" icon={<X />} variant="ghost" onClick={onClose} />
+            <IconButton label="Close" icon={<XIcon />} variant="ghost" onClick={onClose} />
           </header>
           {children}
         </div>

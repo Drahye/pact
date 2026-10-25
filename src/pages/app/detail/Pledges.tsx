@@ -1,4 +1,4 @@
-import { CalendarCheck, CalendarClock } from 'lucide-react';
+import { CalendarCheckIcon, CalendarDotsIcon } from '@phosphor-icons/react';
 import { useEffect, useState } from 'react';
 import { ApiError } from '../../../api/client';
 import { usePactMoney } from '../../../api/hooks';
@@ -38,7 +38,7 @@ export function MyPledge({ pact, meId, onPay }: { pact: Pact; meId: string; onPa
       {mine && mine.remaining > 0 ? (
         <div className={`pledge-card ${isLate(mine) ? 'is-late' : ''}`}>
           <span className="pay-transfer__icon tint--sky" aria-hidden>
-            <CalendarClock />
+            <CalendarDotsIcon />
           </span>
           <span className="pledge-card__text">
             <strong>
@@ -60,7 +60,7 @@ export function MyPledge({ pact, meId, onPay }: { pact: Pact; meId: string; onPa
       ) : (
         !mine && (
           <button type="button" className="pledge-link" onClick={() => setOpen(true)}>
-            <CalendarCheck aria-hidden /> Can’t pay yet? Pick a pay date
+            <CalendarCheckIcon aria-hidden /> Can’t pay yet? Pick a pay date
           </button>
         )
       )}

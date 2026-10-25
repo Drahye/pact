@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAccount, useAccountActions } from '../../api/account';
 import { useAuth } from '../../api/auth';
 import { ApiError } from '../../api/client';
-import { MailPlus, X } from 'lucide-react';
+import { EnvelopeSimpleIcon, XIcon } from '@phosphor-icons/react';
 import { IconButton } from '../ui/IconButton';
 import { useToast } from '../ui/Toast';
 import './strip.css';
@@ -52,7 +52,7 @@ export function SignInUpgradePrompt() {
   return (
     <section className="strip" aria-labelledby="upgrade-h">
       <span className="strip__icon" aria-hidden>
-        <MailPlus />
+        <EnvelopeSimpleIcon />
       </span>
       <div className="strip__text">
         <h2 id="upgrade-h" className="strip__title">
@@ -69,7 +69,7 @@ export function SignInUpgradePrompt() {
           Add email
         </Link>
       )}
-      <IconButton label="Maybe later" variant="ghost" icon={<X />} onClick={hide} />
+      <IconButton label="Maybe later" variant="ghost" icon={<XIcon />} onClick={hide} />
     </section>
   );
 }

@@ -1,4 +1,4 @@
-import { CalendarDays } from 'lucide-react';
+import { CalendarDotsIcon } from '@phosphor-icons/react';
 import { formatDate, formatNaira } from '../../lib/format';
 import { AvatarGroup } from '../ui/AvatarGroup';
 import { ProgressBar } from '../ui/ProgressBar';
@@ -30,7 +30,7 @@ export function CommunicationPactSummary({ data, progress = true }: { data: Comm
         )}
         {data.deadline && (
           <span className="comm-pact__date">
-            <CalendarDays aria-hidden /> Closes {formatDate(data.deadline, { month: 'short', day: 'numeric' })}
+            <CalendarDotsIcon aria-hidden /> Closes {formatDate(data.deadline, { month: 'short', day: 'numeric' })}
           </span>
         )}
       </div>

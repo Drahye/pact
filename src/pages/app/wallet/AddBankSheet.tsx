@@ -1,4 +1,4 @@
-import { CheckCircle2, AlertTriangle } from 'lucide-react';
+import { CheckCircleIcon, WarningIcon } from '@phosphor-icons/react';
 import { useEffect, useState } from 'react';
 import type { BankAccountDTO } from '../../../../shared/contracts';
 import { useAuth } from '../../../api/auth';
@@ -104,7 +104,7 @@ export function AddBankSheet({ open, onClose, onAdded }: Props) {
             hint={number.length && number.length < 10 ? `${10 - number.length} more digits` : undefined}
           />
           {resolved && (
-            <Notice tone={resolved.matchesProfile ? 'accent' : 'danger'} icon={resolved.matchesProfile ? <CheckCircle2 /> : <AlertTriangle />}>
+            <Notice tone={resolved.matchesProfile ? 'accent' : 'danger'} icon={resolved.matchesProfile ? <CheckCircleIcon /> : <WarningIcon />}>
               <strong>{resolved.accountName}</strong>
               {resolved.matchesProfile ? '' : '. This name doesn’t match yours, so it can’t receive withdrawals.'}
             </Notice>

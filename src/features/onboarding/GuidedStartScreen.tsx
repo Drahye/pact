@@ -1,4 +1,4 @@
-import { Receipt } from 'lucide-react';
+import { ReceiptIcon } from '@phosphor-icons/react';
 import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { MIN_PACT_TARGET, NGN } from '../../../shared/policy';
@@ -26,7 +26,7 @@ const KINDS: { label: string; category: PactCategory; icon?: ReactNode }[] = [
   { label: 'Wedding', category: 'wedding' },
   { label: 'Group gift', category: 'gift' },
   { label: 'Dinner / event', category: 'event' },
-  { label: 'Shared expense', category: 'other', icon: <Receipt /> },
+  { label: 'Shared expense', category: 'other', icon: <ReceiptIcon /> },
   { label: 'Home / moving', category: 'household' },
   { label: 'Something else', category: 'other' },
 ];

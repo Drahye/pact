@@ -1,4 +1,4 @@
-import { Check, ClipboardCopy, Minus, Plus, Share2, ShoppingBag } from 'lucide-react';
+import { CheckIcon, ClipboardTextIcon, MinusIcon, PlusIcon, ShareNetworkIcon, ShoppingBagIcon } from '@phosphor-icons/react';
 import { useEffect, useState } from 'react';
 import { ApiError, newIdempotencyKey } from '../../../api/client';
 import { usePactMoney } from '../../../api/hooks';
@@ -73,7 +73,7 @@ export function OrderMenu({ pact, meId }: { pact: Pact; meId: string }) {
                 const inner = (
                   <>
                 <span className="order-item__icon tint--pink" aria-hidden>
-                  <ShoppingBag />
+                  <ShoppingBagIcon />
                 </span>
                 <span className="order-item__text">
                   <span className="order-item__name">{i.name}</span>
@@ -105,7 +105,7 @@ export function OrderMenu({ pact, meId }: { pact: Pact; meId: string }) {
       </ul>
       {admin && open && (
         <button type="button" className="plan-add" onClick={() => setAdding(true)}>
-          <Plus aria-hidden /> Add an item
+          <PlusIcon aria-hidden /> Add an item
         </button>
       )}
       <PlaceOrderSheet pact={pact} item={ordering} onClose={() => setOrdering(null)} />
@@ -159,7 +159,7 @@ function PlaceOrderSheet({ pact, item, onClose }: { pact: Pact; item: PactItem |
             <div className="suggest" role="radiogroup" aria-label="Size or colour">
               {item.options.map((o) => (
                 <button key={o} type="button" role="radio" aria-checked={option === o} className={`suggest__chip ${option === o ? 'is-on' : ''}`} onClick={() => setOption(o)}>
-                  {option === o && <Check aria-hidden />} {o}
+                  {option === o && <CheckIcon aria-hidden />} {o}
                 </button>
               ))}
             </div>
@@ -171,13 +171,13 @@ function PlaceOrderSheet({ pact, item, onClose }: { pact: Pact; item: PactItem |
           </span>
           <div className="stepper" role="group" aria-labelledby="qty-label">
             <button type="button" className="stepper__btn" aria-label="One fewer" disabled={quantity <= 1} onClick={() => setQuantity((q) => q - 1)}>
-              <Minus />
+              <MinusIcon />
             </button>
             <span className="stepper__value num" aria-live="polite">
               {quantity}
             </span>
             <button type="button" className="stepper__btn" aria-label="One more" disabled={quantity >= max} onClick={() => setQuantity((q) => q + 1)}>
-              <Plus />
+              <PlusIcon />
             </button>
             {n !== null && <span className="stepper__hint">{n} left</span>}
           </div>
@@ -264,7 +264,7 @@ export function MyOrders({ pact, meId }: { pact: Pact; meId: string }) {
         {mine.map((o) => (
           <li key={o.id} className="paid__row">
             <span className="paid__icon tint--pink" aria-hidden>
-              <ShoppingBag />
+              <ShoppingBagIcon />
             </span>
             <span className="paid__text">
               <span className="paid__title">{describe(pact, o)}</span>
@@ -348,7 +348,7 @@ export function OrderSheetSection({ pact, meId }: { pact: Pact; meId: string }) 
                       <span key={o.id} className={`order-sheet__name ${o.paid ? 'is-paid' : ''}`}>
                         {getUser(o.userId).name}
                         {o.quantity > 1 ? ` ×${o.quantity}` : ''}
-                        {o.paid && <Check aria-label="paid" />}
+                        {o.paid && <CheckIcon aria-label="paid" />}
                       </span>
                     ))}
                   </span>
@@ -359,10 +359,10 @@ export function OrderSheetSection({ pact, meId }: { pact: Pact; meId: string }) 
         ))}
       </div>
       <div className="pay-transfer__actions">
-        <Button size="md" variant="secondary" iconLeft={<ClipboardCopy />} onClick={() => navigator.clipboard?.writeText(text).then(() => toast('Order list copied'))}>
+        <Button size="md" variant="secondary" iconLeft={<ClipboardTextIcon />} onClick={() => navigator.clipboard?.writeText(text).then(() => toast('Order list copied'))}>
           Copy list
         </Button>
-        <Button size="md" variant="ghost" iconLeft={<Share2 />} onClick={share}>
+        <Button size="md" variant="ghost" iconLeft={<ShareNetworkIcon />} onClick={share}>
           Send to tailor
         </Button>
       </div>

@@ -1,4 +1,4 @@
-import { Check, FlaskConical } from 'lucide-react';
+import { CheckIcon, FlaskIcon } from '@phosphor-icons/react';
 import { useEffect, useId, useState, type ReactNode } from 'react';
 import { Navigate, useLocation, useParams } from 'react-router-dom';
 import { BudgetList, TaskList } from '../../components/pact/Plan';
@@ -196,7 +196,7 @@ function Panel({ demo, step }: { demo: DemoPact; step: Step }) {
           <section className="demo-block demo-done" aria-labelledby="cp">
             <SegmentedRing shares={ringShares(demo)} target={total} size={132} stroke={14} label={`${p.title} completed`} animate={false}>
               <span className="demo-done__check" aria-hidden>
-                <Check strokeWidth={3} />
+                <CheckIcon weight="bold" />
               </span>
             </SegmentedRing>
             <h3 id="cp" className="demo-done__title">
@@ -259,7 +259,7 @@ export function DemoPactScreen() {
     >
       <div className="demo">
         <p className="demo-banner" role="note">
-          <FlaskConical aria-hidden />
+          <FlaskIcon aria-hidden />
           <span>
             <strong>Demo Pact</strong> A sample of how a group finishes a plan. You can look around, not change anything.
           </span>
@@ -274,7 +274,7 @@ export function DemoPactScreen() {
             </p>
           </div>
           <span className="demo-badge demo-badge--done">
-            <Check aria-hidden strokeWidth={3} /> Completed
+            <CheckIcon aria-hidden weight="bold" /> Completed
           </span>
         </header>
 

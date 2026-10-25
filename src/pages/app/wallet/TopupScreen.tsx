@@ -1,4 +1,4 @@
-import { Building2, CreditCard, ShieldCheck } from 'lucide-react';
+import { BuildingsIcon, CreditCardIcon, ShieldCheckIcon } from '@phosphor-icons/react';
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { MIN_TOPUP, topupFee } from '../../../../shared/policy';
@@ -80,7 +80,7 @@ export function TopupScreen() {
             {valid ? `Pay ${formatNairaKobo(kobo + fee)}` : `Enter at least ${formatNairaKobo(MIN_TOPUP)}`}
           </Button>
           <p className="wallet__secure">
-            <ShieldCheck aria-hidden /> {config?.sandbox ? 'Sandbox mode: no real money moves.' : 'Payments are processed by our payment partner.'}
+            <ShieldCheckIcon aria-hidden /> {config?.sandbox ? 'Sandbox mode: no real money moves.' : 'Payments are processed by our payment partner.'}
           </p>
         </>
       }
@@ -108,7 +108,7 @@ export function TopupScreen() {
       <p className="menu-label">Pay with</p>
       <div className="choices" role="radiogroup" aria-label="Payment method">
         <button type="button" role="radio" aria-checked={channel === 'bank_transfer'} className={`choice ${channel === 'bank_transfer' ? 'is-on' : ''}`} onClick={() => change(() => setChannel('bank_transfer'))}>
-          <span className="choice__icon tint--mint"><Building2 /></span>
+          <span className="choice__icon tint--mint"><BuildingsIcon /></span>
           <span className="choice__text">
             <span className="choice__title">Bank transfer</span>
             <span className="choice__sub">Free · arrives in seconds</span>
@@ -116,7 +116,7 @@ export function TopupScreen() {
           <span className="choice__radio" aria-hidden />
         </button>
         <button type="button" role="radio" aria-checked={channel === 'card'} className={`choice ${channel === 'card' ? 'is-on' : ''}`} onClick={() => change(() => setChannel('card'))}>
-          <span className="choice__icon tint--sky"><CreditCard /></span>
+          <span className="choice__icon tint--sky"><CreditCardIcon /></span>
           <span className="choice__text">
             <span className="choice__title">Debit card</span>
             <span className="choice__sub">1.5% card fee, capped at ₦2,000</span>

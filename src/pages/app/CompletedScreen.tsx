@@ -1,5 +1,5 @@
 import { motion, useReducedMotion } from 'framer-motion';
-import { Check, CheckCheck, Clock, ShieldCheck, Wallet } from 'lucide-react';
+import { CheckIcon, ChecksIcon, ClockIcon, ShieldCheckIcon, WalletIcon } from '@phosphor-icons/react';
 import { MemorySection } from '../../components/pact/Memory';
 import { useAuth } from '../../api/auth';
 import { usePactAction, usePactMoney } from '../../api/hooks';
@@ -73,15 +73,15 @@ export function CompletedScreen({ pact, activity = [] }: { pact: Pact; activity?
         <>
           {showRelease ? (
             request ? (
-              <Button fullWidth variant="secondary" iconLeft={<Clock />} loading={money.declineRelease.isPending} onClick={() => money.declineRelease.mutateAsync(undefined).then(() => toast('Request withdrawn'))}>
+              <Button fullWidth variant="secondary" iconLeft={<ClockIcon />} loading={money.declineRelease.isPending} onClick={() => money.declineRelease.mutateAsync(undefined).then(() => toast('Request withdrawn'))}>
                 Waiting for {coName ?? 'your co-organiser'} · withdraw request
               </Button>
             ) : canRelease ? (
-              <Button fullWidth iconLeft={<Wallet />} onClick={() => setReleaseOpen(true)}>
+              <Button fullWidth iconLeft={<WalletIcon />} onClick={() => setReleaseOpen(true)}>
                 {coName ? `Ask ${coName} to release ${formatNaira(leftover)}` : `Release the ${formatNaira(leftover)} that’s left`}
               </Button>
             ) : (
-              <Button fullWidth iconLeft={<ShieldCheck />} to="/app/profile/verify">
+              <Button fullWidth iconLeft={<ShieldCheckIcon />} to="/app/profile/verify">
                 Verify your identity to release what’s left
               </Button>
             )
@@ -109,7 +109,7 @@ export function CompletedScreen({ pact, activity = [] }: { pact: Pact; activity?
               transition={{ ...spring.pop, delay: 0.9 }}
               aria-hidden
             >
-              <Check strokeWidth={3} />
+              <CheckIcon weight="bold" />
             </motion.span>
           </SegmentedRing>
         </div>
@@ -234,7 +234,7 @@ export function CompletedScreen({ pact, activity = [] }: { pact: Pact; activity?
           <ul>
             {doneTasks.map((t) => (
               <li key={t.id}>
-                <CheckCheck aria-hidden />
+                <ChecksIcon aria-hidden />
                 <span>{t.title}</span>
                 {t.assigneeId && <small>{name(t.assigneeId)}</small>}
               </li>
@@ -279,7 +279,7 @@ export function CompletedScreen({ pact, activity = [] }: { pact: Pact; activity?
       </div>
 
       {released && isOrganizer && (
-        <Notice tone="accent" icon={<Wallet />}>
+        <Notice tone="accent" icon={<WalletIcon />}>
           What was left is in your wallet. Withdraw it to your bank from the Wallet tab.
         </Notice>
       )}

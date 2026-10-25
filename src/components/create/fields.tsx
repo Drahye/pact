@@ -1,4 +1,4 @@
-import { Check } from 'lucide-react';
+import { CheckIcon } from '@phosphor-icons/react';
 import type { ReactNode } from 'react';
 import type { CircleSummaryDTO } from '../../../shared/contracts';
 import { addDaysIso, isoDay } from '../../lib/dates';
@@ -38,7 +38,7 @@ export function CirclePicker({ circles, value, onChange }: { circles: CircleSumm
             </span>
             <AvatarStack userIds={c.memberIds} total={c.memberCount} size="xs" max={3} />
             <span className="cp__mark" aria-hidden>
-              <Check strokeWidth={3} />
+              <CheckIcon weight="bold" />
             </span>
           </button>
         );
@@ -63,7 +63,7 @@ export function PeoplePicker({ ids, selected, onToggle, nameOf, tag, label, sing
                 {t && <small>{t}</small>}
               </span>
               <span className="pp__mark" aria-hidden>
-                <Check strokeWidth={3} />
+                <CheckIcon weight="bold" />
               </span>
             </button>
           </li>
@@ -98,7 +98,7 @@ export function DateField({ label, value, onChange, min, quick, hint, error, dis
         <div className="suggest" role="group" aria-label="Quick dates">
           {quick.map((q) => (
             <button key={q.label} type="button" className={`suggest__chip ${value === q.value ? 'is-on' : ''}`} aria-pressed={value === q.value} onClick={() => onChange(value === q.value ? '' : q.value)}>
-              {value === q.value && <Check aria-hidden />} {q.label}
+              {value === q.value && <CheckIcon aria-hidden />} {q.label}
             </button>
           ))}
         </div>

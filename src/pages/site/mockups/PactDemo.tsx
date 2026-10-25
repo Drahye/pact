@@ -1,4 +1,4 @@
-import { CalendarDays, Target, Users } from 'lucide-react';
+import { CalendarDotsIcon, TargetIcon, UsersIcon } from '@phosphor-icons/react';
 import { useEffect, useRef, useState } from 'react';
 import { useInView, useReducedMotion } from 'framer-motion';
 import { gsap } from '../../../lib/gsap';
@@ -39,17 +39,17 @@ export function PactDetail({ s }: { s: DetailState }) {
         </div>
         <ul className="d-stats">
           <li className="d-stat d-stat--sun">
-            <CalendarDays />
+            <CalendarDotsIcon />
             <b>12</b>
             <span>days left</span>
           </li>
           <li className="d-stat d-stat--sky">
-            <Users />
+            <UsersIcon />
             <b className="num">{s.people}</b>
             <span>people</span>
           </li>
           <li className="d-stat d-stat--mint">
-            <Target />
+            <TargetIcon />
             <b className="num">{toGo ? kobo(toGo).replace(',000', 'k').replace('₦', '₦') : 'Done'}</b>
             <span>{toGo ? 'to go' : 'raised'}</span>
           </li>

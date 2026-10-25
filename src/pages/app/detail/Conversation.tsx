@@ -1,4 +1,4 @@
-import { Megaphone, Pin, PinOff, Send, Trash2 } from 'lucide-react';
+import { MegaphoneIcon, PaperPlaneRightIcon, PushPinIcon, PushPinSlashIcon, TrashIcon } from '@phosphor-icons/react';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { newIdempotencyKey, type ApiError } from '../../../api/client';
 import { useConversation, useThread } from '../../../api/hooks';
@@ -13,6 +13,7 @@ import { getUser } from '../../../data/users';
 import { formatRelative } from '../../../lib/format';
 import { COMMENT_MAX, REACTIONS } from '../../../lib/reactions';
 import './conversation.css';
+import { Glyph } from '../../../components/ui/Glyph';
 
 /**
  * Conversation attached to activity, not a chat room: a short thread under each meaningful item,
@@ -40,7 +41,7 @@ export function PinnedCard({ pact, meId, onOpen }: { pact: Pact; meId: string; o
   return (
     <button type="button" className="pinned" onClick={() => onOpen(a)} aria-label={`Pinned ${a.type === 'update' ? 'update' : 'item'}: ${plainWords(a, meId)}. Open the discussion`}>
       <span className="pinned__icon" aria-hidden>
-        <Pin />
+        <PushPinIcon />
       </span>
       <span className="pinned__text">
         <span className="pinned__label">{a.type === 'update' ? 'Pinned update' : 'Pinned'}</span>
@@ -113,7 +114,7 @@ function Composer({
             if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) submit(e);
           }}
         />
-        <Button type="submit" size="md" iconLeft={<Send />} disabled={empty || pending} loading={pending} aria-label={submitLabel}>
+        <Button type="submit" size="md" iconLeft={<PaperPlaneRightIcon />} disabled={empty || pending} loading={pending} aria-label={submitLabel}>
           {submitLabel}
         </Button>
       </div>
@@ -233,7 +234,7 @@ export function ThreadSheet({ pact, activityId, meId, onClose }: { pact: Pact; a
                   disabled={!canReply || convo.react.isPending}
                   onClick={() => void run(() => convo.react.mutateAsync({ activityId: activity.id, reaction: r.key, on: !mine(r.key) }))}
                 >
-                  <span aria-hidden>{r.emoji}</span>
+                  <Glyph emoji={r.emoji} />
                   {n > 0 && <span className="num">{n}</span>}
                 </button>
               );
@@ -249,7 +250,7 @@ export function ThreadSheet({ pact, activityId, meId, onClose }: { pact: Pact; a
                   disabled={!canReply || convo.pin.isPending}
                   onClick={() => void run(() => convo.pin.mutateAsync(isPinned ? null : activity.id), isPinned ? 'Unpinned' : 'Pinned to the top')}
                 >
-                  {isPinned ? <PinOff aria-hidden /> : <Pin aria-hidden />} {isPinned ? 'Unpin' : 'Pin to top'}
+                  {isPinned ? <PushPinSlashIcon aria-hidden /> : <PushPinIcon aria-hidden />} {isPinned ? 'Unpin' : 'Pin to top'}
                 </button>
               )}
               {isMyUpdate && (
@@ -262,7 +263,7 @@ export function ThreadSheet({ pact, activityId, meId, onClose }: { pact: Pact; a
                     void run(() => convo.removeUpdate.mutateAsync(activity.id), 'Update removed').then(onClose);
                   }}
                 >
-                  <Trash2 aria-hidden /> {confirmRemove ? 'Tap again to remove' : 'Remove update'}
+                  <TrashIcon aria-hidden /> {confirmRemove ? 'Tap again to remove' : 'Remove update'}
                 </button>
               )}
             </div>
@@ -285,7 +286,7 @@ export function ThreadSheet({ pact, activityId, meId, onClose }: { pact: Pact; a
                   </div>
                   {c.userId === meId && !c.deleted && canReply && (
                     <button type="button" className="comment__remove" aria-label="Remove your comment" onClick={() => void run(() => convo.removeComment.mutateAsync({ commentId: c.id, activityId: activity.id }), 'Comment removed')}>
-                      <Trash2 aria-hidden />
+                      <TrashIcon aria-hidden />
                     </button>
                   )}
                 </li>
@@ -333,7 +334,7 @@ export function UpdateSheet({ pact, open, onClose }: { pact: Pact; open: boolean
       <div className="update-form">
         <Composer label="Update" placeholder="Venue confirmed for Saturday" submitLabel="Post update" stacked pending={sending} error={error} value={text} onChange={setText} onSubmit={() => void post()} />
         <p className="update-form__hint">
-          <Megaphone aria-hidden /> Updates are for running the plan. They can’t change what the Pact records, like contributions and payments.
+          <MegaphoneIcon aria-hidden /> Updates are for running the plan. They can’t change what the Pact records, like contributions and payments.
         </p>
       </div>
     </Modal>

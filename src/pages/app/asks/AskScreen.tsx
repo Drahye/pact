@@ -1,4 +1,4 @@
-import { Ellipsis, Share2 } from 'lucide-react';
+import { DotsThreeIcon, ShareNetworkIcon } from '@phosphor-icons/react';
 import { useState } from 'react';
 import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../../api/auth';
@@ -74,15 +74,15 @@ export function AskScreen() {
           title={a.circle.name}
           trailing={
             <span className="detail__top-actions">
-              <IconButton label="Share" icon={<Share2 />} onClick={share} />
-              {a.canClose && <IconButton label="More" icon={<Ellipsis />} onClick={() => setSheet('menu')} />}
+              <IconButton label="Share" icon={<ShareNetworkIcon />} onClick={share} />
+              {a.canClose && <IconButton label="More" icon={<DotsThreeIcon />} onClick={() => setSheet('menu')} />}
             </span>
           }
         />
       }
       footer={
         justCreated && a.status === 'open' ? (
-          <Button fullWidth iconLeft={<Share2 />} onClick={share}>
+          <Button fullWidth iconLeft={<ShareNetworkIcon />} onClick={share}>
             Share with the group
           </Button>
         ) : undefined

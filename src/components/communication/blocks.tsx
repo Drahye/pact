@@ -1,4 +1,4 @@
-import { Check, CircleDashed, Clock, Quote as QuoteIcon } from 'lucide-react';
+import { CheckIcon, CircleDashedIcon, ClockIcon, QuotesIcon } from '@phosphor-icons/react';
 import type { ReactNode } from 'react';
 import { getUser } from '../../data/users';
 import { formatNaira } from '../../lib/format';
@@ -37,7 +37,7 @@ export function StatGrid({ stats }: { stats: { label: string; value: string }[] 
 export function Quote({ children, by }: { children: ReactNode; by?: string }) {
   return (
     <CommunicationCard className="comm-quote" label="Message">
-      <QuoteIcon aria-hidden className="comm-quote__mark" />
+      <QuotesIcon aria-hidden className="comm-quote__mark" />
       <blockquote>{children}</blockquote>
       {by && <p className="comm-quote__by">{by}</p>}
     </CommunicationCard>
@@ -66,9 +66,9 @@ export function StepList({ title, steps }: { title: string; steps: { title: stri
 }
 
 const statusLook = {
-  paid: { label: 'Paid', icon: <Check aria-hidden />, cls: 'good' },
-  pending: { label: 'Pending', icon: <Clock aria-hidden />, cls: 'wait' },
-  not_paid: { label: 'Not paid', icon: <CircleDashed aria-hidden />, cls: 'quiet' },
+  paid: { label: 'Paid', icon: <CheckIcon aria-hidden />, cls: 'good' },
+  pending: { label: 'Pending', icon: <ClockIcon aria-hidden />, cls: 'wait' },
+  not_paid: { label: 'Not paid', icon: <CircleDashedIcon aria-hidden />, cls: 'quiet' },
 } as const;
 
 export function LineList({ title, lines }: { title: string; lines: BudgetLineData[] }) {
@@ -105,13 +105,13 @@ export function TaskCard({ data }: { data: CommunicationData }) {
     <CommunicationCard className="comm-task" label="Task">
       <div className="comm-task__row">
         <span className={`comm-task__mark ${done ? 'is-done' : ''}`} aria-hidden>
-          {done && <Check />}
+          {done && <CheckIcon />}
         </span>
         <span className="comm-task__text">
           <strong>{data.taskName ?? 'A task'}</strong>
           {who && <span>{done ? `Done by ${who}` : `With ${who}`}</span>}
         </span>
-        <span className={`comm-chip comm-chip--${done ? 'good' : 'wait'}`}>{done ? <Check aria-hidden /> : <Clock aria-hidden />}{done ? 'Done' : data.taskStatus === 'claimed' ? 'In progress' : 'To do'}</span>
+        <span className={`comm-chip comm-chip--${done ? 'good' : 'wait'}`}>{done ? <CheckIcon aria-hidden /> : <ClockIcon aria-hidden />}{done ? 'Done' : data.taskStatus === 'claimed' ? 'In progress' : 'To do'}</span>
       </div>
       {pct !== null && (
         <p className="comm-task__plan">

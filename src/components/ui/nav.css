@@ -65,12 +65,12 @@
   text-overflow: ellipsis;
 }
 
-/* Tab bar: a capsule of four tabs, and Create as its own round button -------------------------------------------------- */
-/* The bar floats over the content (negative margin), so nothing is ever left beneath it in a different colour. Screens that carry
-   it pad their end by --tab-h, so the last line always scrolls clear of it. */
+/* Tab bar: a regular docked bar, edge to edge. Two tabs, Create in the middle, two tabs. ------------------------------------------------ */
+/* The bar sits over the foot of the screen (negative margin), so nothing is left beneath it in a different colour. Screens that carry it
+   pad their end by --tab-h, so the last line always scrolls clear of it. */
 .screen {
-  --tab-pill: 58px;
-  --tab-h: calc(var(--tab-pill) + var(--space-2) + var(--space-2) + max(env(safe-area-inset-bottom), var(--space-3)));
+  --tab-pill: 56px;
+  --tab-h: calc(var(--tab-pill) + max(env(safe-area-inset-bottom), var(--space-2)));
 }
 
 .tabbar {
@@ -78,14 +78,12 @@
   bottom: 0;
   z-index: 5;
   display: flex;
-  align-items: center;
-  gap: var(--space-2);
+  align-items: flex-start;
   height: var(--tab-h);
   margin-top: calc(var(--tab-h) * -1);
-  padding: var(--space-2) var(--space-4) calc(var(--space-2) + max(env(safe-area-inset-bottom), var(--space-3)));
-  /* Content dissolves into the bar's edge instead of being cut by it. */
-  background: linear-gradient(180deg, color-mix(in srgb, var(--color-bg) 0%, transparent) 0%, color-mix(in srgb, var(--color-bg) 92%, transparent) 62%);
-  pointer-events: none;
+  padding: 0 var(--space-2) max(env(safe-area-inset-bottom), var(--space-2));
+  background: var(--color-surface);
+  box-shadow: 0 -1px 0 var(--color-border);
 }
 
 .screen:has(> .tabbar) .screen__content,
@@ -94,35 +92,39 @@
   padding-bottom: calc(var(--tab-h) + var(--space-4));
 }
 
+/* The four tabs and Create share the bar as equal slots; Create takes the middle one. */
 .tabbar__pill {
-  flex: 1 1 auto;
-  min-width: 0;
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  align-items: stretch;
-  height: var(--tab-pill);
-  padding: 5px;
-  border-radius: var(--radius-full);
-  background: var(--color-surface);
-  box-shadow: var(--lit-edge), 0 0 0 1px var(--line-quiet), 0 1px 2px var(--shade-1), 0 16px 28px -14px var(--shade-4);
-  pointer-events: auto;
+  display: contents;
 }
 
 .tabbar__item {
   position: relative;
   display: flex;
+  flex: 1 1 0;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 3px;
   min-width: 0;
-  border-radius: var(--radius-full);
+  height: var(--tab-pill);
   color: var(--color-text-secondary);
   transition: color var(--motion-micro) var(--ease-soft);
 }
 
+.tabbar__item:nth-child(-n + 2) {
+  order: 1;
+}
+
+.tabbar__item:nth-child(n + 3) {
+  order: 3;
+}
+
 /* Tactile: the icon gives a little under the finger. */
 .tabbar__icon {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 30px;
   transition: transform var(--motion-micro) var(--ease-press);
 }
 
@@ -130,33 +132,15 @@
   transform: scale(0.88);
 }
 
+/* The current tab is told by its filled icon and bold label, in the app's green (the text-safe one). Nothing behind it. */
 .tabbar__item.is-active {
-  color: var(--color-on-selected);
-}
-
-/* The chosen tab is a solid ink pill, the same chosen look as a chip, and its icon is drawn filled. */
-.tabbar__active {
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: var(--color-selected);
-}
-
-.tabbar__item.is-active .tabbar__icon svg {
-  fill: currentColor;
-  fill-opacity: 0.22;
-}
-
-.tabbar__icon,
-.tabbar__label {
-  position: relative;
+  color: var(--color-accent-text);
 }
 
 .tabbar__icon svg {
   display: block;
-  width: 21px;
-  height: 21px;
-  stroke-width: 2;
+  width: 24px;
+  height: 24px;
 }
 
 .tabbar__label {
@@ -170,39 +154,41 @@
   letter-spacing: 0;
 }
 
-/* Create: the one round, bright thing, beside the bar and not in it. The sheet opens out of this shape. */
+.tabbar__item.is-active .tabbar__label {
+  font-weight: var(--weight-bold);
+}
+
+/* Create: the one bright thing, in the middle of the bar. The sheet opens out of this shape. */
 .tabbar__create {
-  flex: 0 0 auto;
+  order: 2;
   display: grid;
+  flex: 1 1 0;
   place-items: center;
-  width: var(--tab-pill);
   height: var(--tab-pill);
   border: 0;
+  background: none;
+  color: var(--brand-ink);
+  transition: transform var(--motion-micro) var(--ease-press);
+}
+
+.tabbar__create svg {
+  box-sizing: border-box;
+  width: 46px;
+  height: 46px;
+  padding: 11px;
   border-radius: var(--radius-full);
   background: var(--brand);
-  color: var(--brand-ink);
-  box-shadow: inset 0 1px 0 var(--veil-5), 0 1px 2px var(--shade-2), 0 14px 24px -10px color-mix(in srgb, var(--green-500) 80%, transparent);
-  transition: box-shadow var(--motion-state) var(--ease-soft), transform var(--motion-micro) var(--ease-press);
-  pointer-events: auto;
+  box-shadow: inset 0 1px 0 var(--veil-5), 0 1px 2px var(--shade-2), 0 10px 18px -10px color-mix(in srgb, var(--green-500) 80%, transparent);
+  transition: transform var(--motion-sheet) var(--ease-press), box-shadow var(--motion-state) var(--ease-soft);
 }
 
 .tabbar__create:active {
   transform: scale(0.9);
 }
 
-.tabbar__create svg {
-  width: 26px;
-  height: 26px;
-  stroke-width: 2.4;
-  transition: transform var(--motion-sheet) var(--ease-press);
-}
-
 /* The sheet is open: the plus turns into a close, and the button settles back, as if it were holding the sheet up. */
 .tabbar__create.is-open svg {
   transform: rotate(135deg);
-}
-
-.tabbar__create.is-open {
   box-shadow: inset 0 1px 0 var(--veil-4), 0 1px 2px var(--shade-2);
 }
 
@@ -231,10 +217,6 @@
 }
 
 @media (max-width: 359px) {
-  .tabbar {
-    padding-inline: var(--space-3);
-  }
-
   .tabbar__label {
     font-size: var(--t-micro-size);
   }

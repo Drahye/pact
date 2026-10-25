@@ -1,4 +1,4 @@
-import { CheckCheck, Clock, Hourglass, ShieldCheck, Store, Wallet } from 'lucide-react';
+import { ChecksIcon, ClockIcon, HourglassIcon, ShieldCheckIcon, StorefrontIcon, WalletIcon } from '@phosphor-icons/react';
 import { useState } from 'react';
 import { newIdempotencyKey, type ApiError } from '../../../api/client';
 import { usePactMoney } from '../../../api/hooks';
@@ -110,12 +110,12 @@ export function ExecutionSection({ pact, meId, onPay, onComplete, nextKind = nul
         </ul>
 
         {waiting.length > 0 && (
-          <Notice tone="sun" icon={<Hourglass />}>
+          <Notice tone="sun" icon={<HourglassIcon />}>
             {plural(waiting.length, 'payment is', 'payments are')} waiting for approval. The money is set aside until then.
           </Notice>
         )}
         {flight.length > waiting.length && (
-          <Notice tone="accent" icon={<Clock />}>
+          <Notice tone="accent" icon={<ClockIcon />}>
             {plural(flight.length - waiting.length, 'payment is', 'payments are')} on the way to the bank.
           </Notice>
         )}
@@ -123,7 +123,7 @@ export function ExecutionSection({ pact, meId, onPay, onComplete, nextKind = nul
         {runsMoney && canPayVendors(pact) && (
           <div className="exec__actions">
             {nextKind !== 'pay' && (
-              <Button fullWidth iconLeft={<Store />} onClick={() => onPay(next)}>
+              <Button fullWidth iconLeft={<StorefrontIcon />} onClick={() => onPay(next)}>
                 {hasLines ? (next ? `Pay ${next.name}` : 'Pay for the plan') : 'Use Pact funds'}
               </Button>
             )}
@@ -135,7 +135,7 @@ export function ExecutionSection({ pact, meId, onPay, onComplete, nextKind = nul
           </div>
         )}
         {organizer && isExecuting(pact) && nextKind !== 'complete' && (
-          <Button variant="secondary" fullWidth iconLeft={<CheckCheck />} onClick={onComplete} disabled={flight.length > 0}>
+          <Button variant="secondary" fullWidth iconLeft={<ChecksIcon />} onClick={onComplete} disabled={flight.length > 0}>
             Complete this Pact
           </Button>
         )}
@@ -179,7 +179,7 @@ export function PlanPayments({ pact, onPay, canPay }: { pact: Pact; onPay?: (lin
             <div className="planpay__head">
               <span className="planpay__name">{l.name}</span>
               <Badge tone={stateTone[state]}>
-                {state === 'paid' && <CheckCheck aria-hidden />}
+                {state === 'paid' && <ChecksIcon aria-hidden />}
                 {lineStateLabel[state]}
               </Badge>
             </div>
@@ -250,11 +250,11 @@ export function CompleteSheet({ pact, open, onClose, onChooseCoOrganizer }: { pa
           blocked ? undefined : m.left > 0 ? (
             <div className="exec__choices">
               {canRelease ? (
-                <Button fullWidth iconLeft={<Wallet />} onClick={() => setPinOpen(true)}>
+                <Button fullWidth iconLeft={<WalletIcon />} onClick={() => setPinOpen(true)}>
                   {coName ? `Ask ${coName} to release ${formatNaira(m.left)}` : `Release ${formatNaira(m.left)} and complete`}
                 </Button>
               ) : (
-                <Button fullWidth iconLeft={<ShieldCheck />} to="/app/profile/verify">
+                <Button fullWidth iconLeft={<ShieldCheckIcon />} to="/app/profile/verify">
                   Verify your identity to release what’s left
                 </Button>
               )}
@@ -293,22 +293,22 @@ export function CompleteSheet({ pact, open, onClose, onChooseCoOrganizer }: { pa
         </dl>
         <div className="exec__notices">
         {unfinished > 0 && (
-          <Notice tone="sun" icon={<Hourglass />}>
+          <Notice tone="sun" icon={<HourglassIcon />}>
             {unfinished === 1 ? '1 task is still unfinished.' : `${unfinished} tasks are still unfinished.`} You can still complete the Pact.
           </Notice>
         )}
         {unpaid > 0 && (
-          <Notice tone="sun" icon={<Hourglass />}>
+          <Notice tone="sun" icon={<HourglassIcon />}>
             {unpaid === 1 ? '1 planned cost isn’t paid yet.' : `${unpaid} planned costs aren’t paid yet.`} You can still complete the Pact.
           </Notice>
         )}
         {flight.length > 0 && (
-          <Notice tone="danger" icon={<Clock />}>
+          <Notice tone="danger" icon={<ClockIcon />}>
             {plural(flight.length, 'payment is', 'payments are')} still waiting for approval or on the way. Let {flight.length === 1 ? 'it' : 'them'} finish first, because they change what’s left.
           </Notice>
         )}
         {releasePending && (
-          <Notice tone="danger" icon={<Clock />}>
+          <Notice tone="danger" icon={<ClockIcon />}>
             A release is waiting for {coName ?? 'your co-organiser'}. Hear back from them first.
           </Notice>
         )}

@@ -1,4 +1,4 @@
-import { Check, CheckCircle2, ChevronRight, Circle, CircleDashed, CircleDot, Plus } from 'lucide-react';
+import { CaretRightIcon, CheckCircleIcon, CheckIcon, CircleDashedIcon, CircleIcon, PlusIcon, RadioButtonIcon } from '@phosphor-icons/react';
 import type { BudgetLine, Pact, Task } from '../../data/types';
 import { getUser } from '../../data/users';
 import { formatNairaCompact } from '../../lib/format';
@@ -64,7 +64,7 @@ export function OrganizerProgress({ rows, onInvite }: { rows: Checkpoint[]; onIn
       <ul>
         {rows.map((r) => (
           <li key={r.key} className={r.done ? 'is-done' : ''}>
-            {r.done ? <CheckCircle2 aria-hidden /> : <Circle aria-hidden />}
+            {r.done ? <CheckCircleIcon aria-hidden /> : <CircleIcon aria-hidden />}
             <span className="visually-hidden">{r.done ? 'Done: ' : 'To do: '}</span>
             {r.to ? (
               <button type="button" className="progress__link" onClick={onInvite}>
@@ -98,7 +98,7 @@ export function BudgetList({ lines, editable, onEdit, onAdd }: { lines: BudgetLi
                   <span className={`budget__state num ${full ? 'is-full' : ''}`}>
                     {full ? (
                       <>
-                        <Check aria-hidden /> Funded
+                        <CheckIcon aria-hidden /> Funded
                       </>
                     ) : l.funded > 0 ? (
                       `${formatNairaCompact(l.funded)} of ${formatNairaCompact(l.amount)}`
@@ -118,7 +118,7 @@ export function BudgetList({ lines, editable, onEdit, onAdd }: { lines: BudgetLi
       </ul>
       {editable && onAdd && (
         <button type="button" className="plan-add" onClick={onAdd}>
-          <Plus aria-hidden /> Add a budget line
+          <PlusIcon aria-hidden /> Add a budget line
         </button>
       )}
     </div>
@@ -127,7 +127,7 @@ export function BudgetList({ lines, editable, onEdit, onAdd }: { lines: BudgetLi
 
 /* Tasks -------------------------------------------------------------------- */
 
-const statusIcon = { open: <Circle />, in_progress: <CircleDot />, done: <Check strokeWidth={3} /> };
+const statusIcon = { open: <CircleIcon />, in_progress: <RadioButtonIcon />, done: <CheckIcon weight="bold" /> };
 
 export function TaskList({ pact, tasks, meId, onOpen, onAdd }: { pact: Pact; tasks: Task[]; meId: string; onOpen: (t: Task) => void; onAdd?: () => void }) {
   const budget = new Map((pact.budget ?? []).map((b) => [b.id, b.name]));
@@ -137,7 +137,7 @@ export function TaskList({ pact, tasks, meId, onOpen, onAdd }: { pact: Pact; tas
     <div className="tasks">
       {sorted.length === 0 ? (
         <p className="plan-empty">
-          <CircleDashed aria-hidden /> Nothing assigned yet.
+          <CircleDashedIcon aria-hidden /> Nothing assigned yet.
         </p>
       ) : (
         <ul className="tasks__list">
@@ -160,7 +160,7 @@ export function TaskList({ pact, tasks, meId, onOpen, onAdd }: { pact: Pact; tas
                     {t.assigneeId ? <Avatar userId={t.assigneeId} size="xs" accent accentColor={colorOf(pact, t.assigneeId)} label={false} /> : null}
                     <span className="task__who-name">{who}</span>
                   </span>
-                  <ChevronRight className="task__chevron" aria-hidden />
+                  <CaretRightIcon className="task__chevron" aria-hidden />
                 </button>
               </li>
             );
@@ -169,7 +169,7 @@ export function TaskList({ pact, tasks, meId, onOpen, onAdd }: { pact: Pact; tas
       )}
       {onAdd && (
         <button type="button" className="plan-add" onClick={onAdd}>
-          <Plus aria-hidden /> Add a task
+          <PlusIcon aria-hidden /> Add a task
         </button>
       )}
     </div>

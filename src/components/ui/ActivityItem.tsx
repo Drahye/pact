@@ -1,4 +1,4 @@
-import { CalendarCheck, Megaphone, MessageCircle, ShoppingBag, Camera, Check, CheckCheck, Divide, Flag, Hand, Landmark, ListPlus, LogOut, Plus, Receipt, RotateCcw, ShieldCheck, Sparkles, UserPlus, Wallet, X } from 'lucide-react';
+import { ArrowCounterClockwiseIcon, BankIcon, CalendarCheckIcon, CameraIcon, ChatCircleIcon, CheckIcon, ChecksIcon, DivideIcon, FlagIcon, HandIcon, ListPlusIcon, MegaphoneIcon, PlusIcon, ReceiptIcon, ShieldCheckIcon, ShoppingBagIcon, SignOutIcon, SparkleIcon, UserPlusIcon, WalletIcon, XIcon } from '@phosphor-icons/react';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import type { Activity } from '../../data/types';
@@ -7,6 +7,7 @@ import { formatNaira, formatRelative } from '../../lib/format';
 import { REACTIONS } from '../../lib/reactions';
 import { Avatar, type AvatarSize } from './Avatar';
 import './activity.css';
+import { Glyph } from './Glyph';
 
 interface Props {
   activity: Activity;
@@ -78,31 +79,31 @@ export function describeActivity(activity: Activity, viewerId: string | null = C
 }
 
 const glyph = {
-  contribution: <Plus strokeWidth={3} />,
-  join: <UserPlus strokeWidth={2.5} />,
-  created: <Sparkles strokeWidth={2.5} />,
-  completed: <Check strokeWidth={3} />,
-  released: <Wallet strokeWidth={2.5} />,
-  pact_completed: <CheckCheck strokeWidth={2.5} />,
-  update: <Megaphone strokeWidth={2.5} />,
-  refunded: <RotateCcw strokeWidth={2.5} />,
-  cancelled: <X strokeWidth={3} />,
-  left: <LogOut strokeWidth={2.5} />,
-  committed: <Hand strokeWidth={2.5} />,
-  task_added: <ListPlus strokeWidth={2.5} />,
-  task_claimed: <Hand strokeWidth={2.5} />,
-  task_done: <CheckCheck strokeWidth={2.5} />,
-  milestone: <Flag strokeWidth={2.5} />,
-  split_requested: <Divide strokeWidth={2.5} />,
-  memory_added: <Camera strokeWidth={2.5} />,
-  guest_contribution: <Landmark strokeWidth={2.5} />,
-  vendor_paid: <Receipt strokeWidth={2.5} />,
-  co_organizer: <ShieldCheck strokeWidth={2.5} />,
-  release_requested: <Wallet strokeWidth={2.5} />,
-  pledged: <CalendarCheck strokeWidth={2.5} />,
-  ordered: <ShoppingBag strokeWidth={2.5} />,
-  orders_closed: <Flag strokeWidth={2.5} />,
-  pledge_kept: <CheckCheck strokeWidth={2.5} />,
+  contribution: <PlusIcon weight="bold" />,
+  join: <UserPlusIcon weight="bold" />,
+  created: <SparkleIcon weight="bold" />,
+  completed: <CheckIcon weight="bold" />,
+  released: <WalletIcon weight="bold" />,
+  pact_completed: <ChecksIcon weight="bold" />,
+  update: <MegaphoneIcon weight="bold" />,
+  refunded: <ArrowCounterClockwiseIcon weight="bold" />,
+  cancelled: <XIcon weight="bold" />,
+  left: <SignOutIcon weight="bold" />,
+  committed: <HandIcon weight="bold" />,
+  task_added: <ListPlusIcon weight="bold" />,
+  task_claimed: <HandIcon weight="bold" />,
+  task_done: <ChecksIcon weight="bold" />,
+  milestone: <FlagIcon weight="bold" />,
+  split_requested: <DivideIcon weight="bold" />,
+  memory_added: <CameraIcon weight="bold" />,
+  guest_contribution: <BankIcon weight="bold" />,
+  vendor_paid: <ReceiptIcon weight="bold" />,
+  co_organizer: <ShieldCheckIcon weight="bold" />,
+  release_requested: <WalletIcon weight="bold" />,
+  pledged: <CalendarCheckIcon weight="bold" />,
+  ordered: <ShoppingBagIcon weight="bold" />,
+  orders_closed: <FlagIcon weight="bold" />,
+  pledge_kept: <ChecksIcon weight="bold" />,
 };
 
 /** Events with no single person behind them get a badge instead of an avatar. */
@@ -119,7 +120,7 @@ export function ActivityItem({ activity, viewerId = CURRENT_USER_ID, to, meta, s
           </span>
         ) : systemEvent(activity) ? (
           <span className={`activity__complete avatar--${size}`} aria-hidden>
-            {activity.type === 'refunded' ? <RotateCcw strokeWidth={2.5} /> : activity.type === 'milestone' ? <Flag strokeWidth={2.5} /> : <Check strokeWidth={3} />}
+            {activity.type === 'refunded' ? <ArrowCounterClockwiseIcon weight="bold" /> : activity.type === 'milestone' ? <FlagIcon weight="bold" /> : <CheckIcon weight="bold" />}
           </span>
         ) : (
           <Avatar userId={activity.userId} size={size} label={false} accent />
@@ -173,7 +174,7 @@ function Social({ activity }: { activity: Activity }) {
     <span className="activity__social">
       {shown.map((r) => (
         <span key={r.key} className={`activity__chip ${activity.myReactions?.includes(r.key) ? 'is-mine' : ''}`}>
-          <span aria-hidden>{r.emoji}</span>
+          <Glyph emoji={r.emoji} />
           <span className="num">{activity.reactions?.[r.key]}</span>
           <span className="visually-hidden">
             {r.label}
@@ -183,7 +184,7 @@ function Social({ activity }: { activity: Activity }) {
       ))}
       {comments > 0 && (
         <span className="activity__chip">
-          <MessageCircle aria-hidden />
+          <ChatCircleIcon aria-hidden />
           <span className="num">{comments}</span>
           <span className="visually-hidden">{comments === 1 ? 'comment' : 'comments'}</span>
         </span>

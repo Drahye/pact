@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { Copy, CreditCard, FlaskConical, Lock } from 'lucide-react';
+import { CopyIcon, CreditCardIcon, FlaskIcon, LockIcon } from '@phosphor-icons/react';
 import { useState } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import type { TopupDTO } from '../../../../shared/contracts';
@@ -61,7 +61,7 @@ export function CheckoutScreen() {
       className="checkout"
     >
       <span className="sandbox-tag">
-        <FlaskConical aria-hidden /> Sandbox checkout · no real money
+        <FlaskIcon aria-hidden /> Sandbox checkout · no real money
       </span>
       <p className="checkout__total num">{formatNairaKobo(c.total)}</p>
       <p className="checkout__ref">Ref {c.reference}</p>
@@ -69,7 +69,7 @@ export function CheckoutScreen() {
       {c.channel === 'card' ? (
         <div className="checkout__card" aria-label="Test card">
           <div className="checkout__card-top">
-            <CreditCard aria-hidden />
+            <CreditCardIcon aria-hidden />
             <span>Test Verve card</span>
           </div>
           <p className="num checkout__pan">5060 6666 6666 6666 666</p>
@@ -89,7 +89,7 @@ export function CheckoutScreen() {
             <strong className="num">
               {c.transferAccount.accountNumber}{' '}
               <button type="button" className="checkout__copy" aria-label="Copy account number" onClick={() => navigator.clipboard?.writeText(c.transferAccount.accountNumber).then(() => toast('Copied'))}>
-                <Copy />
+                <CopyIcon />
               </button>
             </strong>
           </div>
@@ -104,7 +104,7 @@ export function CheckoutScreen() {
         </div>
       )}
 
-      <Notice icon={<Lock />}>
+      <Notice icon={<LockIcon />}>
         In production this is the payment partner’s secure page. Your wallet is credited only when the partner confirms the payment to our server, never on this screen’s word.
       </Notice>
     </Screen>

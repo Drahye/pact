@@ -1,6 +1,7 @@
-import { ChevronRight } from 'lucide-react';
+import { CaretRightIcon } from '@phosphor-icons/react';
 import { Link } from 'react-router-dom';
 import './primitives.css';
+import { Glyph } from '../ui/Glyph';
 
 /**
  * An agenda line: when on the left (a date block when `date` is given, so the day is the anchor), what and how it is going on the right. A ruled row on the page, not a card. `today` marks the
@@ -23,12 +24,12 @@ export function ComingUpRow({ when, today, title, emoji, meta, to, onOpen, disab
       )}
       <span className="ox-agenda__main">
         <strong>
-          {title} {emoji && <span aria-hidden>{emoji}</span>}
+          {title} {emoji && <Glyph emoji={emoji} className="ox-agenda__glyph" />}
         </strong>
         {meta && <span>{meta}</span>}
       </span>
       {photo && <img className="ox-agenda__photo" src={photo} alt="" aria-hidden loading="lazy" decoding="async" />}
-      <ChevronRight aria-hidden />
+      <CaretRightIcon aria-hidden />
     </>
   );
   if (disabled) return <div className={`ox-agenda ${photo ? 'ox-agenda--photo' : ''} is-disabled`} aria-disabled="true">{inner}</div>;

@@ -1,4 +1,4 @@
-import { Landmark, Plus, Trash2 } from 'lucide-react';
+import { BankIcon, PlusIcon, TrashIcon } from '@phosphor-icons/react';
 import { useState } from 'react';
 import { useBankAccounts, useRemoveBankAccount } from '../../../api/hooks';
 import { Empty } from '../../../components/app/States';
@@ -24,7 +24,7 @@ export function BankAccountsScreen() {
       className="xhero xhero--lite tint--lilac"
       topBar={<TopBar tone="transparent" backTo="/app/profile" title="Bank accounts" collapse />}
       footer={
-        <Button fullWidth iconLeft={<Plus />} onClick={() => setOpen(true)}>
+        <Button fullWidth iconLeft={<PlusIcon />} onClick={() => setOpen(true)}>
           Add a bank account
         </Button>
       }
@@ -34,12 +34,12 @@ export function BankAccountsScreen() {
       {accounts.isLoading ? (
         <RowListSkeleton count={3} trailing={false} label="Loading bank accounts" />
       ) : !accounts.data?.length ? (
-        <Empty icon={<Landmark />} title="No bank accounts yet" body="Add an account in your name, so money you are owed can come home." />
+        <Empty icon={<BankIcon />} title="No bank accounts yet" body="Add an account in your name, so money you are owed can come home." />
       ) : (
         <div className="menu" style={{ marginTop: 16 }}>
           {accounts.data.map((a) => (
             <div key={a.id} className="menu__row">
-              <span className="menu__icon tint--lilac"><Landmark /></span>
+              <span className="menu__icon tint--lilac"><BankIcon /></span>
               <span className="menu__text">
                 <span className="menu__title">
                   {a.bankName} {a.isDefault && <Badge tone="accent">Default</Badge>}
@@ -50,7 +50,7 @@ export function BankAccountsScreen() {
               </span>
               <IconButton
                 label={`Remove ${a.bankName} account`}
-                icon={<Trash2 />}
+                icon={<TrashIcon />}
                 variant="ghost"
                 onClick={() => remove.mutate(a.id, { onSuccess: () => toast('Account removed') })}
               />

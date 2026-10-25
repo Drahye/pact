@@ -8,6 +8,7 @@ import './components/objects/objects.css';
 import './styles/bold.css';
 import './styles/photo-blend.css';
 import './styles/home-v4.css';
+import { IconContext } from '@phosphor-icons/react';
 import { initPwaInstall } from './lib/pwaInstall';
 
 // iOS Safari only applies :active (the pressed look of every control) when something on the page listens for touch.
@@ -31,6 +32,8 @@ window.addEventListener('vite:preloadError', (event) => {
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <App />
+    <IconContext.Provider value={{ size: 24, weight: 'regular' }}>
+      <App />
+    </IconContext.Provider>
   </React.StrictMode>,
 );

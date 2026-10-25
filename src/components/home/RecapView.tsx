@@ -3,6 +3,7 @@ import { DoneMark } from '../objects';
 import { AvatarGroup } from '../ui/AvatarGroup';
 import { CircleBadge } from '../circle/CircleBadge';
 import './recap.css';
+import { Glyph } from '../ui/Glyph';
 
 /**
  * The celebratory page for something that finished. Strong type, the completion mark, a few labelled numbers. One gentle rise
@@ -14,7 +15,7 @@ export function RecapView({ recap }: { recap: RecapDTO }) {
   return (
     <article className={`recap recap--${recap.kind} tint--${tint}`} aria-labelledby="recap-title">
       <p className="recap__emoji" aria-hidden>
-        {recap.emoji}
+        <Glyph emoji={recap.emoji} />
       </p>
       <p className="recap__kind">{recap.kind === 'split' ? 'Split' : recap.kind === 'plan' ? 'Plan' : 'Pact'}</p>
       <h1 id="recap-title" className="recap__title">

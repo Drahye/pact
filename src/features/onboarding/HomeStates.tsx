@@ -1,4 +1,4 @@
-import { ArrowRight, Check, RotateCcw } from 'lucide-react';
+import { ArrowCounterClockwiseIcon, ArrowRightIcon, CheckIcon } from '@phosphor-icons/react';
 import { Link } from 'react-router-dom';
 import { PactListItem } from '../../components/pact/PactListItem';
 import { Button } from '../../components/ui/Button';
@@ -31,7 +31,7 @@ export function HomeFirstTime({ compact, brief }: { compact?: boolean; brief?: b
         </h2>
         <p className="hs__lede">A trip, a gift, a birthday, a shared bill. Start with one real plan.</p>
         <div className="hs__ctas">
-          <Button to="/app/start" state={{ from: 'home' }} fullWidth iconRight={<ArrowRight />}>
+          <Button to="/app/start" state={{ from: 'home' }} fullWidth iconRight={<ArrowRightIcon />}>
             Start a Pact
           </Button>
           <Button to="/app/join-invite" variant="secondary" fullWidth>
@@ -68,7 +68,7 @@ export function HomeFirstTime({ compact, brief }: { compact?: boolean; brief?: b
           ))}
         </ol>
         <Link to="/app/onboarding?replay=1" className="hs__help">
-          Watch the quick intro <ArrowRight aria-hidden />
+          Watch the quick intro <ArrowRightIcon aria-hidden />
         </Link>
       </section>
       )}
@@ -91,7 +91,7 @@ export function HomeRepeat({ finished }: { finished: Pact[] }) {
         </h2>
         <p className="hs__lede">{finished.length ? 'Nothing is running right now. Start the next one, or join someone else’s.' : 'Nothing is running right now.'}</p>
         <div className="hs__ctas">
-          <Button to={startPath()} state={{ from: 'home' }} fullWidth iconRight={<ArrowRight />}>
+          <Button to={startPath()} state={{ from: 'home' }} fullWidth iconRight={<ArrowRightIcon />}>
             Create another Pact
           </Button>
           <Button to="/app/join-invite" variant="secondary" fullWidth>
@@ -103,13 +103,13 @@ export function HomeRepeat({ finished }: { finished: Pact[] }) {
       {last && (
         <Link to={`/app/start?category=${last.category}`} state={{ from: 'home' }} className="hs__repeat">
           <span className="hs__repeat-icon" aria-hidden>
-            <RotateCcw />
+            <ArrowCounterClockwiseIcon />
           </span>
           <span>
             <strong>Do another {categoryLabel[last.category].toLowerCase()}</strong>
             <span>Start the same kind of plan with a fresh name and date.</span>
           </span>
-          <ArrowRight aria-hidden />
+          <ArrowRightIcon aria-hidden />
         </Link>
       )}
 
@@ -122,7 +122,7 @@ export function HomeRepeat({ finished }: { finished: Pact[] }) {
             ))}
           </div>
           <p className="hs__proud">
-            <Check aria-hidden strokeWidth={3} /> {finished.length} finished together
+            <CheckIcon aria-hidden weight="bold" /> {finished.length} finished together
           </p>
         </section>
       )}

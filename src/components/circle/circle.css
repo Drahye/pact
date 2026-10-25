@@ -6,6 +6,7 @@
   background: linear-gradient(160deg, color-mix(in srgb, var(--white) 45%, var(--tint-bg)), var(--tint-bg) 70%);
   /* A ring in its own colour, a lit top edge and a small tinted shadow: it reads as a thing, not a sticker. */
   box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--tint-solid) 45%, transparent), inset 0 1px 0 var(--veil-5), 0 4px 8px -5px color-mix(in srgb, var(--tint-solid) 70%, transparent);
+  color: var(--tint-fg);
   line-height: 1;
 }
 
@@ -255,3 +256,5 @@
 .ci__now h2 {
   margin: 0 0 var(--space-2);
 }
+
+.idpick__emoji svg { width: 26px; height: 26px; }

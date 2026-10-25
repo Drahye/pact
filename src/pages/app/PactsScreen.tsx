@@ -1,4 +1,4 @@
-import { Plus, Search, X } from 'lucide-react';
+import { MagnifyingGlassIcon, PlusIcon, XIcon } from '@phosphor-icons/react';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '../../api/auth';
 import { usePacts } from '../../api/hooks';
@@ -155,7 +155,7 @@ export function PactsScreen() {
   } else if (!shown.length) {
     body = (
       <Empty
-        icon={<Search />}
+        icon={<MagnifyingGlassIcon />}
         title={`No Pacts match “${query.replace(/\s+/g, ' ').trim()}”.`}
         body={`Searching ${tabLabel[tab]} Pacts by name.`}
         action={
@@ -179,14 +179,14 @@ export function PactsScreen() {
   const announce = loading || failed || !mine.length ? '' : nq ? `${shown.length} of ${tabItems.length} ${tabLabel[tab]} Pacts match` : `${tabItems.length} ${tabLabel[tab]} Pacts`;
 
   return (
-    <Screen className="xhero xhero--lite tint--mint" tabBar={<BottomNav />} topBar={<TopBar tone="transparent" leading="none" title="Pacts" collapse trailing={<IconButton label="Create a Pact" icon={<Plus />} to={startPath()} />} />}>
+    <Screen className="xhero xhero--lite tint--mint" tabBar={<BottomNav />} topBar={<TopBar tone="transparent" leading="none" title="Pacts" collapse trailing={<IconButton label="Create a Pact" icon={<PlusIcon />} to={startPath()} />} />}>
       <PageHero tint="mint" title="Your Pacts" subtitle={heroLine} />
       <div ref={root} aria-busy={loading || pacts.isFetching ? true : undefined}>
         {showControls && (
           <>
             <PactTabs value={tab} onChange={setTabPref} counts={loading ? undefined : counts} />
             <div className="pacts-search">
-              <Search aria-hidden />
+              <MagnifyingGlassIcon aria-hidden />
               <input
                 type="search"
                 aria-label="Search Pacts by name"
@@ -201,7 +201,7 @@ export function PactsScreen() {
               />
               {query && (
                 <button type="button" className="pacts-search__clear" aria-label="Clear search" onClick={clear}>
-                  <X />
+                  <XIcon />
                 </button>
               )}
             </div>

@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { CalendarClock, ChevronRight, MapPin, MessagesSquare } from 'lucide-react';
+import { CalendarDotsIcon, CaretRightIcon, ChatsIcon, MapPinIcon } from '@phosphor-icons/react';
 import { useId, type ReactNode } from 'react';
 import type { Attendance } from '../../../shared/contracts';
 import { Link } from 'react-router-dom';
@@ -100,7 +100,7 @@ export function PlanObject({
               <i>{when.toLocaleDateString('en-US', { month: 'short' })}</i>
             </>
           ) : (
-            <CalendarClock />
+            <CalendarDotsIcon />
           )}
         </span>
         <div className="ox-plan__text">
@@ -118,12 +118,12 @@ export function PlanObject({
               {location &&
                 (heading ? (
                   <a className="ox-plan__where" href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location)}`} target="_blank" rel="noopener noreferrer" aria-label={`${location}. Open in Maps`}>
-                    <MapPin aria-hidden /> {location}
-                    <ChevronRight aria-hidden />
+                    <MapPinIcon aria-hidden /> {location}
+                    <CaretRightIcon aria-hidden />
                   </a>
                 ) : (
                   <span>
-                    <MapPin aria-hidden /> {location}
+                    <MapPinIcon aria-hidden /> {location}
                   </span>
                 ))}
             </p>
@@ -150,7 +150,7 @@ export function PlanObject({
 
       {linkedAsk && density !== 'compact' && (
         <p className="ox-plan__ask">
-          <MessagesSquare aria-hidden />
+          <ChatsIcon aria-hidden />
           <span>
             <strong>{linkedAsk.question}</strong>
             {linkedAsk.leading && <span> {linkedAsk.leading}</span>}
@@ -195,12 +195,12 @@ export function PlanDecisions({ decisions }: { decisions: { id: string; question
       {decisions.map((d) => (
         <li key={d.id}>
           <Link to={d.to} className={`ox-plan__decision ${d.mine ? '' : 'is-open'}`}>
-            <MessagesSquare aria-hidden />
+            <ChatsIcon aria-hidden />
             <span className="ox-plan__decision-text">
               <strong>{d.question}</strong>
               <span>{d.leading ? `${d.leading}${d.mine ? '' : ' · tap to vote'}` : d.mine ? 'You’ve answered' : 'Tap to vote'}</span>
             </span>
-            <ChevronRight aria-hidden />
+            <CaretRightIcon aria-hidden />
           </Link>
         </li>
       ))}
@@ -243,8 +243,8 @@ export function PlanHero({ title, date, endDate, location, status, goingIds, goi
           {range && <span>{range}</span>}
           {location && (
             <a className="ox-plan__where" href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location)}`} target="_blank" rel="noopener noreferrer" aria-label={`${location}. Open in Maps`}>
-              <MapPin aria-hidden /> {location}
-              <ChevronRight aria-hidden />
+              <MapPinIcon aria-hidden /> {location}
+              <CaretRightIcon aria-hidden />
             </a>
           )}
         </p>

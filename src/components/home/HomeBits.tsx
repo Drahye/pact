@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { Check } from 'lucide-react';
+import { CheckIcon } from '@phosphor-icons/react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { ComingUpItem, HomeCircleDTO, NeedsYouItem, RecapCardDTO, RecentItem } from '../../../shared/contracts';
@@ -13,6 +13,7 @@ import { SectionHeading } from '../ui/SectionHeading';
 import { NeedItem, needsShape } from './NeedsObjects';
 import './home-v2.css';
 import './home-v3.css';
+import { Glyph } from '../ui/Glyph';
 
 /**
  * Home's sections. Each one is composed from the Phase A objects and rows (components/objects); what is Home's own here is which
@@ -193,19 +194,16 @@ function MadeTile({ r }: { r: RecapCardDTO }) {
       <span className="hv3-strip__pic">
         {r.kind === 'split' ? (
           <span className="hv3-strip__emoji" aria-hidden>
-            {r.emoji}
+            <Glyph emoji={r.emoji} />
           </span>
         ) : (
           <img src={src} alt="" aria-hidden loading="lazy" decoding="async" />
         )}
         <span className="hv3-strip__check" aria-hidden>
-          <Check />
+          <CheckIcon />
         </span>
       </span>
-      <strong>
-        {r.emoji && r.kind !== 'split' ? `${r.emoji} ` : ''}
-        {r.title}
-      </strong>
+      <strong>{r.title}</strong>
       <span>
         {r.people} {r.people === 1 ? 'person' : 'people'} · {formatDate(r.completedAt, { month: 'short', day: 'numeric' })}
       </span>

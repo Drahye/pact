@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { ChevronRight } from 'lucide-react';
+import { Check } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { ComingUpItem, HomeCircleDTO, NeedsYouItem, RecapCardDTO, RecentItem } from '../../../shared/contracts';
@@ -8,8 +8,7 @@ import { formatDate } from '../../lib/format';
 import { dateRange } from '../../lib/planDates';
 import { transition } from '../../tokens/tokens';
 import { useCover } from '../../api/hooks';
-import { peopleLine } from '../../lib/peopleLine';
-import { ActivityRow, AnimatedCount, AvatarStack, CircleTile, CompletionState, ComingUpRow, OBJECT_KINDS, ObjectArt } from '../objects';
+import { ActivityRow, AnimatedCount, CircleTile, CompletionState, ComingUpRow, OBJECT_KINDS, ObjectArt } from '../objects';
 import { SectionHeading } from '../ui/SectionHeading';
 import { NeedItem, needsShape } from './NeedsObjects';
 import './home-v2.css';
@@ -116,34 +115,32 @@ const whenLabel = (date: string) => {
 };
 
 /**
- * One calm line under the greeting: how much is waiting, and what is next. A sentence, not a dashboard. Counts come from what Home
+ * Two quiet lines under the greeting: how much is waiting, and what is next. A sentence, not a dashboard. Counts come from what Home
  * already holds, so it never disagrees with the list below it.
  */
-export function HomePulse({ total, next, recent = [], selfId }: { total: number; next?: ComingUpItem; recent?: RecentItem[]; selfId?: string }) {
+export function HomePulse({ total, next }: { total: number; next?: ComingUpItem }) {
   const waiting = total === 0 ? 'You’re all caught up.' : total === 1 ? 'One thing needs you.' : `${total} things need you.`;
   const when = next ? whenLabel(next.date) : null;
-  // Who has been doing things today: the people, not the events. Never you.
-  const startOfDay = new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate()).getTime();
-  const active = [...new Set(recent.filter((r) => r.actorId && r.actorId !== selfId && new Date(r.at).getTime() >= startOfDay).map((r) => r.actorId as string))];
   return (
     <div className="hv3-pulse-wrap">
-    <p className="hv3-pulse">
-      <strong className={total ? 'is-live' : undefined}>{waiting}</strong>
-      {next && when && (
-        <span>
-          {' '}
-          Next up: {next.title}, {when === 'Today' || when === 'Tomorrow' ? when.toLowerCase() : when}.
-        </span>
-      )}
-    </p>
-    {active.length > 0 && (
-      <p className="hv3-active">
-        <AvatarStack userIds={active} total={active.length} size="sm" max={4} ring="bg" />
-        <span>{peopleLine(active, null, { names: 2 })} {active.length === 1 ? 'is' : 'are'} on it today</span>
+      <p className="hv3-pulse">
+        <strong className={total ? 'is-live' : undefined}>{waiting}</strong>
       </p>
-    )}
+      {next && when && (
+        <p className="hv3-next">
+          <span className="hv3-next__label">Next</span>
+          <span className="hv3-next__what">{next.title}</span>
+          <span className="hv3-next__when">{when === 'Today' || when === 'Tomorrow' ? when.toLowerCase() : when}</span>
+        </p>
+      )}
     </div>
   );
+}
+
+/** The cover of whatever is next, for the top of Home: the occasion is felt before anything is read. */
+export function useHomeHeroPhoto(next?: ComingUpItem) {
+  const src = useCover({ category: next?.category, cover: next?.cover, id: next?.id }, next?.kind === 'plan' ? 'plan' : 'pact');
+  return next ? src : undefined;
 }
 
 /** Four ways to start, one tap each: a coloured tile per kind, so starting something is the first thing Home offers. */
@@ -188,10 +185,32 @@ function SoonRow({ x }: { x: ComingUpItem }) {
   );
 }
 
-/** A finished thing's photograph, pinned like a print beside it. */
-function MadePhoto({ r }: { r: RecapCardDTO }) {
+/** A finished thing's photograph, pinned like a print. */
+function MadeTile({ r }: { r: RecapCardDTO }) {
   const src = useCover({ category: r.category, cover: r.cover, id: r.id }, r.kind === 'plan' ? 'plan' : 'pact');
-  return <img className="hv3-made__photo" src={src} alt="" aria-hidden loading="lazy" decoding="async" />;
+  return (
+    <Link to={`${r.url}?from=home`} className={`hv3-strip__item tint--${r.kind === 'split' ? 'lilac' : 'mint'}`} aria-label={`View recap: ${r.title}`}>
+      <span className="hv3-strip__pic">
+        {r.kind === 'split' ? (
+          <span className="hv3-strip__emoji" aria-hidden>
+            {r.emoji}
+          </span>
+        ) : (
+          <img src={src} alt="" aria-hidden loading="lazy" decoding="async" />
+        )}
+        <span className="hv3-strip__check" aria-hidden>
+          <Check />
+        </span>
+      </span>
+      <strong>
+        {r.emoji && r.kind !== 'split' ? `${r.emoji} ` : ''}
+        {r.title}
+      </strong>
+      <span>
+        {r.people} {r.people === 1 ? 'person' : 'people'} · {formatDate(r.completedAt, { month: 'short', day: 'numeric' })}
+      </span>
+    </Link>
+  );
 }
 
 export function ComingUpSection({ items }: { items: ComingUpItem[] }) {
@@ -200,7 +219,7 @@ export function ComingUpSection({ items }: { items: ComingUpItem[] }) {
     <section className="screen-section" aria-labelledby="hv2-soon-h">
       <SectionHeading id="hv2-soon-h" title="Coming up" />
       <ul className="hv2-list hv2-list--ruled">
-        {items.map((x) => (
+        {items.slice(0, 3).map((x) => (
           <li key={`${x.kind}-${x.id}`}>
             <SoonRow x={x} />
           </li>
@@ -254,7 +273,7 @@ export function RecentSection({ items }: { items: RecentItem[] }) {
       <SectionHeading id="hv2-recent-h" title="Recent" action={{ label: 'See all', to: '/app/activity' }} />
       <ul className="hv2-list hv2-list--ruled hv2-feed">
         <AnimatePresence initial={false}>
-          {items.slice(0, 6).map((r) => (
+          {items.slice(0, 3).map((r) => (
             <motion.li key={r.id} layout="position" initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} transition={transition.state}>
               <ActivityRow actorId={r.actorId} kind={r.objectType} text={r.text} at={r.at} to={r.url} onOpen={() => trackHome('recent_activity_opened', { object_type: r.objectType, section: 'recent' })} />
             </motion.li>
@@ -265,27 +284,16 @@ export function RecentSection({ items }: { items: RecentItem[] }) {
   );
 }
 
-/** Finished things, acknowledged: the completion language as a row: the thing's emoji, what it was, who and when, a way back to the recap. */
+/** Finished things, acknowledged: a small strip of prints, each a way back to its recap. */
 export function MadeItHappenSection({ items, title = 'Made it happen' }: { items: RecapCardDTO[]; title?: string }) {
   if (!items.length) return null;
   return (
     <section className="screen-section" aria-labelledby="hv2-recap-h">
       <SectionHeading id="hv2-recap-h" title={title} />
-      <ul className="hv3-made">
+      <ul className="hv3-strip" aria-label={title}>
         {items.map((r) => (
           <li key={`${r.kind}-${r.id}`}>
-            <Link to={`${r.url}?from=home`} className="hv3-made__item" aria-label={`View recap: ${r.title}`}>
-              {r.kind !== 'split' && <MadePhoto r={r} />}
-              <CompletionState
-                layout="row"
-                announce={false}
-                lead={r.emoji}
-                title={r.title}
-                line={`${r.people} ${r.people === 1 ? 'person' : 'people'} · ${formatDate(r.completedAt, { month: 'short', day: 'numeric' })}`}
-                tint={r.kind === 'split' ? 'lilac' : 'mint'}
-              />
-              <ChevronRight className="hv3-made__go" aria-hidden />
-            </Link>
+            <MadeTile r={r} />
           </li>
         ))}
       </ul>

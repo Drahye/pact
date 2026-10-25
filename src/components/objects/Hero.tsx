@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import type { CircleTint } from '../../../shared/contracts';
+import { usePhotoTone } from '../../lib/photoTone';
 import { ObjectArt, type ArtKind } from './ObjectArt';
 
 /**
@@ -8,8 +9,9 @@ import { ObjectArt, type ArtKind } from './ObjectArt';
  * under the colour, so the people the thing is about are felt before anything is read.
  */
 export function Hero({ tint, art, photo, backdrop, children, className = '' }: { tint?: CircleTint | string; art?: ArtKind; photo?: string; backdrop?: ReactNode; children: ReactNode; className?: string }) {
+  const tone = usePhotoTone(photo);
   return (
-    <header className={`xh ${tint ? `tint--${tint}` : ''} ${art ? 'xh--art' : ''} ${className}`}>
+    <header className={`xh ${tint ? `tint--${tint}` : ''} ${art ? 'xh--art' : ''} ${className}`} style={tone}>
       {photo && <img className="xh__photo" src={photo} alt="" aria-hidden loading="lazy" decoding="async" />}
       {backdrop}
       {art && <ObjectArt kind={art} className="xh__art" />}

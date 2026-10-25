@@ -6,6 +6,8 @@ import './styles/surfaces.css';
 import './styles/type.css';
 import './components/objects/objects.css';
 import './styles/bold.css';
+import './styles/photo-blend.css';
+import './styles/home-v4.css';
 import { initPwaInstall } from './lib/pwaInstall';
 
 // iOS Safari only applies :active (the pressed look of every control) when something on the page listens for touch.

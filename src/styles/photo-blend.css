@@ -1,0 +1,42 @@
+/* ==========================================================================
+   Photographs blended into colour. A photo is never dimmed to a ghost: it keeps its own strength, and an eased fade (a smoothstep, not a
+   two-stop ramp) hides it where the words are, so there is no visible edge where it ends. Under it sits a glow of the photo's own average
+   colour (--photo-tone, set from the image in lib/photoTone.ts), so the fade passes through colours that belong to the picture (that glow is Home's: see home-v4.css).
+   ========================================================================== */
+:root {
+  /* Opaque at the start of the gradient, clear at the end. Direction is chosen where it is used. */
+  --fade-stops: var(--black) 0.0%, color-mix(in srgb, var(--black) 98.7%, transparent) 8.1%, color-mix(in srgb, var(--black) 95.1%, transparent) 15.5%, color-mix(in srgb, var(--black) 89.6%, transparent) 22.5%, color-mix(in srgb, var(--black) 82.5%, transparent) 29.0%, color-mix(in srgb, var(--black) 74.1%, transparent) 35.3%, color-mix(in srgb, var(--black) 64.8%, transparent) 41.2%, color-mix(in srgb, var(--black) 55.0%, transparent) 47.1%, color-mix(in srgb, var(--black) 45.0%, transparent) 53.0%, color-mix(in srgb, var(--black) 35.2%, transparent) 58.8%, color-mix(in srgb, var(--black) 25.9%, transparent) 64.7%, color-mix(in srgb, var(--black) 17.5%, transparent) 71.0%, color-mix(in srgb, var(--black) 10.4%, transparent) 77.5%, color-mix(in srgb, var(--black) 4.9%, transparent) 84.5%, color-mix(in srgb, var(--black) 1.3%, transparent) 91.9%, transparent 100.0%;
+  /* The same, holding fully opaque for the first third: for a hero, where the top is all picture. */
+  --fade-stops-hold: var(--black) 32.0%, color-mix(in srgb, var(--black) 98.7%, transparent) 37.5%, color-mix(in srgb, var(--black) 95.1%, transparent) 42.5%, color-mix(in srgb, var(--black) 89.6%, transparent) 47.3%, color-mix(in srgb, var(--black) 82.5%, transparent) 51.7%, color-mix(in srgb, var(--black) 74.1%, transparent) 56.0%, color-mix(in srgb, var(--black) 64.8%, transparent) 60.0%, color-mix(in srgb, var(--black) 55.0%, transparent) 64.0%, color-mix(in srgb, var(--black) 45.0%, transparent) 68.0%, color-mix(in srgb, var(--black) 35.2%, transparent) 72.0%, color-mix(in srgb, var(--black) 25.9%, transparent) 76.0%, color-mix(in srgb, var(--black) 17.5%, transparent) 80.3%, color-mix(in srgb, var(--black) 10.4%, transparent) 84.7%, color-mix(in srgb, var(--black) 4.9%, transparent) 89.5%, color-mix(in srgb, var(--black) 1.3%, transparent) 94.5%, transparent 100.0%;
+  --photo-tone: transparent;
+}
+
+/* Hero: the picture melts into the colour before the figures. Strong only where the words are kept clear of it (Home, below); elsewhere
+   the picture stays under text, so it stays gentle. */
+.proto--bold .xh__photo {
+  opacity: 0.3;
+  filter: saturate(1.05);
+  -webkit-mask-image: linear-gradient(180deg, var(--fade-stops-hold));
+  mask-image: linear-gradient(180deg, var(--fade-stops-hold));
+}
+
+/* Pact card: clear on the right where there are no words, fading out to the left. */
+.proto--bold .ox-pact__photo {
+  opacity: 0.22;
+  filter: saturate(1.05);
+  -webkit-mask-image: linear-gradient(270deg, var(--fade-stops));
+  mask-image: linear-gradient(270deg, var(--fade-stops));
+}
+
+/* Circle tile: the photograph is the top of the tile and melts down into the name. */
+.proto--bold .ox-circle__photo {
+  height: 66%;
+  opacity: 0.2;
+  -webkit-mask-image: linear-gradient(180deg, var(--fade-stops));
+  mask-image: linear-gradient(180deg, var(--fade-stops));
+}
+
+/* Dark mode: a bright photograph must not glare against a dark page. */
+:root[data-theme='dark'] :is(.xh__photo, .ox-pact__photo, .ox-circle__photo) {
+  filter: brightness(0.78) saturate(1.05);
+}

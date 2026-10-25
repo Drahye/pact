@@ -9,7 +9,7 @@ import { introSeen } from '../../features/onboarding/store';
 import { SignInUpgradePrompt } from '../../components/app/SignInUpgradePrompt';
 import { PushPrompt } from '../../components/app/PushPrompt';
 import { ErrorState, Loading, Notice } from '../../components/app/States';
-import { CirclesShelf, ComingUpSection, HomePulse, HomeShortcuts, MadeItHappenSection, NeedsYouSection, RecentSection } from '../../components/home/HomeBits';
+import { CirclesShelf, ComingUpSection, HomePulse, HomeShortcuts, MadeItHappenSection, NeedsYouSection, RecentSection, useHomeHeroPhoto } from '../../components/home/HomeBits';
 import { Hero, Sheet } from '../../components/objects';
 import { HomeSkeleton } from '../../components/home/HomeSkeleton';
 import { HomeStart } from '../../components/home/HomeStart';
@@ -39,6 +39,8 @@ export function HomeScreen() {
   const unread = notes.data?.unread ?? 0;
   const h = home.data;
   const firstTime = pacts.isSuccess && !mine.length && !invites.length && h?.state === 'new';
+  const live = !!h && !firstTime && h.state !== 'new';
+  const heroPhoto = useHomeHeroPhoto(live ? h.comingUp[0] : undefined);
 
   // One coarse "Home was looked at" per visit, once the data is in. Never what was on it.
   const seen = useRef(false);
@@ -87,16 +89,16 @@ export function HomeScreen() {
         />
       }
     >
-      <Hero className="xh--home home__header">
+      <Hero className="xh--home home__header" photo={live ? heroPhoto : undefined}>
         <p className="home__date">{formatDate(isoDay(new Date()), { weekday: 'long', month: 'long', day: 'numeric' })}</p>
         <h1 className="home__title">
           <span className="home__hi">{greeting()},</span>
           <span className="home__name">{user?.firstName}</span>
         </h1>
-        {h && !firstTime && h.state !== 'new' && <HomePulse total={h.needsYouTotal} next={h.comingUp[0]} recent={h.recent} selfId={user?.id} />}
+        {live && <HomePulse total={h.needsYouTotal} next={h.comingUp[0]} />}
       </Hero>
       <Sheet>
-        {h && !firstTime && h.state !== 'new' && <HomeShortcuts />}
+        {live && <HomeShortcuts />}
       {stale && (
         <Notice tone="neutral">
           {typeof navigator !== 'undefined' && navigator.onLine === false ? 'You’re offline. This may be out of date.' : 'Couldn’t refresh. This may be out of date.'}
@@ -128,7 +130,6 @@ export function HomeScreen() {
         <>
           {h.state === 'finished_only' && <HomeStart variant="again" />}
           <NeedsYouSection items={h.needsYou} total={h.needsYouTotal} circles={h.circles} caughtUp={h.state === 'active'} />
-          {prompts}
           {h.circles.length > 0 ? (
             <CirclesShelf circles={h.circles} />
           ) : (
@@ -147,6 +148,7 @@ export function HomeScreen() {
           <ComingUpSection items={h.comingUp} />
           <RecentSection items={h.recent} />
           <MadeItHappenSection items={h.recaps} />
+          {prompts}
         </>
       )}
       </Sheet>

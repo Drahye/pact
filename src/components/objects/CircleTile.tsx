@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { useCover } from '../../api/hooks';
+import { usePhotoTone } from '../../lib/photoTone';
 import type { CircleTint } from '../../../shared/contracts';
 import { AvatarStack } from './AvatarStack';
 import { StatusIndicator } from './StatusIndicator';
@@ -64,6 +65,7 @@ export function CircleTile({
   cover?: { id: string; cover?: string | null };
 }) {
   const photo = useCover(cover ?? {}, 'circle');
+  const tone = usePhotoTone(cover ? photo : undefined);
   const pulse = usePulseOnce(!!live);
   const cls = `ox-circle tint--${tint} ${alt ? 'is-alt' : ''} ${live ? 'is-live' : ''} ${pulse ? 'is-pulsing' : ''} ${selected ? 'is-selected' : ''} ${disabled ? 'is-disabled' : ''}`;
   if (density === 'header') {
@@ -103,13 +105,13 @@ export function CircleTile({
       {children}
     </>
   );
-  if (disabled) return <div className={cls} aria-disabled="true">{body}</div>;
+  if (disabled) return <div className={cls} aria-disabled="true" style={tone}>{body}</div>;
   return to ? (
-    <Link to={to} className={`${cls} ox-press`} onClick={onOpen}>
+    <Link to={to} className={`${cls} ox-press`} onClick={onOpen} style={tone}>
       {body}
     </Link>
   ) : (
-    <button type="button" className={`${cls} ox-press`} aria-pressed={selected ?? undefined} onClick={onOpen}>
+    <button type="button" className={`${cls} ox-press`} aria-pressed={selected ?? undefined} onClick={onOpen} style={tone}>
       {body}
     </button>
   );

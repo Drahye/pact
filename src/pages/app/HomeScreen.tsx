@@ -18,6 +18,7 @@ import { BottomNav } from '../../components/ui/BottomNav';
 import '../../components/ui/button.css';
 import { SectionHeading } from '../../components/ui/SectionHeading';
 import { TopBar } from '../../components/ui/TopBar';
+import { circleCover } from '../../lib/covers';
 import { isoDay } from '../../lib/dates';
 import { formatDate, greeting } from '../../lib/format';
 import { Screen } from './Screen';
@@ -89,7 +90,7 @@ export function HomeScreen() {
         />
       }
     >
-      <Hero className="xh--home home__header" photo={live ? heroPhoto : undefined}>
+      <Hero className="xh--home home__header" photo={h ? (live ? heroPhoto : undefined) ?? (user ? circleCover(user.id) : undefined) : undefined}>
         <p className="home__date">{formatDate(isoDay(new Date()), { weekday: 'long', month: 'long', day: 'numeric' })}</p>
         <h1 className="home__title">
           <span className="home__hi">{greeting()},</span>

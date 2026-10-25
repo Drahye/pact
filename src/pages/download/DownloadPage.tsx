@@ -1,4 +1,4 @@
-import { ArrowRight, Check, Download, Share, Smartphone, SquarePlus, MousePointerClick } from 'lucide-react';
+import { ArrowRightIcon, CheckIcon, CursorClickIcon, DeviceMobileIcon, DownloadSimpleIcon, ExportIcon, PlusSquareIcon } from '@phosphor-icons/react';
 import QRCode from 'qrcode';
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
@@ -24,9 +24,9 @@ const detectPlatform = (): Platform => (isIos(navigator.userAgent, navigator.pla
 const perks = ['Start a plan in three details', 'Everyone brings money, a task, or both', 'Pay for the plan straight from the Pact'];
 
 const steps = [
-  { Icon: MousePointerClick, title: 'Open PACT in your browser', line: 'Safari on iPhone, Chrome on Android. Scan the code on this page if you are on a computer.' },
-  { Icon: SquarePlus, title: 'Choose Add to Home Screen', line: 'On iPhone it is under Share. On Android, tap Install app in the browser menu.' },
-  { Icon: Smartphone, title: 'Open it like any app', line: 'Full screen, with your Pacts one tap away. No app store, nothing to update by hand.' },
+  { Icon: CursorClickIcon, title: 'Open PACT in your browser', line: 'Safari on iPhone, Chrome on Android. Scan the code on this page if you are on a computer.' },
+  { Icon: PlusSquareIcon, title: 'Choose Add to Home Screen', line: 'On iPhone it is under Share. On Android, tap Install app in the browser menu.' },
+  { Icon: DeviceMobileIcon, title: 'Open it like any app', line: 'Full screen, with your Pacts one tap away. No app store, nothing to update by hand.' },
 ] as const;
 
 export function DownloadPage() {
@@ -99,7 +99,7 @@ export function DownloadPage() {
                 {perks.map((p) => (
                   <li key={p}>
                     <span aria-hidden>
-                      <Check strokeWidth={3} />
+                      <CheckIcon weight="bold" />
                     </span>
                     {p}
                   </li>
@@ -124,14 +124,14 @@ export function DownloadPage() {
                   <p className="dl__install-note">PACT is installed on this device. Open it from your Home Screen.</p>
                 ) : platform === 'ios' ? (
                   <>
-                    <Button iconLeft={<Share />} onClick={() => setIosOpen(true)}>
+                    <Button iconLeft={<ExportIcon />} onClick={() => setIosOpen(true)}>
                       Add to Home Screen
                     </Button>
                     {!pwa.needsIosSteps && <p className="dl__install-note">Open this page on your iPhone to add it. Scan the code below.</p>}
                   </>
                 ) : pwa.canInstall ? (
                   <Button
-                    iconLeft={<Download />}
+                    iconLeft={<DownloadSimpleIcon />}
                     onClick={async () => setAsked((await pwa.install()) === 'dismissed' ? 'dismissed' : null)}
                   >
                     Install PACT
@@ -143,7 +143,7 @@ export function DownloadPage() {
               </div>
 
               <div className="dl__qr">
-                {qr ? <img src={qr} alt="QR code that opens PACT on your phone" width={120} height={120} /> : <Smartphone aria-hidden />}
+                {qr ? <img src={qr} alt="QR code that opens PACT on your phone" width={120} height={120} /> : <DeviceMobileIcon aria-hidden />}
                 <div>
                   <p className="dl__qr-title">On a computer?</p>
                   <p className="dl__qr-body">Scan with your phone’s camera to open PACT there.</p>
@@ -194,7 +194,7 @@ export function DownloadPage() {
             <p>
               <strong>Want to see it first?</strong> The full app runs in your browser, with the same screens and the same flow.
             </p>
-            <Button to="/app" variant="inverse" iconRight={<ArrowRight />}>
+            <Button to="/app" variant="inverse" iconRight={<ArrowRightIcon />}>
               Open the web app
             </Button>
           </div>

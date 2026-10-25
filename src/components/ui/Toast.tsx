@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { Check } from 'lucide-react';
+import { CheckIcon } from '@phosphor-icons/react';
 import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { spring } from '../../tokens/tokens';
@@ -51,7 +51,7 @@ function ToastViewport({ items }: { items: ToastItem[] }) {
           >
             {t.tone === 'success' && (
               <span className="toast__icon" aria-hidden>
-                <Check strokeWidth={3} />
+                <CheckIcon weight="bold" />
               </span>
             )}
             {t.message}

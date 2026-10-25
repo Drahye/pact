@@ -1,4 +1,4 @@
-import { Check, ImagePlus } from 'lucide-react';
+import { CheckIcon, ImageSquareIcon } from '@phosphor-icons/react';
 import { AppBar, Chip, DemoRing, Face, HeroCopy, kobo, NextStepCard, seg, sharesAt, StatusBar, Swap, cast } from './demoKit';
 
 /** Scene 5: the last loose ends settle, the organiser completes the Pact, and the outcome appears. t runs 0..1. */
@@ -40,7 +40,7 @@ export function CompleteDemo({ t }: { t: number }) {
               { n: 'Transport', k: 120, ok: transport },
             ].map((l) => (
               <li key={l.n} className="d-line">
-                <span className={`d-tick ${l.ok ? 'is-on' : ''}`}>{l.ok && <Check strokeWidth={3} />}</span>
+                <span className={`d-tick ${l.ok ? 'is-on' : ''}`}>{l.ok && <CheckIcon weight="bold" />}</span>
                 <span className="d-line__name">
                   <b>{l.n}</b>
                   <small className="num">{kobo(l.k)}</small>
@@ -54,7 +54,7 @@ export function CompleteDemo({ t }: { t: number }) {
           <p className="d-h">Tasks</p>
           <ul className="d-lines">
             <li className="d-line">
-              <span className={`d-tick ${decor ? 'is-on' : ''}`}>{decor && <Check strokeWidth={3} />}</span>
+              <span className={`d-tick ${decor ? 'is-on' : ''}`}>{decor && <CheckIcon weight="bold" />}</span>
               <span className="d-line__name">
                 <b>Pick up decorations</b>
                 <small>Femi</small>
@@ -75,7 +75,7 @@ export function CompleteDemo({ t }: { t: number }) {
         <div className="d-done__ring" style={{ transform: `scale(${0.92 + pop * 0.08})` }}>
           <DemoRing shares={sharesAt(500)} size={150} stroke={16}>
             <span className="d-check" style={{ transform: `scale(${pop})` }}>
-              <Check strokeWidth={3} />
+              <CheckIcon weight="bold" />
             </span>
           </DemoRing>
         </div>
@@ -109,7 +109,7 @@ export function CompleteDemo({ t }: { t: number }) {
         </div>
         <div className="d-memory">
           <span className="d-memory__t">
-            <ImagePlus /> Add a memory
+            <ImageSquareIcon /> Add a memory
           </span>
           <i className="m1" />
           <i className="m2" />

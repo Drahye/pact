@@ -1,4 +1,4 @@
-import { BadgeCheck, Lock } from 'lucide-react';
+import { LockIcon, SealCheckIcon } from '@phosphor-icons/react';
 import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TIER_LIMITS, type KycTier } from '../../../../shared/policy';
@@ -68,7 +68,7 @@ export function VerifyScreen() {
                   <span className="tier__name">{l.label}</span> <span className="tier__req">· {l.requirement}</span>
                 </span>
                 {user.kycTier === t && (
-                  <Badge tone="accent" icon={<BadgeCheck width={14} height={14} />}>
+                  <Badge tone="accent" icon={<SealCheckIcon width={14} height={14} />}>
                     Current
                   </Badge>
                 )}
@@ -92,7 +92,7 @@ export function VerifyScreen() {
         <form id="bvn-form" className="verify__form" onSubmit={submit} noValidate>
           <Input label="BVN" name="bvn" autoComplete="off" inputMode="numeric" maxLength={11} value={bvn} onChange={(e) => setBvn(e.target.value.replace(/\D/g, '').slice(0, 11))} hint="Dial *565*0# from your bank-registered line to get it." className="num" />
           <Input label="Date of birth" name="bday" autoComplete="bday" type="date" value={dob} onChange={(e) => setDob(e.target.value)} max={new Date(Date.now() - 18 * 365.25 * 86400000).toISOString().slice(0, 10)} />
-          <Notice icon={<Lock />}>We store only the last four digits and an encrypted copy for regulatory checks.{config?.deployEnv === 'staging' ? ' Beta test: enter the test BVN 22222222222. Never your real one.' : config?.sandbox && ' Sandbox: any 11 digits work.'}</Notice>
+          <Notice icon={<LockIcon />}>We store only the last four digits and an encrypted copy for regulatory checks.{config?.deployEnv === 'staging' ? ' Beta test: enter the test BVN 22222222222. Never your real one.' : config?.sandbox && ' Sandbox: any 11 digits work.'}</Notice>
           {error && <Notice tone="danger">{error}</Notice>}
         </form>
       )}

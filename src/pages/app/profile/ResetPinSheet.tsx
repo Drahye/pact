@@ -1,4 +1,4 @@
-import { FlaskConical } from 'lucide-react';
+import { FlaskIcon } from '@phosphor-icons/react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAccount } from '../../../api/account';
@@ -119,7 +119,7 @@ export function ResetPinSheet({ open, onClose }: { open: boolean; onClose: () =>
         <div className="sheet-form">
           <Input label="6-digit code" inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))} className="num" />
           {devCode && config?.exposeDevCodes && (
-            <Notice tone="sun" icon={<FlaskConical />}>
+            <Notice tone="sun" icon={<FlaskIcon />}>
               Sandbox: no message is sent. Your code is <strong className="num">{devCode}</strong>.{' '}
               <button type="button" className="link" onClick={() => setCode(devCode)}>
                 Fill it in

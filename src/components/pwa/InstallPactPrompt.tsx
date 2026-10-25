@@ -1,4 +1,4 @@
-import { Download, Share, SquarePlus } from 'lucide-react';
+import { DownloadSimpleIcon, ExportIcon, PlusSquareIcon } from '@phosphor-icons/react';
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '../../api/auth';
@@ -15,7 +15,7 @@ function IosSteps() {
     <ol className="install__steps">
       <li>
         <span className="install__step-icon" aria-hidden>
-          <Share />
+          <ExportIcon />
         </span>
         <span>
           Tap <strong>Share</strong> in Safari
@@ -23,7 +23,7 @@ function IosSteps() {
       </li>
       <li>
         <span className="install__step-icon" aria-hidden>
-          <SquarePlus />
+          <PlusSquareIcon />
         </span>
         <span>
           Choose <strong>Add to Home Screen</strong>
@@ -31,7 +31,7 @@ function IosSteps() {
       </li>
       <li>
         <span className="install__step-icon" aria-hidden>
-          <Download />
+          <DownloadSimpleIcon />
         </span>
         <span>
           Tap <strong>Add</strong>
@@ -150,7 +150,7 @@ export function InstallPactPrompt() {
         <div className="install__footer">
           <Button
             fullWidth
-            iconLeft={<Download />}
+            iconLeft={<DownloadSimpleIcon />}
             onClick={async () => {
               const outcome = await pwa.install();
               if (outcome === 'dismissed') pwa.snooze();

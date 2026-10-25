@@ -1,4 +1,4 @@
-import { Share2 } from 'lucide-react';
+import { ShareNetworkIcon } from '@phosphor-icons/react';
 import { useEffect, useRef, useState } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import type { Attendance, PlanDTO } from '../../../../shared/contracts';
@@ -207,7 +207,7 @@ export function PlanLinkScreen() {
         )}
 
         {(saved || joined || !live) && (
-          <Button variant="secondary" iconLeft={<Share2 />} onClick={share}>
+          <Button variant="secondary" iconLeft={<ShareNetworkIcon />} onClick={share}>
             Share with someone
           </Button>
         )}

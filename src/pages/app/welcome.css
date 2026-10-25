@@ -37,17 +37,11 @@
   gap: var(--space-3);
 }
 
-.intro-actions__signin {
-  text-align: center;
-  color: var(--color-text-secondary);
-  font-size: var(--t-support-size);
-}
-
-.intro-actions__signin a {
-  color: var(--color-text);
-  font-weight: var(--weight-semibold);
-  text-decoration: underline;
-  text-underline-offset: 3px;
+/* The second way in is the outlined twin of the first: same height and shape, no fill. */
+.proto--bold .intro-actions .btn--secondary {
+  background: var(--color-surface);
+  box-shadow: inset 0 0 0 1.5px var(--color-border-strong);
+  font-weight: var(--weight-bold);
 }
 
 .intro {

@@ -1,4 +1,4 @@
-import { ChevronLeft, X } from 'lucide-react';
+import { CaretLeftIcon, XIcon } from '@phosphor-icons/react';
 import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useScreenScroll } from '../../pages/app/Screen';
@@ -30,7 +30,7 @@ export function TopBar({ title, leading = 'back', backTo, onBack, trailing, tone
         {leading !== 'none' && (
           <IconButton
             label={leading === 'back' ? 'Back' : 'Close'}
-            icon={leading === 'back' ? <ChevronLeft /> : <X />}
+            icon={leading === 'back' ? <CaretLeftIcon /> : <XIcon />}
             variant="surface"
             onClick={goBack}
           />

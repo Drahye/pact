@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowRight } from 'lucide-react';
+import { ArrowDownIcon, ArrowRightIcon } from '@phosphor-icons/react';
 import { useRef } from 'react';
 import { Avatar } from '../../../components/ui/Avatar';
 import { Button } from '../../../components/ui/Button';
@@ -75,10 +75,10 @@ export function Hero() {
           </h1>
           <p className="hero__lede">PACT keeps the people, money, tasks and next steps for a shared plan in one place, so the plan actually gets done.</p>
           <div className="hero__ctas">
-            <Button to="/app" iconRight={<ArrowRight />}>
+            <Button to="/app" iconRight={<ArrowRightIcon />}>
               Start a Pact
             </Button>
-            <Button href="#story" variant="secondary" iconRight={<ArrowDown />}>
+            <Button href="#story" variant="secondary" iconRight={<ArrowDownIcon />}>
               See how it works
             </Button>
           </div>

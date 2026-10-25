@@ -1,4 +1,4 @@
-import { Handshake } from 'lucide-react';
+import { HandshakeIcon } from '@phosphor-icons/react';
 import { useId, useState } from 'react';
 import { formatNaira } from '../../lib/format';
 import { AvatarStack } from './AvatarStack';
@@ -123,7 +123,7 @@ export function PactObject({
     return (
       <article className={`ox-pact ox-pact--completed tint--${tint}`} aria-labelledby={`${id}-t`}>
         <p className="ox-kicker">
-          <Handshake aria-hidden />
+          <HandshakeIcon aria-hidden />
           <span>Pact</span>
         </p>
         <CompletionState
@@ -150,7 +150,7 @@ export function PactObject({
       <header className="ox-pact__head">
         <p className="ox-kicker">
           <StatusIndicator tone="live" />
-          <Handshake aria-hidden />
+          <HandshakeIcon aria-hidden />
           <span>Pact</span>
         </p>
         {daysLeft !== undefined && <span className="ox-chip t-meta">{daysLeft === 0 ? 'Due today' : `${daysLeft} ${daysLeft === 1 ? 'day' : 'days'} left`}</span>}

@@ -1,4 +1,4 @@
-import { Check, Copy, Link2, MessageCircle, MessageSquare, MoreHorizontal } from 'lucide-react';
+import { ChatCircleIcon, CheckIcon, CopyIcon, DotsThreeIcon, LinkIcon } from '@phosphor-icons/react';
 import { Chip, Face, kobo, seg, StatusBar, Swap, AppBar } from './demoKit';
 import { getUser } from '../../../data/users';
 
@@ -24,17 +24,17 @@ export function InviteDemo({ t }: { t: number }) {
 
         <div className="d-linkcard">
           <span className="d-linkcard__url">
-            <Link2 /> pact.app/sarahs-bday
+            <LinkIcon /> pact.app/sarahs-bday
           </span>
           <span className={`d-btn d-btn--sm ${copied ? 'is-done' : ''}`}>
             <Swap k={copied ? 'c' : 'n'}>
               {copied ? (
                 <>
-                  <Check /> Copied
+                  <CheckIcon /> Copied
                 </>
               ) : (
                 <>
-                  <Copy /> Copy link
+                  <CopyIcon /> Copy link
                 </>
               )}
             </Swap>
@@ -43,19 +43,19 @@ export function InviteDemo({ t }: { t: number }) {
         <div className="d-share">
           <span>
             <i className="d-share__wa">
-              <MessageCircle />
+              <ChatCircleIcon />
             </i>
             WhatsApp
           </span>
           <span>
             <i className="d-share__sm">
-              <MessageSquare />
+              <ChatCircleIcon />
             </i>
             Messages
           </span>
           <span>
             <i className="d-share__more">
-              <MoreHorizontal />
+              <DotsThreeIcon />
             </i>
             More
           </span>

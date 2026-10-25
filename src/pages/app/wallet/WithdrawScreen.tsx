@@ -1,5 +1,5 @@
 import { motion, useReducedMotion } from 'framer-motion';
-import { Check, Landmark, Plus, X } from 'lucide-react';
+import { BankIcon, CheckIcon, PlusIcon, XIcon } from '@phosphor-icons/react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MIN_WITHDRAWAL, TIER_LIMITS, WITHDRAWAL_FEE } from '../../../../shared/policy';
@@ -67,7 +67,7 @@ export function WithdrawScreen() {
             <span className="state__spinner topup-status__spinner" aria-hidden />
           ) : (
             <motion.span className={`topup-status__icon ${state === 'sent' ? 'is-ok' : 'is-bad'}`} initial={reduce ? false : { scale: 0.4 }} animate={{ scale: 1 }} transition={spring.pop} aria-hidden>
-              {state === 'sent' ? <Check strokeWidth={3} /> : <X strokeWidth={3} />}
+              {state === 'sent' ? <CheckIcon weight="bold" /> : <XIcon weight="bold" />}
             </motion.span>
           )}
           <h1 className="large-title">{state === 'sending' ? 'Sending to your bank' : state === 'sent' ? 'On its way' : 'Transfer returned'}</h1>
@@ -90,7 +90,7 @@ export function WithdrawScreen() {
       topBar={<TopBar tone="transparent" backTo="/app/wallet" title="Withdraw" />}
       footer={
         accounts.data && !account ? (
-          <Button fullWidth iconLeft={<Plus />} onClick={() => setAddOpen(true)}>
+          <Button fullWidth iconLeft={<PlusIcon />} onClick={() => setAddOpen(true)}>
             Add a bank account
           </Button>
         ) : (
@@ -129,7 +129,7 @@ export function WithdrawScreen() {
         <div className="choices" role="radiogroup" aria-label="Bank account">
           {accounts.data?.map((a) => (
             <button key={a.id} type="button" role="radio" aria-checked={account?.id === a.id} className={`choice ${account?.id === a.id ? 'is-on' : ''}`} onClick={() => setChosen(a.id)}>
-              <span className="choice__icon tint--lilac"><Landmark /></span>
+              <span className="choice__icon tint--lilac"><BankIcon /></span>
               <span className="choice__text">
                 <span className="choice__title">{a.bankName}</span>
                 <span className="choice__sub num">
@@ -140,7 +140,7 @@ export function WithdrawScreen() {
             </button>
           ))}
           <button type="button" className="choice choice--add" onClick={() => setAddOpen(true)}>
-            <span className="choice__icon"><Plus /></span>
+            <span className="choice__icon"><PlusIcon /></span>
             <span className="choice__text">
               <span className="choice__title">Add a bank account</span>
             </span>

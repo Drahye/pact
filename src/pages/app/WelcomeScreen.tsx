@@ -1,6 +1,6 @@
-import { Link2 } from 'lucide-react';
+import { LinkIcon } from '@phosphor-icons/react';
 import { useEffect, useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { PactLogo } from '../../components/brand/PactLogo';
@@ -51,9 +51,9 @@ export function WelcomeScreen() {
           <Button to="/app/auth/start" fullWidth size="lg">
             Get started
           </Button>
-          <p className="intro-actions__signin">
-            Already have an account? <Link to="/app/auth/signin">Sign in</Link>
-          </p>
+          <Button to="/app/auth/signin" variant="secondary" fullWidth size="lg">
+            I already have an account
+          </Button>
         </div>
       }
     >
@@ -102,7 +102,7 @@ export function WelcomeScreen() {
             setLink(e.target.value);
             setError(undefined);
           }}
-          leading={<Link2 />}
+          leading={<LinkIcon />}
           error={error}
           placeholder="pact.app/app/join/K7M2Q9XR"
           hint="Or just the invite code"

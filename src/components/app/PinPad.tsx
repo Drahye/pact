@@ -1,5 +1,5 @@
 import { motion, useAnimationControls } from 'framer-motion';
-import { Delete } from 'lucide-react';
+import { BackspaceIcon } from '@phosphor-icons/react';
 import { useEffect, useState } from 'react';
 import './app-ui.css';
 
@@ -74,7 +74,7 @@ export function PinPad({ onComplete, busy, error, errorKey, label = 'Transaction
             <span key={i} />
           ) : (
             <button key={i} type="button" className="pinpad__key" onClick={() => void press(k)} disabled={busy} aria-label={k === 'del' ? 'Delete' : k}>
-              {k === 'del' ? <Delete aria-hidden /> : <span className="num">{k}</span>}
+              {k === 'del' ? <BackspaceIcon aria-hidden /> : <span className="num">{k}</span>}
             </button>
           ),
         )}

@@ -1,4 +1,4 @@
-import { Plus } from 'lucide-react';
+import { PlusIcon } from '@phosphor-icons/react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { MemoryRouter, useSearchParams } from 'react-router-dom';
 import type { Attendance } from '../../../shared/contracts';
@@ -540,7 +540,7 @@ function CreateShell() {
                     setOpen(true);
                   }}
                 >
-                  <Plus aria-hidden />
+                  <PlusIcon aria-hidden />
                 </button>
               )}
               {mode === 'dark' && <p className="t-support">Open from the light frame, or use the in-place preview below.</p>}

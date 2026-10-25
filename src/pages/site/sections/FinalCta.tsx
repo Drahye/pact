@@ -1,4 +1,4 @@
-import { ArrowRight } from 'lucide-react';
+import { ArrowRightIcon } from '@phosphor-icons/react';
 import { useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '../../../components/ui/Button';
@@ -29,7 +29,7 @@ export function FinalCta() {
             </h2>
             <p className="final__lede">PACT helps your group track what matters, contribute in different ways, and actually get to the outcome.</p>
             <div className="final__ctas">
-              <Button to="/app" variant="inverse" iconRight={<ArrowRight />}>
+              <Button to="/app" variant="inverse" iconRight={<ArrowRightIcon />}>
                 Start a Pact
               </Button>
             </div>

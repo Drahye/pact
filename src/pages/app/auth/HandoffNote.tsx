@@ -1,4 +1,4 @@
-import { Check } from 'lucide-react';
+import { CheckIcon } from '@phosphor-icons/react';
 import { OBJECT_KINDS } from '../../../components/objects/kinds';
 import { handoffWords, readHandoff, type Handoff } from './handoff';
 import './handoff.css';
@@ -22,7 +22,7 @@ export function HandoffChip({ h }: { h: Pick<Handoff, 'kind' | 'title' | 'from' 
       </span>
       {h.choice && (
         <span className="handoff__choice">
-          <Check aria-hidden strokeWidth={3} /> {h.choice}
+          <CheckIcon aria-hidden weight="bold" /> {h.choice}
         </span>
       )}
     </div>

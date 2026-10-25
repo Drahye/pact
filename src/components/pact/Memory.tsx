@@ -1,4 +1,4 @@
-import { Camera, ImagePlus, Pencil, Trash2 } from 'lucide-react';
+import { CameraIcon, ImageSquareIcon, PencilSimpleIcon, TrashIcon } from '@phosphor-icons/react';
 import { useEffect, useRef, useState } from 'react';
 import { ApiError } from '../../api/client';
 import { usePhoto, usePactPlan } from '../../api/hooks';
@@ -38,7 +38,7 @@ export function MemorySection({ pact, meId }: { pact: Pact; meId: string }) {
   if (!m && !isOrganizer) {
     return (
       <section className="memory memory--empty" aria-label="Memory">
-        <Camera aria-hidden />
+        <CameraIcon aria-hidden />
         <p>{getUser(pact.organizerId).name} can add photos and a note once it happens.</p>
       </section>
     );
@@ -52,7 +52,7 @@ export function MemorySection({ pact, meId }: { pact: Pact; meId: string }) {
         </h2>
         {isOrganizer && m && (
           <button type="button" className="memory__edit" onClick={() => setEditing(true)}>
-            <Pencil aria-hidden /> Edit
+            <PencilSimpleIcon aria-hidden /> Edit
           </button>
         )}
       </div>
@@ -70,7 +70,7 @@ export function MemorySection({ pact, meId }: { pact: Pact; meId: string }) {
         </>
       ) : (
         <button type="button" className="memory__add" onClick={() => setEditing(true)}>
-          <ImagePlus aria-hidden />
+          <ImageSquareIcon aria-hidden />
           <span>
             <strong>Add the memory</strong>
             <span>A few photos and a line about how it went. Only people in this Pact can see it.</span>
@@ -88,7 +88,7 @@ export function MemorySection({ pact, meId }: { pact: Pact; meId: string }) {
               <Button
                 variant="secondary"
                 size="md"
-                iconLeft={<Trash2 />}
+                iconLeft={<TrashIcon />}
                 onClick={async () => {
                   try {
                     await plan.deletePhoto.mutateAsync(viewing);
@@ -213,7 +213,7 @@ function MemorySheet({ pact, open, onClose }: { pact: Pact; open: boolean; onClo
             ))}
             {photos.length + uploading < MAX_PHOTOS && (
               <button type="button" className="memory__photo memory__photo--add" onClick={() => file.current?.click()}>
-                <ImagePlus aria-hidden />
+                <ImageSquareIcon aria-hidden />
                 <span>Add</span>
               </button>
             )}

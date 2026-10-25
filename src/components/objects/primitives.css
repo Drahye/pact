@@ -1498,3 +1498,10 @@
 
 /* Little overlap here: at this size the next face's ring would otherwise bite into the letter before it. */
 .ox-pact__gave .avatar-group > .avatar + .avatar { margin-left: -4px; }
+
+/* The small icon after a Coming up title, in the title's own size. */
+.ox-agenda__glyph {
+  display: inline-block;
+  vertical-align: -0.12em;
+  color: var(--color-text-secondary);
+}

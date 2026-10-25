@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowLeft, FlaskConical } from 'lucide-react';
+import { ArrowLeftIcon, FlaskIcon } from '@phosphor-icons/react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link, useLocation, useOutlet } from 'react-router-dom';
 import { useAuth } from '../../api/auth';
@@ -8,6 +8,7 @@ import { clearReturnTo } from './auth/flow';
 import { PactLogo } from '../../components/brand/PactLogo';
 import { CreateSheetProvider } from '../../components/create/CreateSheet';
 import { OverlayRootContext } from '../../components/ui/overlay';
+import { ErrorSurfacer } from '../../components/ui/ErrorSurfacer';
 import { ToastProvider } from '../../components/ui/Toast';
 import { useMediaQuery } from '../../lib/useMediaQuery';
 import { ease } from '../../tokens/tokens';
@@ -58,14 +59,14 @@ function DemoPanel() {
   return (
     <aside className="proto-panel" aria-label="About this demo">
       <Link to="/" className="proto-panel__back">
-        <ArrowLeft aria-hidden /> Website
+        <ArrowLeftIcon aria-hidden /> Website
       </Link>
       <div className="proto-panel__intro">
         <PactLogo size="lg" />
         <p>{config?.deployEnv === 'development' ? 'The full PACT app, running against the live API. Sign up with any Nigerian number, or use a demo account below.' : 'PACT is made for your phone. For the best experience, open this link on it.'}</p>
         {config?.sandbox && (
           <span className="sandbox-tag">
-            <FlaskConical aria-hidden /> Sandbox payments: no real money moves
+            <FlaskIcon aria-hidden /> Sandbox payments: no real money moves
           </span>
         )}
       </div>
@@ -179,6 +180,7 @@ export function AppShell() {
             <div ref={setOverlayRoot} className="device__overlay" />
             {framed && <span className="device__home" aria-hidden />}
           </div>
+          <ErrorSurfacer />
         </div>
       </div>
     </ToastProviderWithRoot>

@@ -1,4 +1,4 @@
-import { Activity, House, Plus, UserRound, UsersRound } from 'lucide-react';
+import { HouseIcon, PlusIcon, PulseIcon, UserCircleIcon, UsersThreeIcon, type Icon } from '@phosphor-icons/react';
 import { motion } from 'framer-motion';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useCreateSheet } from '../create/CreateSheet';
@@ -10,11 +10,11 @@ import './nav.css';
  * verb are different kinds of control, so they are different shapes. Pacts and Wallet are not tabs: they live under Home and Me
  * (a Pact is reached from Home, Circles and Me; the wallet from Home and Me), and stay highlighted there.
  */
-const tabs = [
-  { to: '/app/home', label: 'Home', icon: <House />, also: ['/app/pacts'] },
-  { to: '/app/circles', label: 'Circles', icon: <UsersRound />, also: [] },
-  { to: '/app/activity', label: 'Activity', icon: <Activity />, also: [] },
-  { to: '/app/profile', label: 'Me', icon: <UserRound />, also: ['/app/wallet'] },
+const tabs: { to: string; label: string; Icon: Icon; also: string[] }[] = [
+  { to: '/app/home', label: 'Home', Icon: HouseIcon, also: ['/app/pacts'] },
+  { to: '/app/circles', label: 'Circles', Icon: UsersThreeIcon, also: [] },
+  { to: '/app/activity', label: 'Activity', Icon: PulseIcon, also: [] },
+  { to: '/app/profile', label: 'Me', Icon: UserCircleIcon, also: ['/app/wallet'] },
 ];
 
 export function BottomNav() {
@@ -26,9 +26,8 @@ export function BottomNav() {
       <NavLink key={t.to} to={t.to} className={() => `tabbar__item ${active ? 'is-active' : ''}`} aria-current={active ? 'page' : undefined}>
         {() => (
           <>
-            {active && <motion.span layoutId="tab-active" className="tabbar__active" transition={spring.soft} />}
             <span className="tabbar__icon" aria-hidden>
-              {t.icon}
+              <t.Icon weight={active ? 'fill' : 'regular'} />
             </span>
             <span className="tabbar__label">{t.label}</span>
           </>
@@ -49,7 +48,7 @@ export function BottomNav() {
         whileTap={{ scale: 0.92 }}
         transition={spring.press}
       >
-        <Plus aria-hidden />
+        <PlusIcon weight="bold" aria-hidden />
       </motion.button>
     </nav>
   );

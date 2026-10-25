@@ -1,4 +1,4 @@
-import { Camera, Check } from 'lucide-react';
+import { CameraIcon, CheckIcon } from '@phosphor-icons/react';
 import { useRef } from 'react';
 import { coversFor, coverUrl } from '../../lib/covers';
 import { Button } from '../ui/Button';
@@ -17,7 +17,7 @@ export function CoverSheet({ open, onClose, category, current, onPick, onUpload,
       {onUpload && (
         <>
           <button type="button" className="cover-upload" disabled={busy} onClick={() => file.current?.click()}>
-            <Camera aria-hidden />
+            <CameraIcon aria-hidden />
             <span>
               <strong>Use your own photo</strong>
               <small>Only people in the {who} will see it.</small>
@@ -46,7 +46,7 @@ export function CoverSheet({ open, onClose, category, current, onPick, onUpload,
               <span>{c.label}</span>
               {current === c.key && (
                 <i aria-hidden>
-                  <Check strokeWidth={3} />
+                  <CheckIcon weight="bold" />
                 </i>
               )}
             </button>

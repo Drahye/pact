@@ -1,4 +1,4 @@
-import { Check, ChevronDown, ChevronRight, History, Phone, Plus, RotateCcw, Scale, ShoppingBag, Wallet, X } from 'lucide-react';
+import { ArrowCounterClockwiseIcon, CaretDownIcon, CaretRightIcon, CheckIcon, ClockCounterClockwiseIcon, PhoneIcon, PlusIcon, ScalesIcon, ShoppingBagIcon, WalletIcon, XIcon } from '@phosphor-icons/react';
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ApiError, newIdempotencyKey } from '../../api/client';
@@ -79,7 +79,7 @@ function Disclosure({ icon, title, summary, open, onToggle, children }: { icon: 
           <strong>{title}</strong>
           {summary && <small>{summary}</small>}
         </span>
-        <ChevronDown aria-hidden className="disclosure__chev" />
+        <CaretDownIcon aria-hidden className="disclosure__chev" />
       </button>
       {open && (
         <div id={id} className="disclosure__body">
@@ -332,7 +332,7 @@ export function CreatePactScreen() {
     >
       {planId && planDraft.error && step === 'what' && <Notice tone="danger">{(planDraft.error as ApiError).message}</Notice>}
       {restored && step === 'what' && (
-        <Notice tone="accent" icon={<History />}>
+        <Notice tone="accent" icon={<ClockCounterClockwiseIcon />}>
           We kept what you’d filled in.{' '}
           <button type="button" className="link" onClick={startOver}>
             Start over
@@ -379,7 +379,7 @@ export function CreatePactScreen() {
             ) : (
               <span className="create__invite-text">{circleMembers.length ? 'Add someone else' : 'Invite people now'}</span>
             )}
-            <ChevronRight aria-hidden />
+            <CaretRightIcon aria-hidden />
           </button>
         </>
       )}
@@ -391,7 +391,7 @@ export function CreatePactScreen() {
               const on = tasks.includes(t);
               return (
                 <button key={t} type="button" className={`suggest__chip ${on ? 'is-on' : ''}`} aria-pressed={on} onClick={() => toggleTask(t)}>
-                  {on ? <Check aria-hidden /> : <Plus aria-hidden />} {t}
+                  {on ? <CheckIcon aria-hidden /> : <PlusIcon aria-hidden />} {t}
                 </button>
               );
             })}
@@ -444,7 +444,7 @@ export function CreatePactScreen() {
                       <input className="num" inputMode="numeric" aria-label={`Item ${i + 1} price`} placeholder="0" value={formatAmountInput(it.price)} onChange={(e) => setItem(it.key, { price: Math.min(50_000_000, parseAmount(e.target.value)) })} />
                     </span>
                     <button type="button" className="budget-edit__remove" aria-label={`Remove ${it.name || 'item'}`} onClick={() => setItems((all) => all.filter((x) => x.key !== it.key))}>
-                      <X />
+                      <XIcon />
                     </button>
                   </div>
                   <div className="item-edit__extra">
@@ -456,7 +456,7 @@ export function CreatePactScreen() {
             </ul>
             <div className="suggest">
               <button type="button" className="suggest__chip suggest__chip--own" onClick={addItem}>
-                <Plus aria-hidden /> Add an item
+                <PlusIcon aria-hidden /> Add an item
               </button>
             </div>
             {touched && errors.target && <p className="field__error">{errors.target}</p>}
@@ -500,7 +500,7 @@ export function CreatePactScreen() {
                     />
                   </span>
                   <button type="button" className="budget-edit__remove" aria-label={`Remove ${l.name || 'line'}`} onClick={() => setLines((all) => all.filter((x) => x.key !== l.key))}>
-                    <X />
+                    <XIcon />
                   </button>
                 </li>
               ))}
@@ -510,11 +510,11 @@ export function CreatePactScreen() {
                 .filter((name) => !lines.some((l) => l.name.toLowerCase() === name.toLowerCase()))
                 .map((name) => (
                   <button key={name} type="button" className="suggest__chip" onClick={() => addLine(name)}>
-                    <Plus aria-hidden /> {name}
+                    <PlusIcon aria-hidden /> {name}
                   </button>
                 ))}
               <button type="button" className="suggest__chip suggest__chip--own" onClick={() => addLine()}>
-                <Plus aria-hidden /> Add a line
+                <PlusIcon aria-hidden /> Add a line
               </button>
             </div>
             <p className="budget-edit__total">
@@ -526,7 +526,7 @@ export function CreatePactScreen() {
 
         {mode === 'target' && (
           <button type="button" className="create__link" onClick={() => { setMode('budget'); if (!lines.length) setLines(template.budget.slice(0, 3).map((name) => ({ key: lineKey++, name, amount: 0 }))); }}>
-            <Plus aria-hidden /> Break it into what the money covers
+            <PlusIcon aria-hidden /> Break it into what the money covers
           </button>
         )}
         {mode === 'budget' && (
@@ -542,14 +542,14 @@ export function CreatePactScreen() {
 
           <StepHint show={touched && !!firstError}>{firstError}</StepHint>
         {mode !== 'orders' && (
-          <Disclosure icon={<ShoppingBag aria-hidden />} title="More ways to use PACT" summary="Group orders" open={moreOpen} onToggle={() => setMoreOpen((o) => !o)}>
+          <Disclosure icon={<ShoppingBagIcon aria-hidden />} title="More ways to use PACT" summary="Group orders" open={moreOpen} onToggle={() => setMoreOpen((o) => !o)}>
             <button type="button" className="choice" onClick={() => { setMode('orders'); if (!items.length) addItem(); }}>
-              <span className="choice__icon tint--pink"><ShoppingBag /></span>
+              <span className="choice__icon tint--pink"><ShoppingBagIcon /></span>
               <span className="choice__text">
                 <span className="choice__title">Group order</span>
                 <span className="choice__sub">Aso-ebi, shirts, tickets: people order what they want and pay for their own.</span>
               </span>
-              <ChevronRight aria-hidden />
+              <CaretRightIcon aria-hidden />
             </button>
           </Disclosure>
         )}
@@ -591,13 +591,13 @@ export function CreatePactScreen() {
             )}
           </section>
         {mode === 'orders' ? (
-          <Notice icon={<Scale />}>
+          <Notice icon={<ScalesIcon />}>
             The date above is the pay-by date. People pay for their own orders by then, and PACT reminds them on the day. Unpaid orders are released after it.
           </Notice>
         ) : (
           <div className="create__rules">
             <p className="create__rules-line">
-              <Scale aria-hidden />
+              <ScalesIcon aria-hidden />
               <span>
                 <strong>If the goal isn’t reached:</strong>{' '}
                 {policy === 'refund' ? 'everyone gets their money back.' : 'the organiser keeps what was raised.'}{' '}
@@ -638,11 +638,11 @@ export function CreatePactScreen() {
         </div>
         <div className="field">
           <span className="field__label" id="rule-label">
-            <Scale aria-hidden className="create__label-icon" /> If the goal isn’t reached by the deadline
+            <ScalesIcon aria-hidden className="create__label-icon" /> If the goal isn’t reached by the deadline
           </span>
           <div className="choices" role="radiogroup" aria-labelledby="rule-label">
             <button type="button" role="radio" aria-checked={policy === 'refund'} className={`choice ${policy === 'refund' ? 'is-on' : ''}`} onClick={() => setPolicy('refund')}>
-              <span className="choice__icon tint--mint"><RotateCcw /></span>
+              <span className="choice__icon tint--mint"><ArrowCounterClockwiseIcon /></span>
               <span className="choice__text">
                 <span className="choice__title">Refund everyone</span>
                 <span className="choice__sub">Each contribution goes back automatically. Recommended.</span>
@@ -650,7 +650,7 @@ export function CreatePactScreen() {
               <span className="choice__radio" aria-hidden />
             </button>
             <button type="button" role="radio" aria-checked={policy === 'release'} className={`choice ${policy === 'release' ? 'is-on' : ''}`} onClick={() => setPolicy('release')}>
-              <span className="choice__icon tint--sun"><Wallet /></span>
+              <span className="choice__icon tint--sun"><WalletIcon /></span>
               <span className="choice__text">
                 <span className="choice__title">Keep what was raised</span>
                 <span className="choice__sub">The organiser receives whatever came in.</span>
@@ -697,7 +697,7 @@ export function CreatePactScreen() {
                 addPhone();
               }
             }}
-            leading={<Phone />}
+            leading={<PhoneIcon />}
             error={phoneError}
             type="tel"
             name="invite-phone"
@@ -717,7 +717,7 @@ export function CreatePactScreen() {
                 .filter((r) => !phones.includes(r.phone))
                 .map((r) => (
                   <button key={r.phone} type="button" className="suggest__chip" onClick={() => setPhones((l) => [...l, r.phone])}>
-                    <Plus aria-hidden /> <span className="num">{r.phone}</span>
+                    <PlusIcon aria-hidden /> <span className="num">{r.phone}</span>
                   </button>
                 ))}
             </div>
@@ -729,7 +729,7 @@ export function CreatePactScreen() {
               <li key={p}>
                 <span className="num">{p}</span>
                 <button type="button" aria-label={`Remove ${p}`} onClick={() => setPhones((l) => l.filter((x) => x !== p))}>
-                  <X />
+                  <XIcon />
                 </button>
               </li>
             ))}
@@ -749,7 +749,7 @@ export function CreatePactScreen() {
                         {p.firstName} {p.lastName}
                       </span>
                       <span className="contact__check" aria-hidden>
-                        {on && <Check strokeWidth={3} />}
+                        {on && <CheckIcon weight="bold" />}
                       </span>
                     </button>
                   </li>

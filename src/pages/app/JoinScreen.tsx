@@ -1,4 +1,4 @@
-import { CalendarDays, Copy, Landmark, Users } from 'lucide-react';
+import { BankIcon, CalendarDotsIcon, CopyIcon, UsersIcon } from '@phosphor-icons/react';
 import { useState } from 'react';
 import type { Participation } from '../../data/types';
 import { ParticipationPicker } from './detail/Sheets';
@@ -133,10 +133,10 @@ export function JoinScreen() {
         )}
         <ul className="join__facts">
           <li>
-            <Users aria-hidden /> {p.memberCount} {p.memberCount === 1 ? 'person' : 'people'} in
+            <UsersIcon aria-hidden /> {p.memberCount} {p.memberCount === 1 ? 'person' : 'people'} in
           </li>
           <li>
-            <CalendarDays aria-hidden /> {formatDate(p.deadline, { month: 'short', day: 'numeric' })} · {formatDaysLeft(daysUntil(p.deadline))}
+            <CalendarDotsIcon aria-hidden /> {formatDate(p.deadline, { month: 'short', day: 'numeric' })} · {formatDaysLeft(daysUntil(p.deadline))}
           </li>
         </ul>
       </div>
@@ -153,7 +153,7 @@ export function JoinScreen() {
         <section className="pay-transfer" aria-labelledby="join-pay">
           <div className="pay-transfer__head">
             <span className="pay-transfer__icon tint--mint" aria-hidden>
-              <Landmark />
+              <BankIcon />
             </span>
             <div>
               <h2 id="join-pay" className="pay-transfer__title">
@@ -169,7 +169,7 @@ export function JoinScreen() {
             aria-label={`Copy account number ${p.bankAccount.accountNumber}`}
           >
             <span className="num">{p.bankAccount.accountNumber.replace(/(\d{3})(\d{3})(\d{4})/, '$1 $2 $3')}</span>
-            <Copy aria-hidden />
+            <CopyIcon aria-hidden />
           </button>
           <p className="pay-transfer__meta">
             {p.bankAccount.bankName} · {p.bankAccount.accountName}

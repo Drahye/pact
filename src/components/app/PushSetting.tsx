@@ -1,4 +1,4 @@
-import { BellRing } from 'lucide-react';
+import { BellRingingIcon } from '@phosphor-icons/react';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../api/auth';
 import { pushDiagnostics } from '../../lib/push';
@@ -47,7 +47,7 @@ export function PushSetting() {
     <SettingsGroup id="st-notify" title="Notifications" plain>
     <div className="push-setting">
       <span className="push-setting__icon" aria-hidden>
-        <BellRing />
+        <BellRingingIcon />
       </span>
       <div className="push-setting__text">
         <span id="push-setting-label" className="push-setting__title">

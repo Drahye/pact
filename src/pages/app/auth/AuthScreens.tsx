@@ -1,4 +1,4 @@
-import { FlaskConical, Phone, ShieldCheck } from 'lucide-react';
+import { FlaskIcon, PhoneIcon, ShieldCheckIcon } from '@phosphor-icons/react';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../../api/auth';
@@ -117,7 +117,7 @@ export function PhoneScreen() {
         </div>
       </form>
       <div className="auth__trust">
-        <ShieldCheck aria-hidden />
+        <ShieldCheckIcon aria-hidden />
         <p>Your number is never shown to people outside your Pacts.</p>
       </div>
     </Screen>
@@ -208,7 +208,7 @@ export function CodeScreen() {
       {error && <p className="field__error auth__error">{error}</p>}
 
       {devCode && config?.exposeDevCodes && (
-        <Notice tone="sun" icon={<FlaskConical />}>
+        <Notice tone="sun" icon={<FlaskIcon />}>
           Sandbox: no SMS is sent. Your code is <strong className="num">{devCode}</strong>.{' '}
           <button type="button" className="link" onClick={() => onChange(devCode)}>
             Fill it in
@@ -220,7 +220,7 @@ export function CodeScreen() {
         {resendIn > 0 ? (
           <p className="num">Resend code in 0:{String(resendIn).padStart(2, '0')}</p>
         ) : (
-          <Button variant="ghost" size="sm" iconLeft={<Phone />} onClick={resend}>
+          <Button variant="ghost" size="sm" iconLeft={<PhoneIcon />} onClick={resend}>
             Resend code
           </Button>
         )}

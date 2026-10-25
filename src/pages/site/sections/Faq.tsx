@@ -1,4 +1,4 @@
-import { Plus } from 'lucide-react';
+import { PlusIcon } from '@phosphor-icons/react';
 import { SectionHeading } from '../../../components/ui/SectionHeading';
 import { CARD_FEE_CAP, NGN, TIER_LIMITS, VENDOR_APPROVAL_THRESHOLD, WITHDRAWAL_FEE } from '../../../../shared/policy';
 
@@ -45,7 +45,7 @@ export function Faq() {
             <details key={f.q} className="faq__item">
               <summary>
                 <span>{f.q}</span>
-                <Plus aria-hidden />
+                <PlusIcon aria-hidden />
               </summary>
               <p>{f.a}</p>
             </details>

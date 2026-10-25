@@ -1,4 +1,4 @@
-import { Ellipsis, Share2 } from 'lucide-react';
+import { DotsThreeIcon, ShareNetworkIcon } from '@phosphor-icons/react';
 import { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import type { SplitDTO, SplitShareDTO } from '../../../../shared/contracts';
@@ -114,8 +114,8 @@ export function SplitScreen() {
           title={s.circle.name}
           trailing={
             <span className="detail__top-actions">
-              <IconButton label="Share split" icon={<Share2 />} onClick={share} />
-              {(s.canEdit || s.canHandOver) && <IconButton label="More" icon={<Ellipsis />} onClick={() => setSheet(s.canEdit ? 'menu' : 'hand')} />}
+              <IconButton label="Share split" icon={<ShareNetworkIcon />} onClick={share} />
+              {(s.canEdit || s.canHandOver) && <IconButton label="More" icon={<DotsThreeIcon />} onClick={() => setSheet(s.canEdit ? 'menu' : 'hand')} />}
             </span>
           }
         />
@@ -161,7 +161,7 @@ export function SplitScreen() {
         )}
 
         {!cancelled && s.status === 'open' && (
-          <Button variant="secondary" iconLeft={<Share2 />} onClick={share}>
+          <Button variant="secondary" iconLeft={<ShareNetworkIcon />} onClick={share}>
             Share
           </Button>
         )}

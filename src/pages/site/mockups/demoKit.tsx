@@ -1,4 +1,4 @@
-import { Check, ChevronLeft, Share2, X } from 'lucide-react';
+import { CaretLeftIcon, CheckIcon, ShareNetworkIcon, XIcon } from '@phosphor-icons/react';
 import type { ReactNode } from 'react';
 import { Avatar } from '../../../components/ui/Avatar';
 import '../../../components/pact/segmented-ring.css';
@@ -72,11 +72,11 @@ export function StatusBar() {
 export function AppBar({ title, left = 'back', right }: { title: string; left?: 'back' | 'close'; right?: boolean }) {
   return (
     <div className="d-bar">
-      <span className="d-bar__btn">{left === 'close' ? <X /> : <ChevronLeft />}</span>
+      <span className="d-bar__btn">{left === 'close' ? <XIcon /> : <CaretLeftIcon />}</span>
       <span className="d-bar__title">{title}</span>
       {right ? (
         <span className="d-bar__btn">
-          <Share2 />
+          <ShareNetworkIcon />
         </span>
       ) : (
         <span className="d-bar__btn d-bar__btn--ghost" />
@@ -162,7 +162,7 @@ export function TaskRow({ name, who, status }: { name: string; who?: string; sta
   const label = { open: 'Unclaimed', doing: 'In progress', done: 'Done' }[status];
   return (
     <li className={`d-task d-task--${status}`}>
-      <span className="d-task__mark">{status === 'done' && <Check strokeWidth={3} />}</span>
+      <span className="d-task__mark">{status === 'done' && <CheckIcon weight="bold" />}</span>
       <span className="d-task__name">
         <b>{name}</b>
         <small>{who ? getUser(who).name : 'Nobody yet'}</small>

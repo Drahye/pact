@@ -1,4 +1,4 @@
-import { ArrowRight } from 'lucide-react';
+import { ArrowRightIcon } from '@phosphor-icons/react';
 import { useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Avatar } from '../../../../components/ui/Avatar';
@@ -72,7 +72,7 @@ export function PvFinal() {
               Your people are waiting.
             </h2>
             <p className="lp2-final__lede">Start a Pact, send one link, and watch the plan become a memory.</p>
-            <Button to="/app" size="lg" iconRight={<ArrowRight />}>
+            <Button to="/app" size="lg" iconRight={<ArrowRightIcon />}>
               Start a Pact
             </Button>
             <p className="lp2-final__note">

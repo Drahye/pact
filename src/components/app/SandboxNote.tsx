@@ -1,4 +1,4 @@
-import { FlaskConical } from 'lucide-react';
+import { FlaskIcon } from '@phosphor-icons/react';
 import { useAuth } from '../../api/auth';
 import { Notice } from './States';
 
@@ -7,7 +7,7 @@ export function SandboxNote() {
   const { config } = useAuth();
   if (!config?.sandbox) return null;
   return (
-    <Notice tone="sun" icon={<FlaskConical aria-hidden />}>
+    <Notice tone="sun" icon={<FlaskIcon aria-hidden />}>
       Sandbox beta: this is test money. No real money moves in or out of PACT.
     </Notice>
   );

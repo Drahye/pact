@@ -1,4 +1,4 @@
-import { Handshake, Settings2, ShieldCheck, Wallet as WalletIcon } from 'lucide-react';
+import { HandshakeIcon, ShieldCheckIcon, SlidersHorizontalIcon, WalletIcon } from '@phosphor-icons/react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../api/auth';
 import { useHome } from '../../api/home';
@@ -50,7 +50,7 @@ export function ProfileScreen() {
     <Screen
       tabBar={<BottomNav />}
       className="profile xhero tint--pink"
-      topBar={<TopBar leading="none" tone="transparent" title="Me" trailing={<Link to="/app/profile/settings" className="me__settings" aria-label="Settings"><Settings2 aria-hidden /></Link>} />}
+      topBar={<TopBar leading="none" tone="transparent" title="Me" trailing={<Link to="/app/profile/settings" className="me__settings" aria-label="Settings"><SlidersHorizontalIcon aria-hidden /></Link>} />}
     >
       <Hero tint="pink" className="xh--me">
         <Avatar userId={user.id} size="xl" />
@@ -62,7 +62,7 @@ export function ProfileScreen() {
             Since {since}
             {user.kycTier >= 2 && (
               <span className="me__trust">
-                <ShieldCheck aria-hidden /> Verified
+                <ShieldCheckIcon aria-hidden /> Verified
               </span>
             )}
           </p>
@@ -116,12 +116,12 @@ export function ProfileScreen() {
         </section>
       )}
       <SettingsGroup id="me-yours" title="Yours">
-        <SettingsRow to="/app/pacts" icon={<Handshake />} tint="mint" title="Your Pacts" sub={mine.length ? `${mine.length} ${mine.length === 1 ? 'Pact' : 'Pacts'}, running and finished` : 'Everything you’re part of'} />
+        <SettingsRow to="/app/pacts" icon={<HandshakeIcon />} tint="mint" title="Your Pacts" sub={mine.length ? `${mine.length} ${mine.length === 1 ? 'Pact' : 'Pacts'}, running and finished` : 'Everything you’re part of'} />
         <SettingsRow to="/app/wallet" icon={<WalletIcon />} tint="sun" title="Wallet" sub="Balance, top up and withdraw" />
       </SettingsGroup>
 
       <SettingsGroup id="me-settings" title="Settings">
-        <SettingsRow to="/app/profile/settings" icon={<Settings2 />} title="Settings" sub="Account, notifications, appearance, privacy and security" />
+        <SettingsRow to="/app/profile/settings" icon={<SlidersHorizontalIcon />} title="Settings" sub="Account, notifications, appearance, privacy and security" />
       </SettingsGroup>
       </Sheet>
     </Screen>

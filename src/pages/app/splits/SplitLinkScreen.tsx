@@ -1,4 +1,4 @@
-import { Share2 } from 'lucide-react';
+import { ShareNetworkIcon } from '@phosphor-icons/react';
 import { useState } from 'react';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../../api/auth';
@@ -57,7 +57,7 @@ export function SplitLinkScreen() {
   if (signedIn && view.isMember && view.splitId && !join.isPending && !joined) return <Navigate to={`/app/splits/${view.splitId}?from=circle`} replace />;
 
   const payer = view.payer.firstName;
-  const circleName = `${view.circle.name} ${view.circle.emoji}`;
+  const circleName = view.circle.name;
   const m = view.mine;
   const open = view.status === 'open';
   const signIn = () => begin({ kind: 'split', path: `/s/${token}`, title: view.title, from: payer, action: 'share' });
@@ -143,7 +143,7 @@ export function SplitLinkScreen() {
         {(joined || showJoin) && <ShareJoin circle={view.circle.name} tint="lilac" joined={!!joined} loading={join.isPending} onJoin={doJoin} onOpen={() => joined && navigate(`/app/circles/${joined.id}`)} why={`This was shared from ${circleName}. Joining is optional.`} />}
 
         {view.status !== 'cancelled' && (
-          <Button variant="secondary" iconLeft={<Share2 />} onClick={share}>
+          <Button variant="secondary" iconLeft={<ShareNetworkIcon />} onClick={share}>
             Share
           </Button>
         )}

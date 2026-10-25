@@ -1,13 +1,13 @@
-import { Gift, Heart, Plane, Utensils } from 'lucide-react';
+import { AirplaneIcon, ForkKnifeIcon, GiftIcon, HeartIcon } from '@phosphor-icons/react';
 import { useRef } from 'react';
 import { gsap, MQ, useGSAP } from '../../../../lib/gsap';
 import { img } from './shared';
 
 const moments = [
-  { id: 'trips', icon: Plane, tint: 'sky', photo: 'trip-road', alt: 'Two friends smiling on a road trip through green hills', title: 'The trip you keep talking about', line: 'Flights, stays and who books what. Then the part you will tell stories about for years.', chip: 'Calabar weekend · 6 friends' },
-  { id: 'weddings', icon: Heart, tint: 'pink', photo: 'moment-aso-ebi', alt: 'Women in matching aso ebi holding feather fans at a wedding', title: 'The wedding everyone shows up for', line: 'Aso ebi, food, the venue. Shared costs, shared jobs, and everyone in on the day.', chip: 'Wedding contributions · 24 guests' },
-  { id: 'birthdays', icon: Gift, tint: 'coral', photo: 'party-birthday', alt: 'Women in colourful dresses celebrating together with balloons', title: 'The gift that is from all of you', line: 'One gift, everyone in, nobody chasing. Her face when she opens it is the point.', chip: 'Sarah’s Birthday · 8 people' },
-  { id: 'dinners', icon: Utensils, tint: 'sun', photo: 'dinner-friends', alt: 'Friends sharing a meal at a low table and laughing', title: 'The long table and the late night', line: 'Owambe, team dinners, match day. Pay the vendors from the Pact and enjoy the evening.', chip: 'Team dinner · 12 people' },
+  { id: 'trips', icon: AirplaneIcon, tint: 'sky', photo: 'trip-road', alt: 'Two friends smiling on a road trip through green hills', title: 'The trip you keep talking about', line: 'Flights, stays and who books what. Then the part you will tell stories about for years.', chip: 'Calabar weekend · 6 friends' },
+  { id: 'weddings', icon: HeartIcon, tint: 'pink', photo: 'moment-aso-ebi', alt: 'Women in matching aso ebi holding feather fans at a wedding', title: 'The wedding everyone shows up for', line: 'Aso ebi, food, the venue. Shared costs, shared jobs, and everyone in on the day.', chip: 'Wedding contributions · 24 guests' },
+  { id: 'birthdays', icon: GiftIcon, tint: 'coral', photo: 'party-birthday', alt: 'Women in colourful dresses celebrating together with balloons', title: 'The gift that is from all of you', line: 'One gift, everyone in, nobody chasing. Her face when she opens it is the point.', chip: 'Sarah’s Birthday · 8 people' },
+  { id: 'dinners', icon: ForkKnifeIcon, tint: 'sun', photo: 'dinner-friends', alt: 'Friends sharing a meal at a low table and laughing', title: 'The long table and the late night', line: 'Owambe, team dinners, match day. Pay the vendors from the Pact and enjoy the evening.', chip: 'Team dinner · 12 people' },
 ] as const;
 
 /**

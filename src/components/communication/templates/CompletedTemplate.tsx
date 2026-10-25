@@ -2,7 +2,7 @@ import { contentFor } from '../copy';
 import { CommunicationLayout } from '../CommunicationLayout';
 import { CommunicationPactSummary } from '../CommunicationPactSummary';
 import type { TemplateProps } from '../registry';
-import { Check } from 'lucide-react';
+import { CheckIcon } from '@phosphor-icons/react';
 import { formatNaira } from '../../../lib/format';
 import { PeopleRing, StatGrid } from '../blocks';
 
@@ -14,7 +14,7 @@ export function CompletedTemplate({ data, headingLevel }: TemplateProps) {
     ...(data.releasedAmount ? [{ label: 'Released', value: formatNaira(data.releasedAmount) }] : []),
   ];
   return (
-    <CommunicationLayout content={contentFor('completed', data)} headingLevel={headingLevel} hero={<PeopleRing data={{ ...data, raisedAmount: data.targetAmount ?? data.raisedAmount }} size={140}><span className="comm-ring-center"><Check aria-hidden /><span>Done</span></span></PeopleRing>}>
+    <CommunicationLayout content={contentFor('completed', data)} headingLevel={headingLevel} hero={<PeopleRing data={{ ...data, raisedAmount: data.targetAmount ?? data.raisedAmount }} size={140}><span className="comm-ring-center"><CheckIcon aria-hidden /><span>Done</span></span></PeopleRing>}>
       <StatGrid stats={stats} />
       <CommunicationPactSummary data={{ ...data, raisedAmount: data.targetAmount ?? data.raisedAmount }} progress={false} />
     </CommunicationLayout>

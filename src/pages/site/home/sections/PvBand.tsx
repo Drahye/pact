@@ -1,4 +1,4 @@
-import { ArrowRight } from 'lucide-react';
+import { ArrowRightIcon } from '@phosphor-icons/react';
 import { useRef } from 'react';
 import { Avatar } from '../../../../components/ui/Avatar';
 import { Button } from '../../../../components/ui/Button';
@@ -79,7 +79,7 @@ export function PvBand() {
           ))}
         </div>
         <div className="lp2-band__cta">
-          <Button to="/app" variant="inverse" size="lg" iconRight={<ArrowRight />}>
+          <Button to="/app" variant="inverse" size="lg" iconRight={<ArrowRightIcon />}>
             Start a Pact
           </Button>
         </div>

@@ -1,4 +1,4 @@
-import { Bus, Cake, Landmark } from 'lucide-react';
+import { BankIcon, BusIcon, CakeIcon } from '@phosphor-icons/react';
 import type { ReactNode } from 'react';
 import { ActivityRow, AppBar, Chip, DemoRing, HeroCopy, kobo, NextStepCard, seg, sharesAt, StatusBar, Swap, TARGET_K, type Tone } from './demoKit';
 
@@ -14,9 +14,9 @@ export function ExecuteDemo({ t }: { t: number }) {
   const poolK = TARGET_K - 200 * venueUsed - 80 * cakeUsed;
   const usedK = TARGET_K - poolK;
   const lines: Line[] = [
-    { name: 'Venue', k: 200, icon: <Landmark />, status: t >= 0.38 ? 'paid' : t >= 0.2 ? 'pending' : 'none', pressed: t >= 0.14 && t < 0.2 },
-    { name: 'Cake', k: 80, icon: <Cake />, status: t >= 0.7 ? 'pending' : t >= 0.56 ? 'pending' : 'none', pressed: t >= 0.5 && t < 0.56 },
-    { name: 'Transport', k: 120, icon: <Bus />, status: 'none', pressed: false },
+    { name: 'Venue', k: 200, icon: <BankIcon />, status: t >= 0.38 ? 'paid' : t >= 0.2 ? 'pending' : 'none', pressed: t >= 0.14 && t < 0.2 },
+    { name: 'Cake', k: 80, icon: <CakeIcon />, status: t >= 0.7 ? 'pending' : t >= 0.56 ? 'pending' : 'none', pressed: t >= 0.5 && t < 0.56 },
+    { name: 'Transport', k: 120, icon: <BusIcon />, status: 'none', pressed: false },
   ];
   const next =
     t < 0.2

@@ -1,4 +1,4 @@
-import { Check } from 'lucide-react';
+import { CheckIcon } from '@phosphor-icons/react';
 import { useEffect, useRef, useState } from 'react';
 import { gsap, ScrollTrigger } from '../../../../lib/gsap';
 import { useMediaQuery } from '../../../../lib/useMediaQuery';
@@ -179,7 +179,7 @@ export function PvStory() {
                 <ul className="lp2-story__points">
                   {s.points.map((p) => (
                     <li key={p}>
-                      <Check strokeWidth={3} aria-hidden /> {p}
+                      <CheckIcon weight="bold" aria-hidden /> {p}
                     </li>
                   ))}
                 </ul>

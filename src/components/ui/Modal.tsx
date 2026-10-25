@@ -1,5 +1,5 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { X } from 'lucide-react';
+import { XIcon } from '@phosphor-icons/react';
 import { useEffect, useId, useRef, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { ease, motion as speed, spring } from '../../tokens/tokens';
@@ -103,7 +103,7 @@ export function Modal({ open, onClose, title, description, children, footer }: P
                   </p>
                 )}
               </div>
-              <IconButton label="Close" icon={<X />} variant="ghost" onClick={onClose} />
+              <IconButton label="Close" icon={<XIcon />} variant="ghost" onClick={onClose} />
             </header>
             <div className="modal__body">{children}</div>
             {footer && <footer className="modal__footer">{footer}</footer>}

@@ -1,4 +1,4 @@
-import { Plus } from 'lucide-react';
+import { PlusIcon } from '@phosphor-icons/react';
 import { Link } from 'react-router-dom';
 import { useCircles } from '../../../api/circles';
 import { ErrorState } from '../../../components/app/States';
@@ -30,7 +30,7 @@ export function CirclesScreen() {
     <Screen
       className="xhero xhero--lite tint--coral"
       tabBar={<BottomNav />}
-      topBar={<TopBar tone="transparent" leading="none" title="Circles" collapse trailing={<IconButton label="New Circle" icon={<Plus />} to="/app/circles/new" />} />}
+      topBar={<TopBar tone="transparent" leading="none" title="Circles" collapse trailing={<IconButton label="New Circle" icon={<PlusIcon />} to="/app/circles/new" />} />}
     >
       <PageHero tint="coral" title="Your Circles" subtitle="The people you make things happen with." />
       {circles.isLoading ? (
@@ -44,7 +44,7 @@ export function CirclesScreen() {
           title="Start with the people you already plan with."
           body="A Circle keeps your group, its plans and its questions in one place: the friends, the family, the crew."
           action={
-            <Button to="/app/circles/new" iconLeft={<Plus />}>
+            <Button to="/app/circles/new" iconLeft={<PlusIcon />}>
               Create a Circle
             </Button>
           }
@@ -61,7 +61,7 @@ export function CirclesScreen() {
             ))}
             <li>
               <Link to="/app/circles/new" className="ch-tiles__new" aria-label="New Circle">
-                <Plus aria-hidden />
+                <PlusIcon aria-hidden />
                 <span>New Circle</span>
               </Link>
             </li>

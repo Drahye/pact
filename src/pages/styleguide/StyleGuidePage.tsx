@@ -1,5 +1,5 @@
 import { CompletionState, EmptyState, Hero, OBJECT_KINDS, Sheet, StatusIndicator } from '../../components/objects';
-import { Check, Plus, Share } from 'lucide-react';
+import { CheckIcon, ExportIcon, PlusIcon } from '@phosphor-icons/react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { CategoryChip, CategoryIcon } from '../../components/pact/category';
@@ -495,15 +495,15 @@ export function StyleGuidePage() {
               <div className="sg-row">
                 <Button loading>Contribute</Button>
                 <Button disabled>Enter an amount</Button>
-                <Button iconLeft={<Plus />} variant="secondary">
+                <Button iconLeft={<PlusIcon />} variant="secondary">
                   New Pact
                 </Button>
               </div>
             </Spec>
             <Spec name="Icon buttons · surface / ghost">
               <div className="sg-row">
-                <IconButton label="Share" icon={<Share />} />
-                <IconButton label="Add" icon={<Plus />} variant="ghost" />
+                <IconButton label="Share" icon={<ExportIcon />} />
+                <IconButton label="Add" icon={<PlusIcon />} variant="ghost" />
               </div>
             </Spec>
             <Spec name="Hold button · press and hold to confirm money" wide>
@@ -656,7 +656,7 @@ export function StyleGuidePage() {
           <div className="sg-specs">
             <Spec name="Top bar · back with action / close with title">
               <div className="sg-col sg-phone-w">
-                <TopBar trailing={<IconButton label="Share" icon={<Share />} />} />
+                <TopBar trailing={<IconButton label="Share" icon={<ExportIcon />} />} />
                 <TopBar leading="close" title="New Pact" />
               </div>
             </Spec>
@@ -689,7 +689,7 @@ export function StyleGuidePage() {
               <div className="sg-row">
                 <div className="toast toast--success">
                   <span className="toast__icon" aria-hidden>
-                    <Check strokeWidth={3} />
+                    <CheckIcon weight="bold" />
                   </span>
                   Link copied
                 </div>

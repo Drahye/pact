@@ -1,4 +1,4 @@
-import { ChevronRight } from 'lucide-react';
+import { CaretRightIcon } from '@phosphor-icons/react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { Attendance, NeedsDetail, NeedsYouItem } from '../../../shared/contracts';
@@ -190,7 +190,7 @@ function FallbackNeed({ n }: { n: NeedsYouItem }) {
       </span>
       <span className="act act--text">
         {n.actionLabel}
-        <ChevronRight aria-hidden />
+        <CaretRightIcon aria-hidden />
       </span>
     </Link>
   );

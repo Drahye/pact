@@ -6,6 +6,7 @@ import type { CircleTint } from '../../../shared/contracts';
 import { AvatarStack } from './AvatarStack';
 import { StatusIndicator } from './StatusIndicator';
 import './primitives.css';
+import { Glyph } from '../ui/Glyph';
 
 /** True for a moment when something becomes live: one soft pulse, never a loop. */
 function usePulseOnce(active: boolean) {
@@ -72,7 +73,7 @@ export function CircleTile({
     return (
       <header className={`ox-circle ox-circle--header tint--${tint} ${live ? 'is-live' : ''}`}>
         <span className="ox-circle__emoji" aria-hidden>
-          {emoji}
+          <Glyph emoji={emoji} />
         </span>
         <div className="ox-circle__id">
           <h1 className="ox-circle__name t-page">{name}</h1>
@@ -94,7 +95,7 @@ export function CircleTile({
     <>
       {cover && <img className="ox-circle__photo" src={photo} alt="" aria-hidden loading="lazy" decoding="async" />}
       <span className="ox-circle__emoji" aria-hidden>
-        {emoji}
+        <Glyph emoji={emoji} />
       </span>
       <span className="ox-circle__name">{name}</span>
       <span className="ox-circle__signal">

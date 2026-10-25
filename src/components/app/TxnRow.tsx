@@ -1,17 +1,17 @@
-import { ArrowDownLeft, ArrowUpRight, RotateCcw, Undo2, Wallet } from 'lucide-react';
+import { ArrowCounterClockwiseIcon, ArrowDownLeftIcon, ArrowUUpLeftIcon, ArrowUpRightIcon, WalletIcon } from '@phosphor-icons/react';
 import type { WalletTxnDTO } from '../../../shared/contracts';
 import { formatDateTime, formatNairaKobo } from '../../lib/format';
 import '../pact/category.css';
 import './app-ui.css';
 
 const meta: Record<WalletTxnDTO['kind'], { icon: JSX.Element; tint: string; label: string }> = {
-  topup: { icon: <ArrowDownLeft />, tint: 'mint', label: 'Top up' },
-  contribution: { icon: <ArrowUpRight />, tint: 'sky', label: 'Contribution' },
-  pact_release: { icon: <Wallet />, tint: 'sun', label: 'Pact funds' },
-  withdrawal: { icon: <ArrowUpRight />, tint: 'lilac', label: 'Withdrawal' },
-  withdrawal_reversal: { icon: <Undo2 />, tint: 'coral', label: 'Returned' },
-  refund: { icon: <RotateCcw />, tint: 'pink', label: 'Refund' },
-  vendor_payment_reversal: { icon: <Undo2 />, tint: 'coral', label: 'Vendor payment returned' },
+  topup: { icon: <ArrowDownLeftIcon />, tint: 'mint', label: 'Top up' },
+  contribution: { icon: <ArrowUpRightIcon />, tint: 'sky', label: 'Contribution' },
+  pact_release: { icon: <WalletIcon />, tint: 'sun', label: 'Pact funds' },
+  withdrawal: { icon: <ArrowUpRightIcon />, tint: 'lilac', label: 'Withdrawal' },
+  withdrawal_reversal: { icon: <ArrowUUpLeftIcon />, tint: 'coral', label: 'Returned' },
+  refund: { icon: <ArrowCounterClockwiseIcon />, tint: 'pink', label: 'Refund' },
+  vendor_payment_reversal: { icon: <ArrowUUpLeftIcon />, tint: 'coral', label: 'Vendor payment returned' },
 };
 
 export function TxnRow({ txn, onClick }: { txn: WalletTxnDTO; onClick?: () => void }) {

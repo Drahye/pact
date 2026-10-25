@@ -1,5 +1,5 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeftIcon } from '@phosphor-icons/react';
 import { useEffect, useRef, useState } from 'react';
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../api/auth';
@@ -64,7 +64,7 @@ export function OnboardingScreen() {
     <div className="ob">
       <header className="ob__top">
         <button type="button" className="ob__back" onClick={() => go(i - 1)} disabled={i === 0} aria-label="Back">
-          <ArrowLeft aria-hidden />
+          <ArrowLeftIcon aria-hidden />
         </button>
         <ol className="ob__dots" aria-label={`Step ${i + 1} of ${SLIDES.length}`}>
           {SLIDES.map((s, n) => (

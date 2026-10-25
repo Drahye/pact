@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowRight } from 'lucide-react';
+import { ArrowDownIcon, ArrowRightIcon } from '@phosphor-icons/react';
 import { useRef } from 'react';
 import { Avatar } from '../../../../components/ui/Avatar';
 import { Button } from '../../../../components/ui/Button';
@@ -95,12 +95,12 @@ export function PvHero() {
         <p className="lp2-hero__lede">Plan the trip, the wedding, the gift and the dinner with your people, and actually make it happen together.</p>
         <div className="lp2-hero__ctas">
           <span className="lp2-magnet">
-            <Button to="/app" variant="inverse" size="lg" iconRight={<ArrowRight />}>
+            <Button to="/app" variant="inverse" size="lg" iconRight={<ArrowRightIcon />}>
               Start a Pact
             </Button>
           </span>
           <a href="#should" className="lp2-link lp2-link--light">
-            Step inside <ArrowDown aria-hidden />
+            Step inside <ArrowDownIcon aria-hidden />
           </a>
         </div>
       </div>

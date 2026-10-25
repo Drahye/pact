@@ -1,4 +1,4 @@
-import { AlertTriangle, Bell, BellRing, CheckCheck, CircleCheck, Clock, Coins, ListChecks, Megaphone, MessageCircle, PartyPopper, Pin, ShieldAlert, ShieldCheck, UserPlus, Wallet } from 'lucide-react';
+import { BellIcon, BellRingingIcon, ChatCircleIcon, CheckCircleIcon, ChecksIcon, ClockIcon, CoinsIcon, ConfettiIcon, ListChecksIcon, MegaphoneIcon, PushPinIcon, ShieldCheckIcon, ShieldWarningIcon, UserPlusIcon, WalletIcon, WarningIcon } from '@phosphor-icons/react';
 import type { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { NotificationDTO } from '../../../shared/contracts';
@@ -16,30 +16,30 @@ import './notifications.css';
 
 type Look = { el: ReactNode; tint: string };
 const looks: Record<string, Look> = {
-  invite: { el: <UserPlus />, tint: 'lilac' },
-  join: { el: <UserPlus />, tint: 'sky' },
-  contribution: { el: <Coins />, tint: 'mint' },
-  funded: { el: <PartyPopper />, tint: 'lilac' },
-  completed: { el: <PartyPopper />, tint: 'mint' },
-  approval: { el: <ShieldCheck />, tint: 'sun' },
-  co_organizer: { el: <ShieldCheck />, tint: 'sun' },
-  vendor_paid: { el: <CircleCheck />, tint: 'mint' },
-  vendor_failed: { el: <AlertTriangle />, tint: 'coral' },
-  task: { el: <ListChecks />, tint: 'sky' },
-  task_due: { el: <Clock />, tint: 'coral' },
-  update: { el: <Megaphone />, tint: 'mint' },
-  pinned: { el: <Pin />, tint: 'sun' },
-  comment: { el: <MessageCircle />, tint: 'sky' },
-  nudge: { el: <BellRing />, tint: 'sun' },
-  reminder: { el: <BellRing />, tint: 'sun' },
-  pledge: { el: <BellRing />, tint: 'sun' },
-  security: { el: <ShieldAlert />, tint: 'coral' },
-  topup: { el: <Wallet />, tint: 'mint' },
-  withdrawal: { el: <Wallet />, tint: 'mint' },
-  refund: { el: <Wallet />, tint: 'mint' },
-  released: { el: <Wallet />, tint: 'mint' },
+  invite: { el: <UserPlusIcon />, tint: 'lilac' },
+  join: { el: <UserPlusIcon />, tint: 'sky' },
+  contribution: { el: <CoinsIcon />, tint: 'mint' },
+  funded: { el: <ConfettiIcon />, tint: 'lilac' },
+  completed: { el: <ConfettiIcon />, tint: 'mint' },
+  approval: { el: <ShieldCheckIcon />, tint: 'sun' },
+  co_organizer: { el: <ShieldCheckIcon />, tint: 'sun' },
+  vendor_paid: { el: <CheckCircleIcon />, tint: 'mint' },
+  vendor_failed: { el: <WarningIcon />, tint: 'coral' },
+  task: { el: <ListChecksIcon />, tint: 'sky' },
+  task_due: { el: <ClockIcon />, tint: 'coral' },
+  update: { el: <MegaphoneIcon />, tint: 'mint' },
+  pinned: { el: <PushPinIcon />, tint: 'sun' },
+  comment: { el: <ChatCircleIcon />, tint: 'sky' },
+  nudge: { el: <BellRingingIcon />, tint: 'sun' },
+  reminder: { el: <BellRingingIcon />, tint: 'sun' },
+  pledge: { el: <BellRingingIcon />, tint: 'sun' },
+  security: { el: <ShieldWarningIcon />, tint: 'coral' },
+  topup: { el: <WalletIcon />, tint: 'mint' },
+  withdrawal: { el: <WalletIcon />, tint: 'mint' },
+  refund: { el: <WalletIcon />, tint: 'mint' },
+  released: { el: <WalletIcon />, tint: 'mint' },
 };
-const look = (type: string): Look => looks[type] ?? { el: <Bell />, tint: 'sky' };
+const look = (type: string): Look => looks[type] ?? { el: <BellIcon />, tint: 'sky' };
 
 function Row({ n, onOpen }: { n: NotificationDTO; onOpen: (n: NotificationDTO) => void }) {
   const l = look(n.type);
@@ -115,7 +115,7 @@ export function NotificationsScreen() {
           backTo="/app/home"
           title="Notifications"
           collapse
-          trailing={unread ? <IconButton label="Mark all as read" icon={<CheckCheck />} onClick={() => markRead.mutate(undefined)} /> : undefined}
+          trailing={unread ? <IconButton label="Mark all as read" icon={<ChecksIcon />} onClick={() => markRead.mutate(undefined)} /> : undefined}
         />
       }
     >

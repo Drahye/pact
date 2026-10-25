@@ -1,4 +1,4 @@
-import { ArrowRight, Check } from 'lucide-react';
+import { ArrowRightIcon, CheckIcon } from '@phosphor-icons/react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Button } from '../../../components/ui/Button';
 import { useReducedMotion } from 'framer-motion';
@@ -98,7 +98,7 @@ function Copy({ s, n }: { s: Scene; n: number }) {
       <ul className="story__points">
         {s.points.map((p) => (
           <li key={p}>
-            <Check strokeWidth={3} aria-hidden /> {p}
+            <CheckIcon weight="bold" aria-hidden /> {p}
           </li>
         ))}
       </ul>
@@ -278,7 +278,7 @@ export function Execution() {
       after={
         <div className="container story__cta">
           <p>That is the whole plan, from idea to done.</p>
-          <Button to="/app" iconRight={<ArrowRight />}>
+          <Button to="/app" iconRight={<ArrowRightIcon />}>
             Start a Pact
           </Button>
         </div>

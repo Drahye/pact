@@ -1,6 +1,6 @@
 import Lenis from 'lenis';
 import 'lenis/dist/lenis.css';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRightIcon } from '@phosphor-icons/react';
 import { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Footer } from '../../components/site/Footer';
@@ -103,7 +103,7 @@ export function LandingPage() {
       <Footer />
 
       <Link to="/app" className="lp2-sticky-cta" ref={cta} aria-label="Start a Pact">
-        Start a Pact <ArrowRight aria-hidden />
+        Start a Pact <ArrowRightIcon aria-hidden />
       </Link>
     </>
   );

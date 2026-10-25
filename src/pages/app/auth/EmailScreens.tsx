@@ -1,4 +1,4 @@
-import { FlaskConical } from 'lucide-react';
+import { FlaskIcon } from '@phosphor-icons/react';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../../api/auth';
@@ -152,7 +152,7 @@ export function EmailCodeScreen() {
       {error && <p className="field__error auth__error" id="email-otp-error" role="alert">{error}</p>}
 
       {devCode && config?.exposeDevCodes && (
-        <Notice tone="sun" icon={<FlaskConical />}>
+        <Notice tone="sun" icon={<FlaskIcon />}>
           Sandbox: no email is sent. Your code is <strong className="num">{devCode}</strong>.{' '}
           <button type="button" className="link" onClick={() => onChange(devCode)}>
             Fill it in

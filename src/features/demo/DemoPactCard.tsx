@@ -1,4 +1,4 @@
-import { ArrowRight, Check, FlaskConical } from 'lucide-react';
+import { ArrowRightIcon, CheckIcon, FlaskIcon } from '@phosphor-icons/react';
 import { Link } from 'react-router-dom';
 import { CategoryIcon } from '../../components/pact/category';
 import { AvatarGroup } from '../../components/ui/AvatarGroup';
@@ -23,7 +23,7 @@ export function DemoPactCard({ demo, from, headingLevel = 'h3', compact = false 
           <p>{categoryLabel[demo.category]}</p>
         </div>
         <span className="demo-badge">
-          <FlaskConical aria-hidden />
+          <FlaskIcon aria-hidden />
           Demo · Completed
         </span>
       </header>
@@ -32,21 +32,21 @@ export function DemoPactCard({ demo, from, headingLevel = 'h3', compact = false 
       </p>
       {compact ? (
         <p className="demo-card__summary">
-          <Check aria-hidden strokeWidth={3} /> {demo.summary}
+          <CheckIcon aria-hidden weight="bold" /> {demo.summary}
         </p>
       ) : (
         <>
           <ul className="demo-card__ticks" aria-label="What got done">
             {demo.milestones.map((m) => (
               <li key={m}>
-                <Check aria-hidden strokeWidth={3} /> {m}
+                <CheckIcon aria-hidden weight="bold" /> {m}
               </li>
             ))}
           </ul>
           <div className="demo-card__foot">
             <AvatarGroup userIds={p.members.map((m) => m.userId)} max={4} size="sm" total={people} />
             <Link to={`/app/demo/${demo.id}`} state={{ from }} className="demo-card__link">
-              See how this Pact worked <ArrowRight aria-hidden />
+              See how this Pact worked <ArrowRightIcon aria-hidden />
             </Link>
           </div>
         </>

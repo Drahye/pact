@@ -1,4 +1,4 @@
-import { Banknote, Check, CircleDot, Hand, Handshake, ListChecks, RotateCcw, Trash2, UserMinus } from 'lucide-react';
+import { ArrowCounterClockwiseIcon, CheckIcon, HandIcon, HandshakeIcon, ListChecksIcon, MoneyIcon, RadioButtonIcon, TrashIcon, UserMinusIcon } from '@phosphor-icons/react';
 import { useEffect, useState } from 'react';
 import { ApiError } from '../../../api/client';
 import { usePactPlan } from '../../../api/hooks';
@@ -33,7 +33,7 @@ const useRun = () => {
 
 /* How are you showing up? ------------------------------------------------ */
 
-const participationIcon: Record<Participation, JSX.Element> = { money: <Banknote />, task: <ListChecks />, both: <Handshake />, later: <Hand /> };
+const participationIcon: Record<Participation, JSX.Element> = { money: <MoneyIcon />, task: <ListChecksIcon />, both: <HandshakeIcon />, later: <HandIcon /> };
 const participationTint: Record<Participation, string> = { money: 'mint', task: 'lilac', both: 'sun', later: 'sky' };
 
 export function ParticipationPicker({ value, onChange }: { value: Participation | null; onChange: (p: Participation) => void }) {
@@ -102,7 +102,7 @@ export function TaskSheet({ pact, task, meId, onClose }: { pact: Pact; task: Tas
                 <Avatar userId={m.userId} size="md" accent accentColor={colorOf(pact, m.userId)} label={false} />
                 <span className="contact__name">{m.userId === meId ? 'You' : getUser(m.userId).fullName}</span>
                 <span className="contact__check" aria-hidden>
-                  {task.assigneeId === m.userId && <Check strokeWidth={3} />}
+                  {task.assigneeId === m.userId && <CheckIcon weight="bold" />}
                 </span>
               </button>
             </li>
@@ -112,43 +112,43 @@ export function TaskSheet({ pact, task, meId, onClose }: { pact: Pact; task: Tas
         <div className="menu">
           {!task.assigneeId && (
             <button type="button" className="menu__row" disabled={busy} onClick={() => update({ assigneeId: 'me' }, 'It’s yours')}>
-              <span className="menu__icon tint--mint"><Hand /></span>
+              <span className="menu__icon tint--mint"><HandIcon /></span>
               <span className="menu__text"><span className="menu__title">I’ll do it</span><span className="menu__sub">Taking a task counts as showing up</span></span>
             </button>
           )}
           {canUpdate && task.status === 'open' && task.assigneeId && (
             <button type="button" className="menu__row" disabled={busy} onClick={() => update({ status: 'in_progress' }, 'Marked in progress')}>
-              <span className="menu__icon tint--sun"><CircleDot /></span>
+              <span className="menu__icon tint--sun"><RadioButtonIcon /></span>
               <span className="menu__text"><span className="menu__title">Mark in progress</span></span>
             </button>
           )}
           {canUpdate && task.status !== 'done' && (
             <button type="button" className="menu__row" disabled={busy} onClick={() => update({ status: 'done' }, 'Done. Nice.')}>
-              <span className="menu__icon tint--mint"><Check /></span>
+              <span className="menu__icon tint--mint"><CheckIcon /></span>
               <span className="menu__text"><span className="menu__title">Mark done</span></span>
             </button>
           )}
           {canUpdate && task.status === 'done' && (
             <button type="button" className="menu__row" disabled={busy} onClick={() => update({ status: 'open' }, 'Reopened')}>
-              <span className="menu__icon tint--sky"><RotateCcw /></span>
+              <span className="menu__icon tint--sky"><ArrowCounterClockwiseIcon /></span>
               <span className="menu__text"><span className="menu__title">Reopen</span></span>
             </button>
           )}
           {isOrganizer && (
             <button type="button" className="menu__row" disabled={busy} onClick={() => setAssignOpen(true)}>
-              <span className="menu__icon tint--lilac"><ListChecks /></span>
+              <span className="menu__icon tint--lilac"><ListChecksIcon /></span>
               <span className="menu__text"><span className="menu__title">{task.assigneeId ? 'Give it to someone else' : 'Ask someone to do it'}</span></span>
             </button>
           )}
           {(mine || (isOrganizer && task.assigneeId)) && task.status !== 'done' && (
             <button type="button" className="menu__row" disabled={busy} onClick={() => update({ assigneeId: null }, mine ? 'You let it go' : 'Unassigned')}>
-              <span className="menu__icon tint--sky"><UserMinus /></span>
+              <span className="menu__icon tint--sky"><UserMinusIcon /></span>
               <span className="menu__text"><span className="menu__title">{mine ? 'Let it go' : 'Unassign'}</span></span>
             </button>
           )}
           {canDelete && (
             <button type="button" className="menu__row menu__row--danger" disabled={busy} onClick={() => run(() => plan.deleteTask.mutateAsync(task.id), 'Task removed').then((ok) => ok && onClose())}>
-              <span className="menu__icon tint--coral"><Trash2 /></span>
+              <span className="menu__icon tint--coral"><TrashIcon /></span>
               <span className="menu__text"><span className="menu__title">Remove task</span></span>
             </button>
           )}
@@ -204,7 +204,7 @@ export function AddTaskSheet({ pact, meId, open, onClose }: { pact: Pact; meId: 
             <div className="suggest">
               {pact.budget.map((b) => (
                 <button key={b.id} type="button" className={`suggest__chip ${line === b.id ? 'is-on' : ''}`} aria-pressed={line === b.id} onClick={() => setLine(line === b.id ? null : b.id)}>
-                  {line === b.id && <Check aria-hidden />} {b.name}
+                  {line === b.id && <CheckIcon aria-hidden />} {b.name}
                 </button>
               ))}
             </div>

@@ -1,5 +1,5 @@
 import { TopBar } from '../../../components/ui/TopBar';
-import { ChevronRight, Landmark, ReceiptText, ShieldCheck } from 'lucide-react';
+import { BankIcon, CaretRightIcon, ReceiptIcon, ShieldCheckIcon } from '@phosphor-icons/react';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { WalletTxnDTO } from '../../../../shared/contracts';
@@ -57,21 +57,21 @@ export function WalletScreen() {
           )}
           {tier < 2 && (
             <Link to="/app/profile/verify" className="wallet__upgrade">
-              <ShieldCheck aria-hidden />
+              <ShieldCheckIcon aria-hidden />
               <span>
                 <strong>Raise your limits</strong>
                 <span>Verify your BVN to hold up to {formatNairaKobo(TIER_LIMITS[2].maxBalance)}</span>
               </span>
-              <ChevronRight aria-hidden />
+              <CaretRightIcon aria-hidden />
             </Link>
           )}
           <Link to="/app/profile/banks" className="wallet__upgrade wallet__upgrade--plain">
-            <Landmark aria-hidden />
+            <BankIcon aria-hidden />
             <span>
               <strong>Bank accounts</strong>
               <span>Where withdrawals go</span>
             </span>
-            <ChevronRight aria-hidden />
+            <CaretRightIcon aria-hidden />
           </Link>
         </div>
       )}
@@ -97,7 +97,7 @@ export function WalletScreen() {
         ) : txns.error ? (
           <ErrorState onRetry={() => txns.refetch()} />
         ) : !items.length ? (
-          <Empty icon={<ReceiptText />} title="Nothing here yet" body="When you add money, or put it into something with your people, it shows up here." />
+          <Empty icon={<ReceiptIcon />} title="Nothing here yet" body="When you add money, or put it into something with your people, it shows up here." />
         ) : (
           <>
             <div className="txn-list">

@@ -1,4 +1,4 @@
-import { BadgeCheck, Download, FileText, Gift, Landmark, LifeBuoy, LockKeyhole, LogOut, ShieldCheck, Smartphone, UserRound, UserX } from 'lucide-react';
+import { BankIcon, DeviceMobileIcon, DownloadSimpleIcon, FileTextIcon, GiftIcon, LifebuoyIcon, LockKeyIcon, SealCheckIcon, ShieldCheckIcon, SignOutIcon, UserIcon, UserMinusIcon } from '@phosphor-icons/react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TIER_LIMITS } from '../../../../shared/policy';
@@ -69,15 +69,15 @@ export function SettingsScreen() {
       <PageHero tint="lilac" title="Settings" subtitle="Make PACT feel like yours." />
 
       <SettingsGroup id="st-account" title="Account">
-        <SettingsRow to="/app/profile/account" icon={<UserRound />} title="Account and sign-in" sub={ways || 'How you sign in'} />
+        <SettingsRow to="/app/profile/account" icon={<UserIcon />} title="Account and sign-in" sub={ways || 'How you sign in'} />
         <SettingsRow
           to="/app/profile/verify"
-          icon={user.kycTier >= 2 ? <BadgeCheck /> : <ShieldCheck />}
+          icon={user.kycTier >= 2 ? <SealCheckIcon /> : <ShieldCheckIcon />}
           tint={user.kycTier >= 2 ? 'mint' : 'sun'}
           title={user.kycTier >= 2 ? 'Identity verified' : 'Verify your identity'}
           sub={user.kycTier >= 2 ? `${tier.label} account` : 'Needed to release a Pact’s funds or withdraw more'}
         />
-        <SettingsRow to="/app/profile/banks" icon={<Landmark />} tint="lilac" title="Bank accounts" sub="Where withdrawals go" />
+        <SettingsRow to="/app/profile/banks" icon={<BankIcon />} tint="lilac" title="Bank accounts" sub="Where withdrawals go" />
       </SettingsGroup>
 
       <PushSetting />
@@ -97,14 +97,14 @@ export function SettingsScreen() {
       </SettingsGroup>
 
       <SettingsGroup id="st-privacy" title="Privacy">
-        <SettingsRow onClick={download} disabled={exporting} icon={<Download />} title="Download my data" sub="Your profile, Pacts and transactions as a file" end={exporting ? '…' : undefined} />
-        <SettingsRow onClick={() => setCloseOpen(true)} icon={<UserX />} tint="coral" danger title="Close my account" sub="Needs an empty wallet and no money in open Pacts" end={<span />} />
+        <SettingsRow onClick={download} disabled={exporting} icon={<DownloadSimpleIcon />} title="Download my data" sub="Your profile, Pacts and transactions as a file" end={exporting ? '…' : undefined} />
+        <SettingsRow onClick={() => setCloseOpen(true)} icon={<UserMinusIcon />} tint="coral" danger title="Close my account" sub="Needs an empty wallet and no money in open Pacts" end={<span />} />
       </SettingsGroup>
 
       <SettingsGroup id="st-security" title="Security">
         <SettingsRow
           to="/app/profile/security"
-          icon={<LockKeyhole />}
+          icon={<LockKeyIcon />}
           tint="mint"
           title="PIN and devices"
           sub={user.hasPin ? 'Change or reset your PIN, sign out other devices' : 'Create a PIN when you need to approve something sensitive'}
@@ -112,17 +112,17 @@ export function SettingsScreen() {
       </SettingsGroup>
 
       <SettingsGroup id="st-about" title="About">
-        <SettingsRow onClick={invite} icon={<Gift />} tint="sun" title="Tell a friend about PACT" sub={`Your code ${user.referralCode}`} />
-        {pwa.available && <SettingsRow onClick={() => (pwa.canInstall ? void pwa.install() : setIosOpen(true))} icon={<Smartphone />} tint="mint" title="Install PACT" sub="Add PACT to your Home Screen" />}
-        <SettingsRow href="mailto:support@pact.africa?subject=PACT%20help" icon={<LifeBuoy />} title="Help and support" sub="We reply within a day" />
-        <SettingsRow to="/terms" icon={<FileText />} tint="pink" title="Terms, privacy and refunds" />
+        <SettingsRow onClick={invite} icon={<GiftIcon />} tint="sun" title="Tell a friend about PACT" sub={`Your code ${user.referralCode}`} />
+        {pwa.available && <SettingsRow onClick={() => (pwa.canInstall ? void pwa.install() : setIosOpen(true))} icon={<DeviceMobileIcon />} tint="mint" title="Install PACT" sub="Add PACT to your Home Screen" />}
+        <SettingsRow href="mailto:support@pact.africa?subject=PACT%20help" icon={<LifebuoyIcon />} title="Help and support" sub="We reply within a day" />
+        <SettingsRow to="/terms" icon={<FileTextIcon />} tint="pink" title="Terms, privacy and refunds" />
       </SettingsGroup>
 
       <div className="st-signout">
         <Button
           variant="secondary"
           fullWidth
-          iconLeft={<LogOut />}
+          iconLeft={<SignOutIcon />}
           onClick={async () => {
             await signOut();
             clearReturnTo();

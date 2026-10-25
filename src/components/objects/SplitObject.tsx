@@ -1,4 +1,4 @@
-import { Check } from 'lucide-react';
+import { CheckIcon } from '@phosphor-icons/react';
 import { useEffect, useId, useRef, useState } from 'react';
 import { formatNaira } from '../../lib/format';
 import { koboText } from '../../lib/splitMoney';
@@ -201,7 +201,7 @@ export function SplitObject({
               <span className="ox-share__state t-support">Paid it</span>
             ) : s.status === 'settled' ? (
               <span className="ox-share__state ox-share__state--done">
-                Settled <Check aria-hidden strokeWidth={3} />
+                Settled <CheckIcon aria-hidden weight="bold" />
                 {s.canChange && onUndo && !disabled && (
                   <button type="button" className="ox-share__undo" aria-label={`Mark ${name(s.userId)}’s ${money(s.amount)} as unsettled`} onClick={() => onUndo(s.userId)}>
                     Undo

@@ -1,5 +1,5 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { Check, CreditCard, LockKeyhole, Wallet } from 'lucide-react';
+import { CheckIcon, CreditCardIcon, LockKeyIcon, WalletIcon } from '@phosphor-icons/react';
 import { useAuth } from '../../api/auth';
 import { newIdempotencyKey } from '../../api/client';
 import { useContribute, useCover, usePact, useWallet } from '../../api/hooks';
@@ -144,7 +144,7 @@ export function ContributeScreen() {
               transition={spring.pop}
               aria-hidden
             >
-              <Check strokeWidth={3} />
+              <CheckIcon weight="bold" />
             </motion.span>
           </SegmentedRing>
           <motion.div
@@ -204,7 +204,7 @@ export function ContributeScreen() {
             </Button>
           )}
           <p className="contribute__secure">
-            <LockKeyhole aria-hidden /> {payWith === 'balance' && short === 0 ? 'Hold, then confirm with your PIN · ' : ''}Everyone in the Pact sees it
+            <LockKeyIcon aria-hidden /> {payWith === 'balance' && short === 0 ? 'Hold, then confirm with your PIN · ' : ''}Everyone in the Pact sees it
           </p>
         </>
       }
@@ -258,7 +258,7 @@ export function ContributeScreen() {
           <div className="choices" role="radiogroup" aria-label="Pay with">
             {have > 0 && (
               <button type="button" role="radio" aria-checked={payWith === 'balance'} className={`choice ${payWith === 'balance' ? 'is-on' : ''}`} onClick={() => setSource('balance')}>
-                <span className="choice__icon tint--sun"><Wallet /></span>
+                <span className="choice__icon tint--sun"><WalletIcon /></span>
                 <span className="choice__text">
                   <span className="choice__title">PACT balance</span>
                   <span className="choice__sub num">{formatNairaKobo(wallet.data?.balance ?? 0)} available</span>
@@ -267,7 +267,7 @@ export function ContributeScreen() {
               </button>
             )}
             <button type="button" role="radio" aria-checked={payWith === 'other'} className={`choice ${payWith === 'other' ? 'is-on' : ''}`} onClick={() => setSource('other')}>
-              <span className="choice__icon tint--sky"><CreditCard /></span>
+              <span className="choice__icon tint--sky"><CreditCardIcon /></span>
               <span className="choice__text">
                 <span className="choice__title">Bank transfer or card</span>
                 <span className="choice__sub">Transfer is free. Cards show their fee first.</span>

@@ -1,4 +1,4 @@
-import { Link2, Share2 } from 'lucide-react';
+import { LinkIcon, ShareNetworkIcon } from '@phosphor-icons/react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ApiError } from '../../../api/client';
 import { useRecap, useRecapShare, type RecapKind } from '../../../api/home';
@@ -64,7 +64,7 @@ export function RecapScreen() {
         <RecapView recap={r} />
         {token ? (
           <>
-            <Button iconLeft={<Share2 />} onClick={send}>
+            <Button iconLeft={<ShareNetworkIcon />} onClick={send}>
               Share recap
             </Button>
             {r.share?.canManage && (
@@ -80,7 +80,7 @@ export function RecapScreen() {
           </>
         ) : r.share?.canManage ? (
           <>
-            <Button iconLeft={<Link2 />} loading={share.on.isPending} onClick={turnOn}>
+            <Button iconLeft={<LinkIcon />} loading={share.on.isPending} onClick={turnOn}>
               Make a link to share
             </Button>
             <p className="split-note" style={{ margin: 0 }}>

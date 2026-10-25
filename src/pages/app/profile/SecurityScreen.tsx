@@ -1,4 +1,4 @@
-import { KeyRound, LifeBuoy, LogOut, Monitor, Smartphone } from 'lucide-react';
+import { DeviceMobileIcon, KeyIcon, LifebuoyIcon, MonitorIcon, SignOutIcon } from '@phosphor-icons/react';
 import { ResetPinSheet } from './ResetPinSheet';
 import { useState } from 'react';
 import { ApiError } from '../../../api/client';
@@ -76,7 +76,7 @@ export function SecurityScreen() {
       <div className="menu">
         {user && !user.hasPin ? (
           <button type="button" className="menu__row" onClick={() => setSetupOpen(true)}>
-            <span className="menu__icon tint--mint"><KeyRound /></span>
+            <span className="menu__icon tint--mint"><KeyIcon /></span>
             <span className="menu__text">
               <span className="menu__title">Create a PIN</span>
               <span className="menu__sub">Create a PIN when you need to approve a sensitive action. You don’t need one to use PACT with your people.</span>
@@ -85,14 +85,14 @@ export function SecurityScreen() {
         ) : (
           <>
             <button type="button" className="menu__row" onClick={() => setOpen(true)}>
-              <span className="menu__icon tint--mint"><KeyRound /></span>
+              <span className="menu__icon tint--mint"><KeyIcon /></span>
               <span className="menu__text">
                 <span className="menu__title">Change PIN</span>
                 <span className="menu__sub">Used to approve payments and sensitive changes</span>
               </span>
             </button>
             <button type="button" className="menu__row" onClick={() => setResetOpen(true)}>
-              <span className="menu__icon tint--sun"><LifeBuoy /></span>
+              <span className="menu__icon tint--sun"><LifebuoyIcon /></span>
               <span className="menu__text">
                 <span className="menu__title">Forgot your PIN?</span>
                 <span className="menu__sub">Reset it with a code sent to your verified email or phone. Withdrawals pause for 24 hours after a reset.</span>
@@ -111,7 +111,7 @@ export function SecurityScreen() {
         <div className="menu sessions">
           {sessions.data?.map((s) => (
             <div key={s.id} className="menu__row">
-              <span className="menu__icon tint--sky">{/iPhone|Android/.test(s.device) ? <Smartphone /> : <Monitor />}</span>
+              <span className="menu__icon tint--sky">{/iPhone|Android/.test(s.device) ? <DeviceMobileIcon /> : <MonitorIcon />}</span>
               <span className="menu__text">
                 <span className="menu__title">{s.device}</span>
                 <span className="menu__sub">{s.current ? 'This device' : `Active ${formatRelative(s.lastUsedAt)}`}</span>
@@ -127,7 +127,7 @@ export function SecurityScreen() {
       )}
       {others.length > 0 && (
         <div style={{ marginTop: 16 }}>
-          <Button variant="secondary" fullWidth iconLeft={<LogOut />} onClick={() => revokeOthers.mutate(undefined, { onSuccess: () => toast('Signed out of other devices') })}>
+          <Button variant="secondary" fullWidth iconLeft={<SignOutIcon />} onClick={() => revokeOthers.mutate(undefined, { onSuccess: () => toast('Signed out of other devices') })}>
             Sign out of all other devices
           </Button>
         </div>

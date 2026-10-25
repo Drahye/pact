@@ -1,4 +1,4 @@
-import { ChevronRight, Ellipsis, Image as ImageIcon, LogOut, Pencil, Plus, RefreshCw, Settings2, Share2 } from 'lucide-react';
+import { ArrowsClockwiseIcon, CaretRightIcon, DotsThreeIcon, ImageIcon, PencilSimpleIcon, PlusIcon, ShareNetworkIcon, SignOutIcon, SlidersHorizontalIcon } from '@phosphor-icons/react';
 import { useState, type ReactNode } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useCircle, useEnsureInvite, useLeaveCircle, useRemoveMember, useResetInvite, useUpdateCircle, useUploadCircleCover } from '../../../api/circles';
@@ -34,6 +34,7 @@ import '../../../components/ask/ask.css';
 import '../../../components/circle/circle.css';
 import '../object-detail.css';
 import './circle-detail.css';
+import { Glyph } from '../../../components/ui/Glyph';
 
 const today = () => `${new Date().toISOString().slice(0, 10)}T00:00:00Z`;
 /** "Today", "Tomorrow", then the weekday for this week, then the date (the same words Home uses for Coming up). */
@@ -151,8 +152,8 @@ export function CircleScreen() {
           title={c.name}
           trailing={
             <span className="detail__top-actions">
-              <IconButton label="Invite people" icon={<Share2 />} onClick={invite} />
-              <IconButton label="More" icon={<Ellipsis />} onClick={() => setSheet('menu')} />
+              <IconButton label="Invite people" icon={<ShareNetworkIcon />} onClick={invite} />
+              <IconButton label="More" icon={<DotsThreeIcon />} onClick={() => setSheet('menu')} />
             </span>
           }
         />
@@ -160,7 +161,7 @@ export function CircleScreen() {
     >
       <Hero tint={c.tint} photo={cover} className="xh--circle">
         <span className="xh__emoji" aria-hidden>
-          {c.emoji}
+          <Glyph emoji={c.emoji} />
         </span>
         <h1 className="xh__title">{c.name}</h1>
         <p className="xh__meta">{peopleLine(c.members.map((m) => m.userId), user?.id, { names: 3 }) || people(c.memberCount)}</p>
@@ -168,7 +169,7 @@ export function CircleScreen() {
           <AvatarStack userIds={c.members.map((m) => m.userId)} total={c.memberCount} size="lg" max={5} enter />
           <button type="button" className="od-circle__slot" onClick={invite} disabled={ensure.isPending} aria-label="Invite someone to this Circle">
             <span className="od-circle__slot-mark" aria-hidden>
-              <Plus />
+              <PlusIcon />
             </span>
             <span>Invite</span>
           </button>
@@ -203,7 +204,7 @@ export function CircleScreen() {
                 Ask something else
               </Link>
             </div>
-            <Button variant="secondary" iconLeft={<Plus />} onClick={start}>
+            <Button variant="secondary" iconLeft={<PlusIcon />} onClick={start}>
               More ways to start
             </Button>
           </section>
@@ -221,7 +222,7 @@ export function CircleScreen() {
                 ) : (
                   <p className="od-note">Nothing is open right now.</p>
                 )}
-                <Button variant="secondary" iconLeft={<Plus />} onClick={start} className="od-circle__more">
+                <Button variant="secondary" iconLeft={<PlusIcon />} onClick={start} className="od-circle__more">
                   Start something
                 </Button>
               </section>
@@ -282,12 +283,12 @@ export function CircleScreen() {
 
         <section className="od-circle__settings" aria-label="Circle settings">
           <button type="button" className="od-circle__settings-btn" onClick={() => setSheet('menu')}>
-            <Settings2 aria-hidden />
+            <SlidersHorizontalIcon aria-hidden />
             <span>
               Circle settings
               <small>{isOwner ? 'Edit, reset the invite link, leave' : 'Leave this Circle'}</small>
             </span>
-            <ChevronRight aria-hidden />
+            <CaretRightIcon aria-hidden />
           </button>
         </section>
       </Sheet>
@@ -312,18 +313,18 @@ export function CircleScreen() {
           )}
           {isOwner && (
             <button type="button" className="menu__row" onClick={() => (setDraft({ name: c.name, emoji: c.emoji, tint: c.tint as 'mint' }), setSheet('edit'))}>
-              <span className="menu__icon tint--sky"><Pencil aria-hidden /></span>
-              <span className="menu__text"><span className="menu__title">Edit Circle</span><span className="menu__sub">Name, emoji and colour</span></span>
+              <span className="menu__icon tint--sky"><PencilSimpleIcon aria-hidden /></span>
+              <span className="menu__text"><span className="menu__title">Edit Circle</span><span className="menu__sub">Name, icon and colour</span></span>
             </button>
           )}
           {isOwner && (
             <button type="button" className="menu__row" onClick={() => setSheet('reset')}>
-              <span className="menu__icon tint--sun"><RefreshCw aria-hidden /></span>
+              <span className="menu__icon tint--sun"><ArrowsClockwiseIcon aria-hidden /></span>
               <span className="menu__text"><span className="menu__title">Reset invite link</span><span className="menu__sub">Turns the old link off</span></span>
             </button>
           )}
           <button type="button" className="menu__row menu__row--danger" onClick={() => setSheet('leave')}>
-            <span className="menu__icon tint--coral"><LogOut aria-hidden /></span>
+            <span className="menu__icon tint--coral"><SignOutIcon aria-hidden /></span>
             <span className="menu__text"><span className="menu__title">Leave Circle</span></span>
           </button>
         </div>

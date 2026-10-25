@@ -1,15 +1,16 @@
 import { Link } from 'react-router-dom';
 import { useCreateSheet } from '../create/CreateSheet';
+import { coverUrl } from '../../lib/covers';
 import { OBJECT_KINDS, type ObjectKind } from '../objects';
 import { Button } from '../ui/Button';
 import { MomentTiles } from './MomentTiles';
 import './home-start.css';
 
-const WHAT: { kind: ObjectKind; title: string; body: string }[] = [
-  { kind: 'ask', title: 'Settle things in a tap', body: 'Quick questions, answered in seconds.' },
-  { kind: 'plan', title: 'Plan with real dates', body: 'See who is in, and when.' },
-  { kind: 'split', title: 'Split what you spend', body: 'Know who has paid and who has not.' },
-  { kind: 'pact', title: 'Commit to the big things', body: 'Money, tasks and a deadline, together.' },
+const WHAT: { kind: ObjectKind; title: string; body: string; photo: string; to: string }[] = [
+  { kind: 'ask', title: 'Settle things in a tap', body: 'Quick questions, answered in seconds.', photo: 'other-park', to: '/app/asks/new' },
+  { kind: 'plan', title: 'Plan with real dates', body: 'See who is in, and when.', photo: 'trip-road', to: '/app/plans/new' },
+  { kind: 'split', title: 'Split what you spend', body: 'Know who has paid and who has not.', photo: 'gift-laugh', to: '/app/splits/new' },
+  { kind: 'pact', title: 'Commit to the big things', body: 'Money, tasks and a deadline, together.', photo: 'fund-hug-women', to: '/app/create' },
 ];
 
 /**
@@ -50,13 +51,16 @@ export function HomeStart({ variant }: { variant: 'new' | 'again' }) {
       <ul className="hm-start__kinds" aria-label="What you can make">
         {WHAT.map((w) => (
           <li key={w.kind} className={`tint--${OBJECT_KINDS[w.kind].tint}`}>
-            <span className="hm-start__icon" aria-hidden>
-              {OBJECT_KINDS[w.kind].icon}
-            </span>
-            <span>
-              <strong>{w.title}</strong>
-              <span>{w.body}</span>
-            </span>
+            <Link to={w.to} className="hm-kind">
+              <img src={coverUrl(w.photo)} alt="" aria-hidden loading="lazy" decoding="async" />
+              <span className="hm-kind__icon" aria-hidden>
+                {OBJECT_KINDS[w.kind].icon}
+              </span>
+              <span className="hm-kind__text">
+                <strong>{w.title}</strong>
+                <span>{w.body}</span>
+              </span>
+            </Link>
           </li>
         ))}
       </ul>

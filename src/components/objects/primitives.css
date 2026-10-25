@@ -27,6 +27,10 @@
   line-height: 1.2;
 }
 
+.ox-kicker > span:not(.ox-kicker__where) {
+  flex: none;
+}
+
 .ox-kicker svg {
   width: 13px;
   height: 13px;

@@ -9,6 +9,7 @@ import { StatusIndicator } from './StatusIndicator';
 import { Avatar } from '../ui/Avatar';
 import { SegmentedBar } from '../pact/SegmentedBar';
 import type { Share } from '../pact/SegmentedRing';
+import { usePhotoTone } from '../../lib/photoTone';
 import './primitives.css';
 
 /**
@@ -68,13 +69,14 @@ export function PactObject({
   gave?: { ids: string[]; text: string } | null;
 }) {
   const id = useId();
+  const tone = usePhotoTone(photo);
   const people = contributorIds ?? [];
   const pct = Math.min(100, Math.round((raised / Math.max(1, target)) * 100));
   const [pressed, setPressed] = useState(false);
   const bar: Share[] = shares ?? [{ id: 'all', color: 'var(--tint-solid)', value: raised }];
   if (density === 'compact' && !completed) {
     return (
-      <article className={`ox-pact ox-pact--compact tint--${tint} ${disabled ? 'is-disabled' : ''}`} aria-labelledby={`${id}-t`}>
+      <article className={`ox-pact ox-pact--compact tint--${tint} ${disabled ? 'is-disabled' : ''}`} aria-labelledby={`${id}-t`} style={tone}>
         {photo && <img className="ox-pact__photo" src={photo} alt="" aria-hidden loading="lazy" decoding="async" />}
         <ProgressRing value={pct} size={56} stroke={6} label={`${title} is ${pct}% funded`}>
           <span className="ox-pact__pct num">{pct}%</span>

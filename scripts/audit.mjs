@@ -5,7 +5,7 @@ import { chromium } from 'playwright';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 
-const out = process.argv[2] ?? 'audit-results.json';
+const out = process.argv[2] ?? 'docs/archive/audit-results.json';
 const BASE = (process.env.AUDIT_BASE ?? 'http://localhost:5173').replace(/\/$/, '');
 // Staging has no demo data: the audit signs up its own person and Pact through the API (needs STAGING_SHOW_CODES or a dev stack).
 const FRESH = process.env.AUDIT_FRESH === '1';

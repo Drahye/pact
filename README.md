@@ -2,6 +2,8 @@
 
 **Plan it together. Fund it together.**
 
+Setting up? Start with [HOWTOSETUP.md](HOWTOSETUP.md). Built with AI assistance: read [AI-DISCLOSURE.md](AI-DISCLOSURE.md).
+
 PACT is a social money app for groups saving toward one shared goal: a trip, a birthday gift, a wedding contribution, rent. Everyone tops up a wallet, contributes to the Pact with their PIN, and sees every naira land in a ring made of everyone's colours. When the goal is reached the Pact is funded, not finished: the organiser pays for the plan from the Pact, the group finishes its tasks, and the organiser completes the Pact when it happened and decides what to do with what is left. If the goal isn't reached, the rule the group agreed at the start runs on its own.
 
 This repository holds the whole product: the marketing site, the mobile-first web app, and the API with its ledger, payments and background jobs.
@@ -153,4 +155,4 @@ Going live needs: a managed Postgres, a Paystack live secret key with the webhoo
 | `npm run db:reset` | Delete the local embedded database (reseeds on next start) |
 | `node scripts/e2e.mjs [dir]` | Browser journey: sign up, top up, create, contribute, verify, withdraw |
 
-The earlier design-submission exports (`npm run export:screens`, `RATIONALE.md`, `PROJECT_NOTES.md`) describe the original prototype. The app screens now need the API and a signed-in session, so those capture scripts reflect the prototype, not the current product.
+The earlier design-submission exports (`npm run export:screens`, [docs/archive/RATIONALE.md](docs/archive/RATIONALE.md), [docs/archive/PROJECT_NOTES.md](docs/archive/PROJECT_NOTES.md)) describe the original prototype. The app screens now need the API and a signed-in session, so those capture scripts reflect the prototype, not the current product.

@@ -1,6 +1,6 @@
 /** The headers that keep tokens in URLs from leaking and the app out of other people's frames, pinned. */
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { after, before, describe, it } from 'node:test';
@@ -32,4 +32,17 @@ describe('security headers', () => {
       assert.equal(r.headers['x-content-type-options'], 'nosniff');
     });
   }
+});
+
+/** The policy is script-src 'self', so a script written into the page would be blocked and its job silently not done. */
+describe('index.html and the content security policy', () => {
+  const html = readFileSync(new URL('../../index.html', import.meta.url), 'utf8');
+  it('has no inline script: every script is a file on this origin', () => {
+    const inline = [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g)].filter(([, attrs, body]) => !/\bsrc=/.test(attrs) || body.trim());
+    assert.deepEqual(inline.map((m) => m[0].slice(0, 80)), []);
+  });
+  it('loads the theme script from public/, before anything paints', () => {
+    assert.match(html, /<script src="\/theme-init\.js"><\/script>/);
+    assert.ok(existsSync(new URL('../../public/theme-init.js', import.meta.url)));
+  });
 });

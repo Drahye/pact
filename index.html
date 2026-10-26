@@ -10,23 +10,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#F6F4EF" />
     <meta name="color-scheme" content="light" />
-    <script>
-      /* Set the theme before first paint so the app never flashes the wrong one. Keep in step with src/theme/ThemeProvider.tsx. */
-      (function () {
-        var theme = 'light';
-        try {
-          if (/^\/(app|styleguide)(\/|$)/.test(location.pathname)) {
-            var t = localStorage.getItem('pact.theme');
-            theme = t === 'dark' || (t === 'system' && matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
-          }
-        } catch (e) {}
-        document.documentElement.dataset.theme = theme;
-        if (theme === 'dark') {
-          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0F1512');
-          document.querySelector('meta[name="color-scheme"]').setAttribute('content', 'dark');
-        }
-      })();
-    </script>
+    <!-- Sets the theme before first paint. A file of its own, not inline, because the server's policy only runs scripts from its own origin. Keep in step with src/theme/ThemeProvider.tsx. -->
+    <script src="/theme-init.js"></script>
     <meta name="description" content="PACT: one place for your group. Make a Circle, ask a question, plan something, split a cost, and pool money in a Pact when it needs it." />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="PACT" />

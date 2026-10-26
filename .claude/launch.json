@@ -26,6 +26,18 @@
         "server/src/index.ts"
       ],
       "port": 8799
+    },
+    {
+      "name": "pact-dist-preview",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "vite",
+        "preview",
+        "--port",
+        "4173",
+        "--strictPort"
+      ],
+      "port": 4173
     }
   ]
 }

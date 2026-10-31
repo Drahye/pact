@@ -100,6 +100,12 @@ const Env = z.object({
 
   /** Run the background job worker inside the API process. Set false and run `npm run worker` to scale separately. */
   RUN_WORKER: bool(true),
+  /**
+   * How often the worker checks for due jobs, in milliseconds. Unset keeps the built-in pace (1 second in the API process,
+   * 0.5 second in `npm run worker`). A scale-to-zero database such as Neon's free plan only sleeps if nothing queries it, so a
+   * slow-and-cheap deployment can raise this (for example 600000): jobs then wait up to that long.
+   */
+  WORKER_INTERVAL_MS: z.coerce.number().int().min(250).max(3_600_000).optional(),
   /** Serve the built web app from ./dist (single-container deploys). */
   SERVE_STATIC: bool(false),
   /** Seed demo people and Pacts on an empty database. */

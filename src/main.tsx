@@ -17,6 +17,13 @@ document.addEventListener('touchstart', () => undefined, { passive: true });
 // Before React renders: Chromium can fire beforeinstallprompt very early, and it fires once.
 initPwaInstall();
 
+// The service worker serves the offline page when a navigation fails. Registered after load so it never competes with first paint.
+if (import.meta.env.PROD && 'serviceWorker' in navigator && window.isSecureContext) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(() => undefined);
+  });
+}
+
 // A tab opened before a deploy asks for chunks the new build no longer has. Reload once to pick up the new build; the flag stops a loop.
 window.addEventListener('vite:preloadError', (event) => {
   try {

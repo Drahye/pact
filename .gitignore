@@ -9,3 +9,4 @@ build
 exports
 tsconfig.tsbuildinfo
 *.log
+.neon

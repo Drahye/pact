@@ -19,7 +19,7 @@ async function main() {
   }
   if (config.SEED_DEMO && !config.isProd) await seedDemo(ctx);
 
-  const stopWorker = config.RUN_WORKER ? startWorker(ctx) : () => {};
+  const stopWorker = config.RUN_WORKER ? startWorker(ctx, config.WORKER_INTERVAL_MS) :() => {};
   await app.listen({ port: config.PORT, host: config.HOST });
   app.log.info(`PACT API on :${config.PORT} · payments: ${ctx.provider.name} · db: ${db.driver}`);
 

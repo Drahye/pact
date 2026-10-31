@@ -73,3 +73,17 @@ describe('deployment guards', () => {
     assert.throws(() => loadConfig({ NODE_ENV: 'production', DEPLOY_ENV: 'staging', PAYMENTS_PROVIDER: 'sandbox', SMS_PROVIDER: 'termii', DATABASE_URL: 'postgres://x' }), /JWT_SECRET must be set/);
   });
 });
+
+describe('worker pace', () => {
+  const staging = { DEPLOY_ENV: 'staging', PAYMENTS_PROVIDER: 'sandbox', SMS_PROVIDER: 'log', STAGING_SHOW_CODES: 'true' };
+
+  it('keeps the built-in pace unless WORKER_INTERVAL_MS is set', () => {
+    assert.equal(prod(staging).WORKER_INTERVAL_MS, undefined);
+  });
+
+  it('accepts a slower interval for scale-to-zero databases, and refuses one that would hammer or stall the queue', () => {
+    assert.equal(prod({ ...staging, WORKER_INTERVAL_MS: '600000' }).WORKER_INTERVAL_MS, 600000);
+    refuses({ ...staging, WORKER_INTERVAL_MS: '100' }, /WORKER_INTERVAL_MS/);
+    refuses({ ...staging, WORKER_INTERVAL_MS: '99999999' }, /WORKER_INTERVAL_MS/);
+  });
+});
